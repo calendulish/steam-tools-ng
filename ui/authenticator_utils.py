@@ -41,7 +41,7 @@ async def on_get_secret_from_adb(adb: Any, secret_type: str) -> bytes:
 
 
 @config.check
-async def on_connect_to_adb(adb_path: Optional[config.ConfigStr] = None) -> Any:
+def on_connect_to_adb(adb_path: Optional[config.ConfigStr] = None) -> Any:
     while True:
         if not adb_path:
             user_input = console_utils.safe_input("Paste here the path to your adb 'binary'")

@@ -40,7 +40,7 @@ async def on_start_authenticator(shared_secret: config.ConfigStr) -> int:
         use_adb = console_utils.safe_input("Do you want to get it now using adb?", False)
         if use_adb:
             try:
-                adb = await authenticator_utils.on_connect_to_adb()
+                adb = authenticator_utils.on_connect_to_adb()
                 secret = await authenticator_utils.on_get_secret_from_adb(adb, 'shared')
                 shared_secret = config.ConfigStr(secret.decode())
             except (FileNotFoundError, AttributeError):
