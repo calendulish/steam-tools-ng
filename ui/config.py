@@ -67,8 +67,7 @@ class Check(object):
         signature = inspect.signature(function_)
 
         for option in signature.parameters.values():
-            # noinspection PyUnresolvedReferences
-            value_type = function_.__annotations__.get(option.name)
+            value_type = option.annotation
             # noinspection PyUnusedLocal
             value: Union[ConfigStr, ConfigInt, ConfigBool, ConfigFloat]
 
