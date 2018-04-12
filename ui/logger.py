@@ -91,7 +91,7 @@ class ColoredStreamHandler(Handler):
         'WARNING': 2 | 4 | 8,
         'ERROR': 1 | 4 | 8,
         'CRITICAL': 4 | 8,
-        'debug': 2 | 1,
+        'DEBUG': 2 | 1,
     }
 
     def emit(self, record: Any) -> None:

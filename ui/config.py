@@ -78,11 +78,11 @@ class Check(object):
                 try:
                     if option.annotation in [ConfigStr, Optional[ConfigStr]]:
                         value = ConfigStr(config_parser.get(self.section, option.name))
-                    elif option.annotation is [ConfigInt, Optional[ConfigInt]]:
+                    elif option.annotation in [ConfigInt, Optional[ConfigInt]]:
                         value = ConfigInt(config_parser.getint(self.section, option.name))
-                    elif option.annotation is [ConfigBool, Optional[ConfigBool]]:
+                    elif option.annotation in [ConfigBool, Optional[ConfigBool]]:
                         value = ConfigBool(config_parser.getboolean(self.section, option.name))
-                    elif option.annotation is [ConfigFloat, Optional[ConfigFloat]]:
+                    elif option.annotation in [ConfigFloat, Optional[ConfigFloat]]:
                         value = ConfigFloat(config_parser.getfloat(self.section, option.name))
                     else:
                         log.debug('Nothing to do with {}. Ignoring.'.format(option))
