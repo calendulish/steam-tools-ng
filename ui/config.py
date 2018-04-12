@@ -56,11 +56,11 @@ class DefaultConfig(object):
     log_color = ConfigBool(True)
 
 
-def check(function_: Callable[..., Any]) -> Callable[..., Any]:
-    section = os.path.splitext(os.path.basename(inspect.getfile(inspect.currentframe())))[0]
+class Check(object):
+    def __init__(self) -> None:
+        self.section = os.path.splitext(os.path.basename(inspect.getfile(inspect.currentframe())))[0]
 
-    @functools.wraps(function_)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
+    def __call__(self, function_: Callable[..., Any]) -> Any:
         log.debug('Loading new configs from %s', config_file)
         config_parser.read(config_file)
         new_parameters = {}
@@ -74,31 +74,29 @@ def check(function_: Callable[..., Any]) -> Callable[..., Any]:
 
             try:
                 if value_type is ConfigStr:
-                    value = ConfigStr(config_parser.get(section, option.name))
+                    value = ConfigStr(config_parser.get(self.section, option.name))
                 elif value_type is ConfigInt:
-                    value = ConfigInt(config_parser.getint(section, option.name))
+                    value = ConfigInt(config_parser.getint(self.section, option.name))
                 elif value_type is ConfigBool:
-                    value = ConfigBool(config_parser.getboolean(section, option.name))
+                    value = ConfigBool(config_parser.getboolean(self.section, option.name))
                 elif value_type is ConfigFloat:
-                    value = ConfigFloat(config_parser.getfloat(section, option.name))
+                    value = ConfigFloat(config_parser.getfloat(self.section, option.name))
                 else:
                     log.debug('Nothing to do with {}. Ignoring.'.format(option))
                     continue
             except configparser.NoOptionError:
                 log.debug('Option not found in config: %s', option.name)
             except configparser.NoSectionError:
-                log.debug('Section not found in config: %s', section)
-                config_parser.add_section(section)
+                log.debug('Section not found in config: %s', self.section)
+                config_parser.add_section(self.section)
             else:
                 log.debug('%s will be injected into %s', option.name, function_.__name__)
                 new_parameters[option.name] = value
 
         if new_parameters:
-            return functools.partial(function_, **new_parameters)(*args, **kwargs)
+            return functools.partial(function_, **new_parameters)
         else:
-            return function_(*args, **kwargs)
-
-    return wrapper
+            return function_
 
 
 def init() -> None:
