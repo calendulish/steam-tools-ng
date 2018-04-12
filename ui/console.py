@@ -19,6 +19,7 @@
 import base64
 import logging
 import time
+from typing import Optional
 
 from stlib import authenticator
 
@@ -28,7 +29,7 @@ log = logging.getLogger(__name__)
 
 
 @config.Check('authenticator')
-async def on_start_authenticator(shared_secret: config.ConfigStr) -> int:
+async def on_start_authenticator(shared_secret: Optional[config.ConfigStr] = None) -> int:
     try:
         base64.b64decode(shared_secret)
     except ValueError:
