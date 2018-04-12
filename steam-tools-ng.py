@@ -69,16 +69,13 @@ if __name__ == "__main__":
 
     if console_params.module:
         module_name = f'on_start_{console_params.module[0]}'
-        try:
-            module_options = console_params.options[0]
-        except IndexError:
-            module_options = None
+        module_options = console_params.options
 
         assert hasattr(console, module_name), f'{module_name} doesn\'t exist in {console}'
         module = getattr(console, module_name)
 
         loop_ = asyncio.get_event_loop()
-        return_code = loop_.run_until_complete(module(module_options))
+        return_code = loop_.run_until_complete(module(*module_options))
 
         sys.exit(return_code)
     else:
