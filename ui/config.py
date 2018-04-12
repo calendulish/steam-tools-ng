@@ -21,7 +21,7 @@ import functools
 import inspect
 import logging
 import os
-from typing import Any, Callable, NamedTuple, NewType, Union
+from typing import Any, Callable, NamedTuple, NewType, Optional, Union
 
 config_parser = configparser.RawConfigParser()
 log = logging.getLogger(__name__)
@@ -73,13 +73,13 @@ class Check(object):
             value: Union[ConfigStr, ConfigInt, ConfigBool, ConfigFloat]
 
             try:
-                if value_type is ConfigStr:
+                if value_type in [ConfigStr, Optional[ConfigStr]]:
                     value = ConfigStr(config_parser.get(self.section, option.name))
-                elif value_type is ConfigInt:
+                elif value_type is [ConfigInt, Optional[ConfigInt]]:
                     value = ConfigInt(config_parser.getint(self.section, option.name))
-                elif value_type is ConfigBool:
+                elif value_type is [ConfigBool, Optional[ConfigBool]]:
                     value = ConfigBool(config_parser.getboolean(self.section, option.name))
-                elif value_type is ConfigFloat:
+                elif value_type is [ConfigFloat, Optional[ConfigFloat]]:
                     value = ConfigFloat(config_parser.getfloat(self.section, option.name))
                 else:
                     log.debug('Nothing to do with {}. Ignoring.'.format(option))
