@@ -66,36 +66,42 @@ class Check(object):
         new_parameters = {}
         signature = inspect.signature(function_)
 
-        for option in signature.parameters.values():
-            value_type = option.annotation
-            # noinspection PyUnusedLocal
-            value: Union[ConfigStr, ConfigInt, ConfigBool, ConfigFloat]
-
-            try:
-                if value_type in [ConfigStr, Optional[ConfigStr]]:
-                    value = ConfigStr(config_parser.get(self.section, option.name))
-                elif value_type is [ConfigInt, Optional[ConfigInt]]:
-                    value = ConfigInt(config_parser.getint(self.section, option.name))
-                elif value_type is [ConfigBool, Optional[ConfigBool]]:
-                    value = ConfigBool(config_parser.getboolean(self.section, option.name))
-                elif value_type is [ConfigFloat, Optional[ConfigFloat]]:
-                    value = ConfigFloat(config_parser.getfloat(self.section, option.name))
-                else:
-                    log.debug('Nothing to do with {}. Ignoring.'.format(option))
+        def wrapped_function(*args, **kwargs):
+            for index, option in enumerate(signature.parameters.values()):
+                if len(args) >= index+1:
+                    log.debug("A positional argument already exists for %s. Ignoring...", option.name)
                     continue
-            except configparser.NoOptionError:
-                log.debug('Option not found in config: %s', option.name)
-            except configparser.NoSectionError:
-                log.debug('Section not found in config: %s', self.section)
-                config_parser.add_section(self.section)
-            else:
-                log.debug('%s will be injected into %s', option.name, function_.__name__)
-                new_parameters[option.name] = value
 
-        if new_parameters:
-            return functools.partial(function_, **new_parameters)
-        else:
-            return function_
+                # noinspection PyUnusedLocal
+                value: Union[ConfigStr, ConfigInt, ConfigBool, ConfigFloat]
+
+                try:
+                    if option.annotation in [ConfigStr, Optional[ConfigStr]]:
+                        value = ConfigStr(config_parser.get(self.section, option.name))
+                    elif option.annotation is [ConfigInt, Optional[ConfigInt]]:
+                        value = ConfigInt(config_parser.getint(self.section, option.name))
+                    elif option.annotation is [ConfigBool, Optional[ConfigBool]]:
+                        value = ConfigBool(config_parser.getboolean(self.section, option.name))
+                    elif option.annotation is [ConfigFloat, Optional[ConfigFloat]]:
+                        value = ConfigFloat(config_parser.getfloat(self.section, option.name))
+                    else:
+                        log.debug('Nothing to do with {}. Ignoring.'.format(option))
+                        continue
+                except configparser.NoOptionError:
+                    log.debug('Option not found in config: %s', option.name)
+                except configparser.NoSectionError:
+                    log.debug('Section not found in config: %s', self.section)
+                    config_parser.add_section(self.section)
+                else:
+                    log.debug('%s will be injected into %s', option.name, function_.__name__)
+                    new_parameters[option.name] = value
+
+            if new_parameters:
+                return functools.partial(function_, **new_parameters)(*args, **kwargs)
+            else:
+                return function_(*args, **kwargs)
+
+        return wrapped_function
 
 
 def init() -> None:
