@@ -130,7 +130,7 @@ def console_fixer(end: str = '\n') -> None:
     print(('{:' + str(tsize - 1) + 's}').format(''), end=end, flush=True)
 
 
-@config.check
+@config.Check('logger')
 def configure(
         log_directory: config.ConfigStr = config.DefaultConfig.log_directory,
         log_console_level: config.ConfigStr = config.DefaultConfig.log_console_level,

@@ -57,8 +57,8 @@ class DefaultConfig(object):
 
 
 class Check(object):
-    def __init__(self) -> None:
-        self.section = os.path.splitext(os.path.basename(inspect.getfile(inspect.currentframe())))[0]
+    def __init__(self, section) -> None:
+        self.section = section
 
     def __call__(self, function_: Callable[..., Any]) -> Any:
         log.debug('Loading new configs from %s', config_file)

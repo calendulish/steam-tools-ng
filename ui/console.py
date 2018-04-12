@@ -27,7 +27,7 @@ from ui import authenticator_utils, config, console_utils
 log = logging.getLogger(__name__)
 
 
-@config.check
+@config.Check('authenticator')
 async def on_start_authenticator(shared_secret: config.ConfigStr) -> int:
     try:
         base64.b64decode(shared_secret)

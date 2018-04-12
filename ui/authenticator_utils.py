@@ -40,7 +40,7 @@ async def on_get_secret_from_adb(adb: Any, secret_type: str) -> bytes:
             return secret
 
 
-@config.check
+@config.Check('authenticator')
 def on_connect_to_adb(adb_path: Optional[config.ConfigStr] = None) -> Any:
     while True:
         if not adb_path:
