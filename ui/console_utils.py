@@ -17,12 +17,12 @@
 #
 
 import logging
-from typing import Optional
+from typing import Optional, Union
 
 log = logging.getLogger(__name__)
 
 
-def safe_input(msg: str, default_response: Optional[bool] = None):
+def safe_input(msg: str, default_response: Optional[bool] = None) -> Union[bool, str]:
     if default_response is True:
         options = '[S/n]'
     elif default_response is False:
@@ -49,5 +49,5 @@ def safe_input(msg: str, default_response: Optional[bool] = None):
             else:
                 raise ValueError(f'{user_input} is not an accepted value')
         except ValueError as exception:
-            log.error(exception)
+            log.error(exception.args[0])
             log.error('Please, try again.')

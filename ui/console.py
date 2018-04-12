@@ -30,13 +30,14 @@ log = logging.getLogger(__name__)
 
 @config.Check('authenticator')
 async def on_start_authenticator(shared_secret: Optional[config.ConfigStr] = None) -> int:
-    try:
-        base64.b64decode(shared_secret)
-    except ValueError:
-        log.critical(f'{shared_secret} is not a valid parameter')
-        return 1
-    except TypeError:
-        log.critical("No shared_secret found on config file.")
+    if shared_secret:
+        try:
+            base64.b64decode(shared_secret)
+        except ValueError:
+            log.critical(f'{shared_secret} is not a valid parameter')
+            return 1
+    else:
+        log.critical("No shared_secret found on config file or command line")
 
         use_adb = console_utils.safe_input("Do you want to get it now using adb?", False)
         if use_adb:

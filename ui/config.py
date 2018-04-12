@@ -57,7 +57,7 @@ class DefaultConfig(object):
 
 
 class Check(object):
-    def __init__(self, section) -> None:
+    def __init__(self, section: str) -> None:
         self.section = section
 
     def __call__(self, function_: Callable[..., Any]) -> Any:
@@ -66,7 +66,7 @@ class Check(object):
         new_parameters = {}
         signature = inspect.signature(function_)
 
-        def wrapped_function(*args, **kwargs):
+        def wrapped_function(*args: Any, **kwargs: Any) -> Any:
             for index, option in enumerate(signature.parameters.values()):
                 if len(args) >= index+1:
                     log.debug("A positional argument already exists for %s. Ignoring...", option.name)

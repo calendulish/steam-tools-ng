@@ -45,6 +45,7 @@ def on_connect_to_adb(adb_path: Optional[config.ConfigStr] = None) -> Any:
     while True:
         if not adb_path:
             user_input = console_utils.safe_input("Paste here the path to your adb 'binary'")
+            assert isinstance(user_input, str), "safe_input is returning an invalid user_input"
             adb_path = config.ConfigStr(user_input)
 
         try:
