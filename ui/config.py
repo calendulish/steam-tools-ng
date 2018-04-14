@@ -23,6 +23,8 @@ import logging
 import os
 from typing import Any, Callable, NamedTuple, NewType, Optional, Union
 
+from ui import logger_handlers
+
 config_parser = configparser.RawConfigParser()
 log = logging.getLogger(__name__)
 
@@ -68,7 +70,7 @@ class Check(object):
 
         def wrapped_function(*args: Any, **kwargs: Any) -> Any:
             for index, option in enumerate(signature.parameters.values()):
-                if len(args) >= index+1:
+                if len(args) >= index + 1:
                     log.debug("A positional argument already exists for %s. Ignoring...", option.name)
                     continue
 
@@ -119,8 +121,24 @@ def init() -> None:
 
     if os.path.isfile(config_file):
         config_parser.read(config_file)
-    else:
-        log.debug('No config file found.')
+
+    log_directory = config_parser.get("logger", "log_directory", fallback=DefaultConfig.log_directory)
+    log_level = config_parser.get("logger", "log_level", fallback=DefaultConfig.log_level)
+    log_console_level = config_parser.get("logger", "log_console_level", fallback=DefaultConfig.log_console_level)
+
+    os.makedirs(log_directory, exist_ok=True)
+
+    log_file_handler = logger_handlers.RotatingFileHandler(os.path.join(log_directory, 'steam-tools-ng.log'),
+                                                           backupCount=1,
+                                                           encoding='utf-8')
+    log_file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s'))
+    log_file_handler.setLevel(getattr(logging, log_level.upper()))
+    log_file_handler.doRollover()
+
+    log_console_handler = logger_handlers.ColoredStreamHandler()
+    log_console_handler.setLevel(getattr(logging, log_console_level.upper()))
+
+    logging.basicConfig(level=logging.DEBUG, handlers=[log_file_handler, log_console_handler])
 
 
 def new(*new_configs: Config) -> None:

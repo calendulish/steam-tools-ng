@@ -16,17 +16,15 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-import logging
 import os
-import shutil
 import sys
 from ctypes import Structure, byref, c_short, windll
 from ctypes.wintypes import DWORD
-from logging import Handler, handlers
+from logging import Handler
 from types import TracebackType
 from typing import Any, Optional, Type
 
-from ui import config
+from logging.handlers import *
 
 if os.name == 'nt':
     class WindowsConsoleCoord(Structure):
@@ -123,29 +121,3 @@ class ColoredStreamHandler(Handler):
                 sys.stdout.write('\033[m')
         except Exception:
             self.handleError(record)
-
-
-def console_fixer(end: str = '\n') -> None:
-    tsize = shutil.get_terminal_size()[0]
-    print(('{:' + str(tsize - 1) + 's}').format(''), end=end, flush=True)
-
-
-@config.Check('logger')
-def configure(
-        log_directory: config.ConfigStr = config.DefaultConfig.log_directory,
-        log_console_level: config.ConfigStr = config.DefaultConfig.log_console_level,
-        log_level: config.ConfigStr = config.DefaultConfig.log_level
-) -> None:
-    os.makedirs(log_directory, exist_ok=True)
-
-    log_file = logging.handlers.RotatingFileHandler(os.path.join(log_directory, 'steam-tools-ng.log'),
-                                                    backupCount=1,
-                                                    encoding='utf-8')
-    log_file.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s'))
-    log_file.setLevel(getattr(logging, log_level.upper()))
-    log_file.doRollover()
-
-    console = ColoredStreamHandler()
-    console.setLevel(getattr(logging, log_console_level.upper()))
-
-    logging.basicConfig(level=logging.DEBUG, handlers=[log_file, console])
