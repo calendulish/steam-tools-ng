@@ -104,6 +104,16 @@ class Check(object):
         return wrapped_function
 
 
+def update_log_level(type_: str, level_str: str) -> None:
+    level = getattr(logging, level_str.upper())
+    file_handler, console_handler = logging.root.handlers
+
+    if type_ == "console":
+        console_handler.setLevel(level)
+    else:
+        file_handler.setLevel(level)
+
+
 def init() -> None:
     os.makedirs(config_file_directory, exist_ok=True)
 
@@ -115,6 +125,11 @@ def init() -> None:
 
 def new(*new_configs: Config) -> None:
     for config in new_configs:
+        if config.option == "log_level":
+            update_log_level("file", config.value)
+        elif config.option == "log_console_level":
+            update_log_level("console", config.value)
+
         if not config_parser.has_section(config.section):
             config_parser.add_section(config.section)
 
