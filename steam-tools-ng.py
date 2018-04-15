@@ -23,16 +23,14 @@ import os
 import sys
 import textwrap
 
+from ui import config
+
 if len(sys.argv) == 1:
-    # noinspection PyUnresolvedReferences
-    from ui import interface  # type: ignore # not implemented yet
+    from ui import application
 else:
     from ui import console
 
-from ui import config, logger
-
 config.init()
-logger.configure()
 
 log = logging.getLogger(__name__)
 
@@ -84,5 +82,5 @@ if __name__ == "__main__":
             log.critical('Use -c / --cli <module> for the command line interface.')
             sys.exit(1)
 
-        program = interface.SteamTools()
-        program.run()
+        app = application.Application()
+        app.run()
