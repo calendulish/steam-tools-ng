@@ -154,5 +154,5 @@ def new(*new_configs: Config) -> None:
         config_parser.set(config.section, config.option, str(config.value))
 
     with open(config_file, 'w') as config_file_object:
-        log.debug('Saving new configs at %s', config_file_object)
+        log.debug('Saving new configs at %s', config_file)
         config_parser.write(config_file_object)
