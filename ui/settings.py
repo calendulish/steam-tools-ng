@@ -33,17 +33,20 @@ class SettingsDialog(Gtk.Dialog):
         self.set_destroy_with_parent(True)
         self.set_resizable(False)
         self.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
-        self.add_button(_('Ok'), Gtk.ResponseType.OK)
-        self.add_button(_('Cancel'), Gtk.ResponseType.CANCEL)
 
         content_area = self.get_content_area()
         content_area.set_orientation(Gtk.Orientation.VERTICAL)
         content_area.set_border_width(10)
         content_area.set_spacing(10)
 
+        content_area.pack_start(self.logger_settings(), False, False, 0)
+
+        self.connect('response', self.on_response)
+        self.show_all()
+
+    def logger_settings(self):
         frame = Gtk.Frame(label=_('Logger settings'))
         frame.set_label_align(0.03, 0.5)
-        content_area.pack_start(frame, False, False, 0)
 
         grid = Gtk.Grid()
         grid.set_row_spacing(10)
@@ -55,45 +58,47 @@ class SettingsDialog(Gtk.Dialog):
         log_level_label.set_halign(Gtk.Align.START)
         grid.attach(log_level_label, 0, 0, 1, 1)
 
-        self.log_level_combo = Gtk.ComboBoxText()
-        self.log_level_combo.set_hexpand(True)
-        grid.attach_next_to(self.log_level_combo, log_level_label, Gtk.PositionType.RIGHT, 1, 1)
+        log_level_combo = Gtk.ComboBoxText()
+        log_level_combo.set_hexpand(True)
+        log_level_combo.connect("changed", self.on_log_level_changed)
+        grid.attach_next_to(log_level_combo, log_level_label, Gtk.PositionType.RIGHT, 1, 1)
 
         log_console_level_label = Gtk.Label("Console level:")
         log_console_level_label.set_halign(Gtk.Align.START)
         grid.attach(log_console_level_label, 0, 1, 1, 1)
 
-        self.log_console_level_combo = Gtk.ComboBoxText()
-        self.log_level_combo.set_hexpand(True)
-        grid.attach_next_to(self.log_console_level_combo, log_console_level_label, Gtk.PositionType.RIGHT, 1, 1)
+        log_console_level_combo = Gtk.ComboBoxText()
+        log_console_level_combo.set_hexpand(True)
+        log_console_level_combo.connect("changed", self.on_log_console_level_changed)
+        grid.attach_next_to(log_console_level_combo, log_console_level_label, Gtk.PositionType.RIGHT, 1, 1)
 
-        self.connect('response', self.on_response)
+        self.load_logger_options(log_level_combo, log_console_level_combo)
 
-        self.load_logger_options()
-
-        self.show_all()
-
-    def on_response(self, dialog, response):
-        if response == Gtk.ResponseType.OK:
-            self.save()
-
-        dialog.destroy()
-
-    def save(self):
-        config.new(
-            config.Config('logger', 'log_level', self.log_level_combo.get_active_text()),
-            config.Config('logger', 'log_console_level', self.log_console_level_combo.get_active_text()),
-        )
+        return frame
 
     @config.Check("logger")
     def load_logger_options(
             self,
+            log_level_combo,
+            log_console_level_combo,
             log_level: config.ConfigStr = 'debug',
             log_console_level: config.ConfigStr = 'info',
     ):
         for level in self.log_levels:
-            self.log_level_combo.append_text(level)
-            self.log_console_level_combo.append_text(level)
+            log_level_combo.append_text(level)
+            log_console_level_combo.append_text(level)
 
-        self.log_level_combo.set_active(self.log_levels.index(log_level))
-        self.log_console_level_combo.set_active(self.log_levels.index(log_console_level))
+        log_level_combo.set_active(self.log_levels.index(log_level))
+        log_console_level_combo.set_active(self.log_levels.index(log_console_level))
+
+    @staticmethod
+    def on_response(dialog, response_id):
+        dialog.destroy()
+
+    @staticmethod
+    def on_log_level_changed(combo):
+        config.new(config.Config('logger', 'log_level', combo.get_active_text()))
+
+    @staticmethod
+    def on_log_console_level_changed(combo):
+        config.new(config.Config('logger', 'log_console_level', combo.get_active_text()))
