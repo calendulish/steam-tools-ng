@@ -39,44 +39,33 @@ class SettingsDialog(Gtk.Dialog):
         content_area = self.get_content_area()
         content_area.set_orientation(Gtk.Orientation.VERTICAL)
         content_area.set_border_width(10)
+        content_area.set_spacing(10)
 
         frame = Gtk.Frame(label=_('Logger settings'))
         frame.set_label_align(0.03, 0.5)
         content_area.pack_start(frame, False, False, 0)
 
-        main_box = Gtk.Box()
-        main_box.set_orientation(Gtk.Orientation.HORIZONTAL)
-        main_box.set_homogeneous(True)
-        main_box.set_border_width(10)
-        frame.add(main_box)
+        grid = Gtk.Grid()
+        grid.set_row_spacing(10)
+        grid.set_column_spacing(10)
+        grid.set_border_width(10)
+        frame.add(grid)
 
-        box = Gtk.Box()
-        box.set_orientation(Gtk.Orientation.VERTICAL)
-        box.set_homogeneous(True)
-        box.set_spacing(3)
-        main_box.pack_start(box, False, True, 0)
-
-        label = Gtk.Label()
-        label.set_text('Log level:')
-        label.set_halign(Gtk.Align.START)
-        box.pack_start(label, False, False, 0)
-
-        label = Gtk.Label()
-        label.set_text('Console log level:')
-        label.set_halign(Gtk.Align.START)
-        box.pack_start(label, False, False, 0)
-
-        box = Gtk.Box()
-        box.set_orientation(Gtk.Orientation.VERTICAL)
-        box.set_homogeneous(True)
-        box.set_spacing(3)
-        main_box.pack_start(box, False, True, 0)
+        log_level_label = Gtk.Label("Level:")
+        log_level_label.set_halign(Gtk.Align.START)
+        grid.attach(log_level_label, 0, 0, 1, 1)
 
         self.log_level_combo = Gtk.ComboBoxText()
-        box.pack_start(self.log_level_combo, False, False, 0)
+        self.log_level_combo.set_hexpand(True)
+        grid.attach_next_to(self.log_level_combo, log_level_label, Gtk.PositionType.RIGHT, 1, 1)
+
+        log_console_level_label = Gtk.Label("Console level:")
+        log_console_level_label.set_halign(Gtk.Align.START)
+        grid.attach(log_console_level_label, 0, 1, 1, 1)
 
         self.log_console_level_combo = Gtk.ComboBoxText()
-        box.pack_start(self.log_console_level_combo, False, False, 0)
+        self.log_level_combo.set_hexpand(True)
+        grid.attach_next_to(self.log_console_level_combo, log_console_level_label, Gtk.PositionType.RIGHT, 1, 1)
 
         self.connect('response', self.on_response)
 
