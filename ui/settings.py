@@ -20,10 +20,16 @@ from gi.repository import Gtk
 
 from ui import config
 
+log_levels = [
+    'critical',
+    'error',
+    'warning',
+    'info',
+    'debug',
+]
+
 
 class SettingsDialog(Gtk.Dialog):
-    log_levels = ['critical', 'error', 'warning', 'info', 'debug']
-
     def __init__(self, parent_window):
         super().__init__(use_header_bar=True)
         self.set_default_size(300, 150)
@@ -72,24 +78,9 @@ class SettingsDialog(Gtk.Dialog):
         log_console_level_combo.connect("changed", self.on_log_console_level_changed)
         grid.attach_next_to(log_console_level_combo, log_console_level_label, Gtk.PositionType.RIGHT, 1, 1)
 
-        self.load_logger_options(log_level_combo, log_console_level_combo)
+        load_logger_options(log_level_combo, log_console_level_combo)
 
         return frame
-
-    @config.Check("logger")
-    def load_logger_options(
-            self,
-            log_level_combo,
-            log_console_level_combo,
-            log_level: config.ConfigStr = 'debug',
-            log_console_level: config.ConfigStr = 'info',
-    ):
-        for level in self.log_levels:
-            log_level_combo.append_text(level)
-            log_console_level_combo.append_text(level)
-
-        log_level_combo.set_active(self.log_levels.index(log_level))
-        log_console_level_combo.set_active(self.log_levels.index(log_console_level))
 
     @staticmethod
     def on_response(dialog, response_id):
@@ -102,3 +93,18 @@ class SettingsDialog(Gtk.Dialog):
     @staticmethod
     def on_log_console_level_changed(combo):
         config.new(config.Config('logger', 'log_console_level', combo.get_active_text()))
+
+
+@config.Check("logger")
+def load_logger_options(
+        log_level_combo,
+        log_console_level_combo,
+        log_level: config.ConfigStr = 'debug',
+        log_console_level: config.ConfigStr = 'info',
+):
+    for level in log_levels:
+        log_level_combo.append_text(level)
+        log_console_level_combo.append_text(level)
+
+    log_level_combo.set_active(log_levels.index(log_level))
+    log_console_level_combo.set_active(log_levels.index(log_console_level))
