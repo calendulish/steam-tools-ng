@@ -34,28 +34,28 @@ async def on_start_authenticator(shared_secret: Optional[config.ConfigStr] = Non
         try:
             base64.b64decode(shared_secret)
         except ValueError:
-            log.critical(f'{shared_secret} is not a valid parameter')
+            log.critical(_(f'{shared_secret} is not a valid parameter'))
             return 1
     else:
-        log.critical("No shared_secret found on config file or command line")
+        log.critical(_("No shared_secret found on config file or command line"))
 
-        use_adb = console_utils.safe_input("Do you want to get it now using adb?", False)
+        use_adb = console_utils.safe_input(_("Do you want to get it now using adb?"), False)
         if use_adb:
             try:
                 adb = authenticator_utils.on_connect_to_adb()
                 secret = await authenticator_utils.on_get_secret_from_adb(adb, 'shared')
                 shared_secret = config.ConfigStr(secret.decode())
             except (FileNotFoundError, AttributeError):
-                logging.critical("Failed to get shared_secret!")
+                logging.critical(_("Failed to get shared_secret!"))
                 return 1
 
-            logging.info("Success!")
+            logging.info(_("Success!"))
 
-            save_config = console_utils.safe_input("Do you want to save this configuration?", True)
+            save_config = console_utils.safe_input(_("Do you want to save this configuration?"), True)
             if save_config:
                 config.new(config.Config('authenticator', 'shared_secret', shared_secret),
                            config.Config('authenticator', 'adb_path', adb.adb_path))
-                logging.info("Configuration has been saved!")
+                logging.info(_("Configuration has been saved!"))
         else:
             return 1
 
@@ -63,8 +63,8 @@ async def on_start_authenticator(shared_secret: Optional[config.ConfigStr] = Non
         try:
             auth_code, epoch = authenticator.get_code(shared_secret)
         except ProcessLookupError:
-            logging.critical("Steam Client is not running.")
-            try_again = console_utils.safe_input("Try again?", True)
+            logging.critical(_("Steam Client is not running."))
+            try_again = console_utils.safe_input(_("Try again?"), True)
             if try_again:
                 continue
             else:
@@ -74,5 +74,5 @@ async def on_start_authenticator(shared_secret: Optional[config.ConfigStr] = Non
 
         for past_time in range(seconds):
             progress = '█' * int(past_time / seconds * 10)
-            print("SteamGuard Code: {} ┌{:10}┐".format(''.join(auth_code), progress), end='\r')
+            print(_("SteamGuard Code:"), "{} ┌{:10}┐".format(''.join(auth_code), progress), end='\r')
             time.sleep(1)

@@ -32,7 +32,7 @@ async def on_get_secret_from_adb(adb: Any, secret_type: str) -> bytes:
             secret: bytes = await adb.get_secret(secret_type)
         except AttributeError as exception:
             log.critical(exception.args[0])
-            try_again = console_utils.safe_input("Do you want to try again?", True)
+            try_again = console_utils.safe_input(_("Do you want to try again?"), True)
 
             if not try_again:
                 raise exception
@@ -44,7 +44,7 @@ async def on_get_secret_from_adb(adb: Any, secret_type: str) -> bytes:
 def on_connect_to_adb(adb_path: Optional[config.ConfigStr] = None) -> Any:
     while True:
         if not adb_path:
-            user_input = console_utils.safe_input("Paste here the path to your adb 'binary'")
+            user_input = console_utils.safe_input(_("Paste here the path to your adb 'binary'"))
             assert isinstance(user_input, str), "safe_input is returning an invalid user_input"
             adb_path = config.ConfigStr(user_input)
 
@@ -52,7 +52,7 @@ def on_connect_to_adb(adb_path: Optional[config.ConfigStr] = None) -> Any:
             adb = authenticator.AndroidDebugBridge(adb_path)
         except FileNotFoundError as exception:
             log.critical(exception.args[0])
-            try_again = console_utils.safe_input("Do you want to try again?", True)
+            try_again = console_utils.safe_input(_("Do you want to try again?"), True)
 
             if not try_again:
                 raise exception

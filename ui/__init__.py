@@ -16,10 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-import gettext
 import sys
-
-gettext.install("Steam Tools NG", "lang")
 
 if len(sys.argv) == 1:
     import gi

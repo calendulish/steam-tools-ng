@@ -24,9 +24,9 @@ log = logging.getLogger(__name__)
 
 def safe_input(msg: str, default_response: Optional[bool] = None) -> Union[bool, str]:
     if default_response is True:
-        options = '[S/n]'
+        options = _('[Y/n]')
     elif default_response is False:
-        options = '[s/N]'
+        options = _('[y/N]')
     else:
         options = ''
 
@@ -38,16 +38,16 @@ def safe_input(msg: str, default_response: Optional[bool] = None) -> Union[bool,
                 if len(user_input) > 2:
                     return user_input
                 else:
-                    raise ValueError('Invalid response from user')
+                    raise ValueError(_('Invalid response from user'))
             elif not user_input:
                 return default_response
 
-            if user_input.lower() == 's':
+            if user_input.lower() == _('y'):
                 return True
-            elif user_input.lower() == 'n':
+            elif user_input.lower() == _('n'):
                 return False
             else:
-                raise ValueError(f'{user_input} is not an accepted value')
+                raise ValueError(_(f'{user_input} is not an accepted value'))
         except ValueError as exception:
             log.error(exception.args[0])
-            log.error('Please, try again.')
+            log.error(_('Please, try again.'))

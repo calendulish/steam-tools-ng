@@ -25,14 +25,13 @@ import textwrap
 
 from ui import config
 
+config.init()
+log = logging.getLogger(__name__)
+
 if len(sys.argv) == 1:
     from ui import application
 else:
     from ui import console
-
-config.init()
-
-log = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     log.info('Steam Tools NG version 0.0.0-0 (Made with Girl Power <33)')

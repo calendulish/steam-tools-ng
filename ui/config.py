@@ -18,7 +18,9 @@
 
 import configparser
 import functools
+import gettext
 import inspect
+import locale
 import logging
 import os
 from typing import Any, Callable, NamedTuple, NewType, Optional, Union
@@ -63,7 +65,7 @@ class Check(object):
         self.section = section
 
     def __call__(self, function_: Callable[..., Any]) -> Any:
-        log.debug('Loading new configs from %s', config_file)
+        log.debug(_('Loading new configs from %s'), config_file)
         config_parser.read(config_file)
         new_parameters = {}
         signature = inspect.signature(function_)
@@ -71,7 +73,7 @@ class Check(object):
         def wrapped_function(*args: Any, **kwargs: Any) -> Any:
             for index, option in enumerate(signature.parameters.values()):
                 if len(args) >= index + 1:
-                    log.debug("A positional argument already exists for %s. Ignoring...", option.name)
+                    log.debug(_("A positional argument already exists for %s. Ignoring..."), option.name)
                     continue
 
                 # noinspection PyUnusedLocal
@@ -87,15 +89,15 @@ class Check(object):
                     elif option.annotation in [ConfigFloat, Optional[ConfigFloat]]:
                         value = ConfigFloat(config_parser.getfloat(self.section, option.name))
                     else:
-                        log.debug('Nothing to do with {}. Ignoring.'.format(option))
+                        log.debug(_('Nothing to do with %s. Ignoring.'), option)
                         continue
                 except configparser.NoOptionError:
-                    log.debug('Option not found in config: %s', option.name)
+                    log.debug(_('Option not found in config: %s'), option.name)
                 except configparser.NoSectionError:
-                    log.debug('Section not found in config: %s', self.section)
+                    log.debug(_('Section not found in config: %s'), self.section)
                     config_parser.add_section(self.section)
                 else:
-                    log.debug('%s will be injected into %s', option.name, function_.__name__)
+                    log.debug(_('%s will be injected into %s'), option.name, function_.__name__)
                     new_parameters[option.name] = value
 
             if new_parameters:
@@ -140,6 +142,10 @@ def init() -> None:
 
     logging.basicConfig(level=logging.DEBUG, handlers=[log_file_handler, log_console_handler])
 
+    language = config_parser.get("locale", "language", fallback=locale.getdefaultlocale()[0])
+    translation = gettext.translation("steam-tools-ng", "lang", [language], fallback=True)
+    translation.install()
+
 
 def new(*new_configs: Config) -> None:
     for config in new_configs:
@@ -154,5 +160,5 @@ def new(*new_configs: Config) -> None:
         config_parser.set(config.section, config.option, str(config.value))
 
     with open(config_file, 'w') as config_file_object:
-        log.debug('Saving new configs at %s', config_file)
+        log.debug(_('Saving new configs at %s'), config_file)
         config_parser.write(config_file_object)
