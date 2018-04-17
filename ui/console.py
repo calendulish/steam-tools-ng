@@ -45,8 +45,9 @@ async def on_start_authenticator(shared_secret: Optional[config.ConfigStr] = Non
                 adb = authenticator_utils.on_connect_to_adb()
                 secret = await authenticator_utils.on_get_secret_from_adb(adb, 'shared')
                 shared_secret = config.ConfigStr(secret.decode())
-            except (FileNotFoundError, AttributeError):
+            except (FileNotFoundError, AttributeError) as exception:
                 logging.critical(_("Failed to get shared_secret!"))
+                logging.critical(exception.args[0])
                 return 1
 
             logging.info(_("Success!"))
