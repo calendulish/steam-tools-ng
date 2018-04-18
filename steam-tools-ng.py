@@ -29,9 +29,25 @@ config.init()
 log = logging.getLogger(__name__)
 
 if len(sys.argv) == 1:
+    from gi.repository import Gtk
     from ui import application
 else:
     from ui import console
+
+if os.name == 'nt':
+    event_loop = asyncio.ProactorEventLoop()
+else:
+    event_loop = asyncio.new_event_loop()
+
+asyncio.set_event_loop(event_loop)
+
+
+async def async_gtk_iterator():
+    while Gtk.events_pending():
+        Gtk.main_iteration_do(False)
+
+    asyncio.ensure_future(async_gtk_iterator())
+
 
 if __name__ == "__main__":
     log.info('Steam Tools NG version 0.0.0-0 (Made with Girl Power <33)')
@@ -57,13 +73,6 @@ if __name__ == "__main__":
 
     console_params = command_parser.parse_args()
 
-    if os.name == 'nt':
-        loop = asyncio.ProactorEventLoop()
-    else:
-        loop = asyncio.new_event_loop()
-
-    asyncio.set_event_loop(loop)
-
     if console_params.module:
         module_name = f'on_start_{console_params.module[0]}'
         module_options = console_params.options
@@ -71,8 +80,7 @@ if __name__ == "__main__":
         assert hasattr(console, module_name), f'{module_name} doesn\'t exist in {console}'
         module = getattr(console, module_name)
 
-        loop_ = asyncio.get_event_loop()
-        return_code = loop_.run_until_complete(module(*module_options))
+        return_code = event_loop.run_until_complete(module(*module_options))
 
         sys.exit(return_code)
     else:
@@ -82,4 +90,9 @@ if __name__ == "__main__":
             sys.exit(1)
 
         app = application.Application()
-        app.run()
+        app.register()
+        app.activate()
+
+        asyncio.ensure_future(async_gtk_iterator())
+        event_loop.run_forever()
+        event_loop.close()

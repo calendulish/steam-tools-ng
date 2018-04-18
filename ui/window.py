@@ -43,6 +43,10 @@ class Main(Gtk.ApplicationWindow):
         self.add(main_box)
         self.show_all()
 
+        self.authenticator_status_label = Gtk.Label()
+        self.authenticator_level_bar = Gtk.LevelBar()
+        self.authenticator_code = Gtk.Label()
+
         stack = Gtk.Stack()
         stack.set_hexpand(True)
         stack.set_transition_type(Gtk.StackTransitionType.SLIDE_UP_DOWN)
@@ -57,6 +61,10 @@ class Main(Gtk.ApplicationWindow):
         main_box.pack_start(sidebar, False, False, 0)
         main_box.pack_end(stack, False, True, 0)
 
+    @staticmethod
+    def status_markup(widget, foreground, text):
+        widget.set_markup(f"<span foreground='{foreground}' font_size='small'>{text}</span>")
+
     def authenticator_tab(self):
         box = Gtk.Box()
         box.set_border_width(20)
@@ -69,11 +77,17 @@ class Main(Gtk.ApplicationWindow):
 
         frame_box = Gtk.Box()
         frame_box.set_border_width(5)
+        frame_box.set_spacing(5)
         frame_box.set_orientation(Gtk.Orientation.VERTICAL)
         frame.add(frame_box)
 
-        code = Gtk.Label("_ _ _ _")
-        frame_box.pack_start(code, False, False, 0)
+        self.authenticator_code.set_text('_ _ _ _')
+        frame_box.pack_start(self.authenticator_code, False, False, 0)
+
+        status_msg = _("loading...")
+        self.status_markup(self.authenticator_status_label, 'blue', status_msg)
+        frame_box.pack_start(self.authenticator_status_label, False, False, 0)
+        frame_box.pack_start(self.authenticator_level_bar, False, False, 0)
 
         tip = Gtk.Label(''.join(
             (
