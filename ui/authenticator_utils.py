@@ -17,7 +17,7 @@
 #
 
 import logging
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 from stlib import authenticator
 
@@ -26,10 +26,10 @@ from ui import config, console_utils
 log = logging.getLogger(__name__)
 
 
-async def on_get_secret_from_adb(adb: Any, secret_type: str) -> bytes:
+async def on_get_json_from_adb(adb: Any, *names: str) -> Dict[str, str]:
     while True:
         try:
-            secret: bytes = await adb.get_secret(secret_type)
+            json_data = await adb.get_json(*names)
         except AttributeError as exception:
             log.critical(exception.args[0])
             try_again = console_utils.safe_input(_("Do you want to try again?"), True)
@@ -37,7 +37,7 @@ async def on_get_secret_from_adb(adb: Any, secret_type: str) -> bytes:
             if not try_again:
                 raise exception
         else:
-            return secret
+            return json_data
 
 
 @config.Check('authenticator')
