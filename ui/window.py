@@ -39,8 +39,9 @@ class Main(Gtk.ApplicationWindow):
         self.set_titlebar(header_bar)
         self.set_title('Steam Tools NG')
 
-        main_box = Gtk.Box()
-        self.add(main_box)
+        main_grid = Gtk.Grid()
+        self.add(main_grid)
+
         self.show_all()
 
         self.authenticator_status_label = Gtk.Label()
@@ -48,7 +49,6 @@ class Main(Gtk.ApplicationWindow):
         self.authenticator_code = Gtk.Label()
 
         stack = Gtk.Stack()
-        stack.set_hexpand(True)
         stack.set_transition_type(Gtk.StackTransitionType.SLIDE_UP_DOWN)
         stack.set_transition_duration(500)
         stack.add_titled(self.authenticator_tab(), "authenticator", _("Authenticator"))
@@ -58,36 +58,44 @@ class Main(Gtk.ApplicationWindow):
         sidebar.set_stack(stack)
         sidebar.show()
 
-        main_box.pack_start(sidebar, False, False, 0)
-        main_box.pack_end(stack, False, True, 0)
+        main_grid.attach(sidebar, 0, 0, 1, 1)
+        main_grid.attach_next_to(stack, sidebar, Gtk.PositionType.RIGHT, 1, 1)
 
     @staticmethod
     def status_markup(widget, foreground, text):
         widget.set_markup(f"<span foreground='{foreground}' font_size='small'>{text}</span>")
 
     def authenticator_tab(self):
-        box = Gtk.Box()
-        box.set_border_width(20)
-        box.set_spacing(10)
-        box.set_orientation(Gtk.Orientation.VERTICAL)
+        main_grid = Gtk.Grid()
+        main_grid.set_row_spacing(10)
+        main_grid.set_border_width(20)
 
         frame = Gtk.Frame(label=_('Steam Guard Code'))
         frame.set_label_align(0.03, 0.5)
-        box.pack_start(frame, False, False, 0)
+        main_grid.attach(frame, 0, 0, 1, 1)
 
-        frame_box = Gtk.Box()
-        frame_box.set_border_width(5)
-        frame_box.set_spacing(5)
-        frame_box.set_orientation(Gtk.Orientation.VERTICAL)
-        frame.add(frame_box)
+        frame_grid = Gtk.Grid()
+        frame_grid.set_row_spacing(5)
+        frame_grid.set_border_width(10)
+        frame.add(frame_grid)
 
         self.authenticator_code.set_text('_ _ _ _')
-        frame_box.pack_start(self.authenticator_code, False, False, 0)
+        self.authenticator_code.set_hexpand(True)
+        frame_grid.attach(self.authenticator_code, 0, 0, 1, 1)
 
         status_msg = _("loading...")
         self.status_markup(self.authenticator_status_label, 'blue', status_msg)
-        frame_box.pack_start(self.authenticator_status_label, False, False, 0)
-        frame_box.pack_start(self.authenticator_level_bar, False, False, 0)
+        frame_grid.attach(self.authenticator_status_label, 0, 1, 1, 1)
+        frame_grid.attach(self.authenticator_level_bar, 0, 2, 1, 1)
+
+        sensitive_data_grid = Gtk.Grid()
+        sensitive_data_grid.set_row_spacing(10)
+        sensitive_data_grid.set_column_spacing(10)
+
+        show_sensitive = Gtk.CheckButton(_('Show sensitive data'))
+        show_sensitive.connect("toggled", self.on_show_sensitive_toggled, sensitive_data_grid)
+        main_grid.attach(show_sensitive, 0, 2, 1, 1)
+        main_grid.attach(sensitive_data_grid, 0, 3, 1, 1)
 
         tip = Gtk.Label(''.join(
             (
@@ -98,45 +106,36 @@ class Main(Gtk.ApplicationWindow):
             )
         ))
 
+        tip.set_vexpand(True)
         tip.set_justify(Gtk.Justification.CENTER)
-        box.pack_end(tip, False, False, 0)
+        tip.set_valign(Gtk.Align.END)
+        main_grid.attach(tip, 0, 4, 1, 1)
 
-        sensitive_data_box = Gtk.Box()
-        sensitive_data_box.set_orientation(Gtk.Orientation.VERTICAL)
-
-        show_sensitive = Gtk.CheckButton(_('Show sensitive data'))
-        show_sensitive.connect("toggled", self.on_show_sensitive_toggled, sensitive_data_box)
-        box.pack_start(show_sensitive, False, False, 0)
-        box.pack_start(sensitive_data_box, False, False, 0)
-
-        box.show_all()
-
-        grid = Gtk.Grid()
-        grid.set_row_spacing(10)
-        grid.set_column_spacing(10)
-        sensitive_data_box.pack_start(grid, False, False, 0)
+        main_grid.show_all()
 
         adb_path_label = Gtk.Label(_("adb path:"))
-        grid.attach(adb_path_label, 0, 0, 1, 1)
+        adb_path_label.set_halign(Gtk.Align.START)
+        sensitive_data_grid.attach(adb_path_label, 0, 0, 1, 1)
 
         adb_path = Gtk.Entry()
         adb_path.set_hexpand(True)
         adb_path.set_sensitive(False)
-        grid.attach_next_to(adb_path, adb_path_label, Gtk.PositionType.RIGHT, 1, 1)
+        sensitive_data_grid.attach_next_to(adb_path, adb_path_label, Gtk.PositionType.RIGHT, 1, 1)
 
         shared_secret_label = Gtk.Label(_("shared secret:"))
-        grid.attach(shared_secret_label, 0, 1, 1, 1)
+        shared_secret_label.set_halign(Gtk.Align.START)
+        sensitive_data_grid.attach(shared_secret_label, 0, 1, 1, 1)
 
         shared_secret = Gtk.Entry()
         shared_secret.set_hexpand(True)
         shared_secret.set_sensitive(False)
-        grid.attach_next_to(shared_secret, shared_secret_label, Gtk.PositionType.RIGHT, 1, 1)
+        sensitive_data_grid.attach_next_to(shared_secret, shared_secret_label, Gtk.PositionType.RIGHT, 1, 1)
 
-        return box
+        return main_grid
 
     @staticmethod
-    def on_show_sensitive_toggled(button, sensitive_data_box):
+    def on_show_sensitive_toggled(button, grid):
         if button.get_active():
-            sensitive_data_box.show_all()
+            grid.show_all()
         else:
-            sensitive_data_box.hide()
+            grid.hide()
