@@ -16,17 +16,17 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-import os
 import sys
-from ctypes import Structure, byref, c_short, windll
-from ctypes.wintypes import DWORD
 from logging import Handler
+from logging.handlers import *
 from types import TracebackType
 from typing import Any, Optional, Type
 
-from logging.handlers import *
-
 if os.name == 'nt':
+    from ctypes import Structure, byref, c_short, windll
+    from ctypes.wintypes import DWORD
+
+
     class WindowsConsoleCoord(Structure):
         _fields_ = [
             ("x", c_short),
