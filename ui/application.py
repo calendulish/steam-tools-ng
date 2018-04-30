@@ -31,12 +31,6 @@ class Application(Gtk.Application):
 
         self.window = None
 
-    def do_activate(self):
-        if not self.window:
-            self.window = window.Main(application=self)
-
-        self.window.present()
-
     def do_startup(self):
         Gtk.Application.do_startup(self)
 
@@ -48,12 +42,26 @@ class Application(Gtk.Application):
         about_action.connect("activate", self.on_about_activate)
         self.add_action(about_action)
 
-        return_code = asyncio.ensure_future(self.run_authenticator())
+    def do_activate(self):
+        if not self.window:
+            self.window = window.Main(application=self)
+
+        self.window.present()
+
+        asyncio.ensure_future(self.run_authenticator())
 
     @config.Check("authenticator")
     async def run_authenticator(self, shared_secret: Optional[config.ConfigStr] = None):
-        while True:
+        while self.window.get_realized():
+            current_secret = self.window.shared_secret_entry.get_text()
+
+            if current_secret != shared_secret:
+                shared_secret = current_secret
+
             try:
+                if not shared_secret:
+                    raise TypeError
+
                 auth_code, epoch = authenticator.get_code(shared_secret)
             except TypeError:
                 status_msg = _("The currently secret is invalid")
@@ -71,13 +79,15 @@ class Application(Gtk.Application):
                     progress = int(past_time / seconds * 10)
                     self.window.authenticator_level_bar.set_max_value(seconds)
                     self.window.authenticator_level_bar.set_value(progress)
-                    self.window.authenticator_code.set_text(' '.join(auth_code))
+                    self.window.authenticator_code.set_markup(
+                        f"<span font_weight='bold'font_size='large'>{''.join(auth_code)}</span>"
+                    )
 
             await asyncio.sleep(3)
 
     def on_settings_activate(self, action, data):
-        dialog = settings.SettingsDialog(parent_window=self.window)
-        dialog.run()
+        settings_dialog = settings.SettingsDialog(parent_window=self.window)
+        settings_dialog.run()
 
     def on_about_activate(self, action, param):
         about_dialog = Gtk.AboutDialog(transient_for=self.window, modal=True)

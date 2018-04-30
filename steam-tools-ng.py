@@ -41,14 +41,6 @@ else:
 
 asyncio.set_event_loop(event_loop)
 
-
-async def async_gtk_iterator():
-    while Gtk.events_pending():
-        Gtk.main_iteration_do(False)
-
-    asyncio.ensure_future(async_gtk_iterator())
-
-
 if __name__ == "__main__":
     log.info('Steam Tools NG version 0.0.0-0 (Made with Girl Power <33)')
     log.info('Copyright (C) 2015 ~ 2018 Lara Maia - <dev@lara.click>')
@@ -93,6 +85,26 @@ if __name__ == "__main__":
         app.register()
         app.activate()
 
+
+        async def async_gtk_iterator():
+            while Gtk.events_pending():
+                Gtk.main_iteration_do(False)
+
+            if app.window.get_realized():
+                asyncio.ensure_future(async_gtk_iterator())
+            else:
+                event_loop.stop()
+
+
         asyncio.ensure_future(async_gtk_iterator())
         event_loop.run_forever()
+
+        log.info(_("Exiting..."))
+
+        unfinished_tasks = asyncio.Task.all_tasks()
+
+        if unfinished_tasks:
+            event_loop.run_until_complete(asyncio.wait(unfinished_tasks, return_when=asyncio.ALL_COMPLETED))
+
         event_loop.close()
+        app.quit()
