@@ -143,7 +143,7 @@ def init() -> None:
     logging.basicConfig(level=logging.DEBUG, handlers=[log_file_handler, log_console_handler])
 
     language = config_parser.get("locale", "language", fallback=locale.getdefaultlocale()[0])
-    translation = gettext.translation("steam-tools-ng", "lang", [language], fallback=True)
+    translation = gettext.translation("steam-tools-ng", languages=[language], fallback=True)
     translation.install()
 
 

@@ -47,7 +47,7 @@ def safe_input(msg: str, default_response: Optional[bool] = None) -> Union[bool,
             elif user_input.lower() == _('n'):
                 return False
             else:
-                raise ValueError(_(f'{user_input} is not an accepted value'))
+                raise ValueError(_('{} is not an accepted value').format(user_input))
         except ValueError as exception:
             log.error(exception.args[0])
             log.error(_('Please, try again.'))

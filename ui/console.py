@@ -34,7 +34,7 @@ async def on_start_authenticator(shared_secret: Optional[config.ConfigStr] = Non
         try:
             base64.b64decode(shared_secret)
         except ValueError:
-            log.critical(_(f'{shared_secret} is not a valid parameter'))
+            log.critical(_('%s is not a valid parameter'), shared_secret)
             return 1
     else:
         log.critical(_("No shared_secret found on config file or command line"))
