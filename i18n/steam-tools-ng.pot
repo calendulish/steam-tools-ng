@@ -1,0 +1,265 @@
+# Steam Tools NG - Useful tools for Steam
+# Lara Maia <dev@lara.click> (C) 2015 ~ 2018
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0.0.0-DEV\n"
+"POT-Creation-Date: 2018-05-02 14:19-0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=cp1252\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: steam-tools-ng.py:112
+msgid "Exiting..."
+msgstr ""
+
+#: ui\adb.py:36
+msgid "Android Debug Bridge"
+msgstr ""
+
+#: ui\adb.py:56
+msgid ""
+"Unable to run without a valid adb path.\n"
+"Please, enter a valid 'adb path' and try again"
+msgstr ""
+
+#: ui\adb.py:72
+msgid ""
+"Unable to find adb in:\n"
+msgstr ""
+
+#: ui\adb.py:74
+msgid ""
+"\n"
+"Please, enter a valid 'adb path' and try again."
+msgstr ""
+
+#: ui\adb.py:95
+msgid "Error"
+msgstr ""
+
+#: ui\application.py:67
+msgid "The currently secret is invalid"
+msgstr ""
+
+#: ui\application.py:70
+msgid "Steam Client is not running"
+msgstr ""
+
+#: ui\application.py:73
+msgid "user"
+msgstr ""
+
+#: ui\authenticator_utils.py:35 ui\authenticator_utils.py:55
+msgid "Do you want to try again?"
+msgstr ""
+
+#: ui\authenticator_utils.py:47
+msgid "Paste here the path to your adb 'binary'"
+msgstr ""
+
+#: ui\config.py:68
+msgid "Loading new configs from %s"
+msgstr ""
+
+#: ui\config.py:76
+msgid "A positional argument already exists for %s. Ignoring..."
+msgstr ""
+
+#: ui\config.py:92
+msgid "Nothing to do with %s. Ignoring."
+msgstr ""
+
+#: ui\config.py:95
+msgid "Option not found in config: %s"
+msgstr ""
+
+#: ui\config.py:97
+msgid "Section not found in config: %s"
+msgstr ""
+
+#: ui\config.py:100
+msgid "%s will be injected into %s"
+msgstr ""
+
+#: ui\config.py:163
+msgid "Saving new configs at %s"
+msgstr ""
+
+#: ui\console.py:37
+msgid "%s is not a valid parameter"
+msgstr ""
+
+#: ui\console.py:40
+msgid "No shared_secret found on config file or command line"
+msgstr ""
+
+#: ui\console.py:42
+msgid "Do you want to get it now using adb?"
+msgstr ""
+
+#: ui\console.py:49
+msgid "Failed to get shared_secret!"
+msgstr ""
+
+#: ui\console.py:53
+msgid "Success!"
+msgstr ""
+
+#: ui\console.py:55
+msgid "Do you want to save this configuration?"
+msgstr ""
+
+#: ui\console.py:59
+msgid "Configuration has been saved!"
+msgstr ""
+
+#: ui\console.py:67
+msgid "Steam Client is not running."
+msgstr ""
+
+#: ui\console.py:68
+msgid "Try again?"
+msgstr ""
+
+#: ui\console.py:78
+msgid "SteamGuard Code:"
+msgstr ""
+
+#: ui\console_utils.py:27
+msgid "[Y/n]"
+msgstr ""
+
+#: ui\console_utils.py:29
+msgid "[y/N]"
+msgstr ""
+
+#: ui\console_utils.py:41
+msgid "Invalid response from user"
+msgstr ""
+
+#: ui\console_utils.py:45
+msgid "y"
+msgstr ""
+
+#: ui\console_utils.py:47
+msgid "n"
+msgstr ""
+
+#: ui\console_utils.py:50
+msgid "{} is not an accepted value"
+msgstr ""
+
+#: ui\console_utils.py:53
+msgid "Please, try again."
+msgstr ""
+
+#: ui\settings.py:32
+msgid "English"
+msgstr ""
+
+#: ui\settings.py:33
+msgid "Portuguese (Brazil)"
+msgstr ""
+
+#: ui\settings.py:44 ui\window.py:34
+msgid "Settings"
+msgstr ""
+
+#: ui\settings.py:63
+msgid "Locale settings"
+msgstr ""
+
+#: ui\settings.py:72
+msgid "Language:"
+msgstr ""
+
+#: ui\settings.py:82
+msgid "Requires restart to take effect"
+msgstr ""
+
+#: ui\settings.py:93
+msgid "Logger settings"
+msgstr ""
+
+#: ui\settings.py:102
+msgid "Level:"
+msgstr ""
+
+#: ui\settings.py:111
+msgid "Console level:"
+msgstr ""
+
+#: ui\window.py:35
+msgid "About"
+msgstr ""
+
+#: ui\window.py:58
+msgid "adb_path:"
+msgstr ""
+
+#: ui\window.py:61
+msgid "shared secret:*"
+msgstr ""
+
+#: ui\window.py:64
+msgid "identity secret:"
+msgstr ""
+
+#: ui\window.py:67
+msgid "account name:"
+msgstr ""
+
+#: ui\window.py:70
+msgid "steam id:"
+msgstr ""
+
+#: ui\window.py:78
+msgid "Authenticator"
+msgstr ""
+
+#: ui\window.py:108
+msgid "Steam Guard Code"
+msgstr ""
+
+#: ui\window.py:121
+msgid "loading..."
+msgstr ""
+
+#: ui\window.py:130
+msgid "Show sensitive data"
+msgstr ""
+
+#: ui\window.py:136
+msgid ""
+"A code will be requested every time you try to log in on Steam.\n"
+"\n"
+msgstr ""
+
+#: ui\window.py:137
+msgid ""
+"Tip: If you are not on a shared computer, select 'Remember password'\n"
+msgstr ""
+
+#: ui\window.py:138
+msgid ""
+"when you log in to Steam Client so you do not have to enter the password and\n"
+msgstr ""
+
+#: ui\window.py:139
+msgid "the authenticator code."
+msgstr ""
+
+#: ui\window.py:153
+msgid "Don't worry, everything is saved on-the-fly"
+msgstr ""
+
+#: ui\window.py:188
+msgid "get sensitive data using an Android phone and Android Debug Bridge"
+msgstr ""
+
