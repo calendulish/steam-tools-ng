@@ -18,21 +18,26 @@
 
 import argparse
 import asyncio
+import importlib
 import logging
 import os
 import sys
 import textwrap
 
-from ui import config
+
+def safe_import(method):
+    try:
+        module_ = importlib.import_module(f'.{method}', 'ui')
+    except ModuleNotFoundError:
+        module_ = importlib.import_module(f'.{method}', 'steam_tools_ng_ui')
+
+    return module_
+
+
+config = safe_import('config')
 
 config.init()
 log = logging.getLogger(__name__)
-
-if len(sys.argv) == 1:
-    from gi.repository import Gtk
-    from ui import application
-else:
-    from ui import console
 
 if os.name == 'nt':
     event_loop = asyncio.ProactorEventLoop()
@@ -66,6 +71,7 @@ if __name__ == "__main__":
     console_params = command_parser.parse_args()
 
     if console_params.module:
+        console = safe_import('console')
         module_name = f'on_start_{console_params.module[0]}'
         module_options = console_params.options
 
@@ -76,6 +82,10 @@ if __name__ == "__main__":
 
         sys.exit(return_code)
     else:
+        from gi.repository import Gtk
+
+        application = safe_import('application')
+
         if os.name is 'posix' and not os.getenv('DISPLAY'):
             log.critical('The DISPLAY is not set!')
             log.critical('Use -c / --cli <module> for the command line interface.')

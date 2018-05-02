@@ -21,7 +21,7 @@ from typing import Any, Dict, Optional
 
 from stlib import authenticator
 
-from ui import config, console_utils
+from . import config, console_utils
 
 log = logging.getLogger(__name__)
 

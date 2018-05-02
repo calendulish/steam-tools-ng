@@ -18,7 +18,7 @@
 
 from gi.repository import Gtk
 
-from ui import config
+from . import config
 
 log_levels = [
     'critical',

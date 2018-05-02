@@ -21,7 +21,7 @@ from typing import Optional
 from gi.repository import Gio, Gtk
 from stlib import authenticator
 
-from ui import config, settings, window
+from . import config, settings, window
 
 
 class Application(Gtk.Application):

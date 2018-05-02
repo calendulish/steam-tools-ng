@@ -25,7 +25,7 @@ import logging
 import os
 from typing import Any, Callable, NamedTuple, NewType, Optional, Union
 
-from ui import logger_handlers
+from . import logger_handlers
 
 config_parser = configparser.RawConfigParser()
 log = logging.getLogger(__name__)

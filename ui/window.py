@@ -19,7 +19,7 @@ from typing import Optional, Tuple
 
 from gi.repository import Gio, Gtk
 
-from ui import adb, config
+from . import adb, config
 
 
 class Main(Gtk.ApplicationWindow):

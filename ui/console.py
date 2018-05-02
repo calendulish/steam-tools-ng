@@ -23,7 +23,7 @@ from typing import Optional
 
 from stlib import authenticator
 
-from ui import authenticator_utils, config, console_utils
+from . import authenticator_utils, config, console_utils
 
 log = logging.getLogger(__name__)
 
