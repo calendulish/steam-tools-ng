@@ -1,6 +1,8 @@
 Steam Tools NG
 ==============
 
+[![transifex](https://img.shields.io/badge/transifex-contribute%20now-blue.svg)](https://www.transifex.com/steam-tools-ng)
+
 WORK IN PROGRESS
 
 ___________________________________________________________________________________________
