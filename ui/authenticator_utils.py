@@ -21,9 +21,10 @@ from typing import Any, Dict, Optional
 
 from stlib import authenticator
 
-from . import config, console_utils
+from . import config, console_utils, i18n
 
 log = logging.getLogger(__name__)
+_ = i18n.get_translation
 
 
 async def on_get_json_from_adb(adb: Any, *names: str) -> Dict[str, str]:

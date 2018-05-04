@@ -19,7 +19,9 @@ from typing import Optional, Tuple
 
 from gi.repository import Gio, Gtk
 
-from . import adb, config
+from . import adb, config, i18n
+
+_ = i18n.get_translation
 
 
 class Main(Gtk.ApplicationWindow):
@@ -131,13 +133,11 @@ class Main(Gtk.ApplicationWindow):
         main_grid.attach(show_sensitive, 0, 3, 2, 1)
         main_grid.attach(sensitive_data_grid, 0, 4, 2, 1)
 
-        tip = Gtk.Label(''.join(
-            (
-                _("A code will be requested every time you try to log in on Steam.\n\n"),
-                _("Tip: If you are not on a shared computer, select 'Remember password'\n"),
-                _("when you log in to Steam Client so you do not have to enter the password and\n"),
-                _("the authenticator code."),
-            )
+        tip = Gtk.Label(_(
+            "A code will be requested every time you try to log in on Steam.\n\n"
+            "Tip: If you are not on a shared computer, select 'Remember password'\n"
+            "when you log in to Steam Client so you do not have to enter the password and\n"
+            "the authenticator code."
         ))
 
         tip.set_vexpand(True)

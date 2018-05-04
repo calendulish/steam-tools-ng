@@ -21,7 +21,9 @@ from typing import Optional
 from gi.repository import Gio, Gtk
 from stlib import authenticator
 
-from . import config, settings, window
+from . import config, i18n, settings, window
+
+_ = i18n.get_translation
 
 
 class Application(Gtk.Application):
@@ -70,7 +72,7 @@ class Application(Gtk.Application):
                 status_msg = _("Steam Client is not running")
                 self.window.status_markup(self.window.authenticator_status_label, 'red', status_msg)
             else:
-                status_msg = _("user") # FIXME: get user from steam_api
+                status_msg = _("user")  # FIXME: get user from steam_api
                 self.window.status_markup(self.window.authenticator_status_label, 'green', status_msg)
 
                 seconds = 30 - (epoch % 30)

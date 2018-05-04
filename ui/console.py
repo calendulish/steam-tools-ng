@@ -23,9 +23,10 @@ from typing import Optional
 
 from stlib import authenticator
 
-from . import authenticator_utils, config, console_utils
+from . import authenticator_utils, config, console_utils, i18n
 
 log = logging.getLogger(__name__)
+_ = i18n.get_translation
 
 
 @config.Check('authenticator')

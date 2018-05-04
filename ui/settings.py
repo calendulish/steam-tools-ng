@@ -16,9 +16,14 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-from gi.repository import Gtk
+import logging
 
-from . import config
+from gi.repository import Gtk, Pango
+
+from . import config, i18n
+
+log = logging.getLogger(__name__)
+_ = i18n.get_translation
 
 log_levels = [
     'critical',
@@ -78,14 +83,9 @@ class SettingsDialog(Gtk.Dialog):
 
         frame.show_all()
 
-        notice_label = Gtk.Label()
-        notice = _("Requires restart to take effect")
-        notice_label.set_markup(f"<span foreground='red'>{notice}</span>")
-        grid.attach(notice_label, 0, 1, 2, 1)
-
         load_locale_options(language_combo)
 
-        language_combo.connect("changed", self.on_language_combo_changed, notice_label)
+        language_combo.connect("changed", self.on_language_combo_changed)
 
         return frame
 
@@ -124,10 +124,10 @@ class SettingsDialog(Gtk.Dialog):
 
         return frame
 
-    @staticmethod
-    def on_language_combo_changed(combo, notice_label):
+    def on_language_combo_changed(self, combo):
         config.new(config.Config('locale', 'language', languages[combo.get_active()]))
-        notice_label.show()
+        Gtk.Container.foreach(self, refresh_widget_text)
+        Gtk.Container.foreach(self.parent_window, refresh_widget_text)
 
     @staticmethod
     def on_log_level_changed(combo):
@@ -166,3 +166,41 @@ def load_logger_options(
 
     log_level_combo.set_active(log_levels.index(log_level))
     log_console_level_combo.set_active(log_levels.index(log_console_level))
+
+
+def refresh_widget_text(widget):
+    if isinstance(widget, Gtk.MenuButton):
+        if widget.get_use_popover():
+            refresh_widget_text(widget.get_popover())
+        else:
+            refresh_widget_text(widget.get_popup())
+
+        return
+
+    if isinstance(widget, Gtk.Container):
+        childrens = Gtk.Container.get_children(widget)
+    else:
+        if isinstance(widget, Gtk.Label):
+            try:
+                cached_text = i18n.cache[i18n.new_hash(widget.get_text())]
+            except KeyError:
+                log.debug("it's not an i18n string: %s", widget.get_text())
+                return
+
+            c_ = _
+
+            if widget.get_use_markup():
+                old_attributes = Pango.Layout.get_attributes(widget.get_layout())
+                widget.set_text(c_(cached_text))
+                widget.set_attributes(old_attributes)
+            else:
+                widget.set_text(c_(cached_text))
+
+            log.debug('widget refreshed: %s', widget)
+        else:
+            log.debug('widget not refresh: %s', widget)
+
+        return
+
+    for children in childrens:
+        refresh_widget_text(children)

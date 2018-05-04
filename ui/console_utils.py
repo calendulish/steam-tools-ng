@@ -19,7 +19,10 @@
 import logging
 from typing import Optional, Union
 
+from . import i18n
+
 log = logging.getLogger(__name__)
+_ = i18n.get_translation
 
 
 def safe_input(msg: str, default_response: Optional[bool] = None) -> Union[bool, str]:

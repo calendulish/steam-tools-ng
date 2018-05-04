@@ -18,17 +18,16 @@
 
 import configparser
 import functools
-import gettext
 import inspect
-import locale
 import logging
 import os
 from typing import Any, Callable, NamedTuple, NewType, Optional, Union
 
-from . import logger_handlers
+from . import logger_handlers, i18n
 
 config_parser = configparser.RawConfigParser()
 log = logging.getLogger(__name__)
+_ = i18n.get_translation
 
 if os.name == 'nt':
     data_dir = os.environ['LOCALAPPDATA']
@@ -141,10 +140,6 @@ def init() -> None:
     log_console_handler.setLevel(getattr(logging, log_console_level.upper()))
 
     logging.basicConfig(level=logging.DEBUG, handlers=[log_file_handler, log_console_handler])
-
-    language = config_parser.get("locale", "language", fallback=locale.getdefaultlocale()[0])
-    translation = gettext.translation("steam-tools-ng", languages=[language], fallback=True)
-    translation.install()
 
 
 def new(*new_configs: Config) -> None:

@@ -37,6 +37,10 @@ def safe_import(method):
 config = safe_import('config')
 
 config.init()
+
+i18n = safe_import('i18n')
+_ = i18n.get_translation
+
 log = logging.getLogger(__name__)
 
 if os.name == 'nt':
