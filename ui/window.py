@@ -24,8 +24,9 @@ from . import adb, config, i18n
 _ = i18n.get_translation
 
 
+# noinspection PyUnusedLocal
 class Main(Gtk.ApplicationWindow):
-    def __init__(self, application):
+    def __init__(self, application: Gtk.Application) -> None:
         super().__init__(application=application, title="Steam Tools NG")
         self.application = application
 
@@ -88,7 +89,7 @@ class Main(Gtk.ApplicationWindow):
         main_grid.attach_next_to(stack, sidebar, Gtk.PositionType.RIGHT, 1, 1)
 
     @staticmethod
-    def status_markup(widget, foreground, text):
+    def status_markup(widget: Gtk.Widget, foreground: str, text: str) -> None:
         widget.set_markup(f"<span foreground='{foreground}' font_size='small'>{text}</span>")
 
     @staticmethod
@@ -101,7 +102,7 @@ class Main(Gtk.ApplicationWindow):
 
         return item_label, item
 
-    def authenticator_tab(self):
+    def authenticator_tab(self) -> Gtk.Grid:
         main_grid = Gtk.Grid()
         main_grid.set_row_spacing(10)
         main_grid.set_column_spacing(10)
@@ -192,32 +193,32 @@ class Main(Gtk.ApplicationWindow):
         return main_grid
 
     @staticmethod
-    def on_adb_path_entry_changed(entry):
+    def on_adb_path_entry_changed(entry: Gtk.Entry) -> None:
         if len(entry.get_text()) > 2:
-            config.new(config.Config('authenticator', 'adb_path', entry.get_text()))
+            config.new(config.ConfigType('authenticator', 'adb_path', entry.get_text()))
 
     @staticmethod
-    def on_shared_secret_entry_changed(entry):
-        config.new(config.Config('authenticator', 'shared_secret', entry.get_text()))
+    def on_shared_secret_entry_changed(entry: Gtk.Entry) -> None:
+        config.new(config.ConfigType('authenticator', 'shared_secret', entry.get_text()))
 
     @staticmethod
-    def on_identity_secret_entry_changed(entry):
-        config.new(config.Config('authenticator', 'identity_secret', entry.get_text()))
+    def on_identity_secret_entry_changed(entry: Gtk.Entry) -> None:
+        config.new(config.ConfigType('authenticator', 'identity_secret', entry.get_text()))
 
     @staticmethod
-    def on_account_name_entry_changed(entry):
-        config.new(config.Config('authenticator', 'account_name', entry.get_text()))
+    def on_account_name_entry_changed(entry: Gtk.Entry) -> None:
+        config.new(config.ConfigType('authenticator', 'account_name', entry.get_text()))
 
     @staticmethod
-    def on_steam_id_entry_changed(entry):
-        config.new(config.Config('authenticator', 'steamid', entry.get_text()))
+    def on_steam_id_entry_changed(entry: Gtk.Entry) -> None:
+        config.new(config.ConfigType('authenticator', 'steamid', entry.get_text()))
 
-    def on_adb_clicked(self, button):
+    def on_adb_clicked(self, button: Gtk.Button) -> None:
         adb_dialog = adb.AdbDialog(parent_window=self)
         adb_dialog.show()
 
     @staticmethod
-    def on_show_sensitive_toggled(button, grid, tip):
+    def on_show_sensitive_toggled(button: Gtk.Button, grid: Gtk.Grid, tip: Gtk.Label) -> None:
         if button.get_active():
             tip.hide()
             grid.show_all()

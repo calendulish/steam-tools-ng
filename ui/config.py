@@ -23,7 +23,7 @@ import logging
 import os
 from typing import Any, Callable, NamedTuple, NewType, Optional, Union
 
-from . import logger_handlers, i18n
+from . import i18n, logger_handlers
 
 config_parser = configparser.RawConfigParser()
 log = logging.getLogger(__name__)
@@ -43,13 +43,13 @@ ConfigInt = NewType('ConfigInt', int)
 ConfigBool = NewType('ConfigBool', bool)
 ConfigFloat = NewType('ConfigFloat', float)
 
-Config = NamedTuple(
-    'Config', [
-        ('section', str),
-        ('option', str),
-        ('value', Union[ConfigStr, ConfigInt, ConfigBool, ConfigFloat])
-    ]
-)
+ConfigValue = Union[ConfigStr, ConfigInt, ConfigBool, ConfigFloat]
+
+
+class ConfigType(NamedTuple):
+    section: str
+    option: str
+    value: ConfigValue
 
 
 class DefaultConfig(object):
@@ -107,8 +107,9 @@ class Check(object):
         return wrapped_function
 
 
-def update_log_level(type_: str, level_str: str) -> None:
-    level = getattr(logging, level_str.upper())
+def update_log_level(type_: str, level_string: ConfigValue) -> None:
+    assert isinstance(level_string, str), "Invalid log_level"
+    level = getattr(logging, level_string.upper())
     file_handler, console_handler = logging.root.handlers
 
     if type_ == "console":
@@ -142,7 +143,7 @@ def init() -> None:
     logging.basicConfig(level=logging.DEBUG, handlers=[log_file_handler, log_console_handler])
 
 
-def new(*new_configs: Config) -> None:
+def new(*new_configs: ConfigType) -> None:
     for config in new_configs:
         if config.option == "log_level":
             update_log_level("file", config.value)

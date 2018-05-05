@@ -16,7 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
-from typing import Optional
+from typing import Any, Optional
 
 from gi.repository import Gio, Gtk
 from stlib import authenticator
@@ -26,14 +26,15 @@ from . import config, i18n, settings, window
 _ = i18n.get_translation
 
 
+# noinspection PyUnusedLocal
 class Application(Gtk.Application):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(application_id="click.lara.SteamToolsNG",
                          flags=Gio.ApplicationFlags.FLAGS_NONE)
 
-        self.window = None
+        self.window: Gtk.ApplicationWindow = None
 
-    def do_startup(self):
+    def do_startup(self) -> None:
         Gtk.Application.do_startup(self)
 
         settings_action = Gio.SimpleAction.new('settings')
@@ -44,7 +45,7 @@ class Application(Gtk.Application):
         about_action.connect("activate", self.on_about_activate)
         self.add_action(about_action)
 
-    def do_activate(self):
+    def do_activate(self) -> None:
         if not self.window:
             self.window = window.Main(application=self)
 
@@ -53,7 +54,7 @@ class Application(Gtk.Application):
         asyncio.ensure_future(self.run_authenticator())
 
     @config.Check("authenticator")
-    async def run_authenticator(self, shared_secret: Optional[config.ConfigStr] = None):
+    async def run_authenticator(self, shared_secret: Optional[config.ConfigStr] = None) -> None:
         while self.window.get_realized():
             current_secret = self.window.shared_secret_entry.get_text()
 
@@ -87,10 +88,10 @@ class Application(Gtk.Application):
 
             await asyncio.sleep(3)
 
-    def on_settings_activate(self, action, data):
+    def on_settings_activate(self, action: Any, data: Any) -> None:
         settings_dialog = settings.SettingsDialog(parent_window=self.window)
         settings_dialog.run()
 
-    def on_about_activate(self, action, param):
+    def on_about_activate(self, action: Any, param: Any) -> None:
         about_dialog = Gtk.AboutDialog(transient_for=self.window, modal=True)
         about_dialog.present()

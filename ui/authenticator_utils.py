@@ -31,6 +31,7 @@ async def on_get_json_from_adb(adb: Any, *names: str) -> Dict[str, str]:
     while True:
         try:
             json_data = await adb.get_json(*names)
+            assert isinstance(json_data, dict), "Invalid json_data"
         except AttributeError as exception:
             log.critical(exception.args[0])
             try_again = console_utils.safe_input(_("Do you want to try again?"), True)

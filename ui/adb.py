@@ -17,6 +17,7 @@
 #
 import asyncio
 import logging
+from typing import Any, Dict
 
 from gi.repository import Gtk
 from stlib import authenticator
@@ -27,8 +28,9 @@ log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
 
+# noinspection PyUnusedLocal
 class AdbDialog(Gtk.Dialog):
-    def __init__(self, parent_window):
+    def __init__(self, parent_window: Gtk.Widget) -> None:
         super().__init__(use_header_bar=True)
         self.header_bar = self.get_header_bar()
         self.header_bar.set_show_close_button(False)
@@ -65,7 +67,7 @@ class AdbDialog(Gtk.Dialog):
 
         self.connect('response', self.on_response)
 
-    async def get_sensitive_data(self):
+    async def get_sensitive_data(self) -> Dict[str, str]:
         try:
             adb = authenticator.AndroidDebugBridge(self.parent_window.adb_path_entry.get_text())
         except FileNotFoundError:
@@ -85,13 +87,14 @@ class AdbDialog(Gtk.Dialog):
                 'account_name',
                 'steamid',
             )
+            assert isinstance(json_data, dict), "Invalid json_data"
         except (AttributeError, KeyError) as exception:
             self.new_error(repr(exception))
             raise AttributeError
 
         return json_data
 
-    def new_error(self, text):
+    def new_error(self, text: str) -> None:
         self.spinner.hide()
 
         frame = Gtk.Frame(label=_("Error"))
@@ -112,10 +115,10 @@ class AdbDialog(Gtk.Dialog):
         frame.show_all()
 
     @staticmethod
-    def on_response(dialog, response_id):
+    def on_response(dialog: Gtk.Dialog, response_id: int) -> None:
         dialog.destroy()
 
-    def on_sensitive_data_task_done(self, future):
+    def on_sensitive_data_task_done(self, future: Any) -> None:
         if future.exception():
             exception = future.exception()
             log.debug(repr(exception))

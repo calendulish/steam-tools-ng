@@ -55,8 +55,8 @@ async def on_start_authenticator(shared_secret: Optional[config.ConfigStr] = Non
 
             save_config = console_utils.safe_input(_("Do you want to save this configuration?"), True)
             if save_config:
-                config.new(config.Config('authenticator', 'shared_secret', shared_secret),
-                           config.Config('authenticator', 'adb_path', adb.adb_path))
+                config.new(config.ConfigType('authenticator', 'shared_secret', shared_secret),
+                           config.ConfigType('authenticator', 'adb_path', adb.adb_path))
                 logging.info(_("Configuration has been saved!"))
         else:
             return 1

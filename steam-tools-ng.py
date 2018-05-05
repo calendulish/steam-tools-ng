@@ -23,9 +23,10 @@ import logging
 import os
 import sys
 import textwrap
+from typing import Any
 
 
-def safe_import(method):
+def safe_import(method: str) -> Any:
     try:
         module_ = importlib.import_module(f'.{method}', 'ui')
     except ModuleNotFoundError:
@@ -100,7 +101,7 @@ if __name__ == "__main__":
         app.activate()
 
 
-        async def async_gtk_iterator():
+        async def async_gtk_iterator() -> None:
             while Gtk.events_pending():
                 Gtk.main_iteration_do(False)
 

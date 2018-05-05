@@ -16,9 +16,11 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+import os
 import sys
 from logging import Handler
-from logging.handlers import *
+# noinspection PyUnresolvedReferences
+from logging.handlers import RotatingFileHandler
 from types import TracebackType
 from typing import Any, Optional, Type
 

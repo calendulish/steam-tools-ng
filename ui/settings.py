@@ -17,6 +17,7 @@
 #
 
 import logging
+from typing import Union
 
 from gi.repository import Gtk, Pango
 
@@ -41,8 +42,9 @@ translations = {
 languages = list(translations.keys())
 
 
+# noinspection PyUnusedLocal
 class SettingsDialog(Gtk.Dialog):
-    def __init__(self, parent_window):
+    def __init__(self, parent_window: Gtk.Widget) -> None:
         super().__init__(use_header_bar=True)
         self.parent_window = parent_window
         self.set_default_size(300, 150)
@@ -64,7 +66,7 @@ class SettingsDialog(Gtk.Dialog):
         self.connect('response', self.on_response)
         self.show()
 
-    def locale_settings(self):
+    def locale_settings(self) -> Gtk.Frame:
         frame = Gtk.Frame(label=_('Locale settings'))
         frame.set_label_align(0.03, 0.5)
 
@@ -89,7 +91,7 @@ class SettingsDialog(Gtk.Dialog):
 
         return frame
 
-    def logger_settings(self):
+    def logger_settings(self) -> Gtk.Frame:
         frame = Gtk.Frame(label=_('Logger settings'))
         frame.set_label_align(0.03, 0.5)
 
@@ -124,29 +126,30 @@ class SettingsDialog(Gtk.Dialog):
 
         return frame
 
-    def on_language_combo_changed(self, combo):
-        config.new(config.Config('locale', 'language', languages[combo.get_active()]))
+    def on_language_combo_changed(self, combo: Gtk.ComboBoxText) -> None:
+        language = config.ConfigStr(languages[combo.get_active()])
+        config.new(config.ConfigType('locale', 'language', language))
         Gtk.Container.foreach(self, refresh_widget_text)
         Gtk.Container.foreach(self.parent_window, refresh_widget_text)
 
     @staticmethod
-    def on_log_level_changed(combo):
-        config.new(config.Config('logger', 'log_level', combo.get_active_text()))
+    def on_log_level_changed(combo: Gtk.ComboBoxText) -> None:
+        config.new(config.ConfigType('logger', 'log_level', combo.get_active_text()))
 
     @staticmethod
-    def on_log_console_level_changed(combo):
-        config.new(config.Config('logger', 'log_console_level', combo.get_active_text()))
+    def on_log_console_level_changed(combo: Gtk.ComboBoxText) -> None:
+        config.new(config.ConfigType('logger', 'log_console_level', combo.get_active_text()))
 
     @staticmethod
-    def on_response(dialog, response_id):
+    def on_response(dialog: Gtk.Dialog, response_id: int) -> None:
         dialog.destroy()
 
 
 @config.Check("locale")
 def load_locale_options(
-        language_combo,
-        language: config.ConfigStr = 'en',
-):
+        language_combo: Gtk.ComboBoxText,
+        language: Union[str, config.ConfigStr] = 'en',
+) -> None:
     for translation, description in translations.items():
         language_combo.append_text(f'[{translation}] {description}')
 
@@ -155,11 +158,11 @@ def load_locale_options(
 
 @config.Check("logger")
 def load_logger_options(
-        log_level_combo,
-        log_console_level_combo,
-        log_level: config.ConfigStr = 'debug',
-        log_console_level: config.ConfigStr = 'info',
-):
+        log_level_combo: Gtk.ComboBoxText,
+        log_console_level_combo: Gtk.ComboBoxText,
+        log_level: Union[str, config.ConfigStr] = 'debug',
+        log_console_level: Union[str, config.ConfigStr] = 'info',
+) -> None:
     for level in log_levels:
         log_level_combo.append_text(level)
         log_console_level_combo.append_text(level)
@@ -168,7 +171,7 @@ def load_logger_options(
     log_console_level_combo.set_active(log_levels.index(log_console_level))
 
 
-def refresh_widget_text(widget):
+def refresh_widget_text(widget: Gtk.Widget) -> None:
     if isinstance(widget, Gtk.MenuButton):
         if widget.get_use_popover():
             refresh_widget_text(widget.get_popover())
