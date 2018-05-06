@@ -105,7 +105,7 @@ if __name__ == "__main__":
             while Gtk.events_pending():
                 Gtk.main_iteration_do(False)
 
-            if app.window.get_realized():
+            if app.window and app.window.get_realized():
                 asyncio.ensure_future(async_gtk_iterator())
             else:
                 event_loop.stop()

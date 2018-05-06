@@ -18,7 +18,8 @@
 
 import os
 import sys
-from logging import Handler
+# noinspection PyUnresolvedReferences
+from logging import Handler, NullHandler
 # noinspection PyUnresolvedReferences
 from logging.handlers import RotatingFileHandler
 from types import TracebackType

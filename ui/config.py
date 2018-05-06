@@ -135,7 +135,13 @@ def init() -> None:
                                                            encoding='utf-8')
     log_file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s'))
     log_file_handler.setLevel(getattr(logging, log_level.upper()))
-    log_file_handler.doRollover()
+
+    try:
+        log_file_handler.doRollover()
+    except PermissionError:
+        log.debug(_("Unable to open steam-tools-ng.log"))
+        log_file_handler.close()
+        log_file_handler = logger_handlers.NullHandler()
 
     log_console_handler = logger_handlers.ColoredStreamHandler()
     log_console_handler.setLevel(getattr(logging, log_console_level.upper()))
