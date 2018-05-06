@@ -95,5 +95,6 @@ if __name__ == "__main__":
             except TokenError as exception:
                 print(repr(exception), file=sys.stderr)
 
-    with open(output_file, 'w') as file_pointer:
+    with open(output_file, 'w', encoding='UTF-8', newline='\n') as file_pointer:
+        print(file_pointer.encoding)
         eater.write(file_pointer)
