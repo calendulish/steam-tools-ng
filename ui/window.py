@@ -58,7 +58,7 @@ class Main(Gtk.ApplicationWindow):
         self.authenticator_code = Gtk.Label()
         self.authenticator_code.set_selectable(True)
 
-        self.adb_path_label, self.adb_path_entry = self._new_tab_item(_("adb_path:"))
+        self.adb_path_label, self.adb_path_entry = self._new_tab_item(_("adb path:"))
         self.adb_path_entry.connect('changed', self.on_adb_path_entry_changed)
 
         self.shared_secret_label, self.shared_secret_entry = self._new_tab_item(_("shared secret:*"))
