@@ -22,6 +22,12 @@ import sys
 from importlib.machinery import SourceFileLoader
 
 script_path = os.path.dirname(__file__)
+python_version = f'python{sys.version_info.major}.{sys.version_info.minor}'
+
+if sys.maxsize > 2 ** 32:
+    arch = 64
+else:
+    arch = 32
 
 if script_path:
     os.chdir(os.path.join(script_path, '..'))
@@ -30,8 +36,9 @@ else:
 
 if 'MSC' in platform.python_compiler():
     tools_path = os.path.join(sys.prefix, 'Tools', 'i18n')
+elif sys.platform == 'msys':
+    tools_path = os.path.join(f'/mingw{arch}/lib/{python_version}/Tools/i18n')
 else:
-    python_version = f'python{sys.version_info.major}.{sys.version_info.minor}'
     tools_path = os.path.join(sys.prefix, 'lib', python_version, 'Tools', 'i18n')
 
 msgfmt = SourceFileLoader('msgfmt', os.path.join(tools_path, 'msgfmt.py')).load_module()
