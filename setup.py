@@ -17,12 +17,15 @@
 #
 
 import os
+import platform
+import sys
 from distutils.command.build_py import build_py
 from distutils.command.install import install
 from distutils.command.install_data import install_data
 from distutils.command.install_scripts import install_scripts
-from distutils.core import setup
+from distutils.sysconfig import get_python_lib
 from importlib.machinery import SourceFileLoader
+from typing import Any, List, Mapping, Tuple
 
 from ui import version
 
@@ -30,9 +33,20 @@ po_build_path = os.path.join('build', 'share', 'locale')
 build_translations_path = os.path.join('i18n', 'build_translations.py')
 build_translations = SourceFileLoader('build_translations', build_translations_path).load_module()
 
+if os.name == 'nt':
+    # noinspection PyPackageRequirements
+    from cx_Freeze import setup, Executable
+
+    if sys.maxsize > 2 ** 32:
+        arch = 64
+    else:
+        arch = 32
+else:
+    from distutils.core import setup
+
 
 class RemoveExtension(install_scripts):
-    def run(self):
+    def run(self) -> None:
         install_scripts.run(self)
 
         if os.name != 'nt':
@@ -41,13 +55,13 @@ class RemoveExtension(install_scripts):
 
 
 class BuildTranslations(build_py):
-    def run(self):
+    def run(self) -> None:
         build_py.run(self)
         build_translations.build(os.path.join(po_build_path))
 
 
 class InstallTranslations(install_data):
-    def run(self):
+    def run(self) -> None:
         base_directory = 'share'
         output_directory = os.path.join(self.install_dir, base_directory)
 
@@ -66,9 +80,91 @@ class InstallTranslations(install_data):
 
 
 class Install(install):
-    def run(self):
+    def run(self) -> None:
         install.run(self)
         self.run_command('install_data')
+
+
+def fix_gtk() -> List[Tuple[str, str]]:
+    namespace_packages = [
+        'Gtk-3.0',
+        'Gdk-3.0',
+        'GObject-2.0',
+        'GLib-2.0',
+        'Gio-2.0',
+        'Pango-1.0',
+        'Cairo-1.0',
+        'GdkPixbuf-2.0',
+        'GModule-2.0',
+        'Atk-1.0',
+    ]
+
+    required_dlls = [
+        'libgtk-3-0',
+        'libgdk-3-0',
+        'libpango-1.0-0',
+        'libpangowin32-1.0-0',
+        'libatk-1.0-0',
+    ]
+
+    includes = []
+
+    if 'MSC' in platform.python_compiler():
+        raise NotImplementedError
+    elif os.name == 'nt' and os.environ['PWD']:  # msys
+        lib_path = os.path.join(get_python_lib(), '..', '..')
+        bin_path = os.path.join(get_python_lib(), '..', '..', '..', 'bin')
+    else:
+        raise NotImplementedError
+
+    for package in namespace_packages:
+        includes.append((
+            os.path.join(lib_path, 'girepository-1.0', f'{package}.typelib'),
+            os.path.join('lib', 'girepository-1.0', f'{package}.typelib')
+        ))
+
+    for dll in required_dlls:
+        includes.append((
+            os.path.join(bin_path, f'{dll}.dll'),
+            f'{dll}.dll',
+        ))
+
+    return includes
+
+
+def freeze_options() -> Mapping[str, Any]:
+    if os.name != 'nt':
+        return {}
+
+    executables = [
+        Executable(
+            "steam-tools-ng.py",
+        )
+    ]
+
+    packages = ['asyncio', 'ui', 'gi']
+
+    paths = ['.']
+    paths.extend(sys.path)
+
+    includes = [*fix_gtk()]
+    excludes = ['tkinter']
+
+    build_exe_options = {
+        "packages": packages,
+        "include_files": includes,
+        "excludes": excludes,
+        "path": paths,
+    }
+
+    options = {
+        "build_exe": build_exe_options,
+    }
+
+    return {
+        "options": options,
+        "executables": executables,
+    }
 
 
 setup(
@@ -88,5 +184,6 @@ setup(
         'install': Install,
         'install_scripts': RemoveExtension,
         'install_data': InstallTranslations,
-    }
+    },
+    **freeze_options()
 )
