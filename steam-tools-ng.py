@@ -23,24 +23,10 @@ import logging
 import os
 import sys
 import textwrap
-from typing import Any
 
-
-def safe_import(method: str) -> Any:
-    try:
-        module_ = importlib.import_module(f'.{method}', 'ui')
-    except ModuleNotFoundError:
-        module_ = importlib.import_module(f'.{method}', 'steam_tools_ng_ui')
-
-    return module_
-
-
-version = safe_import('version')
-config = safe_import('config')
+from steam_tools_ng import config, i18n, version
 
 config.init()
-
-i18n = safe_import('i18n')
 _ = i18n.get_translation
 
 log = logging.getLogger(__name__)
@@ -79,13 +65,13 @@ if __name__ == "__main__":
     if console_params.module:
         module_name = console_params.module[0]
         module_options = console_params.options
-        module = safe_import(f'console.{module_name}')
+        module = importlib.import_module(f'.{module_name}', 'steam_tools_ng.console')
 
         return_code = event_loop.run_until_complete(module.run(*module_options))
 
         sys.exit(return_code)
     else:
-        application = safe_import('gtk.application')
+        from steam_tools_ng.gtk import application
         from gi.repository import Gtk
 
         if os.name is 'posix' and not os.getenv('DISPLAY'):

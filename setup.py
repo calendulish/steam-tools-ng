@@ -17,7 +17,6 @@
 #
 
 import os
-import platform
 import sys
 from distutils.command.build_py import build_py
 from distutils.command.install import install
@@ -27,7 +26,7 @@ from distutils.sysconfig import get_python_lib
 from importlib.machinery import SourceFileLoader
 from typing import Any, List, Mapping, Tuple
 
-from ui import version
+from steam_tools_ng import version
 
 po_build_path = os.path.join('build', 'share', 'locale')
 build_translations_path = os.path.join('i18n', 'build_translations.py')
@@ -109,13 +108,8 @@ def fix_gtk() -> List[Tuple[str, str]]:
 
     includes = []
 
-    if 'MSC' in platform.python_compiler():
-        raise NotImplementedError
-    elif os.name == 'nt' and os.environ['PWD']:  # msys
-        lib_path = os.path.join(get_python_lib(), '..', '..')
-        bin_path = os.path.join(get_python_lib(), '..', '..', '..', 'bin')
-    else:
-        raise NotImplementedError
+    lib_path = os.path.join(get_python_lib(), '..', '..')
+    bin_path = os.path.join(get_python_lib(), '..', '..', '..', 'bin')
 
     for package in namespace_packages:
         includes.append((
@@ -142,7 +136,7 @@ def freeze_options() -> Mapping[str, Any]:
         )
     ]
 
-    packages = ['asyncio', 'ui', 'gi']
+    packages = ['asyncio', 'steam_tools_ng', 'gi']
 
     paths = ['.']
     paths.extend(sys.path)
@@ -175,8 +169,11 @@ setup(
     author_email='dev@lara.click',
     url='http://github.com/ShyPixie/steam-tools-ng',
     license='GPL',
-    packages=['steam_tools_ng_ui'],
-    package_dir={'steam_tools_ng_ui': 'ui'},
+    packages=[
+        'steam_tools_ng',
+        'steam_tools_ng.console',
+        'steam_tools_ng.gtk',
+    ],
     scripts=['steam-tools-ng.py'],
     requires=['stlib'],
     cmdclass={
