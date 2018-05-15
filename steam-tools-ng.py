@@ -35,6 +35,7 @@ def safe_import(method: str) -> Any:
     return module_
 
 
+version = safe_import('version')
 config = safe_import('config')
 
 config.init()
@@ -52,7 +53,7 @@ else:
 asyncio.set_event_loop(event_loop)
 
 if __name__ == "__main__":
-    log.info('Steam Tools NG version 0.0.0-0 (Made with Girl Power <33)')
+    log.info(f'Steam Tools NG version {version.__version__} (Made with Girl Power <33)')
     log.info('Copyright (C) 2015 ~ 2018 Lara Maia - <dev@lara.click>')
 
     command_parser = argparse.ArgumentParser(

@@ -24,6 +24,8 @@ from distutils.command.install_scripts import install_scripts
 from distutils.core import setup
 from importlib.machinery import SourceFileLoader
 
+from ui import version
+
 po_build_path = os.path.join('build', 'share', 'locale')
 build_translations_path = os.path.join('i18n', 'build_translations.py')
 build_translations = SourceFileLoader('build_translations', build_translations_path).load_module()
@@ -71,7 +73,7 @@ class Install(install):
 
 setup(
     name='steam-tools-ng',
-    version='0.0.0-DEV',
+    version=version.__version__,
     description="Useful tools for Steam",
     author='Lara Maia',
     author_email='dev@lara.click',
