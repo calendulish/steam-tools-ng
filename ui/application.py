@@ -21,7 +21,7 @@ from typing import Any, Optional
 from gi.repository import Gio, Gtk
 from stlib import authenticator
 
-from . import config, i18n, settings, window
+from . import about, config, i18n, settings, window
 
 _ = i18n.get_translation
 
@@ -92,6 +92,6 @@ class Application(Gtk.Application):
         settings_dialog = settings.SettingsDialog(parent_window=self.window)
         settings_dialog.run()
 
-    def on_about_activate(self, action: Any, param: Any) -> None:
-        about_dialog = Gtk.AboutDialog(transient_for=self.window, modal=True)
-        about_dialog.present()
+    def on_about_activate(self, action: Any, data: Any) -> None:
+        dialog = about.AboutDialog(parent_window=self.window)
+        dialog.run()
