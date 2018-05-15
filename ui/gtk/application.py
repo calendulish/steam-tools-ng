@@ -21,7 +21,8 @@ from typing import Any, Optional
 from gi.repository import Gio, Gtk
 from stlib import authenticator
 
-from . import about, config, i18n, settings, window
+from . import about, settings, window
+from .. import config, i18n
 
 _ = i18n.get_translation
 

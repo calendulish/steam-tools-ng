@@ -21,7 +21,7 @@ from typing import Union
 
 from gi.repository import Gtk, Pango
 
-from . import config, i18n
+from .. import config, i18n
 
 log = logging.getLogger(__name__)
 _ = i18n.get_translation

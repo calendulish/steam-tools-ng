@@ -22,7 +22,7 @@ from typing import Any, Dict
 from gi.repository import Gtk
 from stlib import authenticator
 
-from . import i18n
+from .. import i18n
 
 log = logging.getLogger(__name__)
 _ = i18n.get_translation

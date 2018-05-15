@@ -77,20 +77,16 @@ if __name__ == "__main__":
     console_params = command_parser.parse_args()
 
     if console_params.module:
-        console = safe_import('console')
-        module_name = f'on_start_{console_params.module[0]}'
+        module_name = console_params.module[0]
         module_options = console_params.options
+        module = safe_import(f'console.{module_name}')
 
-        assert hasattr(console, module_name), f'{module_name} doesn\'t exist in {console}'
-        module = getattr(console, module_name)
-
-        return_code = event_loop.run_until_complete(module(*module_options))
+        return_code = event_loop.run_until_complete(module.run(*module_options))
 
         sys.exit(return_code)
     else:
+        application = safe_import('gtk.application')
         from gi.repository import Gtk
-
-        application = safe_import('application')
 
         if os.name is 'posix' and not os.getenv('DISPLAY'):
             log.critical('The DISPLAY is not set!')

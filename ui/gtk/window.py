@@ -19,7 +19,8 @@ from typing import Optional, Tuple
 
 from gi.repository import Gio, Gtk
 
-from . import adb, config, i18n
+from . import adb
+from .. import config, i18n
 
 _ = i18n.get_translation
 

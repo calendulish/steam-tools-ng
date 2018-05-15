@@ -19,7 +19,7 @@
 import logging
 from typing import Optional, Union
 
-from . import i18n
+from .. import i18n
 
 log = logging.getLogger(__name__)
 _ = i18n.get_translation

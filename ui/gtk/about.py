@@ -20,7 +20,7 @@ from typing import Any
 
 from gi.repository import Gtk
 
-from . import version
+from .. import version
 
 
 class AboutDialog(Gtk.AboutDialog):
