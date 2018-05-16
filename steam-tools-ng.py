@@ -67,7 +67,7 @@ if __name__ == "__main__":
         module_options = console_params.options
         module = importlib.import_module(f'.{module_name}', 'steam_tools_ng.console')
 
-        return_code = event_loop.run_until_complete(module.run(*module_options))
+        return_code = event_loop.run_until_complete(module.run(*module_options))  # type: ignore
 
         sys.exit(return_code)
     else:

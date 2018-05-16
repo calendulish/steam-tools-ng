@@ -141,7 +141,7 @@ def init() -> None:
     except PermissionError:
         log.debug(_("Unable to open steam-tools-ng.log"))
         log_file_handler.close()
-        log_file_handler = logger_handlers.NullHandler()
+        log_file_handler = logger_handlers.NullHandler()  # type: ignore
 
     log_console_handler = logger_handlers.ColoredStreamHandler()
     log_console_handler.setLevel(getattr(logging, log_console_level.upper()))

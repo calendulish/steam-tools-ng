@@ -48,5 +48,5 @@ class AboutDialog(Gtk.AboutDialog):
 
         self.present()
 
-    def on_response(self, action: Any, data: Any):
+    def on_response(self, action: Any, data: Any) -> None:
         self.destroy()
