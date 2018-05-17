@@ -2,6 +2,15 @@ Steam Tools NG
 ==============
 
 [![transifex](https://img.shields.io/badge/transifex-contribute%20now-blue.svg)](https://www.transifex.com/steam-tools-ng)
+[![Linux Build Status](https://img.shields.io/travis/ShyPixie/steam-tools-ng/master.svg?label=Linux%20build)](https://travis-ci.org/ShyPixie/steam-tools-ng)
+[![Windows Build status](https://img.shields.io/badge/Windows%20build-not%20ready-lightgrey.svg)](https://ci.appveyor.com/project/ShyPixie/steam-tools-ng)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/ShyPixie/steam-tools-ng/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/ShyPixie/steam-tools-ng/?branch=master)
+[![Code Coverage](https://scrutinizer-ci.com/g/ShyPixie/steam-tools-ng/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/ShyPixie/steam-tools-ng/?branch=master)
+[![GitHub license](https://img.shields.io/badge/license-GPLv3-green.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
+[![GitHub release](https://img.shields.io/github/release/ShyPixie/steam-tools-ng.svg)](https://github.com/ShyPixie/steam-tools-ng/releases)
+[![GitHub Test release](https://img.shields.io/badge/testing-0.0.0_DEV-orange.svg)](https://github.com/ShyPixie/steam-tools-ng/releases)
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=WVQ5XM935XNLN&item_name=steam-tools-ng)
+
 
 WORK IN PROGRESS
 
