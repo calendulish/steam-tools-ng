@@ -1,0 +1,36 @@
+sudo: required
+language: python
+
+addons:
+    apt:
+        update: true
+
+python:
+    - "3.7-dev"
+
+services:
+    - docker
+
+
+install:
+    - pip install --upgrade setuptools aiodns cchardet ujson aiohttp asyncio beautifulsoup4
+
+before_script:
+    - git clone https://github.com/ShyPixie/stlib
+    - cd stlib/src/steam_api
+    - docker login -u shypixie -p $DOCKER_SECRET
+    - image_id=$(docker create shypixie/steamworks_sdk)
+    - docker cp $image_id:steamworks_sdk - > steamworks.tar.gz
+    - tar xfv steamworks.tar.gz
+    - cd ../..
+    - python setup.py build
+    - python setup.py install
+    - cd ..
+
+script:
+    - python setup.py build
+    - python setup.py install
+
+env:
+  global:
+    secure: KH3Dkv5Fczpz9EsXntOQ8uG43fH+V/P//0brxt9rdwNCvldUN/0q2hVRl2lsKsBONSKsjoouB53h0z5Si+zYSPhbKfGYqXEZCKLQjYoG+e7BD1pyXs+dThgiaFdOb6TC2uB8lXg+evOx/fUadrsvEjKzosKZ44w/j/6aZ+vq9lA9RxtnfpmhwZPRV69lnN13dWv8TEgrk0VuxDVP187lH3kiXaDGs4nfeNX+N2HJV/UYtVlpouHsk5f9wfX3pjUAPK85fcMwLPZYSMPLVS7LWszVA0vwWYsfKZOj+uCAuWQpSR/ZR7QGC3ddN0oPrTrdtDCNhfLe6qEQdvXI5A7M6vXhiPcxkW4usZmqVJY99Inn0MBMM6FAASK1hxzn7pzvRJVVuXsAMYOB3z3pQVP44KteVUwjSSvzbaZCnvyC8H2yzgJRIZneHIPke+//LsYdW4KyuN7OIIJ4y3/6HCnhLDxIF8OaTwCGSVz5ChuhnFwSdpnF7b8/VhQYbYDIz5eod9qHFnZ/zHSLLAw3Vp6vvGJa0Cihnx/IDx92i+GPhJoVdjh48cYJl31mYteaJJ+a/TfqQMqPHzSJnHo+QTsQ5Tlf66dclXLTQNMwfGi4MVc9rV0EDyy1kpHmFcA94lChRq4CQU7m+PkSgChjBVkOrRvmpFIWIKp/Al5UGqzlT+c=
