@@ -29,8 +29,6 @@ from typing import Any, List, Mapping, Tuple
 from steam_tools_ng import version
 
 po_build_path = os.path.join('build', 'share', 'locale')
-build_translations_path = os.path.join('i18n', 'build_translations.py')
-build_translations = SourceFileLoader('build_translations', build_translations_path).load_module()
 
 if os.name == 'nt':
     # noinspection PyPackageRequirements
@@ -56,11 +54,22 @@ class RemoveExtension(install_scripts):
 class BuildTranslations(build_py):
     def run(self) -> None:
         build_py.run(self)
+
+        if os.getenv("SCRUTINIZER"):
+            print("bypassing BuildTranslations")
+            return
+
+        build_translations_path = os.path.join('i18n', 'build_translations.py')
+        build_translations = SourceFileLoader('build_translations', build_translations_path).load_module()
         build_translations.build(os.path.join(po_build_path))
 
 
 class InstallTranslations(install_data):
     def run(self) -> None:
+        if os.getenv("SCRUTINIZER"):
+            print("bypassing InstallTranslations")
+            return
+
         base_directory = 'share'
         output_directory = os.path.join(self.install_dir, base_directory)
 
