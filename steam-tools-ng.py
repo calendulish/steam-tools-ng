@@ -31,7 +31,7 @@ _ = i18n.get_translation
 
 log = logging.getLogger(__name__)
 
-if os.name == 'nt':
+if sys.platform == 'win32':
     event_loop = asyncio.ProactorEventLoop()
 else:
     event_loop = asyncio.new_event_loop()
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         from steam_tools_ng.gtk import application
         from gi.repository import Gtk
 
-        if os.name is 'posix' and not os.getenv('DISPLAY'):
+        if sys.platform.startswith("linux") and not os.getenv('DISPLAY'):
             log.critical('The DISPLAY is not set!')
             log.critical('Use -c / --cli <module> for the command line interface.')
             sys.exit(1)

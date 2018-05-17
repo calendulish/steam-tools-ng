@@ -25,7 +25,7 @@ from logging.handlers import RotatingFileHandler
 from types import TracebackType
 from typing import Any, Optional, Type
 
-if os.name == 'nt':
+if sys.platform == 'win32':
     from ctypes import Structure, byref, c_short, windll
     from ctypes.wintypes import DWORD
 
@@ -100,7 +100,7 @@ class ColoredStreamHandler(Handler):
         try:
             msg = record.getMessage().split('\n')
 
-            if os.name == 'nt':
+            if sys.platform == 'win32':
                 color_number = self.windows_color_map.get(record.levelname, 1 | 2 | 4)
 
                 with LowLevelConsoleAPI() as console:

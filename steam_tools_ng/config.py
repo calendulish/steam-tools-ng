@@ -21,6 +21,7 @@ import functools
 import inspect
 import logging
 import os
+import sys
 from typing import Any, Callable, NamedTuple, NewType, Optional, Union
 
 from . import i18n, logger_handlers
@@ -29,7 +30,7 @@ config_parser = configparser.RawConfigParser()
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
-if os.name == 'nt':
+if sys.platform == 'win32':
     data_dir = os.environ['LOCALAPPDATA']
 else:
     data_dir = os.getenv('XDG_CONFIG_HOME', os.path.join(os.path.expanduser('~'), '.config'))
