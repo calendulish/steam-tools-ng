@@ -55,7 +55,7 @@ class BuildTranslations(build_py):
     def run(self) -> None:
         build_py.run(self)
 
-        if os.getenv("SCRUTINIZER"):
+        if os.getenv("SCRUTINIZER") or os.getenv("TRAVIS"):
             print("bypassing BuildTranslations")
             return
 
@@ -66,7 +66,7 @@ class BuildTranslations(build_py):
 
 class InstallTranslations(install_data):
     def run(self) -> None:
-        if os.getenv("SCRUTINIZER"):
+        if os.getenv("SCRUTINIZER") or os.getenv("TRAVIS"):
             print("bypassing InstallTranslations")
             return
 
