@@ -22,7 +22,7 @@ import inspect
 import logging
 import os
 import sys
-from typing import Any, Callable, NamedTuple, NewType, Optional, Union
+from typing import Any, Callable, NamedTuple, NewType, Union
 
 from . import i18n, logger_handlers
 
@@ -80,13 +80,13 @@ class Check(object):
                 value: Union[ConfigStr, ConfigInt, ConfigBool, ConfigFloat]
 
                 try:
-                    if option.annotation in [ConfigStr, Optional[ConfigStr]]:
+                    if 'ConfigStr' in str(option.annotation):
                         value = ConfigStr(config_parser.get(self.section, option.name))
-                    elif option.annotation in [ConfigInt, Optional[ConfigInt]]:
+                    elif 'ConfigInt' in str(option.annotation):
                         value = ConfigInt(config_parser.getint(self.section, option.name))
-                    elif option.annotation in [ConfigBool, Optional[ConfigBool]]:
+                    elif 'ConfigBool' in str(option.annotation):
                         value = ConfigBool(config_parser.getboolean(self.section, option.name))
-                    elif option.annotation in [ConfigFloat, Optional[ConfigFloat]]:
+                    elif 'ConfigFloat' in str(option.annotation):
                         value = ConfigFloat(config_parser.getfloat(self.section, option.name))
                     else:
                         log.debug(_('Nothing to do with %s. Ignoring.'), option)

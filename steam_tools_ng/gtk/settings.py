@@ -145,7 +145,7 @@ class SettingsDialog(Gtk.Dialog):
 @config.Check("locale")
 def load_locale_options(
         language_combo: Gtk.ComboBoxText,
-        language: Union[str, config.ConfigStr] = 'en',
+        language: Union[str, config.ConfigStr] = i18n.fallback_language,
 ) -> None:
     for translation, description in translations.items():
         language_combo.append_text(f'[{translation}] {description}')

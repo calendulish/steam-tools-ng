@@ -23,6 +23,7 @@ from typing import Dict
 
 from . import config
 
+fallback_language = locale.getdefaultlocale()[0]
 cache: Dict[bytes, str] = {}
 
 
@@ -33,8 +34,6 @@ def new_hash(text: str) -> bytes:
 
 
 def get_translation(text: str) -> str:
-    fallback_language, _ = locale.getdefaultlocale()
-    assert isinstance(fallback_language, str), "No fallback language"
     language = config.config_parser.get('locale', 'language', fallback=fallback_language)
     translation = gettext.translation("steam-tools-ng", languages=[language], fallback=True)
     translated_text = translation.gettext(text)
