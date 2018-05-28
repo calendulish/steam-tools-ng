@@ -114,6 +114,7 @@ class Main(Gtk.ApplicationWindow):
 
         steam_guard_section.frame.show_all()
         show_sensitive.show()
+        tip.show()
         main_grid.show()
 
         info_label = Gtk.Label()
