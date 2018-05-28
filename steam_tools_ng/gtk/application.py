@@ -74,16 +74,15 @@ class Application(Gtk.Application):
 
                 seconds = 30 - (epoch % 30)
 
-                for past_time in range(seconds):
-                    progress = int(past_time / seconds * 10)
+                for past_time in range(seconds*9):
                     self.authenticator_status = {
                         'running': True,
-                        'maximum': seconds,
-                        'progress': progress,
+                        'maximum': seconds*8,
+                        'progress': past_time,
                         'code': ''.join(auth_code)
                     }
 
-            await asyncio.sleep(3)
+                    await asyncio.sleep(0.125)
 
     def on_settings_activate(self, action: Any, data: Any) -> None:
         settings_dialog = settings.SettingsDialog(parent_window=self.window)

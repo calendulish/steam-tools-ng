@@ -157,7 +157,7 @@ class Main(Gtk.ApplicationWindow):
             else:
                 status_label.set_markup(utils.status_markup("error", self.application.authenticator_status["message"]))
 
-            await asyncio.sleep(5)
+            await asyncio.sleep(0.125)
 
     @staticmethod
     def on_adb_path_entry_changed(entry: Gtk.Entry) -> None:
