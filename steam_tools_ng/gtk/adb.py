@@ -22,7 +22,7 @@ from typing import Any, Dict
 from gi.repository import Gtk
 from stlib import authenticator
 
-from .. import i18n
+from .. import i18n, config
 
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
@@ -56,25 +56,24 @@ class AdbDialog(Gtk.Dialog):
         self.spinner.start()
         self.spinner.show()
 
-        if len(self.parent_window.adb_path_entry.get_text()) < 3:
+        if len(config.config_parser.get("authenticator", "adb_path", fallback=None)) < 3:
             self.new_error(_(
                 "Unable to run without a valid adb path.\n"
                 "Please, enter a valid 'adb path' and try again"
             ))
-        else:
-            sensitive_data_task = asyncio.ensure_future(self.get_sensitive_data())
-            sensitive_data_task.add_done_callback(self.on_sensitive_data_task_done)
 
         self.connect('response', self.on_response)
 
     async def get_sensitive_data(self) -> Dict[str, str]:
+        adb_path = config.config_parser.get("authenticator", "adb_path", fallback=None)
+
         try:
-            adb = authenticator.AndroidDebugBridge(self.parent_window.adb_path_entry.get_text())
+            adb = authenticator.AndroidDebugBridge(adb_path)
         except FileNotFoundError:
             self.new_error(''.join(
                 (
                     _("Unable to find adb in:\n"),
-                    self.parent_window.adb_path_entry.get_text(),
+                    adb_path,
                     _("\nPlease, enter a valid 'adb path' and try again.")
                 )
             ))
@@ -117,11 +116,3 @@ class AdbDialog(Gtk.Dialog):
     @staticmethod
     def on_response(dialog: Gtk.Dialog, response_id: int) -> None:
         dialog.destroy()
-
-    def on_sensitive_data_task_done(self, future: Any) -> None:
-        if future.exception():
-            exception = future.exception()
-            log.debug(repr(exception))
-        else:
-            self.parent_window.populate_sensitive_data(**future.result())
-            self.destroy()

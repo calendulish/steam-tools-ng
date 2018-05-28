@@ -22,6 +22,7 @@ from typing import NamedTuple, Union
 from gi.repository import Gtk, Pango
 
 from .. import config, i18n
+from . import utils
 
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
@@ -40,16 +41,6 @@ translations = {
 }
 
 languages = list(translations.keys())
-
-
-class Section(NamedTuple):
-    frame: Gtk.Frame
-    grid: Gtk.Grid
-
-
-class Item(NamedTuple):
-    label: Gtk.Label
-    combo: Gtk.ComboBoxText
 
 
 # noinspection PyUnusedLocal
@@ -76,49 +67,24 @@ class SettingsDialog(Gtk.Dialog):
         self.connect('response', self.on_response)
         self.show()
 
-    @staticmethod
-    def new_section(name: str) -> Section:
-        frame = Gtk.Frame(label=name)
-        frame.set_label_align(0.03, 0.5)
-
-        grid = Gtk.Grid()
-        grid.set_row_spacing(10)
-        grid.set_column_spacing(10)
-        grid.set_border_width(10)
-        frame.add(grid)
-
-        return Section(frame, grid)
-
-    @staticmethod
-    def new_item(name: str, grid: Gtk.Grid, *position: int) -> Item:
-        label = Gtk.Label(name)
-        label.set_halign(Gtk.Align.START)
-        grid.attach(label, *position, 1, 1)
-
-        combo = Gtk.ComboBoxText()
-        combo.set_hexpand(True)
-        grid.attach_next_to(combo, label, Gtk.PositionType.RIGHT, 1, 1)
-
-        return Item(label, combo)
-
     def locale_settings(self) -> Gtk.Frame:
-        locale_section = self.new_section(_('Locale settings'))
-        language_item = self.new_item(_("Language"), locale_section.grid, 0, 0)
+        locale_section = utils.new_section(_('Locale settings'))
+        language_item = utils.new_item(_("Language"), locale_section, Gtk.ComboBoxText, 0, 0)
 
-        load_locale_options(language_item.combo)
-        language_item.combo.connect("changed", self.on_language_combo_changed)
+        load_locale_options(language_item.children)
+        language_item.children.connect("changed", self.on_language_combo_changed)
 
         locale_section.frame.show_all()
         return locale_section.frame
 
     def logger_settings(self) -> Gtk.Frame:
-        logger_section = self.new_section(_('Logger settings'))
-        log_level_item = self.new_item(_("Level:"), logger_section.grid, 0, 0)
-        log_level_item.combo.connect("changed", self.on_log_level_changed)
-        log_console_level_item = self.new_item(_("Console level:"), logger_section.grid, 0, 1)
+        logger_section = utils.new_section(_('Logger settings'))
+        log_level_item = utils.new_item(_("Level:"), logger_section, Gtk.ComboBoxText, 0, 0)
+        log_console_level_item = utils.new_item(_("Console level:"), logger_section, Gtk.ComboBoxText, 0, 1)
 
-        load_logger_options(log_level_item.combo, log_console_level_item.combo)
-        log_console_level_item.combo.connect("changed", self.on_log_console_level_changed)
+        load_logger_options(log_level_item.children, log_console_level_item.children)
+        log_level_item.children.connect("changed", self.on_log_level_changed)
+        log_console_level_item.children.connect("changed", self.on_log_console_level_changed)
 
         logger_section.frame.show_all()
         return logger_section.frame

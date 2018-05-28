@@ -15,14 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-from typing import Optional, Tuple
+import asyncio
+import logging
+from typing import Any, Dict, Optional
+import functools
 
 from gi.repository import Gio, Gtk
 
-from . import adb
+from . import adb, utils
 from .. import config, i18n
 
 _ = i18n.get_translation
+log = logging.getLogger(__name__)
 
 
 # noinspection PyUnusedLocal
@@ -54,28 +58,6 @@ class Main(Gtk.ApplicationWindow):
 
         self.show_all()
 
-        self.authenticator_status_label = Gtk.Label()
-        self.authenticator_level_bar = Gtk.LevelBar()
-        self.authenticator_code = Gtk.Label()
-        self.authenticator_code.set_selectable(True)
-
-        self.adb_path_label, self.adb_path_entry = self._new_tab_item(_("adb path:"))
-        self.adb_path_entry.connect('changed', self.on_adb_path_entry_changed)
-
-        self.shared_secret_label, self.shared_secret_entry = self._new_tab_item(_("shared secret:*"))
-        self.shared_secret_entry.connect('changed', self.on_shared_secret_entry_changed)
-
-        self.identity_secret_label, self.identity_secret_entry = self._new_tab_item(_("identity secret:"))
-        self.identity_secret_entry.connect('changed', self.on_identity_secret_entry_changed)
-
-        self.account_name_label, self.account_name_entry = self._new_tab_item(_("account name:"))
-        self.account_name_entry.connect('changed', self.on_account_name_entry_changed)
-
-        self.steam_id_label, self.steam_id_entry = self._new_tab_item(_("steam id:"))
-        self.steam_id_entry.connect('changed', self.on_steam_id_entry_changed)
-
-        self.populate_sensitive_data()
-
         stack = Gtk.Stack()
         stack.set_transition_type(Gtk.StackTransitionType.SLIDE_UP_DOWN)
         stack.set_transition_duration(500)
@@ -89,51 +71,32 @@ class Main(Gtk.ApplicationWindow):
         main_grid.attach(sidebar, 0, 0, 1, 1)
         main_grid.attach_next_to(stack, sidebar, Gtk.PositionType.RIGHT, 1, 1)
 
-    @staticmethod
-    def status_markup(widget: Gtk.Widget, foreground: str, text: str) -> None:
-        widget.set_markup(f"<span foreground='{foreground}' font_size='small'>{text}</span>")
-
-    @staticmethod
-    def _new_tab_item(text: str) -> Tuple[Gtk.Widget, Gtk.Widget]:
-        item_label = Gtk.Label(text)
-        item_label.set_halign(Gtk.Align.START)
-
-        item = Gtk.Entry()
-        item.set_hexpand(True)
-
-        return item_label, item
-
     def authenticator_tab(self) -> Gtk.Grid:
         main_grid = Gtk.Grid()
+        main_grid.set_border_width(10)
         main_grid.set_row_spacing(10)
-        main_grid.set_column_spacing(10)
-        main_grid.set_border_width(20)
 
-        frame = Gtk.Frame(label=_('Steam Guard Code'))
-        frame.set_label_align(0.03, 0.5)
-        main_grid.attach(frame, 0, 0, 2, 1)
+        steam_guard_section = utils.new_section(_('Steam Guard Code'))
+        main_grid.attach(steam_guard_section.frame, 0, 0, 1, 1)
 
-        frame_grid = Gtk.Grid()
-        frame_grid.set_row_spacing(5)
-        frame_grid.set_border_width(10)
-        frame.add(frame_grid)
+        code_label = Gtk.Label()
+        code_label.set_markup('<span font_size="large" font_weight="bold">_ _ _ _</span>')
+        code_label.set_hexpand(True)
+        code_label.set_selectable(True)
+        steam_guard_section.grid.attach(code_label, 0, 0, 1, 1)
 
-        self.authenticator_code.set_markup('<span font_size="large">_ _ _ _</span>')
-        self.authenticator_code.set_hexpand(True)
-        frame_grid.attach(self.authenticator_code, 0, 0, 1, 1)
+        status_label = Gtk.Label()
+        status_label.set_markup(utils.status_markup('info', _("loading...")))
+        steam_guard_section.grid.attach(status_label, 0, 1, 1, 1)
 
-        status_msg = _("loading...")
-        self.status_markup(self.authenticator_status_label, 'blue', status_msg)
-        frame_grid.attach(self.authenticator_status_label, 0, 1, 1, 1)
-        frame_grid.attach(self.authenticator_level_bar, 0, 2, 1, 1)
-
-        sensitive_data_grid = Gtk.Grid()
-        sensitive_data_grid.set_row_spacing(10)
-        sensitive_data_grid.set_column_spacing(10)
+        level_bar = Gtk.LevelBar()
+        steam_guard_section.grid.attach(level_bar, 0, 2, 1, 1)
 
         show_sensitive = Gtk.CheckButton(_('Show sensitive data'))
-        main_grid.attach(show_sensitive, 0, 3, 2, 1)
-        main_grid.attach(sensitive_data_grid, 0, 4, 2, 1)
+        main_grid.attach(show_sensitive, 0, 1, 2, 1)
+
+        sensitive_data_section = utils.new_section(_('Sensitive data'))
+        main_grid.attach(sensitive_data_section.frame, 0, 2, 1, 1)
 
         tip = Gtk.Label(_(
             "A code will be requested every time you try to log in on Steam.\n\n"
@@ -145,53 +108,56 @@ class Main(Gtk.ApplicationWindow):
         tip.set_vexpand(True)
         tip.set_justify(Gtk.Justification.CENTER)
         tip.set_valign(Gtk.Align.END)
-        main_grid.attach(tip, 0, 4, 2, 1)
+        main_grid.attach(tip, 0, 3, 2, 1)
 
-        show_sensitive.connect("toggled", self.on_show_sensitive_toggled, sensitive_data_grid, tip)
+        show_sensitive.connect("toggled", self.on_show_sensitive_toggled, sensitive_data_section.frame, tip)
 
-        main_grid.show_all()
+        steam_guard_section.frame.show_all()
+        show_sensitive.show()
+        main_grid.show()
 
         info_label = Gtk.Label()
         info_label_text = _("Don't worry, everything is saved on-the-fly")
         info_label.set_markup(f"<span foreground='blue'>{info_label_text}</span>")
         info_label.set_justify(Gtk.Justification.CENTER)
-        sensitive_data_grid.attach(info_label, 0, 0, 2, 1)
+        sensitive_data_section.grid.attach(info_label, 0, 0, 2, 1)
 
-        sensitive_data_grid.attach(self.adb_path_label, 0, 1, 1, 1)
-        sensitive_data_grid.attach_next_to(self.adb_path_entry,
-                                           self.adb_path_label,
-                                           Gtk.PositionType.RIGHT,
-                                           1, 1)
+        sensitive_data = {
+            'adb_path': utils.new_item(_("adb path:"), sensitive_data_section, Gtk.Entry, 0, 1),
+            'shared_secret': utils.new_item(_("shared secret:"), sensitive_data_section, Gtk.Entry, 0, 3),
+            'identity_secret': utils.new_item(_("identity secret:"), sensitive_data_section, Gtk.Entry, 0, 5),
+            'account_name': utils.new_item(_("account name:"), sensitive_data_section, Gtk.Entry, 0, 7),
+            'steamid': utils.new_item(_("steam id:"), sensitive_data_section, Gtk.Entry, 0, 9),
+        }
 
-        sensitive_data_grid.attach(self.shared_secret_label, 0, 3, 1, 1)
-        sensitive_data_grid.attach_next_to(self.shared_secret_entry,
-                                           self.shared_secret_label,
-                                           Gtk.PositionType.RIGHT,
-                                           1, 1)
-
-        sensitive_data_grid.attach(self.identity_secret_label, 0, 5, 1, 1)
-        sensitive_data_grid.attach_next_to(self.identity_secret_entry,
-                                           self.identity_secret_label,
-                                           Gtk.PositionType.RIGHT,
-                                           1, 1)
-
-        sensitive_data_grid.attach(self.account_name_label, 0, 7, 1, 1)
-        sensitive_data_grid.attach_next_to(self.account_name_entry,
-                                           self.account_name_label,
-                                           Gtk.PositionType.RIGHT,
-                                           1, 1)
-
-        sensitive_data_grid.attach(self.steam_id_label, 0, 9, 1, 1)
-        sensitive_data_grid.attach_next_to(self.steam_id_entry,
-                                           self.steam_id_label,
-                                           Gtk.PositionType.RIGHT,
-                                           1, 1)
+        sensitive_data['adb_path'].children.connect('changed', self.on_adb_path_entry_changed)
+        sensitive_data['shared_secret'].children.connect('changed', self.on_shared_secret_entry_changed)
+        sensitive_data['identity_secret'].children.connect('changed', self.on_identity_secret_entry_changed)
+        sensitive_data['account_name'].children.connect('changed', self.on_account_name_entry_changed)
+        sensitive_data['steamid'].children.connect('changed', self.on_steam_id_entry_changed)
 
         adb_button = Gtk.Button(_("get sensitive data using an Android phone and Android Debug Bridge"))
-        adb_button.connect('clicked', self.on_adb_clicked)
-        sensitive_data_grid.attach(adb_button, 0, 11, 2, 1)
+        adb_button.connect('clicked', self.on_adb_clicked, sensitive_data)
+        sensitive_data_section.grid.attach(adb_button, 0, 11, 2, 1)
+
+        load_sensitive_data(sensitive_data)
+        asyncio.ensure_future(self.check_authenticator_status(code_label, status_label, level_bar))
 
         return main_grid
+
+    async def check_authenticator_status(self, code_label, status_label, level_bar):
+        while self.get_realized():
+            if self.application.authenticator_status['running']:
+                code_label.set_markup(
+                    f'<span font_size="large" font_weight="bold">{self.application.authenticator_status["code"]}</span>'
+                )
+                status_label.set_markup(utils.status_markup("info", "Running"))
+                level_bar.set_max_value(self.application.authenticator_status['maximum'])
+                level_bar.set_value(self.application.authenticator_status['progress'])
+            else:
+                status_label.set_markup(utils.status_markup("error", self.application.authenticator_status["message"]))
+
+            await asyncio.sleep(5)
 
     @staticmethod
     def on_adb_path_entry_changed(entry: Gtk.Entry) -> None:
@@ -214,33 +180,42 @@ class Main(Gtk.ApplicationWindow):
     def on_steam_id_entry_changed(entry: Gtk.Entry) -> None:
         config.new(config.ConfigType('authenticator', 'steamid', entry.get_text()))
 
-    def on_adb_clicked(self, button: Gtk.Button) -> None:
+    def on_adb_clicked(self, button: Gtk.Button, sensitive_data) -> None:
         adb_dialog = adb.AdbDialog(parent_window=self)
+        task = asyncio.ensure_future(adb_dialog.get_sensitive_data())
+        task.add_done_callback(functools.partial(on_sensitive_data_task_done, adb_dialog, sensitive_data))
         adb_dialog.show()
 
     @staticmethod
-    def on_show_sensitive_toggled(button: Gtk.Button, grid: Gtk.Grid, tip: Gtk.Label) -> None:
+    def on_show_sensitive_toggled(button: Gtk.CheckButton, frame: Gtk.Frame, tip: Gtk.Label) -> None:
         if button.get_active():
             tip.hide()
-            grid.show_all()
+            frame.show_all()
         else:
             tip.show()
-            grid.hide()
+            frame.hide()
 
-    @config.Check("authenticator")
-    def populate_sensitive_data(
-            self,
-            adb_path: Optional[config.ConfigStr] = None,
-            shared_secret: Optional[config.ConfigStr] = None,
-            identity_secret: Optional[config.ConfigStr] = None,
-            account_name: Optional[config.ConfigStr] = None,
-            steamid: Optional[config.ConfigStr] = None
-    ) -> None:
+
+@config.Check("authenticator")
+def load_sensitive_data(
+        sensitive_data: Dict[str, utils.Item],
+        adb_path: Optional[config.ConfigStr] = None,
+        shared_secret: Optional[config.ConfigStr] = None,
+        identity_secret: Optional[config.ConfigStr] = None,
+        account_name: Optional[config.ConfigStr] = None,
+        steamid: Optional[config.ConfigStr] = None
+) -> None:
+    for name, data in sensitive_data.items():
         try:
-            self.adb_path_entry.set_text(adb_path)
-            self.shared_secret_entry.set_text(shared_secret)
-            self.identity_secret_entry.set_text(identity_secret)
-            self.account_name_entry.set_text(account_name)
-            self.steam_id_entry.set_text(steamid)
+            data.children.set_text(locals()[name])
         except TypeError:
-            pass
+            pass  # Not found on config file
+
+
+def on_sensitive_data_task_done(adb_dialog, sensitive_data, future: Any) -> None:
+    if future.exception():
+        exception = future.exception()
+        log.debug(repr(exception))
+    else:
+        load_sensitive_data(sensitive_data, **future.result())
+        adb_dialog.destroy()

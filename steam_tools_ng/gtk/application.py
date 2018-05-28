@@ -20,6 +20,7 @@ from typing import Any, Optional
 
 from gi.repository import Gio, Gtk
 from stlib import authenticator
+import binascii
 
 from . import about, settings, window
 from .. import config, i18n
@@ -34,6 +35,7 @@ class Application(Gtk.Application):
                          flags=Gio.ApplicationFlags.FLAGS_NONE)
 
         self.window: Gtk.ApplicationWindow = None
+        self.authenticator_status = {'running': False, 'message': "Authenticator is not running"}
 
     def do_startup(self) -> None:
         Gtk.Application.do_startup(self)
@@ -54,38 +56,32 @@ class Application(Gtk.Application):
 
         asyncio.ensure_future(self.run_authenticator())
 
-    @config.Check("authenticator")
-    async def run_authenticator(self, shared_secret: Optional[config.ConfigStr] = None) -> None:
+    async def run_authenticator(self) -> None:
         while self.window.get_realized():
-            current_secret = self.window.shared_secret_entry.get_text()
-
-            if current_secret != shared_secret:
-                shared_secret = current_secret
+            shared_secret = config.config_parser.get("authenticator", "shared_secret", fallback=None)
 
             try:
                 if not shared_secret:
                     raise TypeError
 
                 auth_code, epoch = authenticator.get_code(shared_secret)
-            except TypeError:
-                status_msg = _("The currently secret is invalid")
-                self.window.status_markup(self.window.authenticator_status_label, 'red', status_msg)
+            except (TypeError, binascii.Error):
+                self.authenticator_status = {'running': False, 'message': _("The currently secret is invalid")}
             except ProcessLookupError:
-                status_msg = _("Steam Client is not running")
-                self.window.status_markup(self.window.authenticator_status_label, 'red', status_msg)
+                self.authenticator_status = {'running': False, 'message': _("Steam Client is not running")}
             else:
-                status_msg = _("user")  # FIXME: get user from steam_api
-                self.window.status_markup(self.window.authenticator_status_label, 'green', status_msg)
+                self.authenticator_status = {'running': False, 'message': _("Loading...")}
 
                 seconds = 30 - (epoch % 30)
 
                 for past_time in range(seconds):
                     progress = int(past_time / seconds * 10)
-                    self.window.authenticator_level_bar.set_max_value(seconds)
-                    self.window.authenticator_level_bar.set_value(progress)
-                    self.window.authenticator_code.set_markup(
-                        f"<span font_weight='bold'font_size='large'>{''.join(auth_code)}</span>"
-                    )
+                    self.authenticator_status = {
+                        'running': True,
+                        'maximum': seconds,
+                        'progress': progress,
+                        'code': ''.join(auth_code)
+                    }
 
             await asyncio.sleep(3)
 
