@@ -190,21 +190,16 @@ class Main(Gtk.ApplicationWindow):
             level_bar: Gtk.LevelBar,
     ) -> None:
         while self.get_realized():
-            if self.application.steamtrades_status['running']:
-                try:
-                    current_trade_label.set_markup(
-                        f'<span font_size="large" font_weight="bold">{self.application.steamtrades_status["trade_id"]}</span>'
-                    )
-                except AttributeError:
-                    current_trade_label.set_markup(
-                        '<span font_size="large" font_weight="bold">_ _ _ _</span>'
-                    )
+            current_trade_label.set_markup(
+                f'<span font_size="large" font_weight="bold">{self.application.steamtrades_status["trade_id"]}</span>'
+            )
 
+            if self.application.steamtrades_status['running']:
                 status_label.set_markup(utils.status_markup("info", self.application.steamtrades_status['message']))
             else:
                 status_label.set_markup(utils.status_markup("error", self.application.steamtrades_status['message']))
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.5)
 
     async def check_authenticator_status(
             self,
