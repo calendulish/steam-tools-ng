@@ -22,7 +22,7 @@ import logging
 import random
 import sys
 import time
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import aiohttp
 from stlib import authenticator, steamtrades, webapi
@@ -36,38 +36,46 @@ _ = i18n.get_translation
 
 @config.Check("login")
 async def on_get_login_data(
-        api_http,
-        authenticator_code,
+        api_http: webapi.Http,
+        authenticator_code: str,
         username: Optional[config.ConfigStr] = None,
         encrypted_password: Optional[config.ConfigStr] = None,
-):
+) -> Any:
     while True:
         if not username or not encrypted_password:
             log.critical(_("Unable to find a valid username/password on config file or command line"))
 
-            username = utils.safe_input(_("Please, write your username"))
+            username = config.ConfigStr(str(utils.safe_input(_("Please, write your username"))))
             assert isinstance(username, str), "safe_input is returning an invalid username"
             password = getpass.getpass(_("Please, write your password (it's hidden, and will be encrypted):"))
             assert isinstance(password, str), "safe_input is returning and invalid password"
             public_key = await api_http.get_public_key(username)
-            encrypted_password = webapi.encrypt_password(public_key[0], password.encode())
+            encrypted_password_bytes = webapi.encrypt_password(public_key[0], password.encode())
             del password
 
             logging.info(_("Success!"))
             save_config = utils.safe_input(_("Do you want to save this configuration?"), True)
             if save_config:
                 config.new(
-                    config.ConfigType("login", "username", config.ConfigStr(username)),
-                    config.ConfigType("login", "encrypted_password", config.ConfigStr(encrypted_password.decode())),
+                    config.ConfigType(
+                        "login",
+                        "username",
+                        config.ConfigStr(username)
+                    ),
+                    config.ConfigType(
+                        "login",
+                        "encrypted_password",
+                        config.ConfigStr(encrypted_password_bytes.decode())
+                    ),
                 )
                 logging.info(_("Configuration has been saved!"))
         else:
             public_key = await api_http.get_public_key(username)
-            encrypted_password = encrypted_password.encode()
+            encrypted_password_bytes = encrypted_password.encode()
 
         steam_login_data = await api_http.do_login(
             username,
-            encrypted_password,
+            encrypted_password_bytes,
             public_key[1],
             ''.join(authenticator_code[0])
         )
@@ -85,7 +93,7 @@ async def on_get_login_data(
 
 
 @config.Check("authenticator")
-async def on_get_code(shared_secret: Optional[config.ConfigStr] = None):
+async def on_get_code(shared_secret: Optional[config.ConfigStr] = None) -> Any:
     if not shared_secret:
         log.critical(_("Authenticator module is not configured"))
         log.critical(_("Please, run 'authenticator' module, set up it, and try again"))

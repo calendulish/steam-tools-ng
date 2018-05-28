@@ -56,7 +56,7 @@ class AdbDialog(Gtk.Dialog):
         self.spinner.start()
         self.spinner.show()
 
-        if len(config.config_parser.get("authenticator", "adb_path", fallback=None)) < 3:
+        if len(config.config_parser.get("authenticator", "adb_path", fallback='')) < 3:
             self.new_error(_(
                 "Unable to run without a valid adb path.\n"
                 "Please, enter a valid 'adb path' and try again"
@@ -65,7 +65,7 @@ class AdbDialog(Gtk.Dialog):
         self.connect('response', self.on_response)
 
     async def get_sensitive_data(self) -> Dict[str, str]:
-        adb_path = config.config_parser.get("authenticator", "adb_path", fallback=None)
+        adb_path = config.config_parser.get("authenticator", "adb_path", fallback='')
 
         try:
             adb = authenticator.AndroidDebugBridge(adb_path)

@@ -16,9 +16,9 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
+import functools
 import logging
 from typing import Any, Dict, Optional
-import functools
 
 from gi.repository import Gio, Gtk
 
@@ -146,7 +146,12 @@ class Main(Gtk.ApplicationWindow):
 
         return main_grid
 
-    async def check_authenticator_status(self, code_label, status_label, level_bar):
+    async def check_authenticator_status(
+            self,
+            code_label: Gtk.Label,
+            status_label: Gtk.Label,
+            level_bar: Gtk.LevelBar
+    ) -> None:
         while self.get_realized():
             if self.application.authenticator_status['running']:
                 code_label.set_markup(
@@ -181,7 +186,7 @@ class Main(Gtk.ApplicationWindow):
     def on_steam_id_entry_changed(entry: Gtk.Entry) -> None:
         config.new(config.ConfigType('authenticator', 'steamid', entry.get_text()))
 
-    def on_adb_clicked(self, button: Gtk.Button, sensitive_data) -> None:
+    def on_adb_clicked(self, button: Gtk.Button, sensitive_data: Dict[str, utils.Item]) -> None:
         adb_dialog = adb.AdbDialog(parent_window=self)
         task = asyncio.ensure_future(adb_dialog.get_sensitive_data())
         task.add_done_callback(functools.partial(on_sensitive_data_task_done, adb_dialog, sensitive_data))
@@ -213,7 +218,7 @@ def load_sensitive_data(
             pass  # Not found on config file
 
 
-def on_sensitive_data_task_done(adb_dialog, sensitive_data, future: Any) -> None:
+def on_sensitive_data_task_done(adb_dialog: Gtk.Dialog, sensitive_data: Dict[str, utils.Item], future: Any) -> None:
     if future.exception():
         exception = future.exception()
         log.debug(repr(exception))

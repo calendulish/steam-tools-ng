@@ -23,7 +23,7 @@ from typing import Dict
 
 from . import config
 
-fallback_language = locale.getdefaultlocale()[0]
+fallback_language = str(locale.getdefaultlocale()[0])
 cache: Dict[bytes, str] = {}
 
 

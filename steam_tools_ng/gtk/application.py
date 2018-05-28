@@ -58,7 +58,7 @@ class Application(Gtk.Application):
 
     async def run_authenticator(self) -> None:
         while self.window.get_realized():
-            shared_secret = config.config_parser.get("authenticator", "shared_secret", fallback=None)
+            shared_secret = config.config_parser.get("authenticator", "shared_secret", fallback='')
 
             try:
                 if not shared_secret:
