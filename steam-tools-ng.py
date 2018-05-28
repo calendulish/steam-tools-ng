@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
     command_parser.add_argument(
         '-c', '--cli',
-        choices=['authenticator'],
+        choices=['authenticator', 'steamtrades'],
         metavar='module [options]',
         action='store',
         nargs=1,

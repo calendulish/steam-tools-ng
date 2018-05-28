@@ -184,7 +184,7 @@ setup(
         'steam_tools_ng.gtk',
     ],
     scripts=['steam-tools-ng.py'],
-    requires=['stlib'],
+    requires=['stlib', 'aiohttp'],
     cmdclass={
         'build_py': BuildTranslations,
         'install': Install,
