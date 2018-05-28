@@ -39,9 +39,6 @@ else:
 asyncio.set_event_loop(event_loop)
 
 if __name__ == "__main__":
-    log.info(f'Steam Tools NG version {version.__version__} (Made with Girl Power <33)')
-    log.info('Copyright (C) 2015 ~ 2018 Lara Maia - <dev@lara.click>')
-
     command_parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=textwrap.dedent('''
@@ -49,18 +46,47 @@ if __name__ == "__main__":
                     - authenticator
                        '''))
 
-    command_parser.add_argument('-c', '--cli',
-                                choices=['authenticator'],
-                                metavar='module [options]',
-                                action='store',
-                                nargs=1,
-                                help='Start module without GUI (console mode)',
-                                dest='module')
-    command_parser.add_argument('options',
-                                nargs='*',
-                                help=argparse.SUPPRESS)
+    command_parser.add_argument(
+        '-c', '--cli',
+        choices=['authenticator'],
+        metavar='module [options]',
+        action='store',
+        nargs=1,
+        help='Start module without GUI (console mode)',
+        dest='module'
+    )
+
+    command_parser.add_argument(
+        '--config-dir',
+        action='store_true',
+        help='Shows directory used to save config files',
+        dest='config_dir'
+    )
+
+    command_parser.add_argument(
+        '--log-dir',
+        action='store_true',
+        help='Shows directory used to save log files',
+        dest='log_dir',
+    )
+
+    command_parser.add_argument(
+        'options',
+        nargs='*',
+        help=argparse.SUPPRESS
+    )
 
     console_params = command_parser.parse_args()
+
+    if console_params.config_dir:
+        print(config.config_file_directory)
+        sys.exit(0)
+    elif console_params.log_dir:
+        print(config.DefaultConfig.log_directory)
+        sys.exit(0)
+
+    log.info(f'Steam Tools NG version {version.__version__} (Made with Girl Power <33)')
+    log.info('Copyright (C) 2015 ~ 2018 Lara Maia - <dev@lara.click>')
 
     if console_params.module:
         module_name = console_params.module[0]
