@@ -16,11 +16,13 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
-from typing import Any, Optional
-
-from gi.repository import Gio, Gtk
-from stlib import authenticator
 import binascii
+import random
+from typing import Any
+
+import aiohttp
+from gi.repository import Gio, Gtk
+from stlib import authenticator, steamtrades
 
 from . import about, settings, window
 from .. import config, i18n
@@ -36,6 +38,7 @@ class Application(Gtk.Application):
 
         self.window: Gtk.ApplicationWindow = None
         self.authenticator_status = {'running': False, 'message': "Authenticator is not running"}
+        self.steamtrades_status = {'running': False, 'message': "Steamtrades is not running"}
 
     def do_startup(self) -> None:
         Gtk.Application.do_startup(self)
@@ -55,6 +58,7 @@ class Application(Gtk.Application):
         self.window.present()
 
         asyncio.ensure_future(self.run_authenticator())
+        asyncio.ensure_future(self.run_steamtrades())
 
     async def run_authenticator(self) -> None:
         while self.window.get_realized():
@@ -74,15 +78,65 @@ class Application(Gtk.Application):
 
                 seconds = 30 - (epoch % 30)
 
-                for past_time in range(seconds*9):
+                for past_time in range(seconds * 9):
                     self.authenticator_status = {
                         'running': True,
-                        'maximum': seconds*8,
+                        'maximum': seconds * 8,
                         'progress': past_time,
                         'code': ''.join(auth_code)
                     }
 
                     await asyncio.sleep(0.125)
+
+    async def run_steamtrades(self):
+        while self.window.get_realized():
+            shared_secret = config.config_parser.get("authenticator", "shared_secret", fallback='')
+            trade_ids = config.config_parser.get("steamtrades", "trade_ids", fallback='')
+            wait_min = config.config_parser.get("steamtrades", "wait_min", fallback=3700)
+            wait_max = config.config_parser.get("steamtrades", "wait_max", fallback=4100)
+
+            if not shared_secret:
+                self.steamtrades_status = {'running': False, 'message': _("Authenticator is not configured")}
+            elif not trade_ids:
+                self.steamtrades_status = {'running': False, 'message': _("No trade ID found in config file")}
+
+            async with aiohttp.ClientSession(raise_for_status=True) as session:
+                trades_http = steamtrades.Http(session)
+                trades = [trade.strip() for trade in trade_ids.split(',')]
+
+                for trade_id in trades:
+                    try:
+                        trade_info = await trades_http.get_trade_info(trade_id)
+                    except (IndexError, aiohttp.ClientResponseError):
+                        self.steamtrades_status = {'running': False, 'message': f"Unable to find id {trade_id}"}
+                        continue
+
+                    result = await trades_http.bump(trade_info)
+
+                    if result['success']:
+                        self.steamtrades_status = {
+                            'running': True, 'message': 'Bumped!', 'trade_id': trade_info.id
+                        }
+                    elif result['reason'] == 'Not Ready':
+                        self.steamtrades_status = {
+                            'running': True, 'message': f"Waiting more {result['minutes_left']} minutes",
+                            'trade_id': trade_info.id
+                        }
+                        wait_min = result['minutes_left'] * 60
+                        wait_max = wait_min + 400
+                    elif result['reason'] == 'trade is closed':
+                        self.steamtrades_status = {
+                            'running': False, 'message': 'trade is closed', 'trade_id': trade_info.id
+                        }
+                        continue
+
+                wait_offset = random.randint(wait_min, wait_max)
+                for past_time in range(wait_offset):
+                    self.steamtrades_status = {
+                        'running': True,
+                        'message': "Waiting for {:4d} seconds".format(wait_offset - past_time)
+                    }
+                    await asyncio.sleep(1)
 
     def on_settings_activate(self, action: Any, data: Any) -> None:
         settings_dialog = settings.SettingsDialog(parent_window=self.window)

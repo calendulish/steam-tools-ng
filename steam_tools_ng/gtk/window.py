@@ -62,6 +62,7 @@ class Main(Gtk.ApplicationWindow):
         stack.set_transition_type(Gtk.StackTransitionType.SLIDE_UP_DOWN)
         stack.set_transition_duration(500)
         stack.add_titled(self.authenticator_tab(), "authenticator", _("Authenticator"))
+        stack.add_titled(self.steamtrades_tab(), "steamtrades", _("Steamtrades"))
         stack.show()
 
         sidebar = Gtk.StackSidebar()
@@ -110,7 +111,8 @@ class Main(Gtk.ApplicationWindow):
         tip.set_valign(Gtk.Align.END)
         main_grid.attach(tip, 0, 3, 2, 1)
 
-        show_sensitive.connect("toggled", self.on_show_sensitive_toggled, sensitive_data_section.frame, tip)
+        show_sensitive.connect("toggled", self.on_authenticator_show_sensitive_toggled, sensitive_data_section.frame,
+                               tip)
 
         steam_guard_section.frame.show_all()
         show_sensitive.show()
@@ -145,6 +147,64 @@ class Main(Gtk.ApplicationWindow):
         asyncio.ensure_future(self.check_authenticator_status(code_label, status_label, level_bar))
 
         return main_grid
+
+    def steamtrades_tab(self):
+        main_grid = Gtk.Grid()
+        main_grid.set_border_width(10)
+        main_grid.set_row_spacing(10)
+
+        trade_bump_section = utils.new_section(_('Trades bump'))
+        main_grid.attach(trade_bump_section.frame, 0, 0, 1, 1)
+
+        current_trade_label = Gtk.Label()
+        current_trade_label.set_hexpand(True)
+        trade_bump_section.grid.attach(current_trade_label, 0, 0, 1, 1)
+
+        status_label = Gtk.Label()
+        status_label.set_markup(utils.status_markup('info', _("loading...")))
+        trade_bump_section.grid.attach(status_label, 0, 1, 1, 1)
+
+        level_bar = Gtk.LevelBar()
+        trade_bump_section.grid.attach(level_bar, 0, 2, 1, 1)
+
+        show_sensitive = Gtk.CheckButton(_('Show sensitive data'))
+        main_grid.attach(show_sensitive, 0, 1, 2, 1)
+
+        sensitive_data_section = utils.new_section(_('Sensitive data'))
+        main_grid.attach(sensitive_data_section.frame, 0, 2, 1, 1)
+
+        show_sensitive.connect("toggled", self.on_steamtrades_show_sensitive_toggled, sensitive_data_section.frame)
+
+        trade_bump_section.frame.show_all()
+        show_sensitive.show()
+        main_grid.show()
+
+        asyncio.ensure_future(self.check_steamtrades_status(current_trade_label, status_label, level_bar))
+
+        return main_grid
+
+    async def check_steamtrades_status(
+            self,
+            current_trade_label: Gtk.Label,
+            status_label: Gtk.Label,
+            level_bar: Gtk.LevelBar,
+    ) -> None:
+        while self.get_realized():
+            if self.application.steamtrades_status['running']:
+                try:
+                    current_trade_label.set_markup(
+                        f'<span font_size="large" font_weight="bold">{self.application.steamtrades_status["trade_id"]}</span>'
+                    )
+                except AttributeError:
+                    current_trade_label.set_markup(
+                        '<span font_size="large" font_weight="bold">_ _ _ _</span>'
+                    )
+
+                status_label.set_markup(utils.status_markup("info", self.application.steamtrades_status['message']))
+            else:
+                status_label.set_markup(utils.status_markup("error", self.application.steamtrades_status['message']))
+
+            await asyncio.sleep(1)
 
     async def check_authenticator_status(
             self,
@@ -193,12 +253,19 @@ class Main(Gtk.ApplicationWindow):
         adb_dialog.show()
 
     @staticmethod
-    def on_show_sensitive_toggled(button: Gtk.CheckButton, frame: Gtk.Frame, tip: Gtk.Label) -> None:
+    def on_authenticator_show_sensitive_toggled(button: Gtk.CheckButton, frame: Gtk.Frame, tip: Gtk.Label) -> None:
         if button.get_active():
             tip.hide()
             frame.show_all()
         else:
             tip.show()
+            frame.hide()
+
+    @staticmethod
+    def on_steamtrades_show_sensitive_toggled(button: Gtk.CheckButton, frame: Gtk.Frame):
+        if button.get_active():
+            frame.show_all()
+        else:
             frame.hide()
 
 
