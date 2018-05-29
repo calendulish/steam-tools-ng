@@ -55,10 +55,10 @@ class PasswordDialog(Gtk.Dialog):
 
         self.spinner = Gtk.Spinner()
         self.spinner.set_vexpand(True)
-        self.content_area.pack_start(self.spinner, False, False, 0)
+        self.content_area.add(self.spinner)
 
         password_section = utils.new_section("Password")
-        self.content_area.pack_start(password_section.frame, False, False, 0)
+        self.content_area.add(password_section.frame)
 
         self.password_item = utils.new_item("Write your password:", password_section, Gtk.Entry, 0, 0)
         self.password_item.children.set_visibility(False)

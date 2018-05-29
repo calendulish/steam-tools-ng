@@ -62,10 +62,10 @@ class SettingsDialog(Gtk.Dialog):
         content_area.set_border_width(10)
         content_area.set_spacing(10)
 
-        content_area.pack_start(self.login_settings(), False, False, 0)
-        content_area.pack_start(self.logger_settings(), False, False, 0)
-        content_area.pack_start(self.locale_settings(), False, False, 0)
-        content_area.pack_start(self.steamtrades_settings(), False, False, 0)
+        content_area.add(self.login_settings())
+        content_area.add(self.logger_settings())
+        content_area.add(self.locale_settings())
+        content_area.add(self.steamtrades_settings())
 
         self.connect('response', self.on_response)
         self.show()

@@ -51,7 +51,7 @@ class AdbDialog(Gtk.Dialog):
 
         self.spinner = Gtk.Spinner()
         self.spinner.set_vexpand(True)
-        self.content_area.pack_start(self.spinner, False, False, 0)
+        self.content_area.add(self.spinner)
 
         self.spinner.start()
         self.spinner.show()
@@ -109,7 +109,7 @@ class AdbDialog(Gtk.Dialog):
 
         self.header_bar.set_show_close_button(True)
 
-        self.content_area.pack_start(frame, False, False, 0)
+        self.content_area.add(frame)
 
         frame.show_all()
 
