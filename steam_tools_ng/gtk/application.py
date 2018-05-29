@@ -193,8 +193,8 @@ class Application(Gtk.Application):
 
     def on_settings_activate(self, action: Any, data: Any) -> None:
         settings_dialog = settings.SettingsDialog(parent_window=self.window)
-        settings_dialog.run()
+        settings_dialog.show()
 
     def on_about_activate(self, action: Any, data: Any) -> None:
         dialog = about.AboutDialog(parent_window=self.window)
-        dialog.run()
+        dialog.show()
