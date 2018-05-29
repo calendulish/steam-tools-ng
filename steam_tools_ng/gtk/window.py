@@ -111,7 +111,7 @@ class Main(Gtk.ApplicationWindow):
         tip.set_valign(Gtk.Align.END)
         main_grid.attach(tip, 0, 3, 2, 1)
 
-        show_sensitive.connect("toggled", self.on_authenticator_show_sensitive_toggled, sensitive_data_section.frame,
+        show_sensitive.connect("toggled", self.on_show_sensitive_toggled, sensitive_data_section.frame,
                                tip)
 
         steam_guard_section.frame.show_all()
@@ -167,16 +167,7 @@ class Main(Gtk.ApplicationWindow):
         level_bar = Gtk.LevelBar()
         trade_bump_section.grid.attach(level_bar, 0, 2, 1, 1)
 
-        show_sensitive = Gtk.CheckButton(_('Show sensitive data'))
-        main_grid.attach(show_sensitive, 0, 1, 2, 1)
-
-        sensitive_data_section = utils.new_section(_('Sensitive data'))
-        main_grid.attach(sensitive_data_section.frame, 0, 2, 1, 1)
-
-        show_sensitive.connect("toggled", self.on_steamtrades_show_sensitive_toggled, sensitive_data_section.frame)
-
         trade_bump_section.frame.show_all()
-        show_sensitive.show()
         main_grid.show()
 
         asyncio.ensure_future(self.check_steamtrades_status(current_trade_label, status_label, level_bar))
@@ -248,19 +239,12 @@ class Main(Gtk.ApplicationWindow):
         adb_dialog.show()
 
     @staticmethod
-    def on_authenticator_show_sensitive_toggled(button: Gtk.CheckButton, frame: Gtk.Frame, tip: Gtk.Label) -> None:
+    def on_show_sensitive_toggled(button: Gtk.CheckButton, frame: Gtk.Frame, tip: Gtk.Label) -> None:
         if button.get_active():
             tip.hide()
             frame.show_all()
         else:
             tip.show()
-            frame.hide()
-
-    @staticmethod
-    def on_steamtrades_show_sensitive_toggled(button: Gtk.CheckButton, frame: Gtk.Frame):
-        if button.get_active():
-            frame.show_all()
-        else:
             frame.hide()
 
 

@@ -16,13 +16,14 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+import asyncio
 import logging
-from typing import NamedTuple, Union
+from typing import Optional, Union
 
 from gi.repository import Gtk, Pango
 
+from . import password, utils
 from .. import config, i18n
-from . import utils
 
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
@@ -61,11 +62,47 @@ class SettingsDialog(Gtk.Dialog):
         content_area.set_border_width(10)
         content_area.set_spacing(10)
 
+        content_area.pack_start(self.login_settings(), False, False, 0)
         content_area.pack_start(self.logger_settings(), False, False, 0)
         content_area.pack_start(self.locale_settings(), False, False, 0)
+        content_area.pack_start(self.steamtrades_settings(), False, False, 0)
 
         self.connect('response', self.on_response)
         self.show()
+
+    def login_settings(self) -> Gtk.Frame:
+        login_section = utils.new_section(_('Login settings'))
+        username_item = utils.new_item(_("Username"), login_section, Gtk.Entry, 0, 0)
+        encrypted_password_item = utils.new_item(_("Encrypted password"), login_section, Gtk.Entry, 0, 2)
+        encrypted_password_item.children.set_editable(False)
+
+        load_login_options(username_item.children, encrypted_password_item.children)
+        username_item.children.connect("changed", self.on_username_changed)
+
+        change_password = Gtk.Button(_("Change password"))
+
+        change_password.connect(
+            'clicked',
+            self.on_change_password_clicked,
+            username_item.children,
+            encrypted_password_item.children,
+        )
+
+        login_section.grid.attach(change_password, 0, 4, 2, 1)
+
+        login_section.frame.show_all()
+        return login_section.frame
+
+    def steamtrades_settings(self) -> Gtk.Frame:
+        steamtrades_section = utils.new_section(_('Steamtrades settings'))
+        info_label = Gtk.Label("trade id separated by commas. (E.g.: '12345,asdfg')")
+        steamtrades_section.grid.attach(info_label, 0, 0, 2, 1)
+        trade_ids = utils.new_item(_("trade ids:"), steamtrades_section, Gtk.Entry, 0, 1)
+
+        load_steamtrades_options(trade_ids.children)
+
+        steamtrades_section.frame.show_all()
+        return steamtrades_section.frame
 
     def locale_settings(self) -> Gtk.Frame:
         locale_section = utils.new_section(_('Locale settings'))
@@ -96,6 +133,21 @@ class SettingsDialog(Gtk.Dialog):
         Gtk.Container.foreach(self.parent_window, refresh_widget_text)
 
     @staticmethod
+    def on_username_changed(entry: Gtk.Entry) -> None:
+        config.new(config.ConfigType('login', 'username', entry.get_text()))
+
+    def on_change_password_clicked(
+            self,
+            button: Gtk.Button,
+            username_entry: Gtk.Entry,
+            encrypted_password_entry: Gtk.Entry
+    ) -> None:
+        password_dialog = password.PasswordDialog(parent_window=self, username=username_entry.get_text())
+        password_dialog.show()
+
+        asyncio.ensure_future(wait_encrypted_password(password_dialog, encrypted_password_entry))
+
+    @staticmethod
     def on_log_level_changed(combo: Gtk.ComboBoxText) -> None:
         config.new(config.ConfigType('logger', 'log_level', combo.get_active_text()))
 
@@ -106,6 +158,20 @@ class SettingsDialog(Gtk.Dialog):
     @staticmethod
     def on_response(dialog: Gtk.Dialog, response_id: int) -> None:
         dialog.destroy()
+
+
+@config.Check("login")
+def load_login_options(
+        username_entry: Gtk.Entry,
+        encrypted_password_entry: Gtk.Entry,
+        username: Optional[config.ConfigStr] = None,
+        encrypted_password: Optional[config.ConfigStr] = None,
+):
+    if username:
+        username_entry.set_text(username)
+
+    if encrypted_password:
+        encrypted_password_entry.set_text(encrypted_password)
 
 
 @config.Check("locale")
@@ -132,6 +198,15 @@ def load_logger_options(
 
     log_level_combo.set_active(log_levels.index(log_level))
     log_console_level_combo.set_active(log_levels.index(log_console_level))
+
+
+@config.Check("steamtrades")
+def load_steamtrades_options(
+        trade_ids_entry: Gtk.Entry,
+        trade_ids: Optional[config.ConfigStr] = None
+) -> None:
+    if trade_ids:
+        trade_ids_entry.set_text(trade_ids)
 
 
 def refresh_widget_text(widget: Gtk.Widget) -> None:
@@ -170,3 +245,20 @@ def refresh_widget_text(widget: Gtk.Widget) -> None:
 
     for children in childrens:
         refresh_widget_text(children)
+
+
+async def wait_encrypted_password(password_dialog: Gtk.Dialog, encrypted_password_entry: Gtk.Entry) -> None:
+    while not password_dialog.encrypted_password:
+        await asyncio.sleep(5)
+
+    encrypted_password_entry.set_text(password_dialog.encrypted_password)
+
+    config.new(
+        config.ConfigType(
+            "login",
+            "encrypted_password",
+            config.ConfigStr(password_dialog.encrypted_password)
+        )
+    )
+
+    password_dialog.destroy()
