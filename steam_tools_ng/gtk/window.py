@@ -148,7 +148,7 @@ class Main(Gtk.ApplicationWindow):
 
         return main_grid
 
-    def steamtrades_tab(self):
+    def steamtrades_tab(self) -> Gtk.Grid:
         main_grid = Gtk.Grid()
         main_grid.set_border_width(10)
         main_grid.set_row_spacing(10)

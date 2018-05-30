@@ -88,12 +88,12 @@ class Application(Gtk.Application):
 
                     await asyncio.sleep(0.125)
 
-    async def run_steamtrades(self):
+    async def run_steamtrades(self) -> None:
         while self.window.get_realized():
             self.steamtrades_status = {'running': True, 'message': "Loading...", 'trade_id': ''}
             trade_ids = config.config_parser.get("steamtrades", "trade_ids", fallback='')
-            wait_min = config.config_parser.get("steamtrades", "wait_min", fallback=3700)
-            wait_max = config.config_parser.get("steamtrades", "wait_max", fallback=4100)
+            wait_min = config.config_parser.getint("steamtrades", "wait_min", fallback=3700)
+            wait_max = config.config_parser.getint("steamtrades", "wait_max", fallback=4100)
             steamid = config.config_parser.get("login", "steamid", fallback='')
             token = config.config_parser.get("login", "token", fallback='')
             token_secure = config.config_parser.get("login", "token_secure", fallback='')

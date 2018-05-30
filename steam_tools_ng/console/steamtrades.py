@@ -74,28 +74,16 @@ async def on_get_login_data(
 
             logging.info(_("Success!"))
 
-            steamid = steam_login_data["transfer_parameters"]["steamid"]
-            token = steam_login_data["transfer_parameters"]["token"]
-            token_secure = steam_login_data["transfer_parameters"]["token_secure"]
+            steamid = config.ConfigStr(steam_login_data["transfer_parameters"]["steamid"])
+            token = config.ConfigStr(steam_login_data["transfer_parameters"]["token"])
+            token_secure = config.ConfigStr(steam_login_data["transfer_parameters"]["token_secure"])
 
             save_config = utils.safe_input(_("Do you want to save this configuration?"), True)
             if save_config:
                 config.new(
-                    config.ConfigType(
-                        "login",
-                        "steamid",
-                        config.ConfigStr(steamid),
-                    ),
-                    config.ConfigType(
-                        "login",
-                        "token",
-                        config.ConfigStr(token)
-                    ),
-                    config.ConfigType(
-                        "login",
-                        "token_secure",
-                        config.ConfigStr(token_secure)
-                    ),
+                    config.ConfigType("login", "steamid", steamid),
+                    config.ConfigType("login", "token", token),
+                    config.ConfigType("login", "token_secure", token_secure),
                 )
                 logging.info(_("Configuration has been saved!"))
 
@@ -149,7 +137,7 @@ async def run(
                 result = await trades_http.bump(trade_info)
 
                 if result['success']:
-                    log.info("%s (%s) Bumped!", trade_info.id, trade_info.title)
+                    log.info("%s (%s) Bumped! [%s]", trade_info.id, trade_info.title, current_datetime)
                 elif result['reason'] == 'Not Ready':
                     log.warning(
                         "%s (%s) Already bumped. Waiting more %d minutes",

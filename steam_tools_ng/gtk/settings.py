@@ -97,7 +97,8 @@ class SettingsDialog(Gtk.Dialog):
         login_section.frame.show_all()
         return login_section.frame
 
-    def steamtrades_settings(self) -> Gtk.Frame:
+    @staticmethod
+    def steamtrades_settings() -> Gtk.Frame:
         steamtrades_section = utils.new_section(_('Steamtrades settings'))
         info_label = Gtk.Label("trade id separated by commas. (E.g.: '12345,asdfg')")
         steamtrades_section.grid.attach(info_label, 0, 0, 2, 1)
@@ -181,7 +182,7 @@ def load_login_options(
         steamid: Optional[config.ConfigStr] = None,
         token: Optional[config.ConfigStr] = None,
         token_secure: Optional[config.ConfigStr] = None,
-):
+) -> None:
     if steamid:
         steamid_entry.set_text(steamid)
     if token:

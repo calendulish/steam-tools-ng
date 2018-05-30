@@ -23,6 +23,7 @@ from gi.repository import Gtk
 from .. import version
 
 
+# noinspection PyUnusedLocal
 class AboutDialog(Gtk.AboutDialog):
     def __init__(self, parent_window: Gtk.Window) -> None:
         super().__init__(self, transient_for=parent_window, modal=True)

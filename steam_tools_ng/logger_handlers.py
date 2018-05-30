@@ -16,7 +16,6 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-import os
 import sys
 # noinspection PyUnresolvedReferences
 from logging import Handler, NullHandler
