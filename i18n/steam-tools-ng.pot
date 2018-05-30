@@ -4,7 +4,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.0.0-DEV\n"
-"POT-Creation-Date: 2018-05-06 05:33-0300\n"
+"POT-Creation-Date: 2018-05-30 02:42Hora oficial do Brasil\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -14,228 +14,315 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: steam-tools-ng.py:117
+#: steam-tools-ng.py:126
 msgid "Exiting..."
 msgstr ""
 
-#: ui\adb.py:40
+#: steam_tools_ng\config.py:68
+msgid "Loading new configs from %s"
+msgstr ""
+
+#: steam_tools_ng\config.py:76
+msgid "A positional argument already exists for %s. Ignoring..."
+msgstr ""
+
+#: steam_tools_ng\config.py:92
+msgid "Nothing to do with %s. Ignoring."
+msgstr ""
+
+#: steam_tools_ng\config.py:95
+msgid "Option not found in config: %s"
+msgstr ""
+
+#: steam_tools_ng\config.py:97
+msgid "Section not found in config: %s"
+msgstr ""
+
+#: steam_tools_ng\config.py:100
+msgid "%s will be injected into %s"
+msgstr ""
+
+#: steam_tools_ng\config.py:143
+msgid "Unable to open steam-tools-ng.log"
+msgstr ""
+
+#: steam_tools_ng\config.py:166
+msgid "Saving new configs at %s"
+msgstr ""
+
+#: steam_tools_ng\console\authenticator.py:37
+msgid "Paste here the path to your adb 'binary'"
+msgstr ""
+
+#: steam_tools_ng\console\authenticator.py:45
+#: steam_tools_ng\console\authenticator.py:62
+#: steam_tools_ng\console\steamtrades.py:68
+msgid "Do you want to try again?"
+msgstr ""
+
+#: steam_tools_ng\console\authenticator.py:76
+msgid "%s is not a valid parameter"
+msgstr ""
+
+#: steam_tools_ng\console\authenticator.py:79
+msgid "No shared_secret found on config file or command line"
+msgstr ""
+
+#: steam_tools_ng\console\authenticator.py:81
+msgid "Do you want to get it now using adb?"
+msgstr ""
+
+#: steam_tools_ng\console\authenticator.py:88
+msgid "Failed to get shared_secret!"
+msgstr ""
+
+#: steam_tools_ng\console\authenticator.py:92
+#: steam_tools_ng\console\steamtrades.py:75
+msgid "Success!"
+msgstr ""
+
+#: steam_tools_ng\console\authenticator.py:94
+#: steam_tools_ng\console\steamtrades.py:81
+msgid "Do you want to save this configuration?"
+msgstr ""
+
+#: steam_tools_ng\console\authenticator.py:98
+#: steam_tools_ng\console\steamtrades.py:88
+msgid "Configuration has been saved!"
+msgstr ""
+
+#: steam_tools_ng\console\authenticator.py:106
+msgid "Steam Client is not running."
+msgstr ""
+
+#: steam_tools_ng\console\authenticator.py:107
+msgid "Try again?"
+msgstr ""
+
+#: steam_tools_ng\console\authenticator.py:117
+msgid "SteamGuard Code:"
+msgstr ""
+
+#: steam_tools_ng\console\steamtrades.py:47
+msgid "Unable to find a valid login data on config file or command line"
+msgstr ""
+
+#: steam_tools_ng\console\steamtrades.py:49
+msgid "Please, write your username"
+msgstr ""
+
+#: steam_tools_ng\console\steamtrades.py:51
+msgid "Please, write your password (it's hidden, and will be encrypted):"
+msgstr ""
+
+#: steam_tools_ng\console\steamtrades.py:57
+msgid "Trying to login on Steam..."
+msgstr ""
+
+#: steam_tools_ng\console\steamtrades.py:99
+msgid "Authenticator module is not configured"
+msgstr ""
+
+#: steam_tools_ng\console\steamtrades.py:100
+msgid "Please, run 'authenticator' module, set up it, and try again"
+msgstr ""
+
+#: steam_tools_ng\console\utils.py:30
+msgid "[Y/n]"
+msgstr ""
+
+#: steam_tools_ng\console\utils.py:32
+msgid "[y/N]"
+msgstr ""
+
+#: steam_tools_ng\console\utils.py:44
+msgid "Invalid response from user"
+msgstr ""
+
+#: steam_tools_ng\console\utils.py:48
+msgid "y"
+msgstr ""
+
+#: steam_tools_ng\console\utils.py:50
+msgid "n"
+msgstr ""
+
+#: steam_tools_ng\console\utils.py:53
+msgid "{} is not an accepted value"
+msgstr ""
+
+#: steam_tools_ng\console\utils.py:56
+msgid "Please, try again."
+msgstr ""
+
+#: steam_tools_ng\gtk\adb.py:39
 msgid "Android Debug Bridge"
 msgstr ""
 
-#: ui\adb.py:60
+#: steam_tools_ng\gtk\adb.py:59
 msgid ""
 "Unable to run without a valid adb path.\n"
 "Please, enter a valid 'adb path' and try again"
 msgstr ""
 
-#: ui\adb.py:76
+#: steam_tools_ng\gtk\adb.py:74
 msgid ""
 "Unable to find adb in:\n"
 msgstr ""
 
-#: ui\adb.py:78
+#: steam_tools_ng\gtk\adb.py:76
 msgid ""
 "\n"
 "Please, enter a valid 'adb path' and try again."
 msgstr ""
 
-#: ui\adb.py:100
+#: steam_tools_ng\gtk\adb.py:98
 msgid "Error"
 msgstr ""
 
-#: ui\application.py:70
+#: steam_tools_ng\gtk\application.py:73
 msgid "The currently secret is invalid"
 msgstr ""
 
-#: ui\application.py:73
+#: steam_tools_ng\gtk\application.py:75
 msgid "Steam Client is not running"
 msgstr ""
 
-#: ui\application.py:76
-msgid "user"
+#: steam_tools_ng\gtk\application.py:77
+msgid "Loading..."
 msgstr ""
 
-#: ui\authenticator_utils.py:37 ui\authenticator_utils.py:57
-msgid "Do you want to try again?"
+#: steam_tools_ng\gtk\application.py:104
+msgid "No trade ID found in config file"
 msgstr ""
 
-#: ui\authenticator_utils.py:49
-msgid "Paste here the path to your adb 'binary'"
+#: steam_tools_ng\gtk\login.py:44
+msgid "Log-in on Steam"
 msgstr ""
 
-#: ui\config.py:67
-msgid "Loading new configs from %s"
+#: steam_tools_ng\gtk\login.py:57
+msgid "Waiting"
 msgstr ""
 
-#: ui\config.py:75
-msgid "A positional argument already exists for %s. Ignoring..."
+#: steam_tools_ng\gtk\login.py:64
+msgid "User details"
 msgstr ""
 
-#: ui\config.py:91
-msgid "Nothing to do with %s. Ignoring."
+#: steam_tools_ng\gtk\login.py:67
+msgid "Username:"
 msgstr ""
 
-#: ui\config.py:94
-msgid "Option not found in config: %s"
+#: steam_tools_ng\gtk\login.py:68
+msgid "Password:"
 msgstr ""
 
-#: ui\config.py:96
-msgid "Section not found in config: %s"
+#: steam_tools_ng\gtk\login.py:72
+msgid "Log In"
 msgstr ""
 
-#: ui\config.py:99
-msgid "%s will be injected into %s"
+#: steam_tools_ng\gtk\login.py:106
+msgid ""
+"Unable to login!\n"
+"Authenticator is not configured."
 msgstr ""
 
-#: ui\config.py:142
-msgid "Unable to open steam-tools-ng.log"
+#: steam_tools_ng\gtk\login.py:112
+msgid "Unable to log-in with a blank username/password"
 msgstr ""
 
-#: ui\config.py:165
-msgid "Saving new configs at %s"
+#: steam_tools_ng\gtk\login.py:116
+msgid "Running"
 msgstr ""
 
-#: ui\console.py:38
-msgid "%s is not a valid parameter"
-msgstr ""
-
-#: ui\console.py:41
-msgid "No shared_secret found on config file or command line"
-msgstr ""
-
-#: ui\console.py:43
-msgid "Do you want to get it now using adb?"
-msgstr ""
-
-#: ui\console.py:50
-msgid "Failed to get shared_secret!"
-msgstr ""
-
-#: ui\console.py:54
-msgid "Success!"
-msgstr ""
-
-#: ui\console.py:56
-msgid "Do you want to save this configuration?"
-msgstr ""
-
-#: ui\console.py:60
-msgid "Configuration has been saved!"
-msgstr ""
-
-#: ui\console.py:68
-msgid "Steam Client is not running."
-msgstr ""
-
-#: ui\console.py:69
-msgid "Try again?"
-msgstr ""
-
-#: ui\console.py:79
-msgid "SteamGuard Code:"
-msgstr ""
-
-#: ui\console_utils.py:30
-msgid "[Y/n]"
-msgstr ""
-
-#: ui\console_utils.py:32
-msgid "[y/N]"
-msgstr ""
-
-#: ui\console_utils.py:44
-msgid "Invalid response from user"
-msgstr ""
-
-#: ui\console_utils.py:48
-msgid "y"
-msgstr ""
-
-#: ui\console_utils.py:50
-msgid "n"
-msgstr ""
-
-#: ui\console_utils.py:53
-msgid "{} is not an accepted value"
-msgstr ""
-
-#: ui\console_utils.py:56
-msgid "Please, try again."
-msgstr ""
-
-#: ui\settings.py:38
+#: steam_tools_ng\gtk\settings.py:40
 msgid "English"
 msgstr ""
 
-#: ui\settings.py:39
+#: steam_tools_ng\gtk\settings.py:41
 msgid "Portuguese (Brazil)"
 msgstr ""
 
-#: ui\settings.py:51 ui\window.py:37
+#: steam_tools_ng\gtk\settings.py:53 steam_tools_ng\gtk\window.py:42
 msgid "Settings"
 msgstr ""
 
-#: ui\settings.py:70
+#: steam_tools_ng\gtk\settings.py:74
+msgid "Login settings"
+msgstr ""
+
+#: steam_tools_ng\gtk\settings.py:75
+msgid "steamid:"
+msgstr ""
+
+#: steam_tools_ng\gtk\settings.py:76
+msgid "Token:"
+msgstr ""
+
+#: steam_tools_ng\gtk\settings.py:77
+msgid "Token secure:"
+msgstr ""
+
+#: steam_tools_ng\gtk\settings.py:85
+msgid "Log-in"
+msgstr ""
+
+#: steam_tools_ng\gtk\settings.py:102
+msgid "Steamtrades settings"
+msgstr ""
+
+#: steam_tools_ng\gtk\settings.py:105
+msgid "trade ids:"
+msgstr ""
+
+#: steam_tools_ng\gtk\settings.py:113
 msgid "Locale settings"
 msgstr ""
 
-#: ui\settings.py:79
-msgid "Language:"
+#: steam_tools_ng\gtk\settings.py:114
+msgid "Language"
 msgstr ""
 
-#: ui\settings.py:95
+#: steam_tools_ng\gtk\settings.py:123
 msgid "Logger settings"
 msgstr ""
 
-#: ui\settings.py:104
+#: steam_tools_ng\gtk\settings.py:124
 msgid "Level:"
 msgstr ""
 
-#: ui\settings.py:113
+#: steam_tools_ng\gtk\settings.py:125
 msgid "Console level:"
 msgstr ""
 
-#: ui\window.py:38
+#: steam_tools_ng\gtk\window.py:43
 msgid "About"
 msgstr ""
 
-#: ui\window.py:61
-msgid "adb path:"
-msgstr ""
-
-#: ui\window.py:64
-msgid "shared secret:*"
-msgstr ""
-
-#: ui\window.py:67
-msgid "identity secret:"
-msgstr ""
-
-#: ui\window.py:70
-msgid "account name:"
-msgstr ""
-
-#: ui\window.py:73
-msgid "steam id:"
-msgstr ""
-
-#: ui\window.py:81
+#: steam_tools_ng\gtk\window.py:64
 msgid "Authenticator"
 msgstr ""
 
-#: ui\window.py:111
+#: steam_tools_ng\gtk\window.py:65
+msgid "Steamtrades"
+msgstr ""
+
+#: steam_tools_ng\gtk\window.py:80
 msgid "Steam Guard Code"
 msgstr ""
 
-#: ui\window.py:124
+#: steam_tools_ng\gtk\window.py:90 steam_tools_ng\gtk\window.py:164
 msgid "loading..."
 msgstr ""
 
-#: ui\window.py:133
+#: steam_tools_ng\gtk\window.py:96
 msgid "Show sensitive data"
 msgstr ""
 
-#: ui\window.py:137
+#: steam_tools_ng\gtk\window.py:99
+msgid "Sensitive data"
+msgstr ""
+
+#: steam_tools_ng\gtk\window.py:102
 msgid ""
 "A code will be requested every time you try to log in on Steam.\n"
 "\n"
@@ -244,11 +331,35 @@ msgid ""
 "the authenticator code."
 msgstr ""
 
-#: ui\window.py:154
+#: steam_tools_ng\gtk\window.py:123
 msgid "Don't worry, everything is saved on-the-fly"
 msgstr ""
 
-#: ui\window.py:189
+#: steam_tools_ng\gtk\window.py:129
+msgid "adb path:"
+msgstr ""
+
+#: steam_tools_ng\gtk\window.py:130
+msgid "shared secret:"
+msgstr ""
+
+#: steam_tools_ng\gtk\window.py:131
+msgid "identity secret:"
+msgstr ""
+
+#: steam_tools_ng\gtk\window.py:132
+msgid "account name:"
+msgstr ""
+
+#: steam_tools_ng\gtk\window.py:133
+msgid "steam id:"
+msgstr ""
+
+#: steam_tools_ng\gtk\window.py:142
 msgid "get sensitive data using an Android phone and Android Debug Bridge"
+msgstr ""
+
+#: steam_tools_ng\gtk\window.py:156
+msgid "Trades bump"
 msgstr ""
 
