@@ -72,19 +72,19 @@ msgstr ""
 
 if __name__ == "__main__":
     output_file = os.path.join('i18n', 'steam-tools-ng.pot')
-    files = []
+    translatable_files = []
 
-    for file in os.listdir('ui'):
-        file_path = os.path.join('ui', file)
-        if os.path.isfile(file_path):
-            files.append(file_path)
+    for root, dirs, files in os.walk('steam_tools_ng'):
+        for file in files:
+            if file.endswith(".py"):
+                translatable_files.append(os.path.join(root, file))
 
-    files.append('steam-tools-ng.py')
+    translatable_files.append('steam-tools-ng.py')
 
     pygettext.make_escapes(True)
     eater = pygettext.TokenEater(Options())
 
-    for file in files:
+    for file in translatable_files:
         with open(file, 'rb') as file_pointer:
             eater.set_filename(file)
 
@@ -96,5 +96,4 @@ if __name__ == "__main__":
                 print(repr(exception), file=sys.stderr)
 
     with open(output_file, 'w', encoding='UTF-8', newline='\n') as file_pointer:
-        print(file_pointer.encoding)
         eater.write(file_pointer)
