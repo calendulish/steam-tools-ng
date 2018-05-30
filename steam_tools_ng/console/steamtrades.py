@@ -22,7 +22,7 @@ import logging
 import random
 import sys
 import time
-from typing import Any, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import aiohttp
 from stlib import authenticator, steamtrades, webapi
@@ -38,58 +38,71 @@ _ = i18n.get_translation
 async def on_get_login_data(
         api_http: webapi.Http,
         authenticator_code: str,
-        username: Optional[config.ConfigStr] = None,
-        encrypted_password: Optional[config.ConfigStr] = None,
-) -> Any:
+        steamid: Optional[config.ConfigStr] = None,
+        token: Optional[config.ConfigStr] = None,
+        token_secure: Optional[config.ConfigStr] = None,
+) -> Dict[str, str]:
     while True:
-        if not username or not encrypted_password:
-            log.critical(_("Unable to find a valid username/password on config file or command line"))
+        if not steamid or not token or not token_secure:
+            log.critical(_("Unable to find a valid login data on config file or command line"))
 
             username = config.ConfigStr(str(utils.safe_input(_("Please, write your username"))))
             assert isinstance(username, str), "safe_input is returning an invalid username"
             password = getpass.getpass(_("Please, write your password (it's hidden, and will be encrypted):"))
             assert isinstance(password, str), "safe_input is returning and invalid password"
             public_key = await api_http.get_public_key(username)
-            encrypted_password_bytes = webapi.encrypt_password(public_key[0], password.encode())
+            encrypted_password = webapi.encrypt_password(public_key[0], password.encode())
             del password
 
+            log.debug(_("Trying to login on Steam..."))
+
+            steam_login_data = await api_http.do_login(
+                username,
+                encrypted_password,
+                public_key[1],
+                ''.join(authenticator_code[0])
+            )
+
+            if not steam_login_data['success']:
+                log.critical("Unable to log-in on Steam")
+                try_again = utils.safe_input(_("Do you want to try again?"), True)
+
+                if not try_again:
+                    raise aiohttp.ClientConnectionError()
+                else:
+                    continue
+
             logging.info(_("Success!"))
+
+            steamid = steam_login_data["transfer_parameters"]["steamid"]
+            token = steam_login_data["transfer_parameters"]["token"]
+            token_secure = steam_login_data["transfer_parameters"]["token_secure"]
+
             save_config = utils.safe_input(_("Do you want to save this configuration?"), True)
             if save_config:
                 config.new(
                     config.ConfigType(
                         "login",
-                        "username",
-                        config.ConfigStr(username)
+                        "steamid",
+                        config.ConfigStr(steamid),
                     ),
                     config.ConfigType(
                         "login",
-                        "encrypted_password",
-                        config.ConfigStr(encrypted_password_bytes.decode())
+                        "token",
+                        config.ConfigStr(token)
+                    ),
+                    config.ConfigType(
+                        "login",
+                        "token_secure",
+                        config.ConfigStr(token_secure)
                     ),
                 )
                 logging.info(_("Configuration has been saved!"))
-        else:
-            public_key = await api_http.get_public_key(username)
-            encrypted_password_bytes = encrypted_password.encode()
 
-        steam_login_data = await api_http.do_login(
-            username,
-            encrypted_password_bytes,
-            public_key[1],
-            ''.join(authenticator_code[0])
-        )
-
-        if not steam_login_data['success']:
-            log.critical("Unable to log-in on Steam")
-            try_again = utils.safe_input(_("Do you want to try again?"), True)
-
-            if not try_again:
-                raise aiohttp.ClientConnectionError()
-            else:
-                username = None
-        else:
-            return steam_login_data
+        return {
+            'steamLogin': f'{steamid}%7C%7C{token}',
+            'steamLoginSecure': f'{steamid}%7C%7C{token_secure}'
+        }
 
 
 @config.Check("authenticator")
@@ -116,7 +129,8 @@ async def run(
 
     async with aiohttp.ClientSession(raise_for_status=True) as session:
         api_http = webapi.Http(session, 'https://lara.click/api')
-        await on_get_login_data(api_http, authenticator_code)
+        login_data = await on_get_login_data(api_http, authenticator_code)
+        session.cookie_jar.update_cookies(login_data)
         await api_http.do_openid_login('https://steamtrades.com/?login')
 
         trades_http = steamtrades.Http(session)
@@ -137,8 +151,12 @@ async def run(
                 if result['success']:
                     log.info("%s (%s) Bumped!", trade_info.id, trade_info.title)
                 elif result['reason'] == 'Not Ready':
-                    log.warning("%s (%s) Already bumped. Waiting more %d minutes", trade_info.id, trade_info.title,
-                                result['minutes_left'])
+                    log.warning(
+                        "%s (%s) Already bumped. Waiting more %d minutes",
+                        trade_info.id,
+                        trade_info.title,
+                        result['minutes_left']
+                    )
                     wait_min = result['minutes_left'] * 60
                     wait_max = wait_min + 400
                 elif result['reason'] == 'trade is closed':

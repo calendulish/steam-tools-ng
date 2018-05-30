@@ -91,21 +91,12 @@ class Application(Gtk.Application):
     async def run_steamtrades(self):
         while self.window.get_realized():
             self.steamtrades_status = {'running': True, 'message': "Loading...", 'trade_id': ''}
-            shared_secret = config.config_parser.get("authenticator", "shared_secret", fallback='')
             trade_ids = config.config_parser.get("steamtrades", "trade_ids", fallback='')
             wait_min = config.config_parser.get("steamtrades", "wait_min", fallback=3700)
             wait_max = config.config_parser.get("steamtrades", "wait_max", fallback=4100)
-            username = config.config_parser.get("login", "username", fallback='')
-            encrypted_password = config.config_parser.get("login", "encrypted_password", fallback='')
-
-            if not shared_secret:
-                self.steamtrades_status = {
-                    'running': False,
-                    'message': _("Authenticator is not configured"),
-                    'trade_id': '',
-                }
-                await asyncio.sleep(5)
-                continue
+            steamid = config.config_parser.get("login", "steamid", fallback='')
+            token = config.config_parser.get("login", "token", fallback='')
+            token_secure = config.config_parser.get("login", "token_secure", fallback='')
 
             if not trade_ids:
                 self.steamtrades_status = {
@@ -116,37 +107,25 @@ class Application(Gtk.Application):
                 await asyncio.sleep(5)
                 continue
 
-            if not username or not encrypted_password:
+            if not steamid or not token or not token_secure:
                 self.steamtrades_status = {
                     'running': False,
-                    'message': "Unable to find a valid username/password",
+                    'message': "Unable to find a valid login data",
                     'trade_id': '',
                 }
                 await asyncio.sleep(5)
                 continue
 
             async with aiohttp.ClientSession(raise_for_status=True) as session:
-                api_http = webapi.Http(session, 'https://lara.click/api')
-                public_key = await api_http.get_public_key(username)
-                encrypted_password_bytes = encrypted_password.encode()
-                authenticator_code = authenticator.get_code(shared_secret)
-                steam_login_data = await api_http.do_login(
-                    username,
-                    encrypted_password_bytes,
-                    public_key[1],
-                    ''.join(authenticator_code[0])
+                session.cookie_jar.update_cookies(
+                    {
+                        'steamLogin': f'{steamid}%7C%7C{token}',
+                        'steamLoginSecure': f'{steamid}%7C%7C{token_secure}',
+                    }
                 )
 
-                if not steam_login_data['success']:
-                    self.steamtrades_status = {
-                        'running': False,
-                        'message': "Unable to log-in on Steam",
-                        'trade_id': '',
-                    }
-                    await asyncio.sleep(5)
-                    continue
-
-                await api_http.do_openid_login('https://steamtrades.com/?login')
+                http = webapi.Http(session, 'https://lara.click/api')
+                await http.do_openid_login('https://steamtrades.com/?login')
 
                 trades_http = steamtrades.Http(session)
                 trades = [trade.strip() for trade in trade_ids.split(',')]

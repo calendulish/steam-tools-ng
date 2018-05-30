@@ -22,7 +22,7 @@ from typing import Optional, Union
 
 from gi.repository import Gtk, Pango
 
-from . import password, utils
+from . import login, utils
 from .. import config, i18n
 
 log = logging.getLogger(__name__)
@@ -72,23 +72,27 @@ class SettingsDialog(Gtk.Dialog):
 
     def login_settings(self) -> Gtk.Frame:
         login_section = utils.new_section(_('Login settings'))
-        username_item = utils.new_item(_("Username"), login_section, Gtk.Entry, 0, 0)
-        encrypted_password_item = utils.new_item(_("Encrypted password"), login_section, Gtk.Entry, 0, 2)
-        encrypted_password_item.children.set_editable(False)
+        steamid_item = utils.new_item(_("steamid:"), login_section, Gtk.Entry, 0, 0)
+        token_item = utils.new_item(_("Token:"), login_section, Gtk.Entry, 0, 2)
+        token_secure_item = utils.new_item(_("Token secure:"), login_section, Gtk.Entry, 0, 4)
 
-        load_login_options(username_item.children, encrypted_password_item.children)
-        username_item.children.connect("changed", self.on_username_changed)
+        load_login_options(steamid_item.children, token_item.children, token_secure_item.children)
 
-        change_password = Gtk.Button(_("Change password"))
+        steamid_item.children.connect("changed", self.on_steamid_changed)
+        token_item.children.connect("changed", self.on_token_changed)
+        token_secure_item.children.connect("changed", self.on_token_secure_changed)
 
-        change_password.connect(
+        log_in = Gtk.Button(_("Log-in"))
+
+        log_in.connect(
             'clicked',
-            self.on_change_password_clicked,
-            username_item.children,
-            encrypted_password_item.children,
+            self.on_log_in_clicked,
+            steamid_item.children,
+            token_item.children,
+            token_secure_item.children,
         )
 
-        login_section.grid.attach(change_password, 0, 4, 2, 1)
+        login_section.grid.attach(log_in, 0, 6, 2, 1)
 
         login_section.frame.show_all()
         return login_section.frame
@@ -133,19 +137,28 @@ class SettingsDialog(Gtk.Dialog):
         Gtk.Container.foreach(self.parent_window, refresh_widget_text)
 
     @staticmethod
-    def on_username_changed(entry: Gtk.Entry) -> None:
-        config.new(config.ConfigType('login', 'username', entry.get_text()))
+    def on_steamid_changed(entry: Gtk.Entry) -> None:
+        config.new(config.ConfigType('login', 'steamid', entry.get_text()))
 
-    def on_change_password_clicked(
+    @staticmethod
+    def on_token_changed(entry: Gtk.Entry) -> None:
+        config.new(config.ConfigType('login', 'token', entry.get_text()))
+
+    @staticmethod
+    def on_token_secure_changed(entry: Gtk.Entry) -> None:
+        config.new(config.ConfigType('login', 'token_secure', entry.get_text()))
+
+    def on_log_in_clicked(
             self,
             button: Gtk.Button,
-            username_entry: Gtk.Entry,
-            encrypted_password_entry: Gtk.Entry
+            steamid_entry: Gtk.Entry,
+            token_entry: Gtk.Entry,
+            token_secure_entry: Gtk.Entry,
     ) -> None:
-        password_dialog = password.PasswordDialog(parent_window=self, username=username_entry.get_text())
-        password_dialog.show()
+        login_dialog = login.LogInDialog(parent_window=self)
+        login_dialog.show()
 
-        asyncio.ensure_future(wait_encrypted_password(password_dialog, encrypted_password_entry))
+        asyncio.ensure_future(wait_login_data(login_dialog, steamid_entry, token_entry, token_secure_entry))
 
     @staticmethod
     def on_log_level_changed(combo: Gtk.ComboBoxText) -> None:
@@ -162,16 +175,19 @@ class SettingsDialog(Gtk.Dialog):
 
 @config.Check("login")
 def load_login_options(
-        username_entry: Gtk.Entry,
-        encrypted_password_entry: Gtk.Entry,
-        username: Optional[config.ConfigStr] = None,
-        encrypted_password: Optional[config.ConfigStr] = None,
+        steamid_entry: Gtk.Entry,
+        token_entry: Gtk.Entry,
+        token_secure_entry: Gtk.Entry,
+        steamid: Optional[config.ConfigStr] = None,
+        token: Optional[config.ConfigStr] = None,
+        token_secure: Optional[config.ConfigStr] = None,
 ):
-    if username:
-        username_entry.set_text(username)
-
-    if encrypted_password:
-        encrypted_password_entry.set_text(encrypted_password)
+    if steamid:
+        steamid_entry.set_text(steamid)
+    if token:
+        token_entry.set_text(token)
+    if token_secure:
+        token_secure_entry.set_text(token_secure)
 
 
 @config.Check("locale")
@@ -247,18 +263,39 @@ def refresh_widget_text(widget: Gtk.Widget) -> None:
         refresh_widget_text(children)
 
 
-async def wait_encrypted_password(password_dialog: Gtk.Dialog, encrypted_password_entry: Gtk.Entry) -> None:
-    while not password_dialog.encrypted_password:
+async def wait_login_data(
+        login_dialog: Gtk.Dialog,
+        steamid_entry: Gtk.Entry,
+        token_entry: Gtk.Entry,
+        token_secure_entry: Gtk.Entry,
+) -> None:
+    while not login_dialog.login_data:
         await asyncio.sleep(5)
 
-    encrypted_password_entry.set_text(password_dialog.encrypted_password)
+    steamid = login_dialog.login_data["transfer_parameters"]["steamid"]
+    token = login_dialog.login_data["transfer_parameters"]["token"]
+    token_secure = login_dialog.login_data["transfer_parameters"]["token_secure"]
+
+    steamid_entry.set_text(steamid)
+    token_entry.set_text(token)
+    token_secure_entry.set_text(token_secure)
 
     config.new(
         config.ConfigType(
             "login",
-            "encrypted_password",
-            config.ConfigStr(password_dialog.encrypted_password)
-        )
+            "steamid",
+            config.ConfigStr(steamid),
+        ),
+        config.ConfigType(
+            "login",
+            "token",
+            config.ConfigStr(token)
+        ),
+        config.ConfigType(
+            "login",
+            "token_secure",
+            config.ConfigStr(token_secure)
+        ),
     )
 
-    password_dialog.destroy()
+    login_dialog.destroy()
