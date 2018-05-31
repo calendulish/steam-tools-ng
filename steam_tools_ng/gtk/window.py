@@ -20,7 +20,9 @@ import functools
 import logging
 from typing import Any, Dict, Optional
 
+import aiohttp
 from gi.repository import Gio, Gtk
+from stlib import webapi
 
 from . import adb, utils
 from .. import config, i18n
@@ -47,7 +49,7 @@ class Main(Gtk.ApplicationWindow):
         menu_button.set_menu_model(menu)
         header_bar.pack_end(menu_button)
 
-        self.set_default_size(640, 480)
+        self.set_default_size(700, 450)
         self.set_resizable(False)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_titlebar(header_bar)
@@ -62,6 +64,7 @@ class Main(Gtk.ApplicationWindow):
         stack.set_transition_type(Gtk.StackTransitionType.SLIDE_UP_DOWN)
         stack.set_transition_duration(500)
         stack.add_titled(self.authenticator_tab(), "authenticator", _("Authenticator"))
+        stack.add_titled(self.confirmations_tab(), "confirmations", _("Confirmations"))
         stack.add_titled(self.steamtrades_tab(), "steamtrades", _("Steamtrades"))
         stack.show()
 
@@ -131,6 +134,7 @@ class Main(Gtk.ApplicationWindow):
             'identity_secret': utils.new_item(_("identity secret:"), sensitive_data_section, Gtk.Entry, 0, 5),
             'account_name': utils.new_item(_("account name:"), sensitive_data_section, Gtk.Entry, 0, 7),
             'steamid': utils.new_item(_("steam id:"), sensitive_data_section, Gtk.Entry, 0, 9),
+            'deviceid': utils.new_item(_("device id:"), sensitive_data_section, Gtk.Entry, 0, 11),
         }
 
         sensitive_data['adb_path'].children.connect('changed', self.on_adb_path_entry_changed)
@@ -138,13 +142,59 @@ class Main(Gtk.ApplicationWindow):
         sensitive_data['identity_secret'].children.connect('changed', self.on_identity_secret_entry_changed)
         sensitive_data['account_name'].children.connect('changed', self.on_account_name_entry_changed)
         sensitive_data['steamid'].children.connect('changed', self.on_steam_id_entry_changed)
+        sensitive_data['deviceid'].children.connect('changed', self.on_device_id_entry_changed)
 
         adb_button = Gtk.Button(_("get sensitive data using an Android phone and Android Debug Bridge"))
         adb_button.connect('clicked', self.on_adb_clicked, sensitive_data)
-        sensitive_data_section.grid.attach(adb_button, 0, 11, 2, 1)
+        sensitive_data_section.grid.attach(adb_button, 0, 13, 2, 1)
 
         load_sensitive_data(sensitive_data)
         asyncio.ensure_future(self.check_authenticator_status(code_label, status_label, level_bar))
+
+        return main_grid
+
+    def confirmations_tab(self) -> Gtk.Grid:
+        main_grid = Gtk.Grid()
+
+        info_label = Gtk.Label()
+        info_label.set_markup(utils.status_markup("warning", _("If you have confirmations, they will be shown here.")))
+        main_grid.attach(info_label, 0, 0, 2, 1)
+
+        list_store = Gtk.ListStore(str, str, str, str)
+        tree_view = Gtk.TreeView(model=list_store)
+        scrolled_window = Gtk.ScrolledWindow()
+        scrolled_window.add(tree_view)
+        scrolled_window.set_hexpand(True)
+        scrolled_window.set_vexpand(True)
+        scrolled_window.set_overlay_scrolling(False)
+        main_grid.attach(scrolled_window, 0, 1, 2, 1)
+
+        for index, header in enumerate(['give', 'to', 'receive', 'created on']):
+            cell_renderer = Gtk.CellRendererText()
+            column = Gtk.TreeViewColumn(header, cell_renderer, text=index)
+
+            if index == 1 or index == 3:
+                column.set_fixed_width(90)
+            else:
+                column.set_fixed_width(200)
+
+            column.set_resizable(True)
+            tree_view.append_column(column)
+
+        # FIXME: cairo bug: assertion surface->is_clear (cairo-surface.c:542)
+        if len(list_store) == 0:
+            list_store.append(['', '', '', ''])
+
+        tree_view.set_model(list_store)
+        tree_view.set_has_tooltip(True)
+        tree_view.connect('query-tooltip', self.on_query_confirmations_tooltip)
+
+        tree_view_selection = tree_view.get_selection()
+        tree_view_selection.connect("changed", self.on_tree_view_selection_changed)
+
+        main_grid.show_all()
+
+        asyncio.ensure_future(self.check_confirmations_status(list_store))
 
         return main_grid
 
@@ -173,6 +223,45 @@ class Main(Gtk.ApplicationWindow):
         asyncio.ensure_future(self.check_steamtrades_status(current_trade_label, status_label, level_bar))
 
         return main_grid
+
+    @config.Check("authenticator")
+    async def check_confirmations_status(
+            self,
+            list_store: Gtk.ListStore,
+            identity_secret: Optional[config.ConfigStr] = None,
+            steamid: Optional[config.ConfigStr] = None,
+            deviceid: Optional[config.ConfigStr] = None,
+    ) -> None:
+        token = config.config_parser.get("login", "token", fallback='')
+        token_secure = config.config_parser.get("login", "token_secure", fallback='')
+
+        while self.get_realized():
+            async with aiohttp.ClientSession(raise_for_status=True) as session:
+                session.cookie_jar.update_cookies(
+                    {
+                        'steamLogin': f'{steamid}%7C%7C{token}',
+                        'steamLoginSecure': f'{steamid}%7C%7C{token_secure}',
+                    }
+                )
+
+                http = webapi.Http(session, 'https://lara.click/api')
+                confirmations = await http.get_confirmations(identity_secret, steamid, deviceid)
+
+            if confirmations:
+                for confirmation in confirmations:
+                    list_store.clear()
+                    list_store.append([
+                        confirmation.give,
+                        confirmation.to,
+                        confirmation.receive,
+                        confirmation.created,
+                    ])
+            else:
+                list_store.clear()
+                # FIXME: cairo bug (read on __init__)
+                list_store.append(['', '', '', ''])
+
+            await asyncio.sleep(10)
 
     async def check_steamtrades_status(
             self,
@@ -212,6 +301,34 @@ class Main(Gtk.ApplicationWindow):
             await asyncio.sleep(0.125)
 
     @staticmethod
+    def on_query_confirmations_tooltip(
+            tree_view: Gtk.TreeView,
+            x: int,
+            y: int,
+            tip: bool,
+            tooltip: Gtk.Tooltip,
+    ) -> bool:
+        context = tree_view.get_tooltip_context(x, y, tip)
+
+        if context[0]:
+            tooltip.set_text('Give {} to {} and receive {}'.format(
+                context.model.get_value(context.iter, 0),
+                context.model.get_value(context.iter, 1),
+                context.model.get_value(context.iter, 2),
+            ))
+
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def on_tree_view_selection_changed(selection: Any) -> None:
+        model, iter = selection.get_selected()
+        # TODO: dialog to finalize trade
+        if iter:
+            row = model[iter]
+
+    @staticmethod
     def on_adb_path_entry_changed(entry: Gtk.Entry) -> None:
         if len(entry.get_text()) > 2:
             config.new(config.ConfigType('authenticator', 'adb_path', entry.get_text()))
@@ -231,6 +348,10 @@ class Main(Gtk.ApplicationWindow):
     @staticmethod
     def on_steam_id_entry_changed(entry: Gtk.Entry) -> None:
         config.new(config.ConfigType('authenticator', 'steamid', entry.get_text()))
+
+    @staticmethod
+    def on_device_id_entry_changed(entry: Gtk.Entry) -> None:
+        config.new(config.ConfigType('authenticator', 'deviceid', entry.get_text()))
 
     def on_adb_clicked(self, button: Gtk.Button, sensitive_data: Dict[str, utils.Item]) -> None:
         adb_dialog = adb.AdbDialog(parent_window=self)
@@ -255,7 +376,8 @@ def load_sensitive_data(
         shared_secret: Optional[config.ConfigStr] = None,
         identity_secret: Optional[config.ConfigStr] = None,
         account_name: Optional[config.ConfigStr] = None,
-        steamid: Optional[config.ConfigStr] = None
+        steamid: Optional[config.ConfigStr] = None,
+        deviceid: Optional[config.ConfigStr] = None,
 ) -> None:
     for name, data in sensitive_data.items():
         try:

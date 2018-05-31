@@ -86,6 +86,7 @@ class AdbDialog(Gtk.Dialog):
                 'steamid',
             )
             assert isinstance(json_data, dict), "Invalid json_data"
+            json_data['deviceid'] = await adb.get_device_id()
         except (AttributeError, KeyError) as exception:
             self.new_error(repr(exception))
             raise AttributeError
