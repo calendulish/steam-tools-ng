@@ -101,7 +101,7 @@ async def run(shared_secret: Optional[config.ConfigStr] = None) -> int:
 
     while True:
         try:
-            auth_code, epoch = authenticator.get_code(shared_secret)
+            auth_code, server_time = authenticator.get_code(shared_secret)
         except ProcessLookupError:
             logging.critical(_("Steam Client is not running."))
             try_again = utils.safe_input(_("Try again?"), True)
@@ -110,9 +110,9 @@ async def run(shared_secret: Optional[config.ConfigStr] = None) -> int:
             else:
                 return 1
 
-        seconds = 30 - (epoch % 30)
+        seconds = 30 - (server_time % 30)
 
         for past_time in range(seconds):
             progress = '█' * int(past_time / seconds * 10)
-            print(_("SteamGuard Code:"), "{} ┌{:10}┐".format(''.join(auth_code), progress), end='\r')
+            print(_("SteamGuard Code:"), "{} ┌{:10}┐".format(auth_code, progress), end='\r')
             time.sleep(1)

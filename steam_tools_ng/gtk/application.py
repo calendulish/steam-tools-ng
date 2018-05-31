@@ -68,7 +68,7 @@ class Application(Gtk.Application):
                 if not shared_secret:
                     raise TypeError
 
-                auth_code, epoch = authenticator.get_code(shared_secret)
+                auth_code, server_time = authenticator.get_code(shared_secret)
             except (TypeError, binascii.Error):
                 self.authenticator_status = {'running': False, 'message': _("The currently secret is invalid")}
             except ProcessLookupError:
@@ -76,14 +76,14 @@ class Application(Gtk.Application):
             else:
                 self.authenticator_status = {'running': False, 'message': _("Loading...")}
 
-                seconds = 30 - (epoch % 30)
+                seconds = 30 - (server_time % 30)
 
                 for past_time in range(seconds * 9):
                     self.authenticator_status = {
                         'running': True,
                         'maximum': seconds * 8,
                         'progress': past_time,
-                        'code': ''.join(auth_code)
+                        'code': auth_code,
                     }
 
                     await asyncio.sleep(0.125)

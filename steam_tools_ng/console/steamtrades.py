@@ -50,8 +50,8 @@ async def on_get_login_data(
             assert isinstance(username, str), "safe_input is returning an invalid username"
             password = getpass.getpass(_("Please, write your password (it's hidden, and will be encrypted):"))
             assert isinstance(password, str), "safe_input is returning and invalid password"
-            public_key = await api_http.get_public_key(username)
-            encrypted_password = webapi.encrypt_password(public_key[0], password.encode())
+            steam_key = await api_http.get_steam_key(username)
+            encrypted_password = webapi.encrypt_password(steam_key, password.encode())
             del password
 
             log.debug(_("Trying to login on Steam..."))
@@ -59,8 +59,8 @@ async def on_get_login_data(
             steam_login_data = await api_http.do_login(
                 username,
                 encrypted_password,
-                public_key[1],
-                ''.join(authenticator_code[0])
+                steam_key.timestamp,
+                authenticator_code,
             )
 
             if not steam_login_data['success']:
@@ -113,7 +113,7 @@ async def run(
         logging.critical("No trade ID found in config file")
         sys.exit(1)
 
-    authenticator_code = await on_get_code()
+    authenticator_code, server_time = await on_get_code()
 
     async with aiohttp.ClientSession(raise_for_status=True) as session:
         api_http = webapi.Http(session, 'https://lara.click/api')

@@ -118,15 +118,15 @@ class LogInDialog(Gtk.Dialog):
 
         async with aiohttp.ClientSession(raise_for_status=True) as session:
             http = webapi.Http(session, 'https://lara.click/api')
-            public_key = await http.get_public_key(username)
-            encrypted_password = webapi.encrypt_password(public_key[0], password.encode())
-            authenticator_code = authenticator.get_code(shared_secret)
+            steam_key = await http.get_steam_key(username)
+            encrypted_password = webapi.encrypt_password(steam_key, password.encode())
+            authenticator_code, server_time = authenticator.get_code(shared_secret)
 
             steam_login_data = await http.do_login(
                 username,
                 encrypted_password,
-                public_key[1],
-                ''.join(authenticator_code[0])
+                steam_key.timestamp,
+                authenticator_code,
             )
 
             if steam_login_data['success']:
