@@ -24,7 +24,7 @@ import aiohttp
 from gi.repository import Gio, Gtk
 from stlib import webapi
 
-from . import adb, utils
+from . import adb, confirmation, utils
 from .. import config, i18n
 
 _ = i18n.get_translation
@@ -158,22 +158,25 @@ class Main(Gtk.ApplicationWindow):
 
         info_label = Gtk.Label()
         info_label.set_markup(utils.status_markup("warning", _("If you have confirmations, they will be shown here.")))
-        main_grid.attach(info_label, 0, 0, 2, 1)
+        main_grid.attach(info_label, 0, 0, 4, 1)
 
-        list_store = Gtk.ListStore(str, str, str, str)
+        list_store = Gtk.ListStore(*[str for _ in range(7)])
         tree_view = Gtk.TreeView(model=list_store)
         scrolled_window = Gtk.ScrolledWindow()
         scrolled_window.add(tree_view)
         scrolled_window.set_hexpand(True)
         scrolled_window.set_vexpand(True)
         scrolled_window.set_overlay_scrolling(False)
-        main_grid.attach(scrolled_window, 0, 1, 2, 1)
+        main_grid.attach(scrolled_window, 0, 1, 4, 1)
 
-        for index, header in enumerate(['give', 'to', 'receive', 'created on']):
+        for index, header in enumerate(webapi.Confirmation._fields):
             cell_renderer = Gtk.CellRendererText()
             column = Gtk.TreeViewColumn(header, cell_renderer, text=index)
 
-            if index == 1 or index == 3:
+            if index == 0 or index == 1 or index == 2:
+                column.set_visible(False)
+
+            if index == 4 or index == 6:
                 column.set_fixed_width(90)
             else:
                 column.set_fixed_width(200)
@@ -183,14 +186,30 @@ class Main(Gtk.ApplicationWindow):
 
         # FIXME: cairo bug: assertion surface->is_clear (cairo-surface.c:542)
         if len(list_store) == 0:
-            list_store.append(['', '', '', ''])
+            list_store.append(['' for _ in range(7)])
 
         tree_view.set_model(list_store)
         tree_view.set_has_tooltip(True)
         tree_view.connect('query-tooltip', self.on_query_confirmations_tooltip)
 
-        tree_view_selection = tree_view.get_selection()
-        tree_view_selection.connect("changed", self.on_tree_view_selection_changed)
+        tree_selection = tree_view.get_selection()
+        tree_selection.connect("changed", self.on_tree_view_selection_changed)
+
+        accept_button = Gtk.Button(_('Accept selected'))
+        accept_button.connect('clicked', self.on_accept_button_clicked, tree_selection)
+        main_grid.attach(accept_button, 0, 2, 1, 1)
+
+        cancel_button = Gtk.Button(_('Cancel selected'))
+        cancel_button.connect('clicked', self.on_cancel_button_clicked, tree_selection)
+        main_grid.attach(cancel_button, 1, 2, 1, 1)
+
+        accept_all_button = Gtk.Button(_('Accept all'))
+        accept_all_button.connect('clicked', self.on_accept_all_button_clicked, list_store)
+        main_grid.attach(accept_all_button, 2, 2, 1, 1)
+
+        cancel_all_button = Gtk.Button(_('Cancel all'))
+        cancel_all_button.connect('clicked', self.on_cancel_all_button_clicked, list_store)
+        main_grid.attach(cancel_all_button, 3, 2, 1, 1)
 
         main_grid.show_all()
 
@@ -250,18 +269,13 @@ class Main(Gtk.ApplicationWindow):
             if confirmations:
                 for confirmation in confirmations:
                     list_store.clear()
-                    list_store.append([
-                        confirmation.give,
-                        confirmation.to,
-                        confirmation.receive,
-                        confirmation.created,
-                    ])
+                    list_store.append(confirmation)
             else:
                 list_store.clear()
-                # FIXME: cairo bug (read on __init__)
-                list_store.append(['', '', '', ''])
+                # FIXME: cairo bug (see on confirmations_tab)
+                list_store.append(['' for _ in range(7)])
 
-            await asyncio.sleep(10)
+            await asyncio.sleep(20)
 
     async def check_steamtrades_status(
             self,
@@ -312,14 +326,38 @@ class Main(Gtk.ApplicationWindow):
 
         if context[0]:
             tooltip.set_text('Give {} to {} and receive {}'.format(
-                context.model.get_value(context.iter, 0),
-                context.model.get_value(context.iter, 1),
-                context.model.get_value(context.iter, 2),
+                context.model.get_value(context.iter, 3),
+                context.model.get_value(context.iter, 4),
+                context.model.get_value(context.iter, 5),
             ))
 
             return True
         else:
             return False
+
+    def on_accept_button_clicked(self, button: Gtk.Button, selection: Gtk.TreeSelection) -> None:
+        model, iter_ = selection.get_selected()
+
+        if iter_:
+            # FIXME: cairo bug (see on confirmations_tab)
+            if not model[iter_][1] == '':
+                finalize_dialog = confirmation.FinalizeDialog(parent_window=self, data=model[iter_])
+                finalize_dialog.show()
+        else:
+            # TODO: error dialog
+            raise NotImplementedError
+
+    @staticmethod
+    def on_cancel_button_clicked(button: Gtk.Button, selection: Gtk.TreeSelection) -> None:
+        raise NotImplementedError
+
+    @staticmethod
+    def on_accept_all_button_clicked(button: Gtk.Button, tree_view: Gtk.TreeView) -> None:
+        raise NotImplementedError
+
+    @staticmethod
+    def on_cancel_all_button_clicked(button: Gtk.Button, tree_view: Gtk.TreeView) -> None:
+        raise NotImplementedError
 
     @staticmethod
     def on_tree_view_selection_changed(selection: Any) -> None:
