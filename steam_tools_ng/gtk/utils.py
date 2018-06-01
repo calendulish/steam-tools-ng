@@ -20,6 +20,10 @@ from typing import Any, Callable, NamedTuple
 
 from gi.repository import Gtk
 
+from .. import i18n
+
+_ = i18n.get_translation
+
 
 class Section(NamedTuple):
     frame: Gtk.Frame
@@ -62,6 +66,21 @@ def new_item(
     section.grid.attach_next_to(children_widget, label, Gtk.PositionType.RIGHT, 1, 1)
 
     return Item(label, children_widget)
+
+
+def new_error(text: str) -> Gtk.Frame:
+    frame = Gtk.Frame(label=_("Error"))
+    frame.set_label_align(0.03, 0.5)
+
+    error_label = Gtk.Label(text)
+    error_label.set_justify(Gtk.Justification.CENTER)
+    error_label.set_vexpand(True)
+    error_label.set_margin_top(10)
+    error_label.set_margin_bottom(10)
+
+    frame.add(error_label)
+
+    return frame
 
 
 def markup(text: str, **kwargs: Any) -> str:

@@ -21,6 +21,7 @@ from typing import Dict
 from gi.repository import Gtk
 from stlib import authenticator
 
+from . import utils
 from .. import config, i18n
 
 log = logging.getLogger(__name__)
@@ -56,10 +57,16 @@ class AdbDialog(Gtk.Dialog):
         self.spinner.show()
 
         if len(config.config_parser.get("authenticator", "adb_path", fallback='')) < 3:
-            self.new_error(_(
+            self.header_bar.set_show_close_button(True)
+
+            error_frame = utils.new_error(_(
                 "Unable to run without a valid adb path.\n"
                 "Please, enter a valid 'adb path' and try again"
             ))
+
+            self.spinner.hide()
+            self.content_area.add(error_frame)
+            error_frame.show_all()
 
         self.connect('response', self.on_response)
 
@@ -92,26 +99,6 @@ class AdbDialog(Gtk.Dialog):
             raise AttributeError
 
         return json_data
-
-    def new_error(self, text: str) -> None:
-        self.spinner.hide()
-
-        frame = Gtk.Frame(label=_("Error"))
-        frame.set_label_align(0.03, 0.5)
-
-        error_label = Gtk.Label(text)
-        error_label.set_justify(Gtk.Justification.CENTER)
-        error_label.set_vexpand(True)
-        error_label.set_margin_top(10)
-        error_label.set_margin_bottom(10)
-
-        frame.add(error_label)
-
-        self.header_bar.set_show_close_button(True)
-
-        self.content_area.add(frame)
-
-        frame.show_all()
 
     @staticmethod
     def on_response(dialog: Gtk.Dialog, response_id: int) -> None:
