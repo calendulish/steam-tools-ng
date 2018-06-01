@@ -18,6 +18,7 @@
 
 import argparse
 import asyncio
+import contextlib
 import importlib
 import logging
 import os
@@ -121,14 +122,21 @@ if __name__ == "__main__":
 
 
         asyncio.ensure_future(async_gtk_iterator())
-        event_loop.run_forever()
 
-        log.info(_("Exiting..."))
+        try:
+            event_loop.run_forever()
+        finally:
+            log.info(_("Exiting..."))
 
-        unfinished_tasks = asyncio.Task.all_tasks()
+            unfinished_tasks = asyncio.Task.all_tasks()
 
-        if unfinished_tasks:
-            event_loop.run_until_complete(asyncio.wait(unfinished_tasks, return_when=asyncio.ALL_COMPLETED))
+            for task in unfinished_tasks:
+                task.cancel()
 
-        event_loop.close()
-        app.quit()
+                with contextlib.suppress(asyncio.CancelledError):
+                    event_loop.run_until_complete(task)
+
+            # FIXME https://github.com/aio-libs/aiohttp/issues/1925
+            event_loop.run_until_complete(asyncio.sleep(1))
+            event_loop.close()
+            app.quit()
