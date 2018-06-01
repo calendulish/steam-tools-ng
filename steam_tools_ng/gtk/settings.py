@@ -72,9 +72,9 @@ class SettingsDialog(Gtk.Dialog):
 
     def login_settings(self) -> Gtk.Frame:
         login_section = utils.new_section(_('Login settings'))
-        steamid_item = utils.new_item(_("steamid:"), login_section, Gtk.Entry, 0, 0)
-        token_item = utils.new_item(_("Token:"), login_section, Gtk.Entry, 0, 2)
-        token_secure_item = utils.new_item(_("Token secure:"), login_section, Gtk.Entry, 0, 4)
+        steamid_item = utils.new_item("steamid", _("steam id:"), login_section, Gtk.Entry, 0, 0)
+        token_item = utils.new_item("token", _("Token:"), login_section, Gtk.Entry, 0, 2)
+        token_secure_item = utils.new_item("token_secure", _("Token secure:"), login_section, Gtk.Entry, 0, 4)
 
         load_login_options(steamid_item.children, token_item.children, token_secure_item.children)
 
@@ -102,7 +102,7 @@ class SettingsDialog(Gtk.Dialog):
         steamtrades_section = utils.new_section(_('Steamtrades settings'))
         info_label = Gtk.Label("trade id separated by commas. (E.g.: '12345,asdfg')")
         steamtrades_section.grid.attach(info_label, 0, 0, 2, 1)
-        trade_ids = utils.new_item(_("trade ids:"), steamtrades_section, Gtk.Entry, 0, 1)
+        trade_ids = utils.new_item("trade_ids", _("trade ids:"), steamtrades_section, Gtk.Entry, 0, 1)
 
         load_steamtrades_options(trade_ids.children)
 
@@ -111,7 +111,7 @@ class SettingsDialog(Gtk.Dialog):
 
     def locale_settings(self) -> Gtk.Frame:
         locale_section = utils.new_section(_('Locale settings'))
-        language_item = utils.new_item(_("Language"), locale_section, Gtk.ComboBoxText, 0, 0)
+        language_item = utils.new_item("language", _("Language"), locale_section, Gtk.ComboBoxText, 0, 0)
 
         load_locale_options(language_item.children)
         language_item.children.connect("changed", self.on_language_combo_changed)
@@ -121,8 +121,8 @@ class SettingsDialog(Gtk.Dialog):
 
     def logger_settings(self) -> Gtk.Frame:
         logger_section = utils.new_section(_('Logger settings'))
-        log_level_item = utils.new_item(_("Level:"), logger_section, Gtk.ComboBoxText, 0, 0)
-        log_console_level_item = utils.new_item(_("Console level:"), logger_section, Gtk.ComboBoxText, 0, 1)
+        log_level_item = utils.new_item("log_level", _("Level:"), logger_section, Gtk.ComboBoxText, 0, 0)
+        log_console_level_item = utils.new_item("log_console_level", _("Console level:"), logger_section, Gtk.ComboBoxText, 0, 1)
 
         load_logger_options(log_level_item.children, log_console_level_item.children)
         log_level_item.children.connect("changed", self.on_log_level_changed)

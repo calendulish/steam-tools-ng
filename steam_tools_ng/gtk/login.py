@@ -64,8 +64,8 @@ class LogInDialog(Gtk.Dialog):
         user_details_section = utils.new_section(_("User details"))
         self.content_area.add(user_details_section.frame)
 
-        self.username_item = utils.new_item(_("Username:"), user_details_section, Gtk.Entry, 0, 0)
-        self.password_item = utils.new_item(_("Password:"), user_details_section, Gtk.Entry, 0, 1)
+        self.username_item = utils.new_item("username", _("Username:"), user_details_section, Gtk.Entry, 0, 0)
+        self.password_item = utils.new_item("password", _("Password:"), user_details_section, Gtk.Entry, 0, 1)
         self.password_item.children.set_visibility(False)
         self.password_item.children.set_invisible_char('*')
 

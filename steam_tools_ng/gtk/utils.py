@@ -44,13 +44,21 @@ def new_section(label_text: str) -> Section:
     return Section(frame, grid)
 
 
-def new_item(label_text: str, section: Section, children: Callable[..., Gtk.Widget], *grid_position: int) -> Item:
+def new_item(
+        name: str,
+        label_text: str,
+        section: Section,
+        children: Callable[..., Gtk.Widget],
+        *grid_position: int
+) -> Item:
     label = Gtk.Label(label_text)
+    label.set_name(name)
     label.set_halign(Gtk.Align.START)
     section.grid.attach(label, *grid_position, 1, 1)
 
     children_widget = children()
     children_widget.set_hexpand(True)
+    children_widget.set_name(name)
     section.grid.attach_next_to(children_widget, label, Gtk.PositionType.RIGHT, 1, 1)
 
     return Item(label, children_widget)

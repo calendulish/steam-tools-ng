@@ -18,7 +18,7 @@
 import asyncio
 import functools
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import aiohttp
 from gi.repository import Gio, Gtk
@@ -128,27 +128,31 @@ class Main(Gtk.ApplicationWindow):
         info_label.set_justify(Gtk.Justification.CENTER)
         sensitive_data_section.grid.attach(info_label, 0, 0, 2, 1)
 
-        sensitive_data = {
-            'adb_path': utils.new_item(_("adb path:"), sensitive_data_section, Gtk.Entry, 0, 1),
-            'shared_secret': utils.new_item(_("shared secret:"), sensitive_data_section, Gtk.Entry, 0, 3),
-            'identity_secret': utils.new_item(_("identity secret:"), sensitive_data_section, Gtk.Entry, 0, 5),
-            'account_name': utils.new_item(_("account name:"), sensitive_data_section, Gtk.Entry, 0, 7),
-            'steamid': utils.new_item(_("steam id:"), sensitive_data_section, Gtk.Entry, 0, 9),
-            'deviceid': utils.new_item(_("device id:"), sensitive_data_section, Gtk.Entry, 0, 11),
-        }
+        adb_path = utils.new_item('adb_path', _("adb path:"), sensitive_data_section, Gtk.Entry, 0, 1)
+        adb_path.children.connect('changed', self.on_adb_path_entry_changed)
 
-        sensitive_data['adb_path'].children.connect('changed', self.on_adb_path_entry_changed)
-        sensitive_data['shared_secret'].children.connect('changed', self.on_shared_secret_entry_changed)
-        sensitive_data['identity_secret'].children.connect('changed', self.on_identity_secret_entry_changed)
-        sensitive_data['account_name'].children.connect('changed', self.on_account_name_entry_changed)
-        sensitive_data['steamid'].children.connect('changed', self.on_steam_id_entry_changed)
-        sensitive_data['deviceid'].children.connect('changed', self.on_device_id_entry_changed)
+        shared_secret = utils.new_item('shared_secret', _("shared secret:"), sensitive_data_section, Gtk.Entry, 0, 3)
+        shared_secret.children.connect('changed', self.on_shared_secret_entry_changed)
+
+        identity_secret = utils.new_item(
+            'identity_secret', _("identity secret:"), sensitive_data_section, Gtk.Entry, 0, 5
+        )
+        identity_secret.children.connect('changed', self.on_identity_secret_entry_changed)
+
+        account_name = utils.new_item('account_name', _("account name:"), sensitive_data_section, Gtk.Entry, 0, 7)
+        account_name.children.connect('changed', self.on_account_name_entry_changed)
+
+        steamid = utils.new_item('steamid', _("steam id:"), sensitive_data_section, Gtk.Entry, 0, 9)
+        steamid.children.connect('changed', self.on_steam_id_entry_changed)
+
+        deviceid = utils.new_item('deviceid', _("device id:"), sensitive_data_section, Gtk.Entry, 0, 11)
+        deviceid.children.connect('changed', self.on_device_id_entry_changed)
 
         adb_button = Gtk.Button(_("get sensitive data using an Android phone and Android Debug Bridge"))
-        adb_button.connect('clicked', self.on_adb_clicked, sensitive_data)
+        adb_button.connect('clicked', self.on_adb_clicked, sensitive_data_section)
         sensitive_data_section.grid.attach(adb_button, 0, 13, 2, 1)
 
-        load_sensitive_data(sensitive_data)
+        load_sensitive_data(sensitive_data_section)
         asyncio.ensure_future(self.check_authenticator_status(code_label, status_label, level_bar))
 
         return main_grid
@@ -390,10 +394,10 @@ class Main(Gtk.ApplicationWindow):
     def on_device_id_entry_changed(entry: Gtk.Entry) -> None:
         config.new(config.ConfigType('authenticator', 'deviceid', entry.get_text()))
 
-    def on_adb_clicked(self, button: Gtk.Button, sensitive_data: Dict[str, utils.Item]) -> None:
+    def on_adb_clicked(self, button: Gtk.Button, sensitive_data_section: utils.Section) -> None:
         adb_dialog = adb.AdbDialog(parent_window=self)
         task = asyncio.ensure_future(adb_dialog.get_sensitive_data())
-        task.add_done_callback(functools.partial(on_sensitive_data_task_done, adb_dialog, sensitive_data))
+        task.add_done_callback(functools.partial(on_sensitive_data_task_done, adb_dialog, sensitive_data_section))
         adb_dialog.show()
 
     @staticmethod
@@ -408,7 +412,7 @@ class Main(Gtk.ApplicationWindow):
 
 @config.Check("authenticator")
 def load_sensitive_data(
-        sensitive_data: Dict[str, utils.Item],
+        sensitive_data_section: utils.Section,
         adb_path: Optional[config.ConfigStr] = None,
         shared_secret: Optional[config.ConfigStr] = None,
         identity_secret: Optional[config.ConfigStr] = None,
@@ -416,17 +420,20 @@ def load_sensitive_data(
         steamid: Optional[config.ConfigStr] = None,
         deviceid: Optional[config.ConfigStr] = None,
 ) -> None:
-    for name, data in sensitive_data.items():
-        try:
-            data.children.set_text(locals()[name])
-        except TypeError:
-            pass  # Not found on config file
+    childrens = Gtk.Container.get_children(sensitive_data_section.grid)
+
+    for children in childrens:
+        if isinstance(children, Gtk.Entry):
+            try:
+                children.set_text(locals()[children.get_name()])
+            except TypeError:
+                pass  # Not found on config file
 
 
-def on_sensitive_data_task_done(adb_dialog: Gtk.Dialog, sensitive_data: Dict[str, utils.Item], future: Any) -> None:
+def on_sensitive_data_task_done(adb_dialog: Gtk.Dialog, sensitive_data_section: utils.Section, future: Any) -> None:
     if future.exception():
         exception = future.exception()
         log.debug(repr(exception))
     else:
-        load_sensitive_data(sensitive_data, **future.result())
+        load_sensitive_data(sensitive_data_section, **future.result())
         adb_dialog.destroy()
