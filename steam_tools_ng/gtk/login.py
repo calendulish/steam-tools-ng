@@ -54,7 +54,7 @@ class LogInDialog(Gtk.Dialog):
         self.content_area.set_spacing(10)
 
         self.status_label = Gtk.Label()
-        self.status_label.set_markup(utils.status_markup("info", _("Waiting")))
+        self.status_label.set_markup(utils.markup(_("Waiting"), color='green'))
         self.content_area.add(self.status_label)
 
         self.spinner = Gtk.Spinner()
@@ -103,17 +103,17 @@ class LogInDialog(Gtk.Dialog):
     ) -> None:
         if not shared_secret:
             self.status_label.set_markup(
-                utils.status_markup("error", _("Unable to login!\nAuthenticator is not configured."))
+                utils.markup_string(_("Unable to login!\nAuthenticator is not configured."), color='red')
             )
             return None
 
         if not username or not password:
             self.status_label.set_markup(
-                utils.status_markup("error", _("Unable to log-in with a blank username/password"))
+                utils.markup(_("Unable to log-in with a blank username/password"), color='red')
             )
             return None
 
-        self.status_label.set_markup(utils.status_markup("info", _("Running")))
+        self.status_label.set_markup(utils.markup(_("Running"), color='green'))
         self.spinner.start()
 
         async with aiohttp.ClientSession(raise_for_status=True) as session:
@@ -133,7 +133,7 @@ class LogInDialog(Gtk.Dialog):
                 self.login_data = steam_login_data
             else:
                 self.status_label.set_markup(
-                    utils.status_markup("error", "Unable to log-in on Steam!\nPlease, try again.")
+                    utils.markup("Unable to log-in on Steam!\nPlease, try again.", color='red')
                 )
                 self.spinner.stop()
                 return None

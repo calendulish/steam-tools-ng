@@ -84,13 +84,13 @@ class Main(Gtk.ApplicationWindow):
         main_grid.attach(steam_guard_section.frame, 0, 0, 1, 1)
 
         code_label = Gtk.Label()
-        code_label.set_markup('<span font_size="large" font_weight="bold">_ _ _ _</span>')
+        code_label.set_markup(utils.markup('_ _ _ _', font_size='large', font_weight='bold'))
         code_label.set_hexpand(True)
         code_label.set_selectable(True)
         steam_guard_section.grid.attach(code_label, 0, 0, 1, 1)
 
         status_label = Gtk.Label()
-        status_label.set_markup(utils.status_markup('info', _("loading...")))
+        status_label.set_markup(utils.markup(_("loading..."), color='green'))
         steam_guard_section.grid.attach(status_label, 0, 1, 1, 1)
 
         level_bar = Gtk.LevelBar()
@@ -124,7 +124,7 @@ class Main(Gtk.ApplicationWindow):
 
         info_label = Gtk.Label()
         info_label_text = _("Don't worry, everything is saved on-the-fly")
-        info_label.set_markup(f"<span foreground='blue'>{info_label_text}</span>")
+        info_label.set_markup(utils.markup(info_label_text, color='blue'))
         info_label.set_justify(Gtk.Justification.CENTER)
         sensitive_data_section.grid.attach(info_label, 0, 0, 2, 1)
 
@@ -157,7 +157,7 @@ class Main(Gtk.ApplicationWindow):
         main_grid = Gtk.Grid()
 
         info_label = Gtk.Label()
-        info_label.set_markup(utils.status_markup("warning", _("If you have confirmations, they will be shown here.")))
+        info_label.set_markup(utils.markup(_("If you have confirmations, they will be shown here."), color='blue'))
         main_grid.attach(info_label, 0, 0, 4, 1)
 
         list_store = Gtk.ListStore(*[str for _ in range(7)])
@@ -230,7 +230,7 @@ class Main(Gtk.ApplicationWindow):
         trade_bump_section.grid.attach(current_trade_label, 0, 0, 1, 1)
 
         status_label = Gtk.Label()
-        status_label.set_markup(utils.status_markup('info', _("loading...")))
+        status_label.set_markup(utils.markup(_("loading..."), color='green'))
         trade_bump_section.grid.attach(status_label, 0, 1, 1, 1)
 
         level_bar = Gtk.LevelBar()
@@ -284,14 +284,13 @@ class Main(Gtk.ApplicationWindow):
             level_bar: Gtk.LevelBar,
     ) -> None:
         while self.get_realized():
-            current_trade_label.set_markup(
-                f'<span font_size="large" font_weight="bold">{self.application.steamtrades_status["trade_id"]}</span>'
-            )
+            status = self.application.steamtrades_status
+            current_trade_label.set_markup(utils.markup(status['trade_id'], font_size='large', font_weight='bold'))
 
-            if self.application.steamtrades_status['running']:
-                status_label.set_markup(utils.status_markup("info", self.application.steamtrades_status['message']))
+            if status['running']:
+                status_label.set_markup(utils.markup(status['message'], color='green'))
             else:
-                status_label.set_markup(utils.status_markup("error", self.application.steamtrades_status['message']))
+                status_label.set_markup(utils.markup(status['message'], color='red'))
 
             await asyncio.sleep(0.5)
 
@@ -302,15 +301,15 @@ class Main(Gtk.ApplicationWindow):
             level_bar: Gtk.LevelBar
     ) -> None:
         while self.get_realized():
-            if self.application.authenticator_status['running']:
-                code_label.set_markup(
-                    f'<span font_size="large" font_weight="bold">{self.application.authenticator_status["code"]}</span>'
-                )
-                status_label.set_markup(utils.status_markup("info", "Running"))
-                level_bar.set_max_value(self.application.authenticator_status['maximum'])
-                level_bar.set_value(self.application.authenticator_status['progress'])
+            status = self.application.authenticator_status
+
+            if status['running']:
+                code_label.set_markup(utils.markup(status['code'], font_size='large', font_weight='bold'))
+                status_label.set_markup(utils.markup(_("Running"), color='green'))
+                level_bar.set_max_value(status['maximum'])
+                level_bar.set_value(status['progress'])
             else:
-                status_label.set_markup(utils.status_markup("error", self.application.authenticator_status["message"]))
+                status_label.set_markup(utils.markup(status["message"], color='red'))
 
             await asyncio.sleep(0.125)
 

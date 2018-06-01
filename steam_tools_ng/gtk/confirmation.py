@@ -53,19 +53,19 @@ class FinalizeDialog(Gtk.Dialog):
         self.content_area.add(self.status_section.frame)
 
         self.status_label = Gtk.Label()
-        self.status_label.set_markup(utils.status_markup("info", _("Waiting")))
+        self.status_label.set_markup(utils.markup(_("Waiting"), color='green'))
         self.status_section.grid.attach(self.status_label, 0, 0, 1, 1)
 
         self.info_label = Gtk.Label()
         markup = "{} {}\n{} {}\n{} {}\n\n{} {}".format(
             _("Trade with"),
-            utils.status_markup("warning", self.data[4]),
+            utils.markup(self.data[4], color='blue'),
             _("You will give"),
-            utils.status_markup("warning", self.data[3]),
+            utils.markup(self.data[3], color='blue'),
             _("and receives"),
-            utils.status_markup("warning", self.data[5]),
+            utils.markup(self.data[5], color='blue'),
             _("You really want to do that?"),
-            utils.status_markup("error", _("It can't be undone!")),
+            utils.markup(_("It can't be undone!"), color='red'),
         )
 
         self.info_label.set_markup(markup)

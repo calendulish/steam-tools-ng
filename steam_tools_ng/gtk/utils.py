@@ -16,7 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-from typing import Callable, NamedTuple
+from typing import Any, Callable, NamedTuple
 
 from gi.repository import Gtk
 
@@ -56,12 +56,12 @@ def new_item(label_text: str, section: Section, children: Callable[..., Gtk.Widg
     return Item(label, children_widget)
 
 
-def status_markup(message_type: str, message: str) -> str:
-    if message_type == 'info':
-        color = 'green'
-    elif message_type == 'warning':
-        color = 'blue'
-    else:
-        color = 'red'
+def markup(text: str, **kwargs: Any) -> str:
+    markup_string = ['<span']
 
-    return f"<span foreground='{color}' font_size='small'>{message}</span>"
+    for key, value in kwargs.items():
+        markup_string.append(f'{key}="{value}"')
+
+    markup_string.append(f'>{text}</span>')
+
+    return ' '.join(markup_string)
