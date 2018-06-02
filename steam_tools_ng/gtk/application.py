@@ -95,10 +95,9 @@ class Application(Gtk.Application):
             identity_secret = config.config_parser.get("authenticator", "identity_secret", fallback='')
             steamid = config.config_parser.getint("authenticator", "steamid", fallback=None)
             deviceid = config.config_parser.get("authenticator", "deviceid", fallback='')
-            token = config.config_parser.get("login", "token", fallback='')
-            token_secure = config.config_parser.get("login", "token_secure", fallback='')
+            cookies = config.login_cookies()
 
-            if not steamid or not token or not token_secure:
+            if not cookies:
                 self.confirmations_status = {
                     'running': False,
                     'message': "Unable to find a valid login data",
@@ -107,13 +106,7 @@ class Application(Gtk.Application):
                 continue
 
             async with aiohttp.ClientSession(raise_for_status=True) as session:
-                session.cookie_jar.update_cookies(
-                    {
-                        'steamLogin': f'{steamid}%7C%7C{token}',
-                        'steamLoginSecure': f'{steamid}%7C%7C{token_secure}',
-                    }
-                )
-
+                session.cookie_jar.update_cookies(cookies)
                 http = webapi.Http(session, 'https://lara.click/api')
                 confirmations = await http.get_confirmations(identity_secret, steamid, deviceid)
 
@@ -127,9 +120,7 @@ class Application(Gtk.Application):
             trade_ids = config.config_parser.get("steamtrades", "trade_ids", fallback='')
             wait_min = config.config_parser.getint("steamtrades", "wait_min", fallback=3700)
             wait_max = config.config_parser.getint("steamtrades", "wait_max", fallback=4100)
-            steamid = config.config_parser.get("login", "steamid", fallback='')
-            token = config.config_parser.get("login", "token", fallback='')
-            token_secure = config.config_parser.get("login", "token_secure", fallback='')
+            cookies = config.login_cookies()
 
             if not trade_ids:
                 self.steamtrades_status = {
@@ -140,7 +131,7 @@ class Application(Gtk.Application):
                 await asyncio.sleep(5)
                 continue
 
-            if not steamid or not token or not token_secure:
+            if not cookies:
                 self.steamtrades_status = {
                     'running': False,
                     'message': "Unable to find a valid login data",
@@ -150,12 +141,7 @@ class Application(Gtk.Application):
                 continue
 
             async with aiohttp.ClientSession(raise_for_status=True) as session:
-                session.cookie_jar.update_cookies(
-                    {
-                        'steamLogin': f'{steamid}%7C%7C{token}',
-                        'steamLoginSecure': f'{steamid}%7C%7C{token_secure}',
-                    }
-                )
+                session.cookie_jar.update_cookies(cookies)
 
                 http = webapi.Http(session, 'https://lara.click/api')
                 await http.do_openid_login('https://steamtrades.com/?login')

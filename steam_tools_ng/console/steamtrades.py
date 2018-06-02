@@ -87,10 +87,7 @@ async def on_get_login_data(
                 )
                 logging.info(_("Configuration has been saved!"))
 
-        return {
-            'steamLogin': f'{steamid}%7C%7C{token}',
-            'steamLoginSecure': f'{steamid}%7C%7C{token_secure}'
-        }
+        return config.login_cookies(steamid, token, token_secure)
 
 
 @config.Check("authenticator")

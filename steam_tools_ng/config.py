@@ -22,7 +22,7 @@ import inspect
 import logging
 import os
 import sys
-from typing import Any, Callable, NamedTuple, NewType, Union
+from typing import Any, Callable, Dict, NamedTuple, NewType, Optional, Union
 
 from . import i18n, logger_handlers
 
@@ -165,3 +165,18 @@ def new(*new_configs: ConfigType) -> None:
     with open(config_file, 'w') as config_file_object:
         log.debug(_('Saving new configs at %s'), config_file)
         config_parser.write(config_file_object)
+
+
+@Check("login")
+def login_cookies(
+        steamid: Optional[ConfigInt] = None,
+        token: Optional[ConfigStr] = None,
+        token_secure: Optional[ConfigStr] = None,
+) -> Dict[Any, ...]:
+    if not steamid or not token or not token_secure:
+        return {}
+
+    return {
+        'steamLogin': f'{steamid}%7C%7C{token}',
+        'steamLoginSecure': f'{steamid}%7C%7C{token_secure}',
+    }
