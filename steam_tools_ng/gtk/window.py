@@ -20,7 +20,6 @@ import functools
 import logging
 from typing import Any, Optional
 
-import aiohttp
 from gi.repository import Gio, Gtk
 from stlib import webapi
 
@@ -247,39 +246,21 @@ class Main(Gtk.ApplicationWindow):
 
         return main_grid
 
-    @config.Check("authenticator")
-    async def check_confirmations_status(
-            self,
-            list_store: Gtk.ListStore,
-            identity_secret: Optional[config.ConfigStr] = None,
-            steamid: Optional[config.ConfigStr] = None,
-            deviceid: Optional[config.ConfigStr] = None,
-    ) -> None:
-        token = config.config_parser.get("login", "token", fallback='')
-        token_secure = config.config_parser.get("login", "token_secure", fallback='')
-
+    async def check_confirmations_status(self, list_store: Gtk.ListStore) -> None:
         while self.get_realized():
-            async with aiohttp.ClientSession(raise_for_status=True) as session:
-                session.cookie_jar.update_cookies(
-                    {
-                        'steamLogin': f'{steamid}%7C%7C{token}',
-                        'steamLoginSecure': f'{steamid}%7C%7C{token_secure}',
-                    }
-                )
+            status = self.application.confirmations_status
 
-                http = webapi.Http(session, 'https://lara.click/api')
-                confirmations = await http.get_confirmations(identity_secret, steamid, deviceid)
-
-            if confirmations:
-                for confirmation in confirmations:
+            if status['running']:
+                if status['confirmations']:
+                    for confirmation in status['confirmations']:
+                        list_store.clear()
+                        list_store.append(confirmation)
+                else:
                     list_store.clear()
-                    list_store.append(confirmation)
-            else:
-                list_store.clear()
-                # FIXME: cairo bug (see on confirmations_tab)
-                list_store.append(['' for _ in range(7)])
+                    # FIXME: cairo bug (see on confirmations_tab)
+                    list_store.append(['' for _ in range(7)])
 
-            await asyncio.sleep(20)
+            await asyncio.sleep(10)
 
     async def check_steamtrades_status(
             self,

@@ -38,6 +38,7 @@ class Application(Gtk.Application):
 
         self.window: Gtk.ApplicationWindow = None
         self.authenticator_status = {'running': False, 'message': "Authenticator is not running"}
+        self.confirmations_status = {'running': False, 'message': "Confirmations is not running"}
         self.steamtrades_status = {'running': False, 'message': "Steamtrades is not running", 'trade_id': ''}
 
     def do_startup(self) -> None:
@@ -58,6 +59,7 @@ class Application(Gtk.Application):
         self.window.present()
 
         asyncio.ensure_future(self.run_authenticator())
+        asyncio.ensure_future(self.run_confirmations())
         asyncio.ensure_future(self.run_steamtrades())
 
     async def run_authenticator(self) -> None:
@@ -87,6 +89,37 @@ class Application(Gtk.Application):
                     }
 
                     await asyncio.sleep(0.125)
+
+    async def run_confirmations(self) -> None:
+        while self.window.get_realized():
+            identity_secret = config.config_parser.get("authenticator", "identity_secret", fallback='')
+            steamid = config.config_parser.getint("authenticator", "steamid", fallback=None)
+            deviceid = config.config_parser.get("authenticator", "deviceid", fallback='')
+            token = config.config_parser.get("login", "token", fallback='')
+            token_secure = config.config_parser.get("login", "token_secure", fallback='')
+
+            if not steamid or not token or not token_secure:
+                self.confirmations_status = {
+                    'running': False,
+                    'message': "Unable to find a valid login data",
+                }
+                await asyncio.sleep(5)
+                continue
+
+            async with aiohttp.ClientSession(raise_for_status=True) as session:
+                session.cookie_jar.update_cookies(
+                    {
+                        'steamLogin': f'{steamid}%7C%7C{token}',
+                        'steamLoginSecure': f'{steamid}%7C%7C{token_secure}',
+                    }
+                )
+
+                http = webapi.Http(session, 'https://lara.click/api')
+                confirmations = await http.get_confirmations(identity_secret, steamid, deviceid)
+
+            self.confirmations_status = {'running': True, 'confirmations': confirmations}
+
+            await asyncio.sleep(20)
 
     async def run_steamtrades(self) -> None:
         while self.window.get_realized():
