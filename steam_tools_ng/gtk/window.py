@@ -216,7 +216,7 @@ class Main(Gtk.ApplicationWindow):
 
         main_grid.show_all()
 
-        asyncio.ensure_future(self.check_confirmations_status(list_store))
+        asyncio.ensure_future(self.check_confirmations_status(tree_view))
 
         return main_grid
 
@@ -246,19 +246,25 @@ class Main(Gtk.ApplicationWindow):
 
         return main_grid
 
-    async def check_confirmations_status(self, list_store: Gtk.ListStore) -> None:
+    async def check_confirmations_status(self, tree_view: Gtk.TreeView) -> None:
         while self.get_realized():
             status = self.application.confirmations_status
+            selection = tree_view.get_selection()
+            list_store = tree_view.get_model()
+            model, path = selection.get_selected_rows()
 
             if status['running']:
                 if status['confirmations']:
-                    for confirmation in status['confirmations']:
+                    for confirmation_ in status['confirmations']:
                         list_store.clear()
-                        list_store.append(confirmation)
+                        list_store.append(confirmation_)
                 else:
                     list_store.clear()
                     # FIXME: cairo bug (see on confirmations_tab)
                     list_store.append(['' for _ in range(7)])
+
+            if path:
+                selection.select_path(path[0])
 
             await asyncio.sleep(10)
 
@@ -320,20 +326,12 @@ class Main(Gtk.ApplicationWindow):
             return False
 
     def on_accept_button_clicked(self, button: Gtk.Button, selection: Gtk.TreeSelection) -> None:
-        model, iter_ = selection.get_selected()
+        finalize_dialog = confirmation.FinalizeDialog(self, "allow", *selection.get_selected())
+        finalize_dialog.show()
 
-        if iter_:
-            # FIXME: cairo bug (see on confirmations_tab)
-            if not model[iter_][1] == '':
-                finalize_dialog = confirmation.FinalizeDialog(parent_window=self, data=model[iter_])
-                finalize_dialog.show()
-        else:
-            # TODO: error dialog
-            raise NotImplementedError
-
-    @staticmethod
-    def on_cancel_button_clicked(button: Gtk.Button, selection: Gtk.TreeSelection) -> None:
-        raise NotImplementedError
+    def on_cancel_button_clicked(self, button: Gtk.Button, selection: Gtk.TreeSelection) -> None:
+        finalize_dialog = confirmation.FinalizeDialog(self, "cancel", *selection.get_selected())
+        finalize_dialog.show()
 
     @staticmethod
     def on_accept_all_button_clicked(button: Gtk.Button, tree_view: Gtk.TreeView) -> None:
