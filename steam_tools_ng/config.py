@@ -172,7 +172,7 @@ def login_cookies(
         steamid: Optional[ConfigInt] = None,
         token: Optional[ConfigStr] = None,
         token_secure: Optional[ConfigStr] = None,
-) -> Dict[Any, ...]:
+) -> Dict[str, str]:
     if not steamid or not token or not token_secure:
         return {}
 
