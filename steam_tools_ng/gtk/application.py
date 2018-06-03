@@ -112,7 +112,7 @@ class Application(Gtk.Application):
 
             self.confirmations_status = {'running': True, 'confirmations': confirmations}
 
-            await asyncio.sleep(20)
+            await asyncio.sleep(15)
 
     async def run_steamtrades(self) -> None:
         while self.window.get_realized():

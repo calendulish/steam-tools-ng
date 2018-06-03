@@ -16,12 +16,14 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-from typing import Any, Callable, NamedTuple
+import logging
+from typing import Any, Callable, Dict, NamedTuple
 
 from gi.repository import Gtk
 
 from .. import i18n
 
+log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
 
@@ -92,3 +94,45 @@ def markup(text: str, **kwargs: Any) -> str:
     markup_string.append(f'>{text}</span>')
 
     return ' '.join(markup_string)
+
+
+def get_column_len(model, iter_, column) -> int:
+    childrens = model.iter_n_children(iter_)
+    column_len = 0
+
+    for index in range(childrens):
+        column_iter = model.iter_nth_child(iter_, index)
+
+        if model.get_value(column_iter, column):
+            column_len += 1
+        else:
+            log.debug(_("Ignoring value from column %s because value is empty"), index)
+
+    return column_len
+
+
+def match_rows(model: Gtk.TreeModel, item: Dict[str, Any]) -> None:
+    total = len(item)
+    exclusions = len(model) - total
+
+    if exclusions > 0:
+        for index in range(exclusions):
+            exclusion_iter = model.get_iter(total + index)
+            model.remove(exclusion_iter)
+
+
+def match_column_childrens(model: Gtk.TreeModel, iter_: Gtk.TreeIter, item, column) -> None:
+    total = len(item)
+    exclusions = get_column_len(model, iter_, column) - total
+
+    if exclusions > 0:
+        for index in range(exclusions):
+            exclusion_iter = model.iter_nth_child(iter_, total + index)
+
+            if None in [
+                model.get_value(exclusion_iter, 3),
+                model.get_value(exclusion_iter, 5),
+            ]:
+                model.remove(exclusion_iter)
+            else:
+                model.set_value(exclusion_iter, column, '')

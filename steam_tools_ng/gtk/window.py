@@ -17,6 +17,7 @@
 #
 import asyncio
 import functools
+import itertools
 import logging
 from typing import Any, Optional
 
@@ -163,8 +164,8 @@ class Main(Gtk.ApplicationWindow):
         info_label.set_markup(utils.markup(_("If you have confirmations, they will be shown here."), color='blue'))
         main_grid.attach(info_label, 0, 0, 4, 1)
 
-        list_store = Gtk.ListStore(*[str for _ in range(7)])
-        tree_view = Gtk.TreeView(model=list_store)
+        tree_store = Gtk.TreeStore(*[str for _ in range(7)])
+        tree_view = Gtk.TreeView(model=tree_store)
         scrolled_window = Gtk.ScrolledWindow()
         scrolled_window.add(tree_view)
         scrolled_window.set_hexpand(True)
@@ -172,8 +173,9 @@ class Main(Gtk.ApplicationWindow):
         scrolled_window.set_overlay_scrolling(False)
         main_grid.attach(scrolled_window, 0, 1, 4, 1)
 
+        cell_renderer = Gtk.CellRendererText()
+
         for index, header in enumerate(webapi.Confirmation._fields):
-            cell_renderer = Gtk.CellRendererText()
             column = Gtk.TreeViewColumn(header, cell_renderer, text=index)
 
             if index == 0 or index == 1 or index == 2:
@@ -187,16 +189,11 @@ class Main(Gtk.ApplicationWindow):
             column.set_resizable(True)
             tree_view.append_column(column)
 
-        # FIXME: cairo bug: assertion surface->is_clear (cairo-surface.c:542)
-        if len(list_store) == 0:
-            list_store.append(['' for _ in range(7)])
-
-        tree_view.set_model(list_store)
         tree_view.set_has_tooltip(True)
         tree_view.connect('query-tooltip', self.on_query_confirmations_tooltip)
 
         tree_selection = tree_view.get_selection()
-        tree_selection.connect("changed", self.on_tree_view_selection_changed)
+        tree_selection.connect("changed", self.on_tree_selection_changed)
 
         accept_button = Gtk.Button(_('Accept selected'))
         accept_button.connect('clicked', self.on_accept_button_clicked, tree_selection)
@@ -207,16 +204,16 @@ class Main(Gtk.ApplicationWindow):
         main_grid.attach(cancel_button, 1, 2, 1, 1)
 
         accept_all_button = Gtk.Button(_('Accept all'))
-        accept_all_button.connect('clicked', self.on_accept_all_button_clicked, list_store)
+        accept_all_button.connect('clicked', self.on_accept_all_button_clicked, tree_store)
         main_grid.attach(accept_all_button, 2, 2, 1, 1)
 
         cancel_all_button = Gtk.Button(_('Cancel all'))
-        cancel_all_button.connect('clicked', self.on_cancel_all_button_clicked, list_store)
+        cancel_all_button.connect('clicked', self.on_cancel_all_button_clicked, tree_store)
         main_grid.attach(cancel_all_button, 3, 2, 1, 1)
 
         main_grid.show_all()
 
-        asyncio.ensure_future(self.check_confirmations_status(list_store))
+        asyncio.ensure_future(self.check_confirmations_status(tree_view))
 
         return main_grid
 
@@ -246,19 +243,43 @@ class Main(Gtk.ApplicationWindow):
 
         return main_grid
 
-    async def check_confirmations_status(self, list_store: Gtk.ListStore) -> None:
+    async def check_confirmations_status(self, tree_view: Gtk.TreeView) -> None:
         while self.get_realized():
             status = self.application.confirmations_status
+            tree_store = tree_view.get_model()
 
-            if status['running']:
-                if status['confirmations']:
-                    for confirmation in status['confirmations']:
-                        list_store.clear()
-                        list_store.append(confirmation)
-                else:
-                    list_store.clear()
-                    # FIXME: cairo bug (see on confirmations_tab)
-                    list_store.append(['' for _ in range(7)])
+            if status['running'] and status['confirmations']:
+                for confirmation_index, confirmation_ in enumerate(status['confirmations']):
+                    give = confirmation_.give
+                    receive = confirmation_.receive
+
+                    if len(tree_store) == confirmation_index:
+                        iter_ = tree_store.insert(None, confirmation_index)
+                    else:
+                        iter_ = tree_store[confirmation_index].iter
+
+                    tree_store[confirmation_index] = [
+                        confirmation_.mode,
+                        confirmation_.id,
+                        confirmation_.key,
+                        give[0] if len(give) == 1 else _("Various"),
+                        confirmation_.to,
+                        receive[0] if len(receive) == 1 else _("Various"),
+                        confirmation_.created,
+                    ]
+
+                    for item_index, item in enumerate(itertools.zip_longest(give, receive)):
+                        children_iter = tree_store.iter_nth_child(iter_, item_index)
+
+                        if children_iter is None:
+                            children_iter = tree_store.insert(iter_, item_index)
+
+                        tree_store[children_iter] = ['', '', '', item[0], '', item[1], '']
+
+                    utils.match_column_childrens(tree_store, iter_, give, 3)
+                    utils.match_column_childrens(tree_store, iter_, receive, 5)
+
+                utils.match_rows(tree_store, status['confirmations'])
 
             await asyncio.sleep(10)
 
@@ -309,10 +330,12 @@ class Main(Gtk.ApplicationWindow):
         context = tree_view.get_tooltip_context(x, y, tip)
 
         if context[0]:
-            tooltip.set_text('Give {} to {} and receive {}'.format(
-                context.model.get_value(context.iter, 3),
-                context.model.get_value(context.iter, 4),
-                context.model.get_value(context.iter, 5),
+            if context.model.iter_depth(context.iter) != 0:
+                return False
+
+            tooltip.set_text('Id:{}\nKey:{}'.format(
+                context.model.get_value(context.iter, 1),
+                context.model.get_value(context.iter, 2),
             ))
 
             return True
@@ -320,20 +343,12 @@ class Main(Gtk.ApplicationWindow):
             return False
 
     def on_accept_button_clicked(self, button: Gtk.Button, selection: Gtk.TreeSelection) -> None:
-        model, iter_ = selection.get_selected()
+        finalize_dialog = confirmation.FinalizeDialog(self, "allow", *selection.get_selected())
+        finalize_dialog.show()
 
-        if iter_:
-            # FIXME: cairo bug (see on confirmations_tab)
-            if not model[iter_][1] == '':
-                finalize_dialog = confirmation.FinalizeDialog(parent_window=self, data=model[iter_])
-                finalize_dialog.show()
-        else:
-            # TODO: error dialog
-            raise NotImplementedError
-
-    @staticmethod
-    def on_cancel_button_clicked(button: Gtk.Button, selection: Gtk.TreeSelection) -> None:
-        raise NotImplementedError
+    def on_cancel_button_clicked(self, button: Gtk.Button, selection: Gtk.TreeSelection) -> None:
+        finalize_dialog = confirmation.FinalizeDialog(self, "cancel", *selection.get_selected())
+        finalize_dialog.show()
 
     @staticmethod
     def on_accept_all_button_clicked(button: Gtk.Button, tree_view: Gtk.TreeView) -> None:
@@ -344,11 +359,12 @@ class Main(Gtk.ApplicationWindow):
         raise NotImplementedError
 
     @staticmethod
-    def on_tree_view_selection_changed(selection: Any) -> None:
-        model, iter = selection.get_selected()
-        # TODO: dialog to finalize trade
-        if iter:
-            row = model[iter]
+    def on_tree_selection_changed(selection: Gtk.TreeSelection) -> None:
+        model, iter_ = selection.get_selected()
+        parent = model.iter_parent(iter_)
+
+        if parent:
+            selection.select_iter(parent)
 
     @staticmethod
     def on_adb_path_entry_changed(entry: Gtk.Entry) -> None:
