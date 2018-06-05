@@ -97,7 +97,7 @@ class FinalizeDialog(Gtk.Dialog):
             self.column_give.set_fixed_width(300)
             self.tree_view_give.append_column(self.column_give)
 
-            self.copy_childrens(model, self.list_store_give, iter_, 3)
+            utils.copy_childrens(model, self.list_store_give, iter_, 3)
 
             self.arrow = Gtk.Image()
             self.arrow.set_from_icon_name('emblem-symbolic-link', Gtk.IconSize.DIALOG)
@@ -111,7 +111,7 @@ class FinalizeDialog(Gtk.Dialog):
             self.column_receive.set_fixed_width(300)
             self.tree_view_receive.append_column(self.column_receive)
 
-            self.copy_childrens(model, self.list_store_receive, iter_, 5)
+            utils.copy_childrens(model, self.list_store_receive, iter_, 5)
 
             self.info_label = Gtk.Label()
             self.info_label.set_justify(Gtk.Justification.CENTER)
@@ -146,28 +146,6 @@ class FinalizeDialog(Gtk.Dialog):
 
     def on_no_button_clicked(self, button: Gtk.Button) -> None:
         self.destroy()
-
-    @staticmethod
-    def copy_childrens(from_model: Gtk.TreeModel, to_model: Gtk.TreeModel, iter_: Gtk.TreeIter, column: int) -> None:
-        childrens = from_model.iter_n_children(iter_)
-
-        if childrens:
-            for index in range(childrens):
-                children_iter = from_model.iter_nth_child(iter_, index)
-                value = from_model.get_value(children_iter, column)
-
-                if value:
-                    to_model.append([value])
-                else:
-                    log.debug(
-                        _("Ignoring value from %s on column %s item %s because value is empty"),
-                        children_iter,
-                        column,
-                        index
-                    )
-        else:
-            value = from_model.get_value(iter_, column)
-            to_model.append([value])
 
 
 @config.Check("authenticator")

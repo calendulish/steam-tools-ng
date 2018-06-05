@@ -140,6 +140,28 @@ def match_column_childrens(model: Gtk.TreeModel, iter_: Gtk.TreeIter, item: List
                 model.set_value(exclusion_iter, column, '')
 
 
+def copy_childrens(from_model: Gtk.TreeModel, to_model: Gtk.TreeModel, iter_: Gtk.TreeIter, column: int) -> None:
+    childrens = from_model.iter_n_children(iter_)
+
+    if childrens:
+        for index in range(childrens):
+            children_iter = from_model.iter_nth_child(iter_, index)
+            value = from_model.get_value(children_iter, column)
+
+            if value:
+                to_model.append([value])
+            else:
+                log.debug(
+                    _("Ignoring value from %s on column %s item %s because value is empty"),
+                    children_iter,
+                    column,
+                    index
+                )
+    else:
+        value = from_model.get_value(iter_, column)
+        to_model.append([value])
+
+
 def safe_confirmation_get(confirmation_: webapi.Confirmation, attribute: str) -> Tuple[str, List[str]]:
     value = getattr(confirmation_, attribute)
 
