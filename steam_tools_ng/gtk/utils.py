@@ -17,7 +17,7 @@
 #
 
 import logging
-from typing import Any, Callable, Dict, NamedTuple
+from typing import Any, Callable, Dict, List, NamedTuple
 
 from gi.repository import Gtk
 
@@ -96,7 +96,7 @@ def markup(text: str, **kwargs: Any) -> str:
     return ' '.join(markup_string)
 
 
-def get_column_len(model, iter_, column) -> int:
+def get_column_len(model: Gtk.TreeModel, iter_: Gtk.TreeIter, column: int) -> int:
     childrens = model.iter_n_children(iter_)
     column_len = 0
 
@@ -121,7 +121,7 @@ def match_rows(model: Gtk.TreeModel, item: Dict[str, Any]) -> None:
             model.remove(exclusion_iter)
 
 
-def match_column_childrens(model: Gtk.TreeModel, iter_: Gtk.TreeIter, item, column) -> None:
+def match_column_childrens(model: Gtk.TreeModel, iter_: Gtk.TreeIter, item: List[str], column: int) -> None:
     total = len(item)
     exclusions = get_column_len(model, iter_, column) - total
 

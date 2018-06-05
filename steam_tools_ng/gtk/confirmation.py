@@ -148,7 +148,7 @@ class FinalizeDialog(Gtk.Dialog):
         self.destroy()
 
     @staticmethod
-    def copy_childrens(from_model, to_model, iter_, column):
+    def copy_childrens(from_model: Gtk.TreeModel, to_model: Gtk.TreeModel, iter_: Gtk.TreeIter, column: int) -> None:
         for index in range(from_model.iter_n_children(iter_)):
             children_iter = from_model.iter_nth_child(iter_, index)
             value = from_model.get_value(children_iter, column)
@@ -184,10 +184,10 @@ async def finalize(
             data[2],
             action,
         )
-
+        assert isinstance(result, dict), "finalize_confirmation return is not a dict"
         return result
 
 
-def finalize_callback(future: Any, dialog) -> None:
+def finalize_callback(future: Any, dialog: Gtk.Dialog) -> None:
     log.debug("confirmation finalized. The return is %s", future.result)
     dialog.destroy()

@@ -93,7 +93,7 @@ class Application(Gtk.Application):
     async def run_confirmations(self) -> None:
         while self.window.get_realized():
             identity_secret = config.config_parser.get("authenticator", "identity_secret", fallback='')
-            steamid = config.config_parser.getint("authenticator", "steamid", fallback=None)
+            steamid = config.config_parser.getint("authenticator", "steamid", fallback=0)
             deviceid = config.config_parser.get("authenticator", "deviceid", fallback='')
             cookies = config.login_cookies()
 

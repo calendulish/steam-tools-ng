@@ -103,7 +103,7 @@ class LogInDialog(Gtk.Dialog):
     ) -> None:
         if not shared_secret:
             self.status_label.set_markup(
-                utils.markup_string(_("Unable to login!\nAuthenticator is not configured."), color='red')
+                utils.markup(_("Unable to login!\nAuthenticator is not configured."), color='red')
             )
             return None
 

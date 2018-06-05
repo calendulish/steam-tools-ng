@@ -164,7 +164,7 @@ class Main(Gtk.ApplicationWindow):
         info_label.set_markup(utils.markup(_("If you have confirmations, they will be shown here."), color='blue'))
         main_grid.attach(info_label, 0, 0, 4, 1)
 
-        tree_store = Gtk.TreeStore(*[str for _ in range(7)])
+        tree_store = Gtk.TreeStore(*[str for number in range(7)])
         tree_view = Gtk.TreeView(model=tree_store)
         scrolled_window = Gtk.ScrolledWindow()
         scrolled_window.add(tree_view)
