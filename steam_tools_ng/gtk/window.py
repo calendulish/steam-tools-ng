@@ -182,9 +182,9 @@ class Main(Gtk.ApplicationWindow):
                 column.set_visible(False)
 
             if index == 4:
-                column.set_fixed_width(90)
+                column.set_fixed_width(140)
             else:
-                column.set_fixed_width(200)
+                column.set_fixed_width(220)
 
             column.set_resizable(True)
             tree_view.append_column(column)
