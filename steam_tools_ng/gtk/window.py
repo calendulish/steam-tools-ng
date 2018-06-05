@@ -268,13 +268,14 @@ class Main(Gtk.ApplicationWindow):
                         confirmation_.created,
                     ]
 
-                    for item_index, item in enumerate(itertools.zip_longest(give, receive)):
-                        children_iter = tree_store.iter_nth_child(iter_, item_index)
+                    if len(give) > 1 or len(receive) > 1:
+                        for item_index, item in enumerate(itertools.zip_longest(give, receive)):
+                            children_iter = tree_store.iter_nth_child(iter_, item_index)
 
-                        if children_iter is None:
-                            children_iter = tree_store.insert(iter_, item_index)
+                            if children_iter is None:
+                                children_iter = tree_store.insert(iter_, item_index)
 
-                        tree_store[children_iter] = ['', '', '', item[0], '', item[1], '']
+                            tree_store[children_iter] = ['', '', '', item[0], '', item[1], '']
 
                     utils.match_column_childrens(tree_store, iter_, give, 3)
                     utils.match_column_childrens(tree_store, iter_, receive, 5)

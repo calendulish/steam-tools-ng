@@ -134,5 +134,6 @@ def match_column_childrens(model: Gtk.TreeModel, iter_: Gtk.TreeIter, item, colu
                 model.get_value(exclusion_iter, 5),
             ]:
                 model.remove(exclusion_iter)
+                total -= 1
             else:
                 model.set_value(exclusion_iter, column, '')
