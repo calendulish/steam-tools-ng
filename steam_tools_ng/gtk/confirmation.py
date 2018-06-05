@@ -149,19 +149,25 @@ class FinalizeDialog(Gtk.Dialog):
 
     @staticmethod
     def copy_childrens(from_model: Gtk.TreeModel, to_model: Gtk.TreeModel, iter_: Gtk.TreeIter, column: int) -> None:
-        for index in range(from_model.iter_n_children(iter_)):
-            children_iter = from_model.iter_nth_child(iter_, index)
-            value = from_model.get_value(children_iter, column)
+        childrens = from_model.iter_n_children(iter_)
 
-            if value:
-                to_model.append([value])
-            else:
-                log.debug(
-                    _("Ignoring value from %s on column %s item %s because value is empty"),
-                    children_iter,
-                    column,
-                    index
-                )
+        if childrens:
+            for index in range(childrens):
+                children_iter = from_model.iter_nth_child(iter_, index)
+                value = from_model.get_value(children_iter, column)
+
+                if value:
+                    to_model.append([value])
+                else:
+                    log.debug(
+                        _("Ignoring value from %s on column %s item %s because value is empty"),
+                        children_iter,
+                        column,
+                        index
+                    )
+        else:
+            value = from_model.get_value(iter_, column)
+            to_model.append([value])
 
 
 @config.Check("authenticator")

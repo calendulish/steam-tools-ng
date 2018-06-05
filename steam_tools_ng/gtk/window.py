@@ -164,7 +164,7 @@ class Main(Gtk.ApplicationWindow):
         info_label.set_markup(utils.markup(_("If you have confirmations, they will be shown here."), color='blue'))
         main_grid.attach(info_label, 0, 0, 4, 1)
 
-        tree_store = Gtk.TreeStore(*[str for number in range(7)])
+        tree_store = Gtk.TreeStore(*[str for number in range(6)])
         tree_view = Gtk.TreeView(model=tree_store)
         scrolled_window = Gtk.ScrolledWindow()
         scrolled_window.add(tree_view)
@@ -181,7 +181,7 @@ class Main(Gtk.ApplicationWindow):
             if index == 0 or index == 1 or index == 2:
                 column.set_visible(False)
 
-            if index == 4 or index == 6:
+            if index == 4:
                 column.set_fixed_width(90)
             else:
                 column.set_fixed_width(200)
@@ -258,14 +258,16 @@ class Main(Gtk.ApplicationWindow):
                     else:
                         iter_ = tree_store[confirmation_index].iter
 
+                    safe_give, give = utils.safe_confirmation_get(confirmation_, 'give')
+                    safe_receive, receive = utils.safe_confirmation_get(confirmation_, 'receive')
+
                     tree_store[confirmation_index] = [
                         confirmation_.mode,
                         confirmation_.id,
                         confirmation_.key,
-                        give[0] if len(give) == 1 else _("Various"),
+                        safe_give,
                         confirmation_.to,
-                        receive[0] if len(receive) == 1 else _("Various"),
-                        confirmation_.created,
+                        safe_receive,
                     ]
 
                     if len(give) > 1 or len(receive) > 1:
@@ -275,7 +277,7 @@ class Main(Gtk.ApplicationWindow):
                             if children_iter is None:
                                 children_iter = tree_store.insert(iter_, item_index)
 
-                            tree_store[children_iter] = ['', '', '', item[0], '', item[1], '']
+                            tree_store[children_iter] = ['', '', '', item[0], '', item[1]]
 
                     utils.match_column_childrens(tree_store, iter_, give, 3)
                     utils.match_column_childrens(tree_store, iter_, receive, 5)

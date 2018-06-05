@@ -17,9 +17,10 @@
 #
 
 import logging
-from typing import Any, Callable, Dict, List, NamedTuple
+from typing import Any, Callable, Dict, List, NamedTuple, Tuple
 
 from gi.repository import Gtk
+from stlib import webapi
 
 from .. import i18n
 
@@ -137,3 +138,16 @@ def match_column_childrens(model: Gtk.TreeModel, iter_: Gtk.TreeIter, item: List
                 total -= 1
             else:
                 model.set_value(exclusion_iter, column, '')
+
+
+def safe_confirmation_get(confirmation_: webapi.Confirmation, attribute: str) -> Tuple[str, List[str]]:
+    value = getattr(confirmation_, attribute)
+
+    if len(value) == 0:
+        result = _("Nothing")
+    elif len(value) == 1:
+        result = value[0]
+    else:
+        result = _("Various")
+
+    return result, value
