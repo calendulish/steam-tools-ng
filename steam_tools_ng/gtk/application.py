@@ -17,6 +17,7 @@
 #
 import asyncio
 import binascii
+import logging
 import random
 from typing import Any
 
@@ -28,6 +29,7 @@ from . import about, settings, window
 from .. import config, i18n
 
 _ = i18n.get_translation
+log = logging.getLogger(__name__)
 
 
 # noinspection PyUnusedLocal
@@ -108,7 +110,12 @@ class Application(Gtk.Application):
             async with aiohttp.ClientSession(raise_for_status=True) as session:
                 session.cookie_jar.update_cookies(cookies)
                 http = webapi.Http(session, 'https://lara.click/api')
-                confirmations = await http.get_confirmations(identity_secret, steamid, deviceid)
+
+                try:
+                    confirmations = await http.get_confirmations(identity_secret, steamid, deviceid)
+                except AttributeError as exception:
+                    log.error("Error when fetch confirmations: %s", exception)
+                    confirmations = {}
 
             self.confirmations_status = {'running': True, 'confirmations': confirmations}
 
