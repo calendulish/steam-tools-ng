@@ -18,7 +18,7 @@
 import asyncio
 import functools
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Optional, Union
 
 import aiohttp
 from gi.repository import Gtk
@@ -38,16 +38,22 @@ class FinalizeDialog(Gtk.Dialog):
             parent_window: Gtk.Widget,
             action: str,
             model: Gtk.TreeModel,
-            iter_: Gtk.TreeIter
+            iter_: Union[Gtk.TreeIter, bool, None] = False,
     ) -> None:
         super().__init__(use_header_bar=True)
-        self.action = action
+        if action == "allow":
+            self.action = _("accept")
+        else:
+            self.action = _("cancel")
+
+        self.raw_action = action
+        self.model = model
+        self.iter = iter_
 
         self.header_bar = self.get_header_bar()
         self.header_bar.set_show_close_button(False)
 
         self.parent_window = parent_window
-        self.set_default_size(300, 90)
         self.set_title(_('Finalize Confirmation'))
         self.set_transient_for(self.parent_window)
         self.set_modal(True)
@@ -70,68 +76,102 @@ class FinalizeDialog(Gtk.Dialog):
         self.spin = Gtk.Spinner()
         self.content_area.add(self.spin)
 
-        if not iter_:
+        self.set_default_size(300, 90)
+
+        self.give_label = Gtk.Label()
+        self.content_area.add(self.give_label)
+
+        self.grid = Gtk.Grid()
+        self.content_area.add(self.grid)
+
+        self.cell_renderer = Gtk.CellRendererText()
+
+        self.scroll_give = Gtk.ScrolledWindow()
+        self.scroll_give.set_hexpand(True)
+        self.scroll_give.set_vexpand(True)
+        self.grid.attach(self.scroll_give, 0, 0, 1, 1)
+
+        self.list_store_give = Gtk.ListStore(str)
+        self.tree_view_give = Gtk.TreeView(model=self.list_store_give)
+        self.scroll_give.add(self.tree_view_give)
+
+        self.column_give = Gtk.TreeViewColumn("You will give", self.cell_renderer, text=0)
+        self.column_give.set_fixed_width(300)
+        self.tree_view_give.append_column(self.column_give)
+
+        self.arrow = Gtk.Image()
+        self.arrow.set_from_icon_name('emblem-synchronizing', Gtk.IconSize.DIALOG)
+        self.grid.attach(self.arrow, 1, 0, 1, 1)
+
+        self.scroll_receive = Gtk.ScrolledWindow()
+        self.scroll_receive.set_hexpand(True)
+        self.scroll_receive.set_vexpand(True)
+        self.grid.attach(self.scroll_receive, 2, 0, 1, 1)
+
+        self.list_store_receive = Gtk.ListStore(str)
+        self.tree_view_receive = Gtk.TreeView(model=self.list_store_receive)
+        self.scroll_receive.add(self.tree_view_receive)
+
+        self.column_receive = Gtk.TreeViewColumn("You will Receive", self.cell_renderer, text=0)
+        self.column_receive.set_fixed_width(300)
+        self.tree_view_receive.append_column(self.column_receive)
+
+        self.info_label = Gtk.Label()
+        self.info_label.set_justify(Gtk.Justification.CENTER)
+
+        self.content_area.add(self.info_label)
+
+        self.yes_button = Gtk.Button(_("Yes"))
+        self.yes_button.connect("clicked", self.on_yes_button_clicked)
+        self.content_area.add(self.yes_button)
+
+        self.no_button = Gtk.Button(_("No"))
+        self.no_button.connect("clicked", self.on_no_button_clicked)
+        self.content_area.add(self.no_button)
+
+        self.status_section.frame.show_all()
+
+        if self.iter is None or len(model) == 0:
+            self.set_default_size(300, 90)
+
             self.status_label.set_markup(
-                utils.markup(_("You must select an item before accept/cancel"), color='red')
+                utils.markup(_("No items to accept or cancel"), color='red')
             )
+
             self.header_bar.set_show_close_button(True)
-        else:
-            self.data = model[iter_]
-
-            self.give_label = Gtk.Label()
-            self.give_label.set_markup(
-                utils.markup(_("You are trading the following items with {}:").format(self.data[4]), color='blue')
-            )
-            self.content_area.add(self.give_label)
-
-            self.grid = Gtk.Grid()
-            self.content_area.add(self.grid)
-
-            self.cell_renderer = Gtk.CellRendererText()
-
-            self.list_store_give = Gtk.ListStore(str)
-            self.tree_view_give = Gtk.TreeView(model=self.list_store_give)
-            self.grid.attach(self.tree_view_give, 0, 0, 1, 1)
-
-            self.column_give = Gtk.TreeViewColumn("You will Lost", self.cell_renderer, text=0)
-            self.column_give.set_fixed_width(300)
-            self.tree_view_give.append_column(self.column_give)
-
-            utils.copy_childrens(model, self.list_store_give, iter_, 3)
-
-            self.arrow = Gtk.Image()
-            self.arrow.set_from_icon_name('emblem-symbolic-link', Gtk.IconSize.DIALOG)
-            self.grid.attach(self.arrow, 1, 0, 1, 1)
-
-            self.list_store_receive = Gtk.ListStore(str)
-            self.tree_view_receive = Gtk.TreeView(model=self.list_store_receive)
-            self.grid.attach(self.tree_view_receive, 2, 0, 1, 1)
-
-            self.column_receive = Gtk.TreeViewColumn("You will Receive", self.cell_renderer, text=0)
-            self.column_receive.set_fixed_width(300)
-            self.tree_view_receive.append_column(self.column_receive)
-
-            utils.copy_childrens(model, self.list_store_receive, iter_, 5)
-
-            self.info_label = Gtk.Label()
-            self.info_label.set_justify(Gtk.Justification.CENTER)
-
+            self.content_area.show()
+        elif self.iter is False:
             self.info_label.set_markup(
-                utils.markup(_("Do you really want to {} that?").format(action), font_size='larger') +
+                utils.markup(_("Do you really want to"), font_size='medium') +
+                utils.markup(_(" {} ALL ").format(self.action.upper()), font_size='medium', font_weight='bold') +
+                utils.markup(_("confirmations?"), font_size='medium') +
                 utils.markup(_("\nIt can't be undone!"), color='red', font_weight='ultrabold')
             )
 
-            self.content_area.add(self.info_label)
+            self.info_label.show()
+            self.yes_button.show()
+            self.no_button.show()
+            self.spin.show()
+            self.content_area.show()
+        else:
+            self.set_default_size(600, 400)
 
-            self.yes_button = Gtk.Button(_("Yes"))
-            self.yes_button.connect("clicked", self.on_yes_button_clicked)
-            self.content_area.add(self.yes_button)
+            self.give_label.set_markup(
+                utils.markup(
+                    _("You are trading the following items with {}:").format(self.model[self.iter][4]),
+                    color='blue',
+                )
+            )
 
-            self.no_button = Gtk.Button(_("No"))
-            self.no_button.connect("clicked", self.on_no_button_clicked)
-            self.content_area.add(self.no_button)
+            self.info_label.set_markup(
+                utils.markup(_("Do you really want to {} that?").format(self.action), font_size='medium') +
+                utils.markup(_("\nIt can't be undone!"), color='red', font_weight='ultrabold')
+            )
 
-        self.content_area.show_all()
+            utils.copy_childrens(self.model, self.list_store_give, self.iter, 3)
+            utils.copy_childrens(self.model, self.list_store_receive, self.iter, 5)
+
+            self.content_area.show_all()
 
         self.connect('response', self.on_response)
 
@@ -140,9 +180,19 @@ class FinalizeDialog(Gtk.Dialog):
         dialog.destroy()
 
     def on_yes_button_clicked(self, button: Gtk.Button) -> None:
+        self.status_label.set_markup(utils.markup(_("Running"), color='green'))
         self.spin.start()
-        task = asyncio.ensure_future(finalize(self.action, self.data))
-        task.add_done_callback(functools.partial(finalize_callback, dialog=self))
+        self.yes_button.set_sensitive(False)
+        self.no_button.set_sensitive(False)
+
+        future: Any = asyncio.Future()
+
+        if self.iter:
+            asyncio.ensure_future(finalize(future, self.raw_action, self.model, self.iter))
+        else:
+            asyncio.ensure_future(batch_finalize(future, self.raw_action, self.model))
+
+        future.add_done_callback(functools.partial(finalize_callback, dialog=self))
 
     def on_no_button_clicked(self, button: Gtk.Button) -> None:
         self.destroy()
@@ -150,12 +200,14 @@ class FinalizeDialog(Gtk.Dialog):
 
 @config.Check("authenticator")
 async def finalize(
+        future: Any,
         action: str,
-        data: Any,
+        model: Gtk.TreeModel,
+        iter_: Gtk.TreeIter,
         identity_secret: Optional[config.ConfigStr] = None,
         steamid: Optional[config.ConfigInt] = None,
         deviceid: Optional[config.ConfigStr] = None,
-) -> Dict[str, bool]:
+) -> None:
     async with aiohttp.ClientSession(raise_for_status=True) as session:
         session.cookie_jar.update_cookies(config.login_cookies())
         http = webapi.Http(session, 'https://lara.click/api')
@@ -164,14 +216,50 @@ async def finalize(
             identity_secret,
             steamid,
             deviceid,
-            data[1],
-            data[2],
+            model[iter_][1],
+            model[iter_][2],
             action,
         )
         assert isinstance(result, dict), "finalize_confirmation return is not a dict"
-        return result
+        future.set_result(result)
 
 
-def finalize_callback(future: Any, dialog: Gtk.Dialog) -> None:
-    log.debug("confirmation finalized. The return is %s", future.result)
+@config.Check("authenticator")
+async def batch_finalize(
+        future: Any,
+        action: str,
+        model: Gtk.TreeModel,
+        identity_secret: Optional[config.ConfigStr] = None,
+        steamid: Optional[config.ConfigInt] = None,
+        deviceid: Optional[config.ConfigStr] = None,
+) -> None:
+    results = []
+
+    for index in range(len(model)):
+        iter_ = model[index].iter
+
+        async with aiohttp.ClientSession(raise_for_status=True) as session:
+            session.cookie_jar.update_cookies(config.login_cookies())
+            http = webapi.Http(session, 'https://lara.click/api')
+
+            result = await http.finalize_confirmation(
+                identity_secret,
+                steamid,
+                deviceid,
+                model[iter_][1],
+                model[iter_][2],
+                action,
+            )
+
+            results.append(result)
+            assert isinstance(result, dict), "finalize_confirmation return is not a dict"
+
+    future.set_result(results)
+
+
+def finalize_callback(
+        future: Any,
+        dialog: Gtk.Dialog
+) -> None:
+    log.debug("confirmation finalized. The return is %s", future.result())
     dialog.destroy()

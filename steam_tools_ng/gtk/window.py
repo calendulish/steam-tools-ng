@@ -161,7 +161,11 @@ class Main(Gtk.ApplicationWindow):
         main_grid = Gtk.Grid()
 
         info_label = Gtk.Label()
-        info_label.set_markup(utils.markup(_("If you have confirmations, they will be shown here."), color='blue'))
+
+        info_label.set_markup(
+            utils.markup(_("If you have confirmations, they will be shown here. (15 seconds delay)"), color='blue')
+        )
+
         main_grid.attach(info_label, 0, 0, 4, 1)
 
         tree_store = Gtk.TreeStore(*[str for number in range(6)])
@@ -283,8 +287,10 @@ class Main(Gtk.ApplicationWindow):
                     utils.match_column_childrens(tree_store, iter_, receive, 5)
 
                 utils.match_rows(tree_store, status['confirmations'])
+            else:
+                tree_store.clear()
 
-            await asyncio.sleep(10)
+            await asyncio.sleep(1)
 
     async def check_steamtrades_status(
             self,
@@ -353,21 +359,23 @@ class Main(Gtk.ApplicationWindow):
         finalize_dialog = confirmation.FinalizeDialog(self, "cancel", *selection.get_selected())
         finalize_dialog.show()
 
-    @staticmethod
-    def on_accept_all_button_clicked(button: Gtk.Button, tree_view: Gtk.TreeView) -> None:
-        raise NotImplementedError
+    def on_accept_all_button_clicked(self, button: Gtk.Button, model: Gtk.TreeModel) -> None:
+        finalize_dialog = confirmation.FinalizeDialog(self, "allow", model)
+        finalize_dialog.show()
 
-    @staticmethod
-    def on_cancel_all_button_clicked(button: Gtk.Button, tree_view: Gtk.TreeView) -> None:
-        raise NotImplementedError
+    def on_cancel_all_button_clicked(self, button: Gtk.Button, model: Gtk.TreeModel) -> None:
+        finalize_dialog = confirmation.FinalizeDialog(self, "cancel", model)
+        finalize_dialog.show()
 
     @staticmethod
     def on_tree_selection_changed(selection: Gtk.TreeSelection) -> None:
         model, iter_ = selection.get_selected()
-        parent = model.iter_parent(iter_)
 
-        if parent:
-            selection.select_iter(parent)
+        if iter_:
+            parent = model.iter_parent(iter_)
+
+            if parent:
+                selection.select_iter(parent)
 
     @staticmethod
     def on_adb_path_entry_changed(entry: Gtk.Entry) -> None:
