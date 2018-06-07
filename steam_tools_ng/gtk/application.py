@@ -93,23 +93,24 @@ class Application(Gtk.Application):
                     await asyncio.sleep(0.125)
 
     async def run_confirmations(self) -> None:
-        while self.window.get_realized():
-            identity_secret = config.config_parser.get("authenticator", "identity_secret", fallback='')
-            steamid = config.config_parser.getint("authenticator", "steamid", fallback=0)
-            deviceid = config.config_parser.get("authenticator", "deviceid", fallback='')
-            cookies = config.login_cookies()
+        async with aiohttp.ClientSession(raise_for_status=True) as session:
+            http = webapi.Http(session, 'https://lara.click/api')
 
-            if not cookies:
-                self.confirmations_status = {
-                    'running': False,
-                    'message': "Unable to find a valid login data",
-                }
-                await asyncio.sleep(5)
-                continue
+            while self.window.get_realized():
+                identity_secret = config.config_parser.get("authenticator", "identity_secret", fallback='')
+                steamid = config.config_parser.getint("authenticator", "steamid", fallback=0)
+                deviceid = config.config_parser.get("authenticator", "deviceid", fallback='')
+                cookies = config.login_cookies()
 
-            async with aiohttp.ClientSession(raise_for_status=True) as session:
-                session.cookie_jar.update_cookies(cookies)
-                http = webapi.Http(session, 'https://lara.click/api')
+                if cookies:
+                    session.cookie_jar.update_cookies(cookies)
+                else:
+                    self.confirmations_status = {
+                        'running': False,
+                        'message': "Unable to find a valid login data",
+                    }
+                    await asyncio.sleep(5)
+                    continue
 
                 try:
                     confirmations = await http.get_confirmations(identity_secret, steamid, deviceid)
@@ -117,43 +118,43 @@ class Application(Gtk.Application):
                     log.error("Error when fetch confirmations: %s", exception)
                     confirmations = {}
 
-            self.confirmations_status = {'running': True, 'confirmations': confirmations}
+                self.confirmations_status = {'running': True, 'confirmations': confirmations}
 
-            await asyncio.sleep(15)
+                await asyncio.sleep(15)
 
     async def run_steamtrades(self) -> None:
-        while self.window.get_realized():
-            self.steamtrades_status = {'running': True, 'message': "Loading...", 'trade_id': ''}
-            trade_ids = config.config_parser.get("steamtrades", "trade_ids", fallback='')
-            wait_min = config.config_parser.getint("steamtrades", "wait_min", fallback=3700)
-            wait_max = config.config_parser.getint("steamtrades", "wait_max", fallback=4100)
-            cookies = config.login_cookies()
+        async with aiohttp.ClientSession(raise_for_status=True) as session:
+            http = webapi.Http(session, 'https://lara.click/api')
+            trades_http = steamtrades.Http(session)
 
-            if not trade_ids:
-                self.steamtrades_status = {
-                    'running': False,
-                    'message': _("No trade ID found in config file"),
-                    'trade_id': '',
-                }
-                await asyncio.sleep(5)
-                continue
+            while self.window.get_realized():
+                self.steamtrades_status = {'running': True, 'message': "Loading...", 'trade_id': ''}
+                trade_ids = config.config_parser.get("steamtrades", "trade_ids", fallback='')
+                wait_min = config.config_parser.getint("steamtrades", "wait_min", fallback=3700)
+                wait_max = config.config_parser.getint("steamtrades", "wait_max", fallback=4100)
+                cookies = config.login_cookies()
 
-            if not cookies:
-                self.steamtrades_status = {
-                    'running': False,
-                    'message': "Unable to find a valid login data",
-                    'trade_id': '',
-                }
-                await asyncio.sleep(5)
-                continue
+                if not trade_ids:
+                    self.steamtrades_status = {
+                        'running': False,
+                        'message': _("No trade ID found in config file"),
+                        'trade_id': '',
+                    }
+                    await asyncio.sleep(5)
+                    continue
 
-            async with aiohttp.ClientSession(raise_for_status=True) as session:
-                session.cookie_jar.update_cookies(cookies)
+                if cookies:
+                    session.cookie_jar.update_cookies(cookies)
+                    await http.do_openid_login('https://steamtrades.com/?login')
+                else:
+                    self.steamtrades_status = {
+                        'running': False,
+                        'message': "Unable to find a valid login data",
+                        'trade_id': '',
+                    }
+                    await asyncio.sleep(5)
+                    continue
 
-                http = webapi.Http(session, 'https://lara.click/api')
-                await http.do_openid_login('https://steamtrades.com/?login')
-
-                trades_http = steamtrades.Http(session)
                 trades = [trade.strip() for trade in trade_ids.split(',')]
 
                 for trade_id in trades:
@@ -165,6 +166,7 @@ class Application(Gtk.Application):
                             'message': f"Unable to find id {trade_id}",
                             'trade_id': trade_id,
                         }
+                        await asyncio.sleep(5)
                         continue
 
                     result = await trades_http.bump(trade_info)
@@ -190,11 +192,12 @@ class Application(Gtk.Application):
                             'message': 'trade is closed',
                             'trade_id': trade_info.id,
                         }
+                        await asyncio.sleep(5)
                         continue
 
-                wait_offset = random.randint(wait_min, wait_max)
-                for past_time in range(wait_offset):
-                    await asyncio.sleep(1)
+                    wait_offset = random.randint(wait_min, wait_max)
+                    for past_time in range(wait_offset):
+                        await asyncio.sleep(1)
 
     def on_settings_activate(self, action: Any, data: Any) -> None:
         settings_dialog = settings.SettingsDialog(parent_window=self.window)
