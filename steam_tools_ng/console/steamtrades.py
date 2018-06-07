@@ -118,7 +118,13 @@ async def run(
         api_http = webapi.Http(session, 'https://lara.click/api')
         login_data = await on_get_login_data(api_http, authenticator_code)
         session.cookie_jar.update_cookies(login_data)
-        await api_http.do_openid_login('https://steamtrades.com/?login')
+
+        try:
+            await api_http.do_openid_login('https://steamtrades.com/?login')
+        except aiohttp.ClientConnectionError:
+            logging.critical(_("No connection"))
+            sys.exit(1)
+
 
         trades_http = steamtrades.Http(session)
 

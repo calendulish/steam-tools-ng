@@ -117,8 +117,10 @@ class Application(Gtk.Application):
                 except AttributeError as exception:
                     log.error("Error when fetch confirmations: %s", exception)
                     confirmations = {}
-
-                self.confirmations_status = {'running': True, 'confirmations': confirmations}
+                except aiohttp.ClientConnectorError:
+                    self.confirmations_status = {'running': False, 'message': _("No connection")}
+                else:
+                    self.confirmations_status = {'running': True, 'confirmations': confirmations}
 
                 await asyncio.sleep(15)
 
@@ -145,7 +147,12 @@ class Application(Gtk.Application):
 
                 if cookies:
                     session.cookie_jar.update_cookies(cookies)
-                    await http.do_openid_login('https://steamtrades.com/?login')
+                    try:
+                        await http.do_openid_login('https://steamtrades.com/?login')
+                    except aiohttp.ClientConnectionError:
+                        self.steamtrades_status = {'running': False, 'message': _("No connection"), 'trade_id': ''}
+                        await asyncio.sleep(15)
+                        continue
                 else:
                     self.steamtrades_status = {
                         'running': False,
