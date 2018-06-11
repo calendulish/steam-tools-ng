@@ -121,6 +121,8 @@ class Application(Gtk.Application):
                     confirmations = {}
                 except aiohttp.ClientConnectorError:
                     self.confirmations_status = {'running': False, 'message': _("No connection")}
+                except ProcessLookupError:
+                    self.confirmations_status = {'running': False, 'message': _("Steam is not running")}
                 else:
                     self.confirmations_status = {'running': True, 'confirmations': confirmations}
 
