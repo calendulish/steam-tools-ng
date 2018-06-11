@@ -75,8 +75,10 @@ class Application(Gtk.Application):
                 auth_code, server_time = authenticator.get_code(shared_secret)
             except (TypeError, binascii.Error):
                 self.authenticator_status = {'running': False, 'message': _("The currently secret is invalid")}
+                await asyncio.sleep(10)
             except ProcessLookupError:
                 self.authenticator_status = {'running': False, 'message': _("Steam Client is not running")}
+                await asyncio.sleep(10)
             else:
                 self.authenticator_status = {'running': False, 'message': _("Loading...")}
 
