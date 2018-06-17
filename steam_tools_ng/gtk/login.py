@@ -117,12 +117,12 @@ class LogInDialog(Gtk.Dialog):
         self.spinner.start()
 
         async with aiohttp.ClientSession(raise_for_status=True) as session:
-            http = webapi.Http(session, 'https://lara.click/api')
-            steam_key = await http.get_steam_key(username)
-            encrypted_password = webapi.encrypt_password(steam_key, password.encode())
+            steam_webapi = webapi.SteamWebAPI(session, 'https://lara.click/api')
+            steam_key = await steam_webapi.get_steam_key(username)
+            encrypted_password = webapi.encrypt_password(steam_key, password)
             authenticator_code, server_time = authenticator.get_code(shared_secret)
 
-            steam_login_data = await http.do_login(
+            steam_login_data = await steam_webapi.do_login(
                 username,
                 encrypted_password,
                 steam_key.timestamp,

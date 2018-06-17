@@ -23,7 +23,7 @@ from typing import Any
 
 import aiohttp
 from gi.repository import Gio, Gtk
-from stlib import authenticator, steamtrades, webapi
+from stlib import authenticator, webapi
 
 from . import about, settings, window
 from .. import config, i18n
@@ -96,7 +96,7 @@ class Application(Gtk.Application):
 
     async def run_confirmations(self) -> None:
         async with aiohttp.ClientSession(raise_for_status=True) as session:
-            http = webapi.Http(session, 'https://lara.click/api')
+            steam_webapi = webapi.SteamWebAPI(session, 'https://lara.click/api')
 
             while self.window.get_realized():
                 identity_secret = config.config_parser.get("authenticator", "identity_secret", fallback='')
@@ -115,7 +115,7 @@ class Application(Gtk.Application):
                     continue
 
                 try:
-                    confirmations = await http.get_confirmations(identity_secret, steamid, deviceid)
+                    confirmations = await steam_webapi.get_confirmations(identity_secret, steamid, deviceid)
                 except AttributeError as exception:
                     log.error("Error when fetch confirmations: %s", exception)
                     confirmations = {}
@@ -130,8 +130,7 @@ class Application(Gtk.Application):
 
     async def run_steamtrades(self) -> None:
         async with aiohttp.ClientSession(raise_for_status=True) as session:
-            http = webapi.Http(session, 'https://lara.click/api')
-            trades_http = steamtrades.Http(session)
+            steam_trades = webapi.SteamTrades(session, api_url='https://lara.click/api')
 
             while self.window.get_realized():
                 self.steamtrades_status = {'running': True, 'message': "Loading...", 'trade_id': ''}
@@ -152,7 +151,7 @@ class Application(Gtk.Application):
                 if cookies:
                     session.cookie_jar.update_cookies(cookies)
                     try:
-                        await http.do_openid_login('https://steamtrades.com/?login')
+                        await steam_trades.do_openid_login('https://steamtrades.com/?login')
                     except aiohttp.ClientConnectionError:
                         self.steamtrades_status = {'running': False, 'message': _("No connection"), 'trade_id': ''}
                         await asyncio.sleep(15)
@@ -170,7 +169,7 @@ class Application(Gtk.Application):
 
                 for trade_id in trades:
                     try:
-                        trade_info = await trades_http.get_trade_info(trade_id)
+                        trade_info = await steam_trades.get_trade_info(trade_id)
                     except (IndexError, aiohttp.ClientResponseError):
                         self.steamtrades_status = {
                             'running': False,
@@ -180,28 +179,35 @@ class Application(Gtk.Application):
                         await asyncio.sleep(5)
                         continue
 
-                    result = await trades_http.bump(trade_info)
-
-                    if result['success']:
+                    try:
+                        if await steam_trades.bump(trade_info):
+                            self.steamtrades_status = {
+                                'running': True,
+                                'message': 'Bumped!',
+                                'trade_id': trade_info.id,
+                            }
+                            await asyncio.sleep(random.randint(1, 5))
+                        else:
+                            log.critical(f"Unable to bump {trade_info.id}")
+                            await asyncio.sleep(5)
+                            continue
+                    except webapi.NoTradesError as exception:
+                        log.error(exception)
+                        await asyncio.sleep(15)
+                        continue
+                    except webapi.NotReadyError as exception:
                         self.steamtrades_status = {
                             'running': True,
-                            'message': 'Bumped!',
-                            'trade_id': trade_info.id,
+                            'message': f"Waiting more {exception.minutes_left} minutes",
+                            'trade_id': exception.id
                         }
-                        await asyncio.sleep(random.randint(1, 5))
-                    elif result['reason'] == 'Not Ready':
-                        self.steamtrades_status = {
-                            'running': True,
-                            'message': f"Waiting more {result['minutes_left']} minutes",
-                            'trade_id': trade_info.id
-                        }
-                        wait_min = result['minutes_left'] * 60
+                        wait_min = exception.time_left * 60
                         wait_max = wait_min + 400
-                    elif result['reason'] == 'trade is closed':
+                    except webapi.ClosedError as exception:
                         self.steamtrades_status = {
                             'running': False,
-                            'message': 'trade is closed',
-                            'trade_id': trade_info.id,
+                            'message': str(exception),
+                            'trade_id': exception.id,
                         }
                         await asyncio.sleep(5)
                         continue

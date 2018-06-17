@@ -25,7 +25,7 @@ import time
 from typing import Any, Dict, Optional, Union
 
 import aiohttp
-from stlib import authenticator, steamtrades, webapi
+from stlib import authenticator, webapi
 
 from . import utils
 from .. import config, i18n
@@ -36,12 +36,14 @@ _ = i18n.get_translation
 
 @config.Check("login")
 async def on_get_login_data(
-        api_http: webapi.Http,
+        session: aiohttp.ClientSession,
         authenticator_code: str,
         steamid: Optional[config.ConfigStr] = None,
         token: Optional[config.ConfigStr] = None,
         token_secure: Optional[config.ConfigStr] = None,
 ) -> Dict[str, str]:
+    steam_trades = webapi.SteamTrades(session, api_url='https://lara.click/api')
+
     while True:
         if not steamid or not token or not token_secure:
             log.critical(_("Unable to find a valid login data on config file or command line"))
@@ -50,13 +52,13 @@ async def on_get_login_data(
             assert isinstance(username, str), "safe_input is returning an invalid username"
             password = getpass.getpass(_("Please, write your password (it's hidden, and will be encrypted):"))
             assert isinstance(password, str), "safe_input is returning and invalid password"
-            steam_key = await api_http.get_steam_key(username)
-            encrypted_password = webapi.encrypt_password(steam_key, password.encode())
+            steam_key = await steam_trades.get_steam_key(username)
+            encrypted_password = webapi.encrypt_password(steam_key, password)
             del password
 
             log.debug(_("Trying to login on Steam..."))
 
-            steam_login_data = await api_http.do_login(
+            steam_login_data = await steam_trades.do_login(
                 username,
                 encrypted_password,
                 steam_key.timestamp,
@@ -115,18 +117,15 @@ async def run(
     authenticator_code, server_time = await on_get_code()
 
     async with aiohttp.ClientSession(raise_for_status=True) as session:
-        api_http = webapi.Http(session, 'https://lara.click/api')
-        login_data = await on_get_login_data(api_http, authenticator_code)
+        login_data = await on_get_login_data(session, authenticator_code)
         session.cookie_jar.update_cookies(login_data)
+        steam_trades = webapi.SteamTrades(session, api_url="https://lara.click/api")
 
         try:
-            await api_http.do_openid_login('https://steamtrades.com/?login')
+            await steam_trades.do_openid_login('https://steamtrades.com/?login')
         except aiohttp.ClientConnectionError:
             logging.critical(_("No connection"))
             sys.exit(1)
-
-
-        trades_http = steamtrades.Http(session)
 
         while True:
             current_datetime = time.strftime('%B, %d, %Y - %H:%M:%S')
@@ -134,27 +133,30 @@ async def run(
 
             for trade_id in trades:
                 try:
-                    trade_info = await trades_http.get_trade_info(trade_id)
+                    trade_info = await steam_trades.get_trade_info(trade_id)
                 except (IndexError, aiohttp.ClientResponseError):
                     logging.error('Unable to find id: %s. Ignoring...', trade_id)
                     continue
 
-                result = await trades_http.bump(trade_info)
-
-                if result['success']:
-                    log.info("%s (%s) Bumped! [%s]", trade_info.id, trade_info.title, current_datetime)
-                elif result['reason'] == 'Not Ready':
+                try:
+                    bump_result = await steam_trades.bump(trade_info)
+                except webapi.NotReadyError as exception:
                     log.warning(
                         "%s (%s) Already bumped. Waiting more %d minutes",
                         trade_info.id,
                         trade_info.title,
-                        result['minutes_left']
+                        exception.time_left,
                     )
-                    wait_min = result['minutes_left'] * 60
+                    wait_min = exception.time_left * 60
                     wait_max = wait_min + 400
-                elif result['reason'] == 'trade is closed':
+                except webapi.ClosedError:
                     log.error("%s (%s) is closed. Ignoring...", trade_info.id, trade_info.title)
                     continue
+                else:
+                    if bump_result:
+                        log.info("%s (%s) Bumped! [%s]", trade_info.id, trade_info.title, current_datetime)
+                    else:
+                        log.error('Unable to bump %s (%s). Ignoring...', trade_info.id, trade_info.title)
 
             wait_offset = random.randint(wait_min, wait_max)
             for past_time in range(wait_offset):

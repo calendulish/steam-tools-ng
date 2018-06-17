@@ -210,9 +210,9 @@ async def finalize(
 ) -> None:
     async with aiohttp.ClientSession(raise_for_status=True) as session:
         session.cookie_jar.update_cookies(config.login_cookies())
-        http = webapi.Http(session, 'https://lara.click/api')
+        steam_webapi = webapi.SteamWebAPI(session, 'https://lara.click/api')
 
-        result = await http.finalize_confirmation(
+        result = await steam_webapi.finalize_confirmation(
             identity_secret,
             steamid,
             deviceid,
@@ -240,9 +240,9 @@ async def batch_finalize(
 
         async with aiohttp.ClientSession(raise_for_status=True) as session:
             session.cookie_jar.update_cookies(config.login_cookies())
-            http = webapi.Http(session, 'https://lara.click/api')
+            steam_webapi = webapi.SteamWebAPI(session, 'https://lara.click/api')
 
-            result = await http.finalize_confirmation(
+            result = await steam_webapi.finalize_confirmation(
                 identity_secret,
                 steamid,
                 deviceid,

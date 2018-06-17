@@ -267,8 +267,8 @@ class Main(Gtk.ApplicationWindow):
 
                     tree_store[confirmation_index] = [
                         confirmation_.mode,
-                        confirmation_.id,
-                        confirmation_.key,
+                        str(confirmation_.id),
+                        str(confirmation_.key),
                         safe_give,
                         confirmation_.to,
                         safe_receive,
