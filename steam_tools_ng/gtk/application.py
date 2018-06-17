@@ -178,6 +178,10 @@ class Application(Gtk.Application):
                         }
                         await asyncio.sleep(5)
                         continue
+                    except aiohttp.ClientConnectionError:
+                        self.steamtrades_status = {'running': False, 'message': _("No connection"), 'trade_id': ''}
+                        await asyncio.sleep(15)
+                        continue
 
                     try:
                         if await steam_trades.bump(trade_info):

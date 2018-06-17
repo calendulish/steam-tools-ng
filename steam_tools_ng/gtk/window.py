@@ -168,6 +168,9 @@ class Main(Gtk.ApplicationWindow):
 
         main_grid.attach(info_label, 0, 0, 4, 1)
 
+        warning_label = Gtk.Label()
+        main_grid.attach(warning_label, 0, 1, 4, 1)
+
         tree_store = Gtk.TreeStore(*[str for number in range(6)])
         tree_view = Gtk.TreeView(model=tree_store)
         scrolled_window = Gtk.ScrolledWindow()
@@ -175,7 +178,7 @@ class Main(Gtk.ApplicationWindow):
         scrolled_window.set_hexpand(True)
         scrolled_window.set_vexpand(True)
         scrolled_window.set_overlay_scrolling(False)
-        main_grid.attach(scrolled_window, 0, 1, 4, 1)
+        main_grid.attach(scrolled_window, 0, 2, 4, 1)
 
         cell_renderer = Gtk.CellRendererText()
 
@@ -201,23 +204,23 @@ class Main(Gtk.ApplicationWindow):
 
         accept_button = Gtk.Button(_('Accept selected'))
         accept_button.connect('clicked', self.on_accept_button_clicked, tree_selection)
-        main_grid.attach(accept_button, 0, 2, 1, 1)
+        main_grid.attach(accept_button, 0, 3, 1, 1)
 
         cancel_button = Gtk.Button(_('Cancel selected'))
         cancel_button.connect('clicked', self.on_cancel_button_clicked, tree_selection)
-        main_grid.attach(cancel_button, 1, 2, 1, 1)
+        main_grid.attach(cancel_button, 1, 3, 1, 1)
 
         accept_all_button = Gtk.Button(_('Accept all'))
         accept_all_button.connect('clicked', self.on_accept_all_button_clicked, tree_store)
-        main_grid.attach(accept_all_button, 2, 2, 1, 1)
+        main_grid.attach(accept_all_button, 2, 3, 1, 1)
 
         cancel_all_button = Gtk.Button(_('Cancel all'))
         cancel_all_button.connect('clicked', self.on_cancel_all_button_clicked, tree_store)
-        main_grid.attach(cancel_all_button, 3, 2, 1, 1)
+        main_grid.attach(cancel_all_button, 3, 3, 1, 1)
 
         main_grid.show_all()
 
-        asyncio.ensure_future(self.check_confirmations_status(tree_view))
+        asyncio.ensure_future(self.check_confirmations_status(tree_view, warning_label))
 
         return main_grid
 
@@ -247,12 +250,22 @@ class Main(Gtk.ApplicationWindow):
 
         return main_grid
 
-    async def check_confirmations_status(self, tree_view: Gtk.TreeView) -> None:
+    async def check_confirmations_status(
+            self,
+            tree_view: Gtk.TreeView,
+            warning_label: Gtk.Label,
+    ) -> None:
         while self.get_realized():
             status = self.application.confirmations_status
             tree_store = tree_view.get_model()
+            warning_label.hide()
 
-            if status['running'] and status['confirmations']:
+            if not status['running']:
+                warning_label.set_markup(utils.markup(status['message'], color='white', background='red'))
+                warning_label.show()
+            elif not status['confirmations']:
+                tree_store.clear()
+            else:
                 for confirmation_index, confirmation_ in enumerate(status['confirmations']):
                     give = confirmation_.give
                     receive = confirmation_.receive
@@ -287,8 +300,6 @@ class Main(Gtk.ApplicationWindow):
                     utils.match_column_childrens(tree_store, iter_, receive, 5)
 
                 utils.match_rows(tree_store, status['confirmations'])
-            else:
-                tree_store.clear()
 
             await asyncio.sleep(1)
 
