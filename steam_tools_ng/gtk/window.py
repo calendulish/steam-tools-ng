@@ -80,7 +80,7 @@ class Main(Gtk.ApplicationWindow):
         main_grid.set_border_width(10)
         main_grid.set_row_spacing(10)
 
-        steam_guard_section = utils.new_section(_('Steam Guard Code'))
+        steam_guard_section = utils.new_section("authenticator", _('Steam Guard Code'))
         main_grid.attach(steam_guard_section.frame, 0, 0, 1, 1)
 
         code_label = Gtk.Label()
@@ -99,7 +99,8 @@ class Main(Gtk.ApplicationWindow):
         show_sensitive = Gtk.CheckButton(_('Show sensitive data'))
         main_grid.attach(show_sensitive, 0, 1, 2, 1)
 
-        sensitive_data_section = utils.new_section(_('Sensitive data'))
+        # FIXME: move sensitive data to settings
+        sensitive_data_section = utils.new_section("login", _('Sensitive data'))
         main_grid.attach(sensitive_data_section.frame, 0, 2, 1, 1)
 
         tip = Gtk.Label(_(
@@ -152,7 +153,8 @@ class Main(Gtk.ApplicationWindow):
         adb_button.connect('clicked', self.on_adb_clicked, sensitive_data_section)
         sensitive_data_section.grid.attach(adb_button, 0, 13, 2, 1)
 
-        load_sensitive_data(sensitive_data_section)
+        # FIXME: move to settings
+        #load_sensitive_data(sensitive_data_section)
         asyncio.ensure_future(self.check_authenticator_status(code_label, status_label, level_bar))
 
         return main_grid
@@ -229,7 +231,7 @@ class Main(Gtk.ApplicationWindow):
         main_grid.set_border_width(10)
         main_grid.set_row_spacing(10)
 
-        trade_bump_section = utils.new_section(_('Trades bump'))
+        trade_bump_section = utils.new_section("steamtrades", _('Trades bump'))
         main_grid.attach(trade_bump_section.frame, 0, 0, 1, 1)
 
         current_trade_label = Gtk.Label()
@@ -436,30 +438,11 @@ class Main(Gtk.ApplicationWindow):
             frame.hide()
 
 
-@config.Check("authenticator")
-def load_sensitive_data(
-        sensitive_data_section: utils.Section,
-        adb_path: Optional[config.ConfigStr] = None,
-        shared_secret: Optional[config.ConfigStr] = None,
-        identity_secret: Optional[config.ConfigStr] = None,
-        account_name: Optional[config.ConfigStr] = None,
-        steamid: Optional[config.ConfigStr] = None,
-        deviceid: Optional[config.ConfigStr] = None,
-) -> None:
-    childrens = Gtk.Container.get_children(sensitive_data_section.grid)
-
-    for children in childrens:
-        if isinstance(children, Gtk.Entry):
-            try:
-                children.set_text(locals()[children.get_name()])
-            except TypeError:
-                pass  # Not found on config file
-
-
 def on_sensitive_data_task_done(adb_dialog: Gtk.Dialog, sensitive_data_section: utils.Section, future: Any) -> None:
     if future.exception():
         exception = future.exception()
         log.debug(repr(exception))
     else:
-        load_sensitive_data(sensitive_data_section, **future.result())
+        # FIXME: Move to settings
+        #load_sensitive_data(sensitive_data_section, **future.result())
         adb_dialog.destroy()

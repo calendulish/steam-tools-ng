@@ -17,8 +17,10 @@
 #
 
 import asyncio
+import configparser
 import logging
-from typing import Optional, Union
+from collections import OrderedDict
+from typing import Any, Optional
 
 from gi.repository import Gtk, Pango
 
@@ -28,20 +30,18 @@ from .. import config, i18n
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
-log_levels = [
-    'critical',
-    'error',
-    'warning',
-    'info',
-    'debug',
-]
+log_levels = OrderedDict([
+    ('critical', _("Critical")),
+    ('error', _("Error")),
+    ('warning', _("Warning")),
+    ('info', _("Info")),
+    ('debug', _("Debug")),
+])
 
-translations = {
-    'en': _("English"),
-    'pt_BR': _("Portuguese (Brazil)"),
-}
-
-languages = list(translations.keys())
+translations = OrderedDict([
+    ('en', _("English")),
+    ('pt_BR', _("Portuguese (Brazil)")),
+])
 
 
 # noinspection PyUnusedLocal
@@ -71,12 +71,12 @@ class SettingsDialog(Gtk.Dialog):
         self.show()
 
     def login_settings(self) -> Gtk.Frame:
-        login_section = utils.new_section(_('Login settings'))
+        login_section = utils.new_section("login", _('Login settings'))
         steamid_item = utils.new_item("steamid", _("steam id:"), login_section, Gtk.Entry, 0, 0)
         token_item = utils.new_item("token", _("Token:"), login_section, Gtk.Entry, 0, 2)
         token_secure_item = utils.new_item("token_secure", _("Token secure:"), login_section, Gtk.Entry, 0, 4)
 
-        load_login_options(steamid_item.children, token_item.children, token_secure_item.children)
+        load_settings(login_section, Gtk.Entry)
 
         steamid_item.children.set_input_purpose(Gtk.InputPurpose.DIGITS)
         steamid_item.children.connect("changed", self.on_steamid_changed)
@@ -100,28 +100,28 @@ class SettingsDialog(Gtk.Dialog):
 
     @staticmethod
     def steamtrades_settings() -> Gtk.Frame:
-        steamtrades_section = utils.new_section(_('Steamtrades settings'))
+        steamtrades_section = utils.new_section('steamtrades', _('Steamtrades settings'))
         info_label = Gtk.Label("trade id separated by commas. (E.g.: '12345,asdfg')")
         steamtrades_section.grid.attach(info_label, 0, 0, 2, 1)
         trade_ids = utils.new_item("trade_ids", _("trade ids:"), steamtrades_section, Gtk.Entry, 0, 1)
 
-        load_steamtrades_options(trade_ids.children)
+        load_settings(steamtrades_section, Gtk.Entry)
 
         steamtrades_section.frame.show_all()
         return steamtrades_section.frame
 
     def locale_settings(self) -> Gtk.Frame:
-        locale_section = utils.new_section(_('Locale settings'))
+        locale_section = utils.new_section("locale", _('Locale settings'))
         language_item = utils.new_item("language", _("Language"), locale_section, Gtk.ComboBoxText, 0, 0)
 
-        load_locale_options(language_item.children)
+        load_settings(locale_section, Gtk.ComboBoxText, combo_items=translations)
         language_item.children.connect("changed", self.on_language_combo_changed)
 
         locale_section.frame.show_all()
         return locale_section.frame
 
     def logger_settings(self) -> Gtk.Frame:
-        logger_section = utils.new_section(_('Logger settings'))
+        logger_section = utils.new_section("logger", _('Logger settings'))
         log_level_item = utils.new_item("log_level", _("Level:"), logger_section, Gtk.ComboBoxText, 0, 0)
 
         log_console_level_item = utils.new_item(
@@ -132,7 +132,8 @@ class SettingsDialog(Gtk.Dialog):
             0, 1,
         )
 
-        load_logger_options(log_level_item.children, log_console_level_item.children)
+        load_settings(logger_section, Gtk.ComboBoxText, combo_items=log_levels)
+
         log_level_item.children.connect("changed", self.on_log_level_changed)
         log_console_level_item.children.connect("changed", self.on_log_console_level_changed)
 
@@ -140,7 +141,7 @@ class SettingsDialog(Gtk.Dialog):
         return logger_section.frame
 
     def on_language_combo_changed(self, combo: Gtk.ComboBoxText) -> None:
-        language = config.ConfigStr(languages[combo.get_active()])
+        language = config.ConfigStr(list(translations)[combo.get_active()])
         config.new(config.ConfigType('locale', 'language', language))
         Gtk.Container.foreach(self, refresh_widget_text)
         Gtk.Container.foreach(self.parent_window, refresh_widget_text)
@@ -182,67 +183,17 @@ class SettingsDialog(Gtk.Dialog):
 
     @staticmethod
     def on_log_level_changed(combo: Gtk.ComboBoxText) -> None:
-        config.new(config.ConfigType('logger', 'log_level', combo.get_active_text()))
+        log_level = config.ConfigStr(list(log_levels)[combo.get_active()])
+        config.new(config.ConfigType('logger', 'log_level', log_level))
 
     @staticmethod
     def on_log_console_level_changed(combo: Gtk.ComboBoxText) -> None:
-        config.new(config.ConfigType('logger', 'log_console_level', combo.get_active_text()))
+        log_console_level = config.ConfigStr(list(log_levels)[combo.get_active()])
+        config.new(config.ConfigType('logger', 'log_console_level', log_console_level))
 
     @staticmethod
     def on_response(dialog: Gtk.Dialog, response_id: int) -> None:
         dialog.destroy()
-
-
-@config.Check("login")
-def load_login_options(
-        steamid_entry: Gtk.Entry,
-        token_entry: Gtk.Entry,
-        token_secure_entry: Gtk.Entry,
-        steamid: Optional[config.ConfigStr] = None,
-        token: Optional[config.ConfigStr] = None,
-        token_secure: Optional[config.ConfigStr] = None,
-) -> None:
-    if steamid:
-        steamid_entry.set_text(steamid)
-    if token:
-        token_entry.set_text(token)
-    if token_secure:
-        token_secure_entry.set_text(token_secure)
-
-
-@config.Check("locale")
-def load_locale_options(
-        language_combo: Gtk.ComboBoxText,
-        language: Union[str, config.ConfigStr] = i18n.fallback_language,
-) -> None:
-    for translation, description in translations.items():
-        language_combo.append_text(f'[{translation}] {description}')
-
-    language_combo.set_active(languages.index(language))
-
-
-@config.Check("logger")
-def load_logger_options(
-        log_level_combo: Gtk.ComboBoxText,
-        log_console_level_combo: Gtk.ComboBoxText,
-        log_level: Union[str, config.ConfigStr] = 'debug',
-        log_console_level: Union[str, config.ConfigStr] = 'info',
-) -> None:
-    for level in log_levels:
-        log_level_combo.append_text(level)
-        log_console_level_combo.append_text(level)
-
-    log_level_combo.set_active(log_levels.index(log_level))
-    log_console_level_combo.set_active(log_levels.index(log_console_level))
-
-
-@config.Check("steamtrades")
-def load_steamtrades_options(
-        trade_ids_entry: Gtk.Entry,
-        trade_ids: Optional[config.ConfigStr] = None
-) -> None:
-    if trade_ids:
-        trade_ids_entry.set_text(trade_ids)
 
 
 def refresh_widget_text(widget: Gtk.Widget) -> None:
@@ -319,3 +270,32 @@ async def wait_login_data(
     )
 
     login_dialog.destroy()
+
+
+def load_settings(
+        section: utils.Section,
+        children_type: Gtk.Widget,
+        combo_items: Optional = None,
+        **kwargs: Any,
+):
+    childrens = Gtk.Container.get_children(section.grid)
+
+    for children in childrens:
+        if isinstance(children, children_type):
+            config_section = section.frame.get_name()
+            config_option = children.get_name()
+
+            try:
+                config_value = config.config_parser.get(config_section, config_option)
+            except (configparser.NoOptionError, configparser.NoSectionError):
+                log.debug(_("Unable to find %s in section %s at config file. Ignoring."), config_section, config_option)
+                continue
+
+            if combo_items:
+                for value in combo_items.values():
+                    children.append_text(value)
+
+                if isinstance(children, Gtk.ComboBox):
+                    children.set_active(list(combo_items).index(config_value))
+            else:
+                children.set_text(config_value)

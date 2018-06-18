@@ -38,11 +38,13 @@ class Item(NamedTuple):
     children: Gtk.Widget
 
 
-def new_section(label_text: str) -> Section:
+def new_section(name: str, label_text: str) -> Section:
     frame = Gtk.Frame(label=label_text)
     frame.set_label_align(0.03, 0.5)
+    frame.set_name(name)
 
     grid = Gtk.Grid()
+    grid.set_name(name)
     grid.set_row_spacing(10)
     grid.set_column_spacing(10)
     grid.set_border_width(10)
