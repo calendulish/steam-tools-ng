@@ -34,7 +34,9 @@ log = logging.getLogger(__name__)
 
 if sys.platform == 'win32':
     event_loop = asyncio.ProactorEventLoop()
+    file_manager = 'explorer'
 else:
+    file_manager = 'xdg-open'
     event_loop = asyncio.new_event_loop()
 
 asyncio.set_event_loop(event_loop)
@@ -80,10 +82,10 @@ if __name__ == "__main__":
     console_params = command_parser.parse_args()
 
     if console_params.config_dir:
-        print(config.config_file_directory)
+        os.system(f'{file_manager} {config.config_file_directory}')
         sys.exit(0)
     elif console_params.log_dir:
-        print(config.DefaultConfig.log_directory)
+        os.system(f'{file_manager} {config.DefaultConfig.log_directory}')
         sys.exit(0)
 
     log.info(f'Steam Tools NG version {version.__version__} (Made with Girl Power <33)')
