@@ -78,6 +78,7 @@ class SettingsDialog(Gtk.Dialog):
 
         load_login_options(steamid_item.children, token_item.children, token_secure_item.children)
 
+        steamid_item.children.set_input_purpose(Gtk.InputPurpose.DIGITS)
         steamid_item.children.connect("changed", self.on_steamid_changed)
         token_item.children.connect("changed", self.on_token_changed)
         token_secure_item.children.connect("changed", self.on_token_secure_changed)
@@ -122,7 +123,14 @@ class SettingsDialog(Gtk.Dialog):
     def logger_settings(self) -> Gtk.Frame:
         logger_section = utils.new_section(_('Logger settings'))
         log_level_item = utils.new_item("log_level", _("Level:"), logger_section, Gtk.ComboBoxText, 0, 0)
-        log_console_level_item = utils.new_item("log_console_level", _("Console level:"), logger_section, Gtk.ComboBoxText, 0, 1)
+
+        log_console_level_item = utils.new_item(
+            "log_console_level",
+            _("Console level:"),
+            logger_section,
+            Gtk.ComboBoxText,
+            0, 1,
+        )
 
         load_logger_options(log_level_item.children, log_console_level_item.children)
         log_level_item.children.connect("changed", self.on_log_level_changed)
@@ -139,7 +147,18 @@ class SettingsDialog(Gtk.Dialog):
 
     @staticmethod
     def on_steamid_changed(entry: Gtk.Entry) -> None:
-        config.new(config.ConfigType('login', 'steamid', entry.get_text()))
+        text = entry.get_text()
+
+        if text.isdigit():
+            config.new(config.ConfigType('login', 'steamid', entry.get_text()))
+        else:
+            new_text = []
+
+            for char in text:
+                if char.isdigit():
+                    new_text.append(char)
+
+            entry.set_text(''.join(new_text))
 
     @staticmethod
     def on_token_changed(entry: Gtk.Entry) -> None:
