@@ -200,11 +200,6 @@ class Application(Gtk.Application):
                         await asyncio.sleep(15)
                         continue
                     except webapi.NotReadyError as exception:
-                        self.steamtrades_status = {
-                            'running': True,
-                            'message': f"Waiting more {exception.minutes_left} minutes",
-                            'trade_id': exception.id
-                        }
                         wait_min = exception.time_left * 60
                         wait_max = wait_min + 400
                     except webapi.ClosedError as exception:
@@ -216,9 +211,16 @@ class Application(Gtk.Application):
                         await asyncio.sleep(5)
                         continue
 
-                    wait_offset = random.randint(wait_min, wait_max)
-                    for past_time in range(wait_offset):
-                        await asyncio.sleep(1)
+                wait_offset = random.randint(wait_min, wait_max)
+                for past_time in range(wait_offset):
+                    self.steamtrades_status = {
+                        'running': True,
+                        'message': f"Waiting more {round(wait_offset / 60)} minutes",
+                        'trade_id': None,
+                        'maximum': wait_offset,
+                        'progress': past_time,
+                    }
+                    await asyncio.sleep(1)
 
     def on_settings_activate(self, action: Any, data: Any) -> None:
         settings_dialog = settings.SettingsDialog(parent_window=self.window)

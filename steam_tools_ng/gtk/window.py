@@ -311,10 +311,17 @@ class Main(Gtk.ApplicationWindow):
     ) -> None:
         while self.get_realized():
             status = self.application.steamtrades_status
-            current_trade_label.set_markup(utils.markup(status['trade_id'], font_size='large', font_weight='bold'))
+
+            if status['trade_id']:
+                current_trade_label.set_markup(utils.markup(status['trade_id'], font_size='large', font_weight='bold'))
 
             if status['running']:
                 status_label.set_markup(utils.markup(status['message'], color='green'))
+                try:
+                    level_bar.set_max_value(status['maximum'])
+                    level_bar.set_value(status['progress'])
+                except KeyError:
+                    level_bar.set_value(0)
             else:
                 status_label.set_markup(utils.markup(status['message'], color='red'))
 
