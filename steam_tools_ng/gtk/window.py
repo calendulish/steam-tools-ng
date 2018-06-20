@@ -18,12 +18,13 @@
 import asyncio
 import itertools
 import logging
+import os
 
-from gi.repository import Gio, Gtk
+from gi.repository import GdkPixbuf, Gio, Gtk
 from stlib import webapi
 
 from . import confirmation, utils
-from .. import i18n
+from .. import config, i18n
 
 _ = i18n.get_translation
 log = logging.getLogger(__name__)
@@ -37,6 +38,11 @@ class Main(Gtk.ApplicationWindow):
 
         header_bar = Gtk.HeaderBar()
         header_bar.set_show_close_button(True)
+
+        icon = Gtk.Image()
+        pix = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(config.icons_dir, 'steam-tools-ng.png'), 28, 28)
+        icon.set_from_pixbuf(pix)
+        header_bar.pack_start(icon)
 
         menu = Gio.Menu()
         menu.append(_("Settings"), "app.settings")

@@ -16,11 +16,12 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+import os
 from typing import Any
 
-from gi.repository import Gtk
+from gi.repository import GdkPixbuf, Gtk
 
-from .. import version
+from .. import config, version
 
 
 # noinspection PyUnusedLocal
@@ -43,7 +44,9 @@ class AboutDialog(Gtk.AboutDialog):
         self.set_copyright("Lara Maia (C) 2015 ~ 2018 - dev@lara.click")
         self.set_comments("Made with Love <3")
         self.set_license_type(Gtk.License.GPL_3_0)
-        # self.set_logo(steam_tools_ng_logo)
+
+        logo = GdkPixbuf.Pixbuf.new_from_file(os.path.join(config.icons_dir, 'steam-tools-ng.png'))
+        self.set_logo(logo)
 
         self.connect("response", self.on_response)
 

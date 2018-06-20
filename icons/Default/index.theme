@@ -1,0 +1,9 @@
+[Icon Theme]
+Name=Steam Tools NG Minimal Icon Set
+Comment=Based on Meliae SVG icon theme
+Directories=actions/scalable
+
+[actions/scalable]
+Size=22
+Context=Actions
+Type=Scalable
