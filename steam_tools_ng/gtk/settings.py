@@ -20,11 +20,11 @@ import asyncio
 import configparser
 import logging
 from collections import OrderedDict
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 from gi.repository import Gtk, Pango
 
-from . import login, utils
+from . import adb, login, utils
 from .. import config, i18n
 
 log = logging.getLogger(__name__)
@@ -58,45 +58,93 @@ class SettingsDialog(Gtk.Dialog):
         self.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
 
         content_area = self.get_content_area()
-        content_area.set_orientation(Gtk.Orientation.VERTICAL)
-        content_area.set_border_width(10)
-        content_area.set_spacing(10)
+        content_grid = Gtk.Grid()
+        content_grid.set_border_width(10)
+        content_grid.set_row_spacing(10)
+        content_grid.set_column_spacing(10)
+        content_area.add(content_grid)
 
-        content_area.add(self.login_settings())
-        content_area.add(self.logger_settings())
-        content_area.add(self.locale_settings())
-        content_area.add(self.steamtrades_settings())
+        content_grid.attach(self.login_settings(), 0, 0, 1, 3)
+        content_grid.attach(self.logger_settings(), 1, 0, 1, 1)
+        content_grid.attach(self.locale_settings(), 1, 1, 1, 1)
+        content_grid.attach(self.steamtrades_settings(), 1, 2, 1, 1)
 
-        self.connect('response', self.on_response)
+        content_grid.show()
+
+        self.connect('response', on_response)
         self.show()
 
     def login_settings(self) -> Gtk.Frame:
-        login_section = utils.new_section("login", _('Login settings'))
-        steamid_item = utils.new_item("steamid", _("steam id:"), login_section, Gtk.Entry, 0, 0)
-        token_item = utils.new_item("token", _("Token:"), login_section, Gtk.Entry, 0, 2)
-        token_secure_item = utils.new_item("token_secure", _("Token secure:"), login_section, Gtk.Entry, 0, 4)
+        login_section = utils.new_section("login", _("Login Settings"))
+        login_section.grid.set_row_spacing(20)
+
+        adb_path = utils.new_item('adb_path', _("Adb Path:"), login_section, Gtk.Entry, 0, 0)
+        adb_path.children.connect('changed', on_adb_path_changed)
+
+        account_name = utils.new_item('account_name', _("Username:"), login_section, Gtk.Entry, 0, 2)
+        account_name.children.connect('changed', on_account_name_changed)
+
+        login_section.frame.show_all()
+
+        token_item = utils.new_item("token", _("Token:"), login_section, Gtk.Entry, 0, 4)
+        token_item.children.connect("changed", on_token_changed)
+
+        token_secure_item = utils.new_item("token_secure", _("Token Secure:"), login_section, Gtk.Entry, 0, 6)
+        token_secure_item.children.connect("changed", on_token_secure_changed)
+
+        shared_secret = utils.new_item('shared_secret', _("Shared Secret:"), login_section, Gtk.Entry, 2, 0)
+        shared_secret.children.connect('changed', on_shared_secret_changed)
+
+        identity_secret = utils.new_item('identity_secret', _("Identity Secret:"), login_section, Gtk.Entry, 2, 2)
+        identity_secret.children.connect('changed', on_identity_secret_changed)
+
+        deviceid = utils.new_item('deviceid', _("Device ID:"), login_section, Gtk.Entry, 2, 4)
+        deviceid.children.connect('changed', on_device_id_changed)
+
+        steamid_item = utils.new_item("steamid", _("Steam ID:"), login_section, Gtk.Entry, 2, 6)
+        steamid_item.children.set_input_purpose(Gtk.InputPurpose.DIGITS)
+        steamid_item.children.connect("changed", on_steamid_changed)
+
+        advanced = Gtk.CheckButton(_("Advanced"))
+        advanced.set_name("advanced_button")
+        advanced.connect("toggled", self.on_advanced_button_toggled, login_section)
+        login_section.grid.attach(advanced, 0, 7, 1, 1)
+        advanced.show()
 
         load_settings(login_section, Gtk.Entry)
 
-        steamid_item.children.set_input_purpose(Gtk.InputPurpose.DIGITS)
-        steamid_item.children.connect("changed", self.on_steamid_changed)
-        token_item.children.connect("changed", self.on_token_changed)
-        token_secure_item.children.connect("changed", self.on_token_secure_changed)
-
         log_in = Gtk.Button(_("Log-in"))
+        log_in.set_name("log_in_button")
+        log_in.connect('clicked', self.on_log_in_clicked, login_section)
+        login_section.grid.attach(log_in, 0, 8, 4, 1)
+        log_in.show()
 
-        log_in.connect(
-            'clicked',
-            self.on_log_in_clicked,
-            steamid_item.children,
-            token_item.children,
-            token_secure_item.children,
-        )
+        adb_button = Gtk.Button(_("Get login data using ADB"))
+        adb_button.set_name("adb_button")
+        adb_button.connect('clicked', self.on_adb_clicked, login_section)
+        login_section.grid.attach(adb_button, 0, 9, 4, 1)
+        adb_button.show()
 
-        login_section.grid.attach(log_in, 0, 6, 2, 1)
-
-        login_section.frame.show_all()
         return login_section.frame
+
+    def on_advanced_button_toggled(self, button: Gtk.Button, section: utils.Section) -> None:
+        if button.get_active():
+            section.grid.show_all()
+            section.frame.set_label_align(0.017, 0.5)
+            section.grid.set_row_spacing(10)
+        else:
+            childrens = Gtk.Container.get_children(section.grid)
+            keep_list = ['adb_path', 'account_name', 'advanced_button', 'log_in_button', 'adb_button']
+
+            for children in childrens:
+                if children.get_name() in keep_list:
+                    children.show()
+                else:
+                    children.hide()
+
+            self.set_size_request(300, 150)
+            section.frame.set_label_align(0.03, 0.5)
+            section.grid.set_row_spacing(20)
 
     @staticmethod
     def steamtrades_settings() -> Gtk.Frame:
@@ -115,7 +163,7 @@ class SettingsDialog(Gtk.Dialog):
         language_item = utils.new_item("language", _("Language"), locale_section, Gtk.ComboBoxText, 0, 0)
 
         load_settings(locale_section, Gtk.ComboBoxText, combo_items=translations)
-        language_item.children.connect("changed", self.on_language_combo_changed)
+        language_item.children.connect("changed", self.update_language)
 
         locale_section.frame.show_all()
         return locale_section.frame
@@ -134,66 +182,115 @@ class SettingsDialog(Gtk.Dialog):
 
         load_settings(logger_section, Gtk.ComboBoxText, combo_items=log_levels)
 
-        log_level_item.children.connect("changed", self.on_log_level_changed)
-        log_console_level_item.children.connect("changed", self.on_log_console_level_changed)
+        log_level_item.children.connect("changed", on_log_level_changed)
+        log_console_level_item.children.connect("changed", on_log_console_level_changed)
 
         logger_section.frame.show_all()
         return logger_section.frame
 
-    def on_language_combo_changed(self, combo: Gtk.ComboBoxText) -> None:
+    def on_adb_clicked(self, button: Gtk.Button, login_section: utils.Section) -> None:
+        adb_dialog = adb.AdbDialog(parent_window=self)
+        adb_dialog.show()
+
+        asyncio.ensure_future(wait_adb_data(adb_dialog, login_section))
+
+    def on_log_in_clicked(
+            self,
+            button: Gtk.Button,
+            login_section,
+    ) -> None:
+        login_dialog = login.LogInDialog(parent_window=self)
+        login_dialog.show()
+
+        asyncio.ensure_future(wait_login_data(login_dialog, login_section))
+
+    def update_language(self, combo: Gtk.ComboBoxText) -> None:
         language = config.ConfigStr(list(translations)[combo.get_active()])
         config.new(config.ConfigType('locale', 'language', language))
         Gtk.Container.foreach(self, refresh_widget_text)
         Gtk.Container.foreach(self.parent_window, refresh_widget_text)
 
-    @staticmethod
-    def on_steamid_changed(entry: Gtk.Entry) -> None:
-        text = entry.get_text()
 
-        if text.isdigit():
-            config.new(config.ConfigType('login', 'steamid', entry.get_text()))
-        else:
-            new_text = []
+async def wait_adb_data(
+        adb_dialog: Gtk.Dialog,
+        login_section: utils.Section,
+) -> None:
+    while not adb_dialog.adb_data:
+        await asyncio.sleep(5)
 
-            for char in text:
-                if char.isdigit():
-                    new_text.append(char)
+    load_settings(login_section, Gtk.Entry, data=adb_dialog.adb_data, save=True)
 
-            entry.set_text(''.join(new_text))
+    adb_dialog.destroy()
 
-    @staticmethod
-    def on_token_changed(entry: Gtk.Entry) -> None:
-        config.new(config.ConfigType('login', 'token', entry.get_text()))
 
-    @staticmethod
-    def on_token_secure_changed(entry: Gtk.Entry) -> None:
-        config.new(config.ConfigType('login', 'token_secure', entry.get_text()))
+async def wait_login_data(
+        login_dialog: Gtk.Dialog,
+        login_section: utils.Section,
+) -> None:
+    while not login_dialog.login_data:
+        await asyncio.sleep(5)
 
-    def on_log_in_clicked(
-            self,
-            button: Gtk.Button,
-            steamid_entry: Gtk.Entry,
-            token_entry: Gtk.Entry,
-            token_secure_entry: Gtk.Entry,
-    ) -> None:
-        login_dialog = login.LogInDialog(parent_window=self)
-        login_dialog.show()
+    load_settings(login_section, Gtk.Entry, data=login_dialog.login_data["transfer_parameters"], save=True)
 
-        asyncio.ensure_future(wait_login_data(login_dialog, steamid_entry, token_entry, token_secure_entry))
+    login_dialog.destroy()
 
-    @staticmethod
-    def on_log_level_changed(combo: Gtk.ComboBoxText) -> None:
-        log_level = config.ConfigStr(list(log_levels)[combo.get_active()])
-        config.new(config.ConfigType('logger', 'log_level', log_level))
 
-    @staticmethod
-    def on_log_console_level_changed(combo: Gtk.ComboBoxText) -> None:
-        log_console_level = config.ConfigStr(list(log_levels)[combo.get_active()])
-        config.new(config.ConfigType('logger', 'log_console_level', log_console_level))
+def on_steamid_changed(entry: Gtk.Entry) -> None:
+    text = entry.get_text()
 
-    @staticmethod
-    def on_response(dialog: Gtk.Dialog, response_id: int) -> None:
-        dialog.destroy()
+    if text.isdigit():
+        config.new(config.ConfigType('login', 'steamid', entry.get_text()))
+    else:
+        new_text = []
+
+        for char in text:
+            if char.isdigit():
+                new_text.append(char)
+
+        entry.set_text(''.join(new_text))
+
+
+def on_token_changed(entry: Gtk.Entry) -> None:
+    config.new(config.ConfigType('login', 'token', entry.get_text()))
+
+
+def on_token_secure_changed(entry: Gtk.Entry) -> None:
+    config.new(config.ConfigType('login', 'token_secure', entry.get_text()))
+
+
+def on_adb_path_changed(entry: Gtk.Entry) -> None:
+    if len(entry.get_text()) > 2:
+        config.new(config.ConfigType('login', 'adb_path', entry.get_text()))
+
+
+def on_shared_secret_changed(entry: Gtk.Entry) -> None:
+    config.new(config.ConfigType('login', 'shared_secret', entry.get_text()))
+
+
+def on_identity_secret_changed(entry: Gtk.Entry) -> None:
+    config.new(config.ConfigType('login', 'identity_secret', entry.get_text()))
+
+
+def on_account_name_changed(entry: Gtk.Entry) -> None:
+    config.new(config.ConfigType('login', 'account_name', entry.get_text()))
+
+
+def on_device_id_changed(entry: Gtk.Entry) -> None:
+    config.new(config.ConfigType('login', 'deviceid', entry.get_text()))
+
+
+def on_log_level_changed(combo: Gtk.ComboBoxText) -> None:
+    log_level = config.ConfigStr(list(log_levels)[combo.get_active()])
+    config.new(config.ConfigType('logger', 'log_level', log_level))
+
+
+def on_log_console_level_changed(combo: Gtk.ComboBoxText) -> None:
+    log_console_level = config.ConfigStr(list(log_levels)[combo.get_active()])
+    config.new(config.ConfigType('logger', 'log_console_level', log_console_level))
+
+
+def on_response(dialog: Gtk.Dialog, response_id: int) -> None:
+    dialog.destroy()
 
 
 def refresh_widget_text(widget: Gtk.Widget) -> None:
@@ -234,68 +331,53 @@ def refresh_widget_text(widget: Gtk.Widget) -> None:
         refresh_widget_text(children)
 
 
-async def wait_login_data(
-        login_dialog: Gtk.Dialog,
-        steamid_entry: Gtk.Entry,
-        token_entry: Gtk.Entry,
-        token_secure_entry: Gtk.Entry,
-) -> None:
-    while not login_dialog.login_data:
-        await asyncio.sleep(5)
-
-    steamid = login_dialog.login_data["transfer_parameters"]["steamid"]
-    token = login_dialog.login_data["transfer_parameters"]["token"]
-    token_secure = login_dialog.login_data["transfer_parameters"]["token_secure"]
-
-    steamid_entry.set_text(steamid)
-    token_entry.set_text(token)
-    token_secure_entry.set_text(token_secure)
-
-    config.new(
-        config.ConfigType(
-            "login",
-            "steamid",
-            config.ConfigStr(steamid),
-        ),
-        config.ConfigType(
-            "login",
-            "token",
-            config.ConfigStr(token)
-        ),
-        config.ConfigType(
-            "login",
-            "token_secure",
-            config.ConfigStr(token_secure)
-        ),
-    )
-
-    login_dialog.destroy()
-
-
 def load_settings(
         section: utils.Section,
         children_type: Gtk.Widget,
-        combo_items: Optional = None,
-        **kwargs: Any,
-):
+        combo_items: Optional[Dict[str, str]] = None,
+        data: Optional[Dict[str, Any]] = None,
+        save: bool = False,
+) -> None:
     childrens = Gtk.Container.get_children(section.grid)
+    config_section = section.frame.get_name()
 
     for children in childrens:
         if isinstance(children, children_type):
-            config_section = section.frame.get_name()
             config_option = children.get_name()
-
-            try:
-                config_value = config.config_parser.get(config_section, config_option)
-            except (configparser.NoOptionError, configparser.NoSectionError):
-                log.debug(_("Unable to find %s in section %s at config file. Ignoring."), config_section, config_option)
-                continue
 
             if combo_items:
                 for value in combo_items.values():
                     children.append_text(value)
 
-                if isinstance(children, Gtk.ComboBox):
-                    children.set_active(list(combo_items).index(config_value))
+            if data:
+                try:
+                    config_value = data[config_option]
+                except KeyError:
+                    log.debug(
+                        _("Unable to find %s in prefilled data. Ignoring."),
+                        config_option,
+                    )
+                    continue
+            else:
+                try:
+                    config_value = config.config_parser.get(config_section, config_option)
+                except (configparser.NoOptionError, configparser.NoSectionError):
+                    log.debug(
+                        _("Unable to find %s in section %s at config file. Using fallback value."),
+                        config_option,
+                        config_section,
+                    )
+
+                    try:
+                        config_value = getattr(config.DefaultConfig, config_option)
+                    except AttributeError:
+                        log.debug(_("Unable to find fallback value to %s. Ignoring"), config_option)
+                        continue
+
+            if isinstance(children, Gtk.ComboBox):
+                children.set_active(list(combo_items).index(config_value))
             else:
                 children.set_text(config_value)
+
+            if save:
+                config.new(config.ConfigType(config_section, config_option, config.ConfigStr(config_value)))

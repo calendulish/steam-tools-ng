@@ -19,6 +19,7 @@
 import configparser
 import functools
 import inspect
+import locale
 import logging
 import os
 import sys
@@ -58,6 +59,7 @@ class DefaultConfig(object):
     log_level = ConfigStr('debug')
     log_console_level = ConfigStr('info')
     log_color = ConfigBool(True)
+    language = ConfigStr(str(locale.getdefaultlocale()[0]))
 
 
 class Check(object):

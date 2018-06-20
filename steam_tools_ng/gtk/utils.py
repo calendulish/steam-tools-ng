@@ -19,6 +19,7 @@
 import logging
 from typing import Any, Callable, Dict, List, NamedTuple, Tuple
 
+import cairo
 from gi.repository import Gtk
 from stlib import webapi
 
@@ -36,6 +37,34 @@ class Section(NamedTuple):
 class Item(NamedTuple):
     label: Gtk.Label
     children: Gtk.Widget
+
+
+class Status(Gtk.Frame):
+    def __init__(self):
+        super().__init__()
+        self.connect('draw', self.__do_status_draw)
+
+        self._grid = Gtk.Grid()
+        self._grid.set_border_width(10)
+        self.add(self._grid)
+
+        self._label = Gtk.Label()
+        self._grid.attach(self._label, 0, 0, 1, 1)
+
+        self.info(_("Waiting"))
+
+    @staticmethod
+    def __do_status_draw(frame: Gtk.Frame, cairo_context: cairo.Context):
+        allocation = frame.get_allocation()
+        cairo_context.set_source_rgb(0.2, 0.2, 0.2)
+        cairo_context.rectangle(0, 0, allocation.width, allocation.height)
+        cairo_context.fill()
+
+    def error(self, text) -> None:
+        self._label.set_markup(markup(text, color='hotpink', face='monospace'))
+
+    def info(self, text) -> None:
+        self._label.set_markup(markup(text, color='cyan', face='monospace'))
 
 
 def new_section(name: str, label_text: str) -> Section:
@@ -71,21 +100,6 @@ def new_item(
     section.grid.attach_next_to(children_widget, label, Gtk.PositionType.RIGHT, 1, 1)
 
     return Item(label, children_widget)
-
-
-def new_error(text: str) -> Gtk.Frame:
-    frame = Gtk.Frame(label=_("Error"))
-    frame.set_label_align(0.03, 0.5)
-
-    error_label = Gtk.Label(text)
-    error_label.set_justify(Gtk.Justification.CENTER)
-    error_label.set_vexpand(True)
-    error_label.set_margin_top(10)
-    error_label.set_margin_bottom(10)
-
-    frame.add(error_label)
-
-    return frame
 
 
 def markup(text: str, **kwargs: Any) -> str:

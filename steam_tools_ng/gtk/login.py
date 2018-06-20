@@ -16,11 +16,13 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
+import base64
+import binascii
 import logging
 from typing import Optional
 
 import aiohttp
-from gi.repository import Gtk
+from gi.repository import Gdk, Gtk
 from stlib import authenticator, webapi
 
 from . import utils
@@ -37,10 +39,10 @@ class LogInDialog(Gtk.Dialog):
         self.login_data = None
 
         self.header_bar = self.get_header_bar()
-        self.header_bar.set_show_close_button(True)
+        self.header_bar.set_show_close_button(False)
 
         self.parent_window = parent_window
-        self.set_default_size(300, 90)
+        self.set_default_size(300, 100)
         self.set_title(_('Log-in on Steam'))
         self.set_transient_for(self.parent_window)
         self.set_modal(True)
@@ -53,48 +55,60 @@ class LogInDialog(Gtk.Dialog):
         self.content_area.set_border_width(10)
         self.content_area.set_spacing(10)
 
-        self.status_label = Gtk.Label()
-        self.status_label.set_markup(utils.markup(_("Waiting"), color='green'))
-        self.content_area.add(self.status_label)
+        self.status = utils.Status()
+        self.content_area.add(self.status)
 
-        self.spinner = Gtk.Spinner()
-        self.spinner.set_vexpand(True)
-        self.content_area.add(self.spinner)
+        self.user_details_section = utils.new_section("login", _("User Details"))
+        self.content_area.add(self.user_details_section.frame)
 
-        user_details_section = utils.new_section(_("User details"))
-        self.content_area.add(user_details_section.frame)
+        config_username = config.config_parser.get("login", "account_name", fallback="")
+        self.username_item = utils.new_item("username", _("Username:"), self.user_details_section, Gtk.Entry, 0, 0)
+        self.username_item.children.set_text(config_username)
+        self.username_item.children.connect("key-release-event", self.on_key_release)
 
-        self.username_item = utils.new_item("username", _("Username:"), user_details_section, Gtk.Entry, 0, 0)
-        self.password_item = utils.new_item("password", _("Password:"), user_details_section, Gtk.Entry, 0, 1)
+        self.password_item = utils.new_item("password", _("Password:"), self.user_details_section, Gtk.Entry, 0, 1)
         self.password_item.children.set_visibility(False)
         self.password_item.children.set_invisible_char('*')
+        self.password_item.children.set_placeholder_text(_("It will not be saved"))
+        self.password_item.children.connect("key-release-event", self.on_key_release)
 
-        log_in_button = Gtk.Button(_("Log In"))
-        log_in_button.connect("clicked", self.on_log_in_button_clicked)
+        self.log_in_button = Gtk.Button(_("Log In"))
+        self.log_in_button.connect("clicked", self.on_log_in_button_clicked)
+        self.header_bar.pack_end(self.log_in_button)
 
-        user_details_section.grid.attach_next_to(
-            log_in_button,
-            self.password_item.children,
-            Gtk.PositionType.RIGHT,
-            1,
-            1,
-        )
+        self.cancel_button = Gtk.Button(_("Cancel"))
+        self.cancel_button.connect("clicked", lambda button: self.destroy())
+        self.header_bar.pack_start(self.cancel_button)
 
         self.content_area.show_all()
+        self.header_bar.show_all()
 
-        self.connect('response', self.on_response)
+        self.connect('response', lambda dialog, response_id: self.destroy())
 
-    @staticmethod
-    def on_response(dialog: Gtk.Dialog, response_id: int) -> None:
-        dialog.destroy()
+    def on_key_release(self, entry: Gtk.Entry, event: Gdk.EventKey):
+        if event.keyval == Gdk.KEY_Return:
+            self.log_in_button.clicked()
 
     def on_log_in_button_clicked(self, button: Gtk.Button) -> None:
         username = self.username_item.children.get_text()
         password = self.password_item.children.get_text()
+        self.user_details_section.frame.hide()
+        self.log_in_button.hide()
+        self.cancel_button.hide()
+        self.set_size_request(300, 100)
+        self.status.info(_("Running... Please wait"))
+        self.header_bar.set_show_close_button(False)
+        task = asyncio.ensure_future(self.do_login(username, password))
+        task.add_done_callback(self.on_task_finish)
 
-        asyncio.ensure_future(self.do_login(username, password))
+    def on_task_finish(self, future: asyncio.Future) -> None:
+        if not self.login_data:
+            self.header_bar.set_show_close_button(True)
+            self.log_in_button.set_label(_("Try again?"))
+            self.log_in_button.show()
+            self.user_details_section.frame.show()
 
-    @config.Check("authenticator")
+    @config.Check("login")
     async def do_login(
             self,
             username: str,
@@ -102,19 +116,24 @@ class LogInDialog(Gtk.Dialog):
             shared_secret: Optional[config.ConfigStr] = None
     ) -> None:
         if not shared_secret:
-            self.status_label.set_markup(
-                utils.markup(_("Unable to login!\nAuthenticator is not configured."), color='red')
-            )
+            self.status.error(_(
+                "Unable to log-in!\n\n"
+                "To login you need to provide at last a valid shared secret.\n"
+                "You can use 'Get login data using ADB' button to get it,\n"
+                "or insert it manually on:\n\n"
+                "settings -> login settings -> mark 'advanced' -> shared secret\n"
+            ))
+            return None
+
+        try:
+            base64.b64decode(shared_secret)
+        except binascii.Error:
+            self.status.error(_("Unable to log-in!\nThe shared secret received is invalid."))
             return None
 
         if not username or not password:
-            self.status_label.set_markup(
-                utils.markup(_("Unable to log-in with a blank username/password"), color='red')
-            )
+            self.status.error(_("Unable to log-in!\nYour username/password is blank."))
             return None
-
-        self.status_label.set_markup(utils.markup(_("Running"), color='green'))
-        self.spinner.start()
 
         async with aiohttp.ClientSession(raise_for_status=True) as session:
             steam_webapi = webapi.SteamWebAPI(session, 'https://lara.click/api')
@@ -132,8 +151,5 @@ class LogInDialog(Gtk.Dialog):
             if steam_login_data['success']:
                 self.login_data = steam_login_data
             else:
-                self.status_label.set_markup(
-                    utils.markup("Unable to log-in on Steam!\nPlease, try again.", color='red')
-                )
-                self.spinner.stop()
+                self.status.error(_("Unable to log-in on Steam!\nPlease, try again."))
                 return None

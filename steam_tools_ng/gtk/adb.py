@@ -15,8 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import asyncio
 import logging
-from typing import Dict
+from typing import Optional
 
 from gi.repository import Gtk
 from stlib import authenticator
@@ -32,12 +33,14 @@ _ = i18n.get_translation
 class AdbDialog(Gtk.Dialog):
     def __init__(self, parent_window: Gtk.Widget) -> None:
         super().__init__(use_header_bar=True)
+        self.adb_data = None
+
         self.header_bar = self.get_header_bar()
         self.header_bar.set_show_close_button(False)
 
         self.parent_window = parent_window
-        self.set_default_size(300, 90)
-        self.set_title(_('Android Debug Bridge'))
+        self.set_default_size(300, 100)
+        self.set_title("Android Debug Bridge")
         self.set_transient_for(self.parent_window)
         self.set_modal(True)
         self.set_destroy_with_parent(True)
@@ -49,41 +52,54 @@ class AdbDialog(Gtk.Dialog):
         self.content_area.set_border_width(10)
         self.content_area.set_spacing(10)
 
-        self.spinner = Gtk.Spinner()
-        self.spinner.set_vexpand(True)
-        self.content_area.add(self.spinner)
-
-        self.spinner.start()
-        self.spinner.show()
-
-        if len(config.config_parser.get("authenticator", "adb_path", fallback='')) < 3:
-            self.header_bar.set_show_close_button(True)
-
-            error_frame = utils.new_error(_(
-                "Unable to run without a valid adb path.\n"
-                "Please, enter a valid 'adb path' and try again"
-            ))
-
-            self.spinner.hide()
-            self.content_area.add(error_frame)
-            error_frame.show_all()
+        self.status = utils.Status()
+        self.content_area.add(self.status)
 
         self.connect('response', self.on_response)
 
-    async def get_sensitive_data(self) -> Dict[str, str]:
-        adb_path = config.config_parser.get("authenticator", "adb_path", fallback='')
+        self.try_again_button = Gtk.Button(_("Try again?"))
+        self.try_again_button.connect("clicked", self.on_try_again_button_clicked)
+        self.header_bar.pack_end(self.try_again_button)
+
+        self.content_area.show_all()
+
+        self.try_again_button.clicked()
+
+    def on_try_again_button_clicked(self, button: Gtk.Button) -> None:
+        self.try_again_button.hide()
+        self.set_size_request(300, 100)
+        self.status.info(_("Running... Please wait"))
+        self.header_bar.set_show_close_button(False)
+        task = asyncio.ensure_future(self.get_adb_data())
+        task.add_done_callback(self.on_task_finish)
+
+    def on_task_finish(self, future: asyncio.Future) -> None:
+        if not self.adb_data:
+            self.header_bar.set_show_close_button(True)
+            self.try_again_button.show()
+
+    @config.Check("login")
+    async def get_adb_data(self, adb_path: Optional[config.ConfigStr] = None) -> None:
+        if not adb_path:
+            self.status.error(_(
+                "Unable to run without a valid 'adb path'.\n\n"
+                "To automatic get login data using adb, you will need:\n"
+                "- A 'rooted' Android phone\n"
+                "- adb tool from Google\n"
+                "- adb path (set it on settings -> adb path)\n"
+                "- USB debugging up and running (on phone)\n"
+                "\nIt's a one-time config\n"
+            ))
+            return None
 
         try:
             adb = authenticator.AndroidDebugBridge(adb_path)
         except FileNotFoundError:
-            self.new_error(''.join(
-                (
-                    _("Unable to find adb in:\n"),
-                    adb_path,
-                    _("\nPlease, enter a valid 'adb path' and try again.")
-                )
-            ))
-            raise FileNotFoundError
+            self.status.error(_(
+                "Unable to find adb in:\n\n{}\n\n"
+                "Please, enter a valid 'adb path' and try again."
+            ).format(adb_path))
+            return None
 
         try:
             json_data = await adb.get_json(
@@ -94,11 +110,11 @@ class AdbDialog(Gtk.Dialog):
             )
             assert isinstance(json_data, dict), "Invalid json_data"
             json_data['deviceid'] = await adb.get_device_id()
-        except (AttributeError, KeyError) as exception:
-            self.new_error(repr(exception))
-            raise AttributeError
-
-        return json_data
+        except authenticator.DeviceError:
+            self.status.error(_("No phone connected"))
+            return None
+        else:
+            self.adb_data = json_data
 
     @staticmethod
     def on_response(dialog: Gtk.Dialog, response_id: int) -> None:
