@@ -47,75 +47,22 @@ class Main(Gtk.ApplicationWindow):
         menu_button.set_menu_model(menu)
         header_bar.pack_end(menu_button)
 
-        self.set_default_size(700, 450)
+        self.set_default_size(600, 600)
         self.set_resizable(False)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_titlebar(header_bar)
         self.set_title('Steam Tools NG')
 
         main_grid = Gtk.Grid()
-        self.add(main_grid)
-
-        self.show_all()
-
-        stack = Gtk.Stack()
-        stack.set_transition_type(Gtk.StackTransitionType.SLIDE_UP_DOWN)
-        stack.set_transition_duration(500)
-        stack.add_titled(self.authenticator_tab(), "authenticator", _("Authenticator"))
-        stack.add_titled(self.confirmations_tab(), "confirmations", _("Confirmations"))
-        stack.add_titled(self.steamtrades_tab(), "steamtrades", _("Steamtrades"))
-        stack.show()
-
-        sidebar = Gtk.StackSidebar()
-        sidebar.set_stack(stack)
-        sidebar.show()
-
-        main_grid.attach(sidebar, 0, 0, 1, 1)
-        main_grid.attach_next_to(stack, sidebar, Gtk.PositionType.RIGHT, 1, 1)
-
-    def authenticator_tab(self) -> Gtk.Grid:
-        main_grid = Gtk.Grid()
         main_grid.set_border_width(10)
         main_grid.set_row_spacing(10)
+        self.add(main_grid)
 
-        steam_guard_section = utils.new_section("authenticator", _('Steam Guard Code'))
-        main_grid.attach(steam_guard_section.frame, 0, 0, 1, 1)
+        steamtrades_status = utils.Status(5, "SteamTrades (bump)")
+        main_grid.attach(steamtrades_status, 0, 0, 4, 1)
 
-        code_label = Gtk.Label()
-        code_label.set_markup(utils.markup('_ _ _ _', font_size='large', font_weight='bold'))
-        code_label.set_hexpand(True)
-        code_label.set_selectable(True)
-        steam_guard_section.grid.attach(code_label, 0, 0, 1, 1)
-
-        status_label = Gtk.Label()
-        status_label.set_markup(utils.markup(_("loading..."), color='green'))
-        steam_guard_section.grid.attach(status_label, 0, 1, 1, 1)
-
-        level_bar = Gtk.LevelBar()
-        steam_guard_section.grid.attach(level_bar, 0, 2, 1, 1)
-
-        tip = Gtk.Label(_(
-            "A code will be requested every time you try to log in on Steam.\n\n"
-            "Tip: If you are not on a shared computer, select 'Remember password'\n"
-            "when you log in to Steam Client so you do not have to enter the password and\n"
-            "the authenticator code."
-        ))
-
-        tip.set_vexpand(True)
-        tip.set_justify(Gtk.Justification.CENTER)
-        tip.set_valign(Gtk.Align.END)
-        main_grid.attach(tip, 0, 3, 2, 1)
-
-        steam_guard_section.frame.show_all()
-        tip.show()
-        main_grid.show()
-
-        asyncio.ensure_future(self.check_authenticator_status(code_label, status_label, level_bar))
-
-        return main_grid
-
-    def confirmations_tab(self) -> Gtk.Grid:
-        main_grid = Gtk.Grid()
+        steamguard_status = utils.Status(4, _('Steam Guard Code'))
+        main_grid.attach(steamguard_status, 0, 1, 4, 1)
 
         info_label = Gtk.Label()
 
@@ -123,10 +70,10 @@ class Main(Gtk.ApplicationWindow):
             utils.markup(_("If you have confirmations, they will be shown here. (15 seconds delay)"), color='blue')
         )
 
-        main_grid.attach(info_label, 0, 0, 4, 1)
+        main_grid.attach(info_label, 0, 2, 4, 1)
 
         warning_label = Gtk.Label()
-        main_grid.attach(warning_label, 0, 1, 4, 1)
+        main_grid.attach(warning_label, 0, 3, 4, 1)
 
         tree_store = Gtk.TreeStore(*[str for number in range(6)])
         tree_view = Gtk.TreeView(model=tree_store)
@@ -135,10 +82,11 @@ class Main(Gtk.ApplicationWindow):
         scrolled_window.set_hexpand(True)
         scrolled_window.set_vexpand(True)
         scrolled_window.set_overlay_scrolling(False)
-        main_grid.attach(scrolled_window, 0, 2, 4, 1)
+        main_grid.attach(scrolled_window, 0, 4, 4, 1)
 
         cell_renderer = Gtk.CellRendererText()
 
+        # noinspection PyProtectedMember
         for index, header in enumerate(webapi.Confirmation._fields):
             column = Gtk.TreeViewColumn(header, cell_renderer, text=index)
 
@@ -161,51 +109,27 @@ class Main(Gtk.ApplicationWindow):
 
         accept_button = Gtk.Button(_('Accept selected'))
         accept_button.connect('clicked', self.on_accept_button_clicked, tree_selection)
-        main_grid.attach(accept_button, 0, 3, 1, 1)
+        main_grid.attach(accept_button, 0, 5, 1, 1)
 
         cancel_button = Gtk.Button(_('Cancel selected'))
         cancel_button.connect('clicked', self.on_cancel_button_clicked, tree_selection)
-        main_grid.attach(cancel_button, 1, 3, 1, 1)
+        main_grid.attach(cancel_button, 1, 5, 1, 1)
 
         accept_all_button = Gtk.Button(_('Accept all'))
         accept_all_button.connect('clicked', self.on_accept_all_button_clicked, tree_store)
-        main_grid.attach(accept_all_button, 2, 3, 1, 1)
+        main_grid.attach(accept_all_button, 2, 5, 1, 1)
 
         cancel_all_button = Gtk.Button(_('Cancel all'))
         cancel_all_button.connect('clicked', self.on_cancel_all_button_clicked, tree_store)
-        main_grid.attach(cancel_all_button, 3, 3, 1, 1)
+        main_grid.attach(cancel_all_button, 3, 5, 1, 1)
 
         main_grid.show_all()
 
+        asyncio.ensure_future(self.check_steamguard_status(steamguard_status))
         asyncio.ensure_future(self.check_confirmations_status(tree_view, warning_label))
+        asyncio.ensure_future(self.check_steamtrades_status(steamtrades_status))
 
-        return main_grid
-
-    def steamtrades_tab(self) -> Gtk.Grid:
-        main_grid = Gtk.Grid()
-        main_grid.set_border_width(10)
-        main_grid.set_row_spacing(10)
-
-        trade_bump_section = utils.new_section("steamtrades", _('Trades bump'))
-        main_grid.attach(trade_bump_section.frame, 0, 0, 1, 1)
-
-        current_trade_label = Gtk.Label()
-        current_trade_label.set_hexpand(True)
-        trade_bump_section.grid.attach(current_trade_label, 0, 0, 1, 1)
-
-        status_label = Gtk.Label()
-        status_label.set_markup(utils.markup(_("loading..."), color='green'))
-        trade_bump_section.grid.attach(status_label, 0, 1, 1, 1)
-
-        level_bar = Gtk.LevelBar()
-        trade_bump_section.grid.attach(level_bar, 0, 2, 1, 1)
-
-        trade_bump_section.frame.show_all()
-        main_grid.show()
-
-        asyncio.ensure_future(self.check_steamtrades_status(current_trade_label, status_label, level_bar))
-
-        return main_grid
+        self.show_all()
 
     async def check_confirmations_status(
             self,
@@ -262,44 +186,38 @@ class Main(Gtk.ApplicationWindow):
 
     async def check_steamtrades_status(
             self,
-            current_trade_label: Gtk.Label,
-            status_label: Gtk.Label,
-            level_bar: Gtk.LevelBar,
+            status: utils.Status,
     ) -> None:
         while self.get_realized():
-            status = self.application.steamtrades_status
+            steamtrades_status = self.application.steamtrades_status
 
-            if status['trade_id']:
-                current_trade_label.set_markup(utils.markup(status['trade_id'], font_size='large', font_weight='bold'))
+            if steamtrades_status['trade_id']:
+                status.set_current(steamtrades_status['trade_id'])
 
-            if status['running']:
-                status_label.set_markup(utils.markup(status['message'], color='green'))
+            if steamtrades_status['running']:
+                status.set_info(steamtrades_status['message'])
                 try:
-                    level_bar.set_max_value(status['maximum'])
-                    level_bar.set_value(status['progress'])
+                    status.set_level(steamtrades_status['progress'], steamtrades_status['maximum'])
                 except KeyError:
-                    level_bar.set_value(0)
+                    status.set_level(0, 0)
             else:
-                status_label.set_markup(utils.markup(status['message'], color='red'))
+                status.set_error(steamtrades_status['message'])
 
             await asyncio.sleep(0.5)
 
-    async def check_authenticator_status(
+    async def check_steamguard_status(
             self,
-            code_label: Gtk.Label,
-            status_label: Gtk.Label,
-            level_bar: Gtk.LevelBar
+            status: utils.Status,
     ) -> None:
         while self.get_realized():
-            status = self.application.authenticator_status
+            steamguard_status = self.application.steamguard_status
 
-            if status['running']:
-                code_label.set_markup(utils.markup(status['code'], font_size='large', font_weight='bold'))
-                status_label.set_markup(utils.markup(_("Running"), color='green'))
-                level_bar.set_max_value(status['maximum'])
-                level_bar.set_value(status['progress'])
+            if steamguard_status['running']:
+                status.set_current(steamguard_status['code'])
+                status.set_info(_("Running"))
+                status.set_level(steamguard_status['progress'], steamguard_status['maximum'])
             else:
-                status_label.set_markup(utils.markup(status["message"], color='red'))
+                status.set_error(steamguard_status['message'])
 
             await asyncio.sleep(0.125)
 

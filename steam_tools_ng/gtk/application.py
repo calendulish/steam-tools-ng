@@ -39,7 +39,7 @@ class Application(Gtk.Application):
                          flags=Gio.ApplicationFlags.FLAGS_NONE)
 
         self.window: Gtk.ApplicationWindow = None
-        self.authenticator_status = {'running': False, 'message': "Authenticator is not running"}
+        self.steamguard_status = {'running': False, 'message': "SteamGuard is not running"}
         self.confirmations_status = {'running': False, 'message': "Confirmations is not running"}
         self.steamtrades_status = {'running': False, 'message': "Steamtrades is not running", 'trade_id': ''}
 
@@ -60,13 +60,13 @@ class Application(Gtk.Application):
 
         self.window.present()
 
-        asyncio.ensure_future(self.run_authenticator())
+        asyncio.ensure_future(self.run_steamguard())
         asyncio.ensure_future(self.run_confirmations())
         asyncio.ensure_future(self.run_steamtrades())
 
-    async def run_authenticator(self) -> None:
+    async def run_steamguard(self) -> None:
         while self.window.get_realized():
-            shared_secret = config.config_parser.get("authenticator", "shared_secret", fallback='')
+            shared_secret = config.config_parser.get("login", "shared_secret", fallback='')
 
             try:
                 if not shared_secret:
@@ -74,18 +74,18 @@ class Application(Gtk.Application):
 
                 auth_code, server_time = authenticator.get_code(shared_secret)
             except (TypeError, binascii.Error):
-                self.authenticator_status = {'running': False, 'message': _("The currently secret is invalid")}
+                self.steamguard_status = {'running': False, 'message': _("The currently secret is invalid")}
                 await asyncio.sleep(10)
             except ProcessLookupError:
-                self.authenticator_status = {'running': False, 'message': _("Steam Client is not running")}
+                self.steamguard_status = {'running': False, 'message': _("Steam Client is not running")}
                 await asyncio.sleep(10)
             else:
-                self.authenticator_status = {'running': False, 'message': _("Loading...")}
+                self.steamguard_status = {'running': False, 'message': _("Loading...")}
 
                 seconds = 30 - (server_time % 30)
 
                 for past_time in range(seconds * 9):
-                    self.authenticator_status = {
+                    self.steamguard_status = {
                         'running': True,
                         'maximum': seconds * 8,
                         'progress': past_time,
@@ -99,9 +99,9 @@ class Application(Gtk.Application):
             steam_webapi = webapi.SteamWebAPI(session, 'https://lara.click/api')
 
             while self.window.get_realized():
-                identity_secret = config.config_parser.get("authenticator", "identity_secret", fallback='')
-                steamid = config.config_parser.getint("authenticator", "steamid", fallback=0)
-                deviceid = config.config_parser.get("authenticator", "deviceid", fallback='')
+                identity_secret = config.config_parser.get("login", "identity_secret", fallback='')
+                steamid = config.config_parser.getint("login", "steamid", fallback=0)
+                deviceid = config.config_parser.get("login", "deviceid", fallback='')
                 cookies = config.login_cookies()
 
                 if cookies:

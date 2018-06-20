@@ -39,8 +39,8 @@ class Item(NamedTuple):
     children: Gtk.Widget
 
 
-class Status(Gtk.Frame):
-    def __init__(self):
+class SimpleStatus(Gtk.Frame):
+    def __init__(self) -> None:
         super().__init__()
         self.connect('draw', self.__do_status_draw)
 
@@ -54,17 +54,57 @@ class Status(Gtk.Frame):
         self.info(_("Waiting"))
 
     @staticmethod
-    def __do_status_draw(frame: Gtk.Frame, cairo_context: cairo.Context):
+    def __do_status_draw(frame: Gtk.Frame, cairo_context: cairo.Context) -> None:
         allocation = frame.get_allocation()
         cairo_context.set_source_rgb(0.2, 0.2, 0.2)
         cairo_context.rectangle(0, 0, allocation.width, allocation.height)
         cairo_context.fill()
 
-    def error(self, text) -> None:
+    def error(self, text: str) -> None:
         self._label.set_markup(markup(text, color='hotpink', face='monospace'))
 
-    def info(self, text) -> None:
+    def info(self, text: str) -> None:
         self._label.set_markup(markup(text, color='cyan', face='monospace'))
+
+
+class Status(Gtk.Frame):
+    def __init__(self, current_text_size: int, label_text: str) -> None:
+        super().__init__()
+        self.set_label(label_text)
+        self.set_label_align(0.02, 0.5)
+
+        self._grid = Gtk.Grid()
+        self._grid.set_border_width(5)
+        self._grid.set_row_spacing(5)
+        self.add(self._grid)
+
+        self._current = Gtk.Label()
+        self._current.set_markup(
+            markup(' '.join(['_' for n in range(1, current_text_size)]), font_size='large', font_weight='bold'),
+        )
+        self._current.set_selectable(True)
+        self._current.set_hexpand(True)
+        self._grid.attach(self._current, 0, 0, 1, 1)
+
+        self._status = Gtk.Label()
+        self._status.set_markup(markup(_("Loading..."), color='green', font_size='small'))
+        self._grid.attach(self._status, 0, 1, 1, 1)
+
+        self._level_bar = Gtk.LevelBar()
+        self._grid.attach(self._level_bar, 0, 2, 1, 1)
+
+    def set_current(self, text) -> None:
+        self._current.set_markup(markup(text, font_size='large', font_weight='bold'))
+
+    def set_info(self, text: str) -> None:
+        self._status.set_markup(markup(text, color='green', font_size='small'))
+
+    def set_error(self, text: str) -> None:
+        self._status.set_markup(markup(text, color='red', font_size='small'))
+
+    def set_level(self, value: int, max_value: int) -> None:
+        self._level_bar.set_value(value)
+        self._level_bar.set_max_value(max_value)
 
 
 def new_section(name: str, label_text: str) -> Section:

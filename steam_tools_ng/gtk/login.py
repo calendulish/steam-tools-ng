@@ -55,7 +55,7 @@ class LogInDialog(Gtk.Dialog):
         self.content_area.set_border_width(10)
         self.content_area.set_spacing(10)
 
-        self.status = utils.Status()
+        self.status = utils.SimpleStatus()
         self.content_area.add(self.status)
 
         self.user_details_section = utils.new_section("login", _("User Details"))

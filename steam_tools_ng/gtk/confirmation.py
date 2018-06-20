@@ -198,7 +198,7 @@ class FinalizeDialog(Gtk.Dialog):
         self.destroy()
 
 
-@config.Check("authenticator")
+@config.Check("login")
 async def finalize(
         future: Any,
         action: str,
@@ -224,7 +224,7 @@ async def finalize(
         future.set_result(result)
 
 
-@config.Check("authenticator")
+@config.Check("login")
 async def batch_finalize(
         future: Any,
         action: str,
