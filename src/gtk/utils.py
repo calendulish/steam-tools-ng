@@ -42,7 +42,7 @@ class Item(NamedTuple):
 class SimpleTextTree(Gtk.ScrolledWindow):
     def __init__(
             self,
-            elements: Tuple[str],
+            elements: Tuple[str, ...],
             overlay_scrolling: bool = True,
             resizable: bool = True,
             fixed_width: int = 0,

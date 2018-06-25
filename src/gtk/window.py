@@ -81,7 +81,7 @@ class Main(Gtk.ApplicationWindow):
         warning_label = Gtk.Label()
         main_grid.attach(warning_label, 0, 3, 4, 1)
 
-        text_tree = utils.SimpleTextTree(webapi.Confirmation._fields, False)
+        text_tree = utils.SimpleTextTree((_('mode'), _('id'), _('key'), _('give'), _('to'), _('receive')), False)
         main_grid.attach(text_tree, 0, 4, 4, 1)
 
         for index, column in enumerate(text_tree._view.get_columns()):
