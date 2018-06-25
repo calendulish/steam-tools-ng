@@ -230,6 +230,7 @@ setup(
         'steam_tools_ng.console',
         'steam_tools_ng.gtk',
     ],
+    package_dir={'steam_tools_ng': 'src'},
     scripts=['steam-tools-ng.py'],
     requires=['stlib', 'aiohttp'],
     cmdclass={
