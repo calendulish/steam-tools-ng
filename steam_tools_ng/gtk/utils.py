@@ -17,7 +17,7 @@
 #
 
 import logging
-from typing import Any, Callable, Dict, List, NamedTuple, Tuple
+from typing import Any, Callable, List, NamedTuple, Tuple
 
 import cairo
 from gi.repository import Gtk
@@ -37,6 +37,35 @@ class Section(NamedTuple):
 class Item(NamedTuple):
     label: Gtk.Label
     children: Gtk.Widget
+
+
+class SimpleTextTree(Gtk.ScrolledWindow):
+    def __init__(
+            self,
+            elements: Tuple[str],
+            overlay_scrolling: bool = True,
+            resizable: bool = True,
+            fixed_width: int = 0,
+            model: Callable[..., Gtk.TreeModel] = Gtk.TreeStore,
+    ):
+        super().__init__()
+        self._store = model(*[str for number in range(len(elements))])
+        renderer = Gtk.CellRendererText()
+        self._view = Gtk.TreeView(model=self._store)
+        self.add(self._view)
+
+        self.set_hexpand(True)
+        self.set_vexpand(True)
+        self.set_overlay_scrolling(overlay_scrolling)
+
+        for index, header in enumerate(elements):
+            column = Gtk.TreeViewColumn(header, renderer, text=index)
+            column.set_resizable(resizable)
+
+            if fixed_width:
+                column.set_fixed_width(fixed_width)
+
+            self._view.append_column(column)
 
 
 class SimpleStatus(Gtk.Frame):
@@ -153,50 +182,7 @@ def markup(text: str, **kwargs: Any) -> str:
     return ' '.join(markup_string)
 
 
-def get_column_len(model: Gtk.TreeModel, iter_: Gtk.TreeIter, column: int) -> int:
-    childrens = model.iter_n_children(iter_)
-    column_len = 0
-
-    for index in range(childrens):
-        column_iter = model.iter_nth_child(iter_, index)
-
-        if model.get_value(column_iter, column):
-            column_len += 1
-        else:
-            log.debug(_("Ignoring value from column %s because value is empty"), index)
-
-    return column_len
-
-
-def match_rows(model: Gtk.TreeModel, item: Dict[str, Any]) -> None:
-    total = len(item)
-    exclusions = len(model) - total
-
-    if exclusions > 0:
-        for index in range(exclusions):
-            exclusion_iter = model.get_iter(total + index)
-            model.remove(exclusion_iter)
-
-
-def match_column_childrens(model: Gtk.TreeModel, iter_: Gtk.TreeIter, item: List[str], column: int) -> None:
-    total = len(item)
-    exclusions = get_column_len(model, iter_, column) - total
-
-    if exclusions > 0:
-        for index in range(exclusions):
-            exclusion_iter = model.iter_nth_child(iter_, total + index)
-
-            if None in [
-                model.get_value(exclusion_iter, 3),
-                model.get_value(exclusion_iter, 5),
-            ]:
-                model.remove(exclusion_iter)
-                total -= 1
-            else:
-                model.set_value(exclusion_iter, column, '')
-
-
-def copy_childrens(from_model: Gtk.TreeModel, to_model: Gtk.TreeModel, iter_: Gtk.TreeIter, column: int) -> None:
+def copy_childrens(from_model: Gtk.TreeStore, to_model: Gtk.ListStore, iter_: Gtk.TreeIter, column: int) -> None:
     childrens = from_model.iter_n_children(iter_)
 
     if childrens:

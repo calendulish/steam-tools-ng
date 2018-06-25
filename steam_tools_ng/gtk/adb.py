@@ -39,7 +39,7 @@ class AdbDialog(Gtk.Dialog):
         self.header_bar.set_show_close_button(False)
 
         self.parent_window = parent_window
-        self.set_default_size(300, 100)
+        self.set_default_size(300, 60)
         self.set_title("Android Debug Bridge")
         self.set_transient_for(self.parent_window)
         self.set_modal(True)
@@ -67,7 +67,7 @@ class AdbDialog(Gtk.Dialog):
 
     def on_try_again_button_clicked(self, button: Gtk.Button) -> None:
         self.try_again_button.hide()
-        self.set_size_request(300, 100)
+        self.set_size_request(300, 60)
         self.status.info(_("Running... Please wait"))
         self.header_bar.set_show_close_button(False)
         task = asyncio.ensure_future(self.get_adb_data())

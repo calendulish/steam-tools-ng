@@ -31,7 +31,10 @@ config_parser = configparser.RawConfigParser()
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
-if sys.platform == 'win32':
+if os.environ.get('GTK_DEBUG', False):
+    data_dir = 'config'
+    icons_dir = 'icons'
+elif sys.platform == 'win32':
     data_dir = os.environ['LOCALAPPDATA']
     icons_dir = os.path.join('share', 'icons')
 else:

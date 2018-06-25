@@ -81,21 +81,10 @@ class Main(Gtk.ApplicationWindow):
         warning_label = Gtk.Label()
         main_grid.attach(warning_label, 0, 3, 4, 1)
 
-        tree_store = Gtk.TreeStore(*[str for number in range(6)])
-        tree_view = Gtk.TreeView(model=tree_store)
-        scrolled_window = Gtk.ScrolledWindow()
-        scrolled_window.add(tree_view)
-        scrolled_window.set_hexpand(True)
-        scrolled_window.set_vexpand(True)
-        scrolled_window.set_overlay_scrolling(False)
-        main_grid.attach(scrolled_window, 0, 4, 4, 1)
+        text_tree = utils.SimpleTextTree(webapi.Confirmation._fields, False)
+        main_grid.attach(text_tree, 0, 4, 4, 1)
 
-        cell_renderer = Gtk.CellRendererText()
-
-        # noinspection PyProtectedMember
-        for index, header in enumerate(webapi.Confirmation._fields):
-            column = Gtk.TreeViewColumn(header, cell_renderer, text=index)
-
+        for index, column in enumerate(text_tree._view.get_columns()):
             if index == 0 or index == 1 or index == 2:
                 column.set_visible(False)
 
@@ -104,13 +93,10 @@ class Main(Gtk.ApplicationWindow):
             else:
                 column.set_fixed_width(220)
 
-            column.set_resizable(True)
-            tree_view.append_column(column)
+        text_tree._view.set_has_tooltip(True)
+        text_tree._view.connect('query-tooltip', self.on_query_confirmations_tooltip)
 
-        tree_view.set_has_tooltip(True)
-        tree_view.connect('query-tooltip', self.on_query_confirmations_tooltip)
-
-        tree_selection = tree_view.get_selection()
+        tree_selection = text_tree._view.get_selection()
         tree_selection.connect("changed", self.on_tree_selection_changed)
 
         accept_button = Gtk.Button(_('Accept selected'))
@@ -122,29 +108,29 @@ class Main(Gtk.ApplicationWindow):
         main_grid.attach(cancel_button, 1, 5, 1, 1)
 
         accept_all_button = Gtk.Button(_('Accept all'))
-        accept_all_button.connect('clicked', self.on_accept_all_button_clicked, tree_store)
+        accept_all_button.connect('clicked', self.on_accept_all_button_clicked, text_tree._store)
         main_grid.attach(accept_all_button, 2, 5, 1, 1)
 
         cancel_all_button = Gtk.Button(_('Cancel all'))
-        cancel_all_button.connect('clicked', self.on_cancel_all_button_clicked, tree_store)
+        cancel_all_button.connect('clicked', self.on_cancel_all_button_clicked, text_tree._store)
         main_grid.attach(cancel_all_button, 3, 5, 1, 1)
 
         main_grid.show_all()
 
         asyncio.ensure_future(self.check_steamguard_status(steamguard_status))
-        asyncio.ensure_future(self.check_confirmations_status(tree_view, warning_label))
+        asyncio.ensure_future(self.check_confirmations_status(text_tree, warning_label))
         asyncio.ensure_future(self.check_steamtrades_status(steamtrades_status))
 
         self.show_all()
 
     async def check_confirmations_status(
             self,
-            tree_view: Gtk.TreeView,
+            text_tree: utils.SimpleTextTree,
             warning_label: Gtk.Label,
     ) -> None:
         while self.get_realized():
             status = self.application.confirmations_status
-            tree_store = tree_view.get_model()
+            tree_store = text_tree._store
             warning_label.hide()
 
             if not status['running']:
@@ -152,43 +138,29 @@ class Main(Gtk.ApplicationWindow):
                 warning_label.show()
             elif not status['confirmations']:
                 tree_store.clear()
+            elif not status['update']:
+                log.debug(_("Skipping because `update' is set to False"))
             else:
+                tree_store.clear()
+
                 for confirmation_index, confirmation_ in enumerate(status['confirmations']):
-                    give = confirmation_.give
-                    receive = confirmation_.receive
-
-                    if len(tree_store) == confirmation_index:
-                        iter_ = tree_store.insert(None, confirmation_index)
-                    else:
-                        iter_ = tree_store[confirmation_index].iter
-
                     safe_give, give = utils.safe_confirmation_get(confirmation_, 'give')
                     safe_receive, receive = utils.safe_confirmation_get(confirmation_, 'receive')
 
-                    tree_store[confirmation_index] = [
+                    iter_ = tree_store.append(None, [
                         confirmation_.mode,
                         str(confirmation_.id),
                         str(confirmation_.key),
                         safe_give,
                         confirmation_.to,
                         safe_receive,
-                    ]
+                    ])
 
                     if len(give) > 1 or len(receive) > 1:
                         for item_index, item in enumerate(itertools.zip_longest(give, receive)):
-                            children_iter = tree_store.iter_nth_child(iter_, item_index)
+                            tree_store.append(iter_, ['', '', '', item[0], '', item[1]])
 
-                            if children_iter is None:
-                                children_iter = tree_store.insert(iter_, item_index)
-
-                            tree_store[children_iter] = ['', '', '', item[0], '', item[1]]
-
-                    utils.match_column_childrens(tree_store, iter_, give, 3)
-                    utils.match_column_childrens(tree_store, iter_, receive, 5)
-
-                utils.match_rows(tree_store, status['confirmations'])
-
-            await asyncio.sleep(1)
+            await asyncio.sleep(15)
 
     async def check_steamtrades_status(
             self,

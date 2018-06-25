@@ -97,6 +97,7 @@ class Application(Gtk.Application):
     async def run_confirmations(self) -> None:
         async with aiohttp.ClientSession(raise_for_status=True) as session:
             steam_webapi = webapi.SteamWebAPI(session, 'https://lara.click/api')
+            old_confirmations = {}
 
             while self.window.get_realized():
                 identity_secret = config.config_parser.get("login", "identity_secret", fallback='')
@@ -104,12 +105,25 @@ class Application(Gtk.Application):
                 deviceid = config.config_parser.get("login", "deviceid", fallback='')
                 cookies = config.login_cookies()
 
+                if not identity_secret:
+                    self.confirmations_status = {
+                        'running': False,
+                        'message': _("Unable to get confirmations without a valid identity secret"),
+                    }
+                    await asyncio.sleep(10)
+                    continue
+
+                if not deviceid:
+                    log.debug(_("Unable to find deviceid. Generating from identity."))
+                    deviceid = authenticator.generate_device_id(identity_secret)
+                    config.new(config.ConfigType("login", "deviceid", config.ConfigStr(deviceid)))
+
                 if cookies:
                     session.cookie_jar.update_cookies(cookies)
                 else:
                     self.confirmations_status = {
                         'running': False,
-                        'message': "Unable to find a valid login data",
+                        'message': _("Unable to find a valid login data"),
                     }
                     await asyncio.sleep(5)
                     continue
@@ -124,7 +138,12 @@ class Application(Gtk.Application):
                 except ProcessLookupError:
                     self.confirmations_status = {'running': False, 'message': _("Steam is not running")}
                 else:
-                    self.confirmations_status = {'running': True, 'confirmations': confirmations}
+                    if old_confirmations != confirmations:
+                        self.confirmations_status = {'running': True, 'update': True, 'confirmations': confirmations}
+                    else:
+                        self.confirmations_status = {'running': True, 'update': False, 'confirmations': confirmations}
+
+                    old_confirmations = confirmations
 
                 await asyncio.sleep(15)
 

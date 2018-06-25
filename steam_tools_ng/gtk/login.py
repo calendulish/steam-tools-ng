@@ -42,7 +42,7 @@ class LogInDialog(Gtk.Dialog):
         self.header_bar.set_show_close_button(False)
 
         self.parent_window = parent_window
-        self.set_default_size(300, 100)
+        self.set_default_size(300, 60)
         self.set_title(_('Log-in on Steam'))
         self.set_transient_for(self.parent_window)
         self.set_modal(True)
@@ -95,7 +95,7 @@ class LogInDialog(Gtk.Dialog):
         self.user_details_section.frame.hide()
         self.log_in_button.hide()
         self.cancel_button.hide()
-        self.set_size_request(300, 100)
+        self.set_size_request(300, 60)
         self.status.info(_("Running... Please wait"))
         self.header_bar.set_show_close_button(False)
         task = asyncio.ensure_future(self.do_login(username, password))
