@@ -21,9 +21,9 @@ from typing import NamedTuple
 
 class _Version(NamedTuple):
     major: int = 0
-    minor: int = 2
-    revision: int = 1
-    extra: str = 'dev1'
+    minor: int = 3
+    revision: int = 0
+    extra: str = 'rc1'
 
 
 __version_info__ = _Version()
