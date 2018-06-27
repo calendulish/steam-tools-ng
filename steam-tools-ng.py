@@ -25,7 +25,11 @@ import os
 import sys
 import textwrap
 
-from steam_tools_ng import config, i18n, version
+if os.environ.get('GTK_DEBUG', False) or os.environ.get('DEBUG', False):
+    from src import config, i18n, version
+else:
+    # noinspection PyUnresolvedReferences
+    from steam_tools_ng import config, i18n, version
 
 config.init()
 _ = i18n.get_translation
@@ -100,7 +104,12 @@ if __name__ == "__main__":
 
         sys.exit(return_code)
     else:
-        from steam_tools_ng.gtk import application
+        if os.environ.get('GTK_DEBUG', False):
+            from src.gtk import application
+        else:
+            # noinspection PyUnresolvedReferences
+            from steam_tools_ng.gtk import application
+
         from gi.repository import Gtk
 
         if sys.platform.startswith("linux") and not os.getenv('DISPLAY'):

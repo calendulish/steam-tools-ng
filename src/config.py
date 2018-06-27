@@ -19,6 +19,7 @@
 import configparser
 import functools
 import inspect
+import locale
 import logging
 import os
 import sys
@@ -30,10 +31,15 @@ config_parser = configparser.RawConfigParser()
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
-if sys.platform == 'win32':
+if os.environ.get('GTK_DEBUG', False):
+    data_dir = 'config'
+    icons_dir = 'icons'
+elif sys.platform == 'win32':
     data_dir = os.environ['LOCALAPPDATA']
+    icons_dir = os.path.join('share', 'icons')
 else:
     data_dir = os.getenv('XDG_CONFIG_HOME', os.path.join(os.path.expanduser('~'), '.config'))
+    icons_dir = os.path.abspath(os.path.join(os.path.sep, 'usr', 'share', 'steam-tools-ng', 'icons'))
 
 config_file_directory = os.path.join(data_dir, 'steam-tools-ng')
 config_file_name = 'steam-tools-ng.config'
@@ -58,6 +64,10 @@ class DefaultConfig(object):
     log_level = ConfigStr('debug')
     log_console_level = ConfigStr('info')
     log_color = ConfigBool(True)
+    language = ConfigStr(str(locale.getdefaultlocale()[0]))
+    wait_min = ConfigInt(3700)
+    wait_max = ConfigInt(4100)
+    theme = ConfigStr("light")
 
 
 class Check(object):
@@ -65,13 +75,14 @@ class Check(object):
         self.section = section
 
     def __call__(self, function_: Callable[..., Any]) -> Any:
-        log.debug(_('Loading new configs from %s'), config_file)
         config_parser.read(config_file)
         new_parameters = {}
         signature = inspect.signature(function_)
 
         def wrapped_function(*args: Any, **kwargs: Any) -> Any:
             for index, option in enumerate(signature.parameters.values()):
+                log.debug(_('Loading %s:%s from config file'), self.section, option.name)
+
                 if len(args) >= index + 1:
                     log.debug(_("A positional argument already exists for %s. Ignoring..."), option.name)
                     continue
@@ -160,10 +171,10 @@ def new(*new_configs: ConfigType) -> None:
         if not config_parser.has_section(config.section):
             config_parser.add_section(config.section)
 
+        log.debug(_('Saving %s:%s on config file'), config.section, config.option)
         config_parser.set(config.section, config.option, str(config.value))
 
     with open(config_file, 'w') as config_file_object:
-        log.debug(_('Saving new configs at %s'), config_file)
         config_parser.write(config_file_object)
 
 

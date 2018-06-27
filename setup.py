@@ -38,8 +38,12 @@ if os.name == 'nt':
         arch = 64
     else:
         arch = 32
+
+    icon_path = os.path.join(get_python_lib(), 'steam_tools_ng', 'share', 'icons')
 else:
     from distutils.core import setup
+
+    icon_path = os.path.abspath(os.path.join(os.path.sep, 'usr', 'share', 'steam-tools-ng', 'icons'))
 
 
 class RemoveExtension(install_scripts):
@@ -66,6 +70,8 @@ class BuildTranslations(build_py):
 
 class InstallTranslations(install_data):
     def run(self) -> None:
+        install_data.run(self)
+
         if os.getenv("SCRUTINIZER") or os.getenv("TRAVIS"):
             print("bypassing InstallTranslations")
             return
@@ -113,6 +119,12 @@ def fix_gtk() -> List[Tuple[str, str]]:
         'libpango-1.0-0',
         'libpangowin32-1.0-0',
         'libatk-1.0-0',
+        'librsvg-2-2',
+    ]
+
+    pixbuf_loaders = [
+        'libpixbufloader-png',
+        'libpixbufloader-svg',
     ]
 
     includes = []
@@ -132,6 +144,22 @@ def fix_gtk() -> List[Tuple[str, str]]:
             f'{dll}.dll',
         ))
 
+    for loader in pixbuf_loaders:
+        includes.append((
+            os.path.join(lib_path, 'gdk-pixbuf-2.0', '2.10.0', 'loaders', f'{loader}.dll'),
+            os.path.join('lib', 'gdk-pixbuf-2.0', '2.10.0', 'loaders', f'{loader}.dll'),
+        ))
+
+    includes.append((
+        os.path.join(lib_path, 'gdk-pixbuf-2.0', '2.10.0', 'loaders.cache'),
+        os.path.join('lib', 'gdk-pixbuf-2.0', '2.10.0', 'loaders.cache'),
+    ))
+
+    includes.append((
+        os.path.join('icons', 'settings.ini'),
+        os.path.join('etc', 'gtk-3.0', 'settings.ini'),
+    ))
+
     return includes
 
 
@@ -142,15 +170,24 @@ def freeze_options() -> Mapping[str, Any]:
     executables = [
         Executable(
             "steam-tools-ng.py",
+            base='Win32GUI',
+            icon=os.path.join('icons', 'steam-tools-ng.ico'),
+            shortcutName='Steam Tools NG',
+            copyright='Lara Maia (C) 2015 ~ 2018',
         )
     ]
 
-    packages = ['asyncio', 'steam_tools_ng', 'gi']
+    packages = ['asyncio', 'steam_tools_ng', 'gi', 'idna']  # idna for cx_freeze <= 5.1.1
 
     paths = ['.']
     paths.extend(sys.path)
 
     includes = [*fix_gtk()]
+
+    for file in os.listdir('icons'):
+        if file != 'settings.ini':
+            includes.append((os.path.join('icons', file), os.path.join('share', 'icons', file)))
+
     excludes = ['tkinter']
 
     build_exe_options = {
@@ -158,6 +195,7 @@ def freeze_options() -> Mapping[str, Any]:
         "include_files": includes,
         "excludes": excludes,
         "path": paths,
+        "optimize": 2,
     }
 
     options = {
@@ -168,6 +206,15 @@ def freeze_options() -> Mapping[str, Any]:
         "options": options,
         "executables": executables,
     }
+
+
+def data_files() -> Mapping[str, List[Tuple[str, List[str]]]]:
+    icons = [
+        os.path.join('icons', 'steam-tools-ng.png'),
+        os.path.join('icons', 'steam-tools-ng.ico'),
+    ]
+
+    return {'data_files': [(icon_path, icons)]}
 
 
 setup(
@@ -183,6 +230,7 @@ setup(
         'steam_tools_ng.console',
         'steam_tools_ng.gtk',
     ],
+    package_dir={'steam_tools_ng': 'src'},
     scripts=['steam-tools-ng.py'],
     requires=['stlib', 'aiohttp'],
     cmdclass={
@@ -191,5 +239,6 @@ setup(
         'install_scripts': RemoveExtension,
         'install_data': InstallTranslations,
     },
-    **freeze_options()
+    **freeze_options(),
+    **data_files()
 )

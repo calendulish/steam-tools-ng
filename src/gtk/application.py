@@ -39,7 +39,9 @@ class Application(Gtk.Application):
                          flags=Gio.ApplicationFlags.FLAGS_NONE)
 
         self.window: Gtk.ApplicationWindow = None
-        self.authenticator_status = {'running': False, 'message': "Authenticator is not running"}
+        self.gtk_settings = Gtk.Settings.get_default()
+
+        self.steamguard_status = {'running': False, 'message': "SteamGuard is not running"}
         self.confirmations_status = {'running': False, 'message': "Confirmations is not running"}
         self.steamtrades_status = {'running': False, 'message': "Steamtrades is not running", 'trade_id': ''}
 
@@ -54,19 +56,26 @@ class Application(Gtk.Application):
         about_action.connect("activate", self.on_about_activate)
         self.add_action(about_action)
 
+        theme = config.config_parser.get("gtk", "theme", fallback="light")
+
+        if theme == 'dark':
+            self.gtk_settings.props.gtk_application_prefer_dark_theme = True
+        else:
+            self.gtk_settings.props.gtk_application_prefer_dark_theme = False
+
     def do_activate(self) -> None:
         if not self.window:
             self.window = window.Main(application=self)
 
         self.window.present()
 
-        asyncio.ensure_future(self.run_authenticator())
+        asyncio.ensure_future(self.run_steamguard())
         asyncio.ensure_future(self.run_confirmations())
         asyncio.ensure_future(self.run_steamtrades())
 
-    async def run_authenticator(self) -> None:
+    async def run_steamguard(self) -> None:
         while self.window.get_realized():
-            shared_secret = config.config_parser.get("authenticator", "shared_secret", fallback='')
+            shared_secret = config.config_parser.get("login", "shared_secret", fallback='')
 
             try:
                 if not shared_secret:
@@ -74,18 +83,18 @@ class Application(Gtk.Application):
 
                 auth_code, server_time = authenticator.get_code(shared_secret)
             except (TypeError, binascii.Error):
-                self.authenticator_status = {'running': False, 'message': _("The currently secret is invalid")}
+                self.steamguard_status = {'running': False, 'message': _("The currently secret is invalid")}
                 await asyncio.sleep(10)
             except ProcessLookupError:
-                self.authenticator_status = {'running': False, 'message': _("Steam Client is not running")}
+                self.steamguard_status = {'running': False, 'message': _("Steam Client is not running")}
                 await asyncio.sleep(10)
             else:
-                self.authenticator_status = {'running': False, 'message': _("Loading...")}
+                self.steamguard_status = {'running': False, 'message': _("Loading...")}
 
                 seconds = 30 - (server_time % 30)
 
                 for past_time in range(seconds * 9):
-                    self.authenticator_status = {
+                    self.steamguard_status = {
                         'running': True,
                         'maximum': seconds * 8,
                         'progress': past_time,
@@ -97,19 +106,33 @@ class Application(Gtk.Application):
     async def run_confirmations(self) -> None:
         async with aiohttp.ClientSession(raise_for_status=True) as session:
             steam_webapi = webapi.SteamWebAPI(session, 'https://lara.click/api')
+            old_confirmations = {}
 
             while self.window.get_realized():
-                identity_secret = config.config_parser.get("authenticator", "identity_secret", fallback='')
-                steamid = config.config_parser.getint("authenticator", "steamid", fallback=0)
-                deviceid = config.config_parser.get("authenticator", "deviceid", fallback='')
+                identity_secret = config.config_parser.get("login", "identity_secret", fallback='')
+                steamid = config.config_parser.getint("login", "steamid", fallback=0)
+                deviceid = config.config_parser.get("login", "deviceid", fallback='')
                 cookies = config.login_cookies()
+
+                if not identity_secret:
+                    self.confirmations_status = {
+                        'running': False,
+                        'message': _("Unable to get confirmations without a valid identity secret"),
+                    }
+                    await asyncio.sleep(10)
+                    continue
+
+                if not deviceid:
+                    log.debug(_("Unable to find deviceid. Generating from identity."))
+                    deviceid = authenticator.generate_device_id(identity_secret)
+                    config.new(config.ConfigType("login", "deviceid", config.ConfigStr(deviceid)))
 
                 if cookies:
                     session.cookie_jar.update_cookies(cookies)
                 else:
                     self.confirmations_status = {
                         'running': False,
-                        'message': "Unable to find a valid login data",
+                        'message': _("Unable to find a valid login data"),
                     }
                     await asyncio.sleep(5)
                     continue
@@ -123,8 +146,15 @@ class Application(Gtk.Application):
                     self.confirmations_status = {'running': False, 'message': _("No connection")}
                 except ProcessLookupError:
                     self.confirmations_status = {'running': False, 'message': _("Steam is not running")}
+                except webapi.LoginError:
+                    self.confirmations_status = {'running': False, 'message': _("User is not logged in")}
                 else:
-                    self.confirmations_status = {'running': True, 'confirmations': confirmations}
+                    if old_confirmations != confirmations:
+                        self.confirmations_status = {'running': True, 'update': True, 'confirmations': confirmations}
+                    else:
+                        self.confirmations_status = {'running': True, 'update': False, 'confirmations': confirmations}
+
+                    old_confirmations = confirmations
 
                 await asyncio.sleep(15)
 
@@ -135,8 +165,19 @@ class Application(Gtk.Application):
             while self.window.get_realized():
                 self.steamtrades_status = {'running': True, 'message': "Loading...", 'trade_id': ''}
                 trade_ids = config.config_parser.get("steamtrades", "trade_ids", fallback='')
-                wait_min = config.config_parser.getint("steamtrades", "wait_min", fallback=3700)
-                wait_max = config.config_parser.getint("steamtrades", "wait_max", fallback=4100)
+
+                wait_min = config.config_parser.getint(
+                    "steamtrades",
+                    "wait_min",
+                    fallback=config.DefaultConfig.wait_min
+                )
+
+                wait_max = config.config_parser.getint(
+                    "steamtrades",
+                    "wait_max",
+                    fallback=config.DefaultConfig.wait_max
+                )
+
                 cookies = config.login_cookies()
 
                 if not trade_ids:
@@ -156,6 +197,14 @@ class Application(Gtk.Application):
                         self.steamtrades_status = {'running': False, 'message': _("No connection"), 'trade_id': ''}
                         await asyncio.sleep(15)
                         continue
+                    except webapi.LoginError:
+                        self.steamtrades_status = {
+                            'running': False,
+                            'message': _("User is not logged in"),
+                            'trade_id': ''
+                        }
+                        await asyncio.sleep(15)
+                        continue
                 else:
                     self.steamtrades_status = {
                         'running': False,
@@ -166,6 +215,7 @@ class Application(Gtk.Application):
                     continue
 
                 trades = [trade.strip() for trade in trade_ids.split(',')]
+                bumped = False
 
                 for trade_id in trades:
                     try:
@@ -187,10 +237,19 @@ class Application(Gtk.Application):
                         if await steam_trades.bump(trade_info):
                             self.steamtrades_status = {
                                 'running': True,
+                                'message': _("Waiting anti-ban timer"),
+                                'trade_id': ''
+                            }
+
+                            await asyncio.sleep(random.randint(3, 8))
+
+                            self.steamtrades_status = {
+                                'running': True,
                                 'message': 'Bumped!',
                                 'trade_id': trade_info.id,
                             }
-                            await asyncio.sleep(random.randint(1, 5))
+
+                            bumped = True
                         else:
                             log.critical(f"Unable to bump {trade_info.id}")
                             await asyncio.sleep(5)
@@ -202,6 +261,7 @@ class Application(Gtk.Application):
                     except webapi.NotReadyError as exception:
                         wait_min = exception.time_left * 60
                         wait_max = wait_min + 400
+                        bumped = True
                     except webapi.ClosedError as exception:
                         self.steamtrades_status = {
                             'running': False,
@@ -211,7 +271,12 @@ class Application(Gtk.Application):
                         await asyncio.sleep(5)
                         continue
 
+                if not bumped:
+                    await asyncio.sleep(10)
+                    continue
+
                 wait_offset = random.randint(wait_min, wait_max)
+                log.debug(_("Setting wait_offset from steamtrades to {}").format(wait_offset))
                 for past_time in range(wait_offset):
                     self.steamtrades_status = {
                         'running': True,
