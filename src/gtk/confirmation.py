@@ -18,7 +18,7 @@
 import asyncio
 import contextlib
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import aiohttp
 from gi.repository import Gtk
@@ -164,7 +164,9 @@ class FinalizeDialog(Gtk.Dialog):
             identity_secret: Optional[config.ConfigStr] = None,
             steamid: Optional[config.ConfigInt] = None,
             deviceid: Optional[config.ConfigStr] = None,
+            keep_iter: bool = False,
     ) -> Dict[str, Any]:
+        self.status.info(_("Processing {}").format(self.model[self.iter][1]))
         async with aiohttp.ClientSession(raise_for_status=True) as session:
             session.cookie_jar.update_cookies(config.login_cookies())
             steam_webapi = webapi.SteamWebAPI(session, 'https://lara.click/api')
@@ -178,7 +180,10 @@ class FinalizeDialog(Gtk.Dialog):
                 self.raw_action,
             )
             assert isinstance(result, dict), "finalize_confirmation return is not a dict"
-            self.model.remove(self.iter)
+
+            if not keep_iter:
+                self.model.remove(self.iter)
+
             return result
 
     @config.Check("login")
@@ -187,13 +192,17 @@ class FinalizeDialog(Gtk.Dialog):
             identity_secret: Optional[config.ConfigStr] = None,
             steamid: Optional[config.ConfigInt] = None,
             deviceid: Optional[config.ConfigStr] = None,
-    ) -> List[Dict[str, Any]]:
+    ) -> List[Tuple[Gtk.TreeIter, Dict[str, Any]]]:
         results = []
 
         for index in range(len(self.model)):
             self.iter = self.model[index].iter
 
-            result = await self.finalize(identity_secret, steamid, deviceid)
-            results.append(result)
+            result = await self.finalize(identity_secret, steamid, deviceid, True)
+            results.append((self.iter, result))
+
+        self.status.info(_("Updating tree"))
+        for iter_, result in results:
+            self.model.remove(iter_)
 
         return results

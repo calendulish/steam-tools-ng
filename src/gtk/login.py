@@ -66,11 +66,11 @@ class LogInDialog(Gtk.Dialog):
         self.username_item.children.set_text(config_username)
         self.username_item.children.connect("key-release-event", self.on_key_release)
 
-        self.password_item = utils.new_item("password", _("Password:"), self.user_details_section, Gtk.Entry, 0, 1)
-        self.password_item.children.set_visibility(False)
-        self.password_item.children.set_invisible_char('*')
-        self.password_item.children.set_placeholder_text(_("It will not be saved"))
-        self.password_item.children.connect("key-release-event", self.on_key_release)
+        self.__password_item = utils.new_item("password", _("Password:"), self.user_details_section, Gtk.Entry, 0, 1)
+        self.__password_item.children.set_visibility(False)
+        self.__password_item.children.set_invisible_char('*')
+        self.__password_item.children.set_placeholder_text(_("It will not be saved"))
+        self.__password_item.children.connect("key-release-event", self.on_key_release)
 
         self.log_in_button = Gtk.Button(_("Log In"))
         self.log_in_button.connect("clicked", self.on_log_in_button_clicked)
@@ -91,7 +91,7 @@ class LogInDialog(Gtk.Dialog):
 
     def on_log_in_button_clicked(self, button: Gtk.Button) -> None:
         username = self.username_item.children.get_text()
-        password = self.password_item.children.get_text()
+        password = self.__password_item.children.get_text()
         self.user_details_section.frame.hide()
         self.log_in_button.hide()
         self.cancel_button.hide()
@@ -107,6 +107,8 @@ class LogInDialog(Gtk.Dialog):
             self.log_in_button.set_label(_("Try again?"))
             self.log_in_button.show()
             self.user_details_section.frame.show()
+        else:
+            self.__password_item.children.set_text("")
 
     @config.Check("login")
     async def do_login(
@@ -149,7 +151,7 @@ class LogInDialog(Gtk.Dialog):
             )
 
             if steam_login_data['success']:
-                self.login_data = steam_login_data
+                self.login_data = {**steam_login_data["transfer_parameters"], 'account_name': username}
             else:
                 self.status.error(_("Unable to log-in on Steam!\nPlease, try again."))
                 return None

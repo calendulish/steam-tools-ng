@@ -39,6 +39,8 @@ class Application(Gtk.Application):
                          flags=Gio.ApplicationFlags.FLAGS_NONE)
 
         self.window: Gtk.ApplicationWindow = None
+        self.gtk_settings = Gtk.Settings.get_default()
+
         self.steamguard_status = {'running': False, 'message': "SteamGuard is not running"}
         self.confirmations_status = {'running': False, 'message': "Confirmations is not running"}
         self.steamtrades_status = {'running': False, 'message': "Steamtrades is not running", 'trade_id': ''}
@@ -53,6 +55,13 @@ class Application(Gtk.Application):
         about_action = Gio.SimpleAction.new("about")
         about_action.connect("activate", self.on_about_activate)
         self.add_action(about_action)
+
+        theme = config.config_parser.get("gtk", "theme", fallback="light")
+
+        if theme == 'dark':
+            self.gtk_settings.props.gtk_application_prefer_dark_theme = True
+        else:
+            self.gtk_settings.props.gtk_application_prefer_dark_theme = False
 
     def do_activate(self) -> None:
         if not self.window:
@@ -137,6 +146,8 @@ class Application(Gtk.Application):
                     self.confirmations_status = {'running': False, 'message': _("No connection")}
                 except ProcessLookupError:
                     self.confirmations_status = {'running': False, 'message': _("Steam is not running")}
+                except webapi.LoginError:
+                    self.confirmations_status = {'running': False, 'message': _("User is not logged in")}
                 else:
                     if old_confirmations != confirmations:
                         self.confirmations_status = {'running': True, 'update': True, 'confirmations': confirmations}
@@ -154,8 +165,19 @@ class Application(Gtk.Application):
             while self.window.get_realized():
                 self.steamtrades_status = {'running': True, 'message': "Loading...", 'trade_id': ''}
                 trade_ids = config.config_parser.get("steamtrades", "trade_ids", fallback='')
-                wait_min = config.config_parser.getint("steamtrades", "wait_min", fallback=3700)
-                wait_max = config.config_parser.getint("steamtrades", "wait_max", fallback=4100)
+
+                wait_min = config.config_parser.getint(
+                    "steamtrades",
+                    "wait_min",
+                    fallback=config.DefaultConfig.wait_min
+                )
+
+                wait_max = config.config_parser.getint(
+                    "steamtrades",
+                    "wait_max",
+                    fallback=config.DefaultConfig.wait_max
+                )
+
                 cookies = config.login_cookies()
 
                 if not trade_ids:
@@ -175,6 +197,14 @@ class Application(Gtk.Application):
                         self.steamtrades_status = {'running': False, 'message': _("No connection"), 'trade_id': ''}
                         await asyncio.sleep(15)
                         continue
+                    except webapi.LoginError:
+                        self.steamtrades_status = {
+                            'running': False,
+                            'message': _("User is not logged in"),
+                            'trade_id': ''
+                        }
+                        await asyncio.sleep(15)
+                        continue
                 else:
                     self.steamtrades_status = {
                         'running': False,
@@ -185,6 +215,7 @@ class Application(Gtk.Application):
                     continue
 
                 trades = [trade.strip() for trade in trade_ids.split(',')]
+                bumped = False
 
                 for trade_id in trades:
                     try:
@@ -206,10 +237,19 @@ class Application(Gtk.Application):
                         if await steam_trades.bump(trade_info):
                             self.steamtrades_status = {
                                 'running': True,
+                                'message': _("Waiting anti-ban timer"),
+                                'trade_id': ''
+                            }
+
+                            await asyncio.sleep(random.randint(3, 8))
+
+                            self.steamtrades_status = {
+                                'running': True,
                                 'message': 'Bumped!',
                                 'trade_id': trade_info.id,
                             }
-                            await asyncio.sleep(random.randint(1, 5))
+
+                            bumped = True
                         else:
                             log.critical(f"Unable to bump {trade_info.id}")
                             await asyncio.sleep(5)
@@ -221,6 +261,7 @@ class Application(Gtk.Application):
                     except webapi.NotReadyError as exception:
                         wait_min = exception.time_left * 60
                         wait_max = wait_min + 400
+                        bumped = True
                     except webapi.ClosedError as exception:
                         self.steamtrades_status = {
                             'running': False,
@@ -230,7 +271,12 @@ class Application(Gtk.Application):
                         await asyncio.sleep(5)
                         continue
 
+                if not bumped:
+                    await asyncio.sleep(10)
+                    continue
+
                 wait_offset = random.randint(wait_min, wait_max)
+                log.debug(_("Setting wait_offset from steamtrades to {}").format(wait_offset))
                 for past_time in range(wait_offset):
                     self.steamtrades_status = {
                         'running': True,

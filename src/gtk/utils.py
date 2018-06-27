@@ -99,6 +99,8 @@ class SimpleStatus(Gtk.Frame):
 class Status(Gtk.Frame):
     def __init__(self, current_text_size: int, label_text: str) -> None:
         super().__init__()
+        self.gtk_settings = Gtk.Settings.get_default()
+
         self.set_label(label_text)
         self.set_label_align(0.02, 0.5)
 
@@ -126,10 +128,20 @@ class Status(Gtk.Frame):
         self._current.set_markup(markup(text, font_size='large', font_weight='bold'))
 
     def set_info(self, text: str) -> None:
-        self._status.set_markup(markup(text, color='green', font_size='small'))
+        if self.gtk_settings.props.gtk_application_prefer_dark_theme:
+            color = 'lightgreen'
+        else:
+            color = 'green'
+
+        self._status.set_markup(markup(text, color=color, font_size='small'))
 
     def set_error(self, text: str) -> None:
-        self._status.set_markup(markup(text, color='red', font_size='small'))
+        if self.gtk_settings.props.gtk_application_prefer_dark_theme:
+            color = 'hotpink'
+        else:
+            color = 'red'
+
+        self._status.set_markup(markup(text, color=color, font_size='small'))
 
     def set_level(self, value: int, max_value: int) -> None:
         self._level_bar.set_value(value)
@@ -215,3 +227,13 @@ def safe_confirmation_get(confirmation_: webapi.Confirmation, attribute: str) ->
         result = _("Various")
 
     return result, value
+
+
+def remove_letters(text: str) -> str:
+    new_text = []
+
+    for char in text:
+        if char.isdigit():
+            new_text.append(char)
+
+    return ''.join(new_text)

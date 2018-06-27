@@ -30,6 +30,11 @@ from .. import config, i18n
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
+gtk_themes = OrderedDict([
+    ('light', _("Light")),
+    ('dark', _("Dark")),
+])
+
 log_levels = OrderedDict([
     ('critical', _("Critical")),
     ('error', _("Error")),
@@ -57,6 +62,8 @@ class SettingsDialog(Gtk.Dialog):
         self.set_resizable(False)
         self.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
 
+        self.gtk_settings_class = Gtk.Settings.get_default()
+
         content_area = self.get_content_area()
         content_grid = Gtk.Grid()
         content_grid.set_border_width(10)
@@ -65,35 +72,37 @@ class SettingsDialog(Gtk.Dialog):
         content_area.add(content_grid)
 
         content_grid.attach(self.login_settings(), 0, 0, 1, 3)
-        content_grid.attach(self.logger_settings(), 1, 0, 1, 1)
-        content_grid.attach(self.locale_settings(), 1, 1, 1, 1)
-        content_grid.attach(self.steamtrades_settings(), 1, 2, 1, 1)
+        content_grid.attach(self.logger_settings(), 1, 0, 1, 2)
+        content_grid.attach(self.locale_settings(), 1, 2, 1, 1)
+        content_grid.attach(self.gtk_settings(), 2, 0, 1, 1)
+        content_grid.attach(self.steamtrades_settings(), 2, 1, 1, 2)
 
         content_grid.show()
 
-        self.connect('response', on_response)
+        self.connect('response', lambda dialog, response_id: self.destroy())
         self.show()
 
     def login_settings(self) -> Gtk.Frame:
         login_section = utils.new_section("login", _("Login Settings"))
-        login_section.grid.set_row_spacing(20)
+        login_section.grid.set_row_spacing(5)
 
         adb_path = utils.new_item('adb_path', _("Adb Path:"), login_section, Gtk.Entry, 0, 0)
+        adb_path.children.set_placeholder_text('E.g.: c:\\adb.exe or /opt/adb')
         adb_path.children.connect('changed', on_adb_path_changed)
 
         account_name = utils.new_item('account_name', _("Username:"), login_section, Gtk.Entry, 0, 2)
         account_name.children.connect('changed', on_account_name_changed)
 
+        shared_secret = utils.new_item('shared_secret', _("Shared Secret:"), login_section, Gtk.Entry, 0, 4)
+        shared_secret.children.connect('changed', on_shared_secret_changed)
+
         login_section.frame.show_all()
 
-        token_item = utils.new_item("token", _("Token:"), login_section, Gtk.Entry, 0, 4)
+        token_item = utils.new_item("token", _("Token:"), login_section, Gtk.Entry, 0, 6)
         token_item.children.connect("changed", on_token_changed)
 
-        token_secure_item = utils.new_item("token_secure", _("Token Secure:"), login_section, Gtk.Entry, 0, 6)
+        token_secure_item = utils.new_item("token_secure", _("Token Secure:"), login_section, Gtk.Entry, 2, 0)
         token_secure_item.children.connect("changed", on_token_secure_changed)
-
-        shared_secret = utils.new_item('shared_secret', _("Shared Secret:"), login_section, Gtk.Entry, 2, 0)
-        shared_secret.children.connect('changed', on_shared_secret_changed)
 
         identity_secret = utils.new_item('identity_secret', _("Identity Secret:"), login_section, Gtk.Entry, 2, 2)
         identity_secret.children.connect('changed', on_identity_secret_changed)
@@ -131,10 +140,9 @@ class SettingsDialog(Gtk.Dialog):
         if button.get_active():
             section.grid.show_all()
             section.frame.set_label_align(0.017, 0.5)
-            section.grid.set_row_spacing(10)
         else:
             childrens = Gtk.Container.get_children(section.grid)
-            keep_list = ['adb_path', 'account_name', 'advanced_button', 'log_in_button', 'adb_button']
+            keep_list = ['adb_path', 'account_name', 'shared_secret', 'advanced_button', 'log_in_button', 'adb_button']
 
             for children in childrens:
                 if children.get_name() in keep_list:
@@ -144,14 +152,41 @@ class SettingsDialog(Gtk.Dialog):
 
             self.set_size_request(300, 150)
             section.frame.set_label_align(0.03, 0.5)
-            section.grid.set_row_spacing(20)
+
+    def gtk_settings(self) -> Gtk.Frame:
+        gtk_section = utils.new_section('gtk', _('Gtk Settings'))
+
+        theme = utils.new_item("theme", _("Theme:"), gtk_section, Gtk.ComboBoxText, 0, 0)
+        theme.children.connect('changed', self.on_theme_changed)
+
+        load_settings(gtk_section, Gtk.ComboBoxText, combo_items=gtk_themes)
+
+        gtk_section.frame.show_all()
+        return gtk_section.frame
+
+    def on_theme_changed(self, combo: Gtk.ComboBoxText) -> None:
+        theme = config.ConfigStr(list(gtk_themes)[combo.get_active()])
+
+        if theme == 'dark':
+            self.gtk_settings_class.props.gtk_application_prefer_dark_theme = True
+        else:
+            self.gtk_settings_class.props.gtk_application_prefer_dark_theme = False
+
+        config.new(config.ConfigType('gtk', 'theme', theme))
 
     @staticmethod
     def steamtrades_settings() -> Gtk.Frame:
-        steamtrades_section = utils.new_section('steamtrades', _('Steamtrades settings'))
-        info_label = Gtk.Label("trade id separated by commas. (E.g.: '12345,asdfg')")
-        steamtrades_section.grid.attach(info_label, 0, 0, 2, 1)
-        trade_ids = utils.new_item("trade_ids", _("trade ids:"), steamtrades_section, Gtk.Entry, 0, 1)
+        steamtrades_section = utils.new_section('steamtrades', _('Steamtrades Settings'))
+
+        trade_ids = utils.new_item("trade_ids", _("Trade IDs:"), steamtrades_section, Gtk.Entry, 0, 0)
+        trade_ids.children.set_placeholder_text('12345, asdfg, ...')
+        trade_ids.children.connect("changed", on_trade_ids_changed)
+
+        wait_min = utils.new_item("wait_min", _("Wait MIN:"), steamtrades_section, Gtk.Entry, 0, 1)
+        wait_min.children.connect("changed", on_wait_min_changed)
+
+        wait_max = utils.new_item("wait_max", _("Wait MAX:"), steamtrades_section, Gtk.Entry, 0, 2)
+        wait_max.children.connect("changed", on_wait_max_changed)
 
         load_settings(steamtrades_section, Gtk.Entry)
 
@@ -229,8 +264,8 @@ async def wait_login_data(
 ) -> None:
     while not login_dialog.login_data:
         await asyncio.sleep(5)
-
-    load_settings(login_section, Gtk.Entry, data=login_dialog.login_data["transfer_parameters"], save=True)
+    print(login_dialog.login_data)
+    load_settings(login_section, Gtk.Entry, data=login_dialog.login_data, save=True)
 
     login_dialog.destroy()
 
@@ -239,15 +274,9 @@ def on_steamid_changed(entry: Gtk.Entry) -> None:
     text = entry.get_text()
 
     if text.isdigit():
-        config.new(config.ConfigType('login', 'steamid', entry.get_text()))
+        config.new(config.ConfigType('login', 'steamid', text))
     else:
-        new_text = []
-
-        for char in text:
-            if char.isdigit():
-                new_text.append(char)
-
-        entry.set_text(''.join(new_text))
+        entry.set_text(utils.remove_letters(text))
 
 
 def on_token_changed(entry: Gtk.Entry) -> None:
@@ -289,8 +318,26 @@ def on_log_console_level_changed(combo: Gtk.ComboBoxText) -> None:
     config.new(config.ConfigType('logger', 'log_console_level', log_console_level))
 
 
-def on_response(dialog: Gtk.Dialog, response_id: int) -> None:
-    dialog.destroy()
+def on_trade_ids_changed(entry: Gtk.Entry) -> None:
+    config.new(config.ConfigType('steamtrades', 'trade_ids', entry.get_text()))
+
+
+def on_wait_min_changed(entry: Gtk.Entry) -> None:
+    text = entry.get_text()
+
+    if text.isdigit():
+        config.new(config.ConfigType('steamtrades', 'wait_min', text))
+    else:
+        entry.set_text(utils.remove_letters(text))
+
+
+def on_wait_max_changed(entry: Gtk.Entry) -> None:
+    text = entry.get_text()
+
+    if text.isdigit():
+        config.new(config.ConfigType('steamtrades', 'wait_max', text))
+    else:
+        entry.set_text(utils.remove_letters(text))
 
 
 def refresh_widget_text(widget: Gtk.Widget) -> None:
@@ -369,7 +416,7 @@ def load_settings(
                     )
 
                     try:
-                        config_value = getattr(config.DefaultConfig, config_option)
+                        config_value = str(getattr(config.DefaultConfig, config_option))
                     except AttributeError:
                         log.debug(_("Unable to find fallback value to %s. Ignoring"), config_option)
                         continue

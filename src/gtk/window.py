@@ -53,7 +53,7 @@ class Main(Gtk.ApplicationWindow):
         menu_button.set_menu_model(menu)
         header_bar.pack_end(menu_button)
 
-        self.set_default_size(600, 600)
+        self.set_default_size(600, 450)
         self.set_resizable(False)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_titlebar(header_bar)
@@ -64,18 +64,17 @@ class Main(Gtk.ApplicationWindow):
         main_grid.set_row_spacing(10)
         self.add(main_grid)
 
+        status_grid = Gtk.Grid()
+        main_grid.attach(status_grid, 0, 0, 4, 1)
+
         steamtrades_status = utils.Status(5, "SteamTrades (bump)")
-        main_grid.attach(steamtrades_status, 0, 0, 4, 1)
+        status_grid.attach(steamtrades_status, 0, 0, 1, 1)
 
         steamguard_status = utils.Status(4, _('Steam Guard Code'))
-        main_grid.attach(steamguard_status, 0, 1, 4, 1)
+        status_grid.attach(steamguard_status, 1, 0, 1, 1)
 
         info_label = Gtk.Label()
-
-        info_label.set_markup(
-            utils.markup(_("If you have confirmations, they will be shown here. (15 seconds delay)"), color='blue')
-        )
-
+        info_label.set_text(_("If you have confirmations, they will be shown here. (15 seconds delay)"))
         main_grid.attach(info_label, 0, 2, 4, 1)
 
         warning_label = Gtk.Label()

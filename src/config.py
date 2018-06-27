@@ -65,6 +65,9 @@ class DefaultConfig(object):
     log_console_level = ConfigStr('info')
     log_color = ConfigBool(True)
     language = ConfigStr(str(locale.getdefaultlocale()[0]))
+    wait_min = ConfigInt(3700)
+    wait_max = ConfigInt(4100)
+    theme = ConfigStr("light")
 
 
 class Check(object):
@@ -72,13 +75,14 @@ class Check(object):
         self.section = section
 
     def __call__(self, function_: Callable[..., Any]) -> Any:
-        log.debug(_('Loading new configs from %s'), config_file)
         config_parser.read(config_file)
         new_parameters = {}
         signature = inspect.signature(function_)
 
         def wrapped_function(*args: Any, **kwargs: Any) -> Any:
             for index, option in enumerate(signature.parameters.values()):
+                log.debug(_('Loading %s:%s from config file'), self.section, option.name)
+
                 if len(args) >= index + 1:
                     log.debug(_("A positional argument already exists for %s. Ignoring..."), option.name)
                     continue
@@ -167,10 +171,10 @@ def new(*new_configs: ConfigType) -> None:
         if not config_parser.has_section(config.section):
             config_parser.add_section(config.section)
 
+        log.debug(_('Saving %s:%s on config file'), config.section, config.option)
         config_parser.set(config.section, config.option, str(config.value))
 
     with open(config_file, 'w') as config_file_object:
-        log.debug(_('Saving new configs at %s'), config_file)
         config_parser.write(config_file_object)
 
 

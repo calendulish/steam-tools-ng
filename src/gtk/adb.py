@@ -112,7 +112,12 @@ class AdbDialog(Gtk.Dialog):
             json_data['deviceid'] = await adb.get_device_id()
         except authenticator.DeviceError:
             self.status.error(_("No phone connected"))
-            return None
+        except authenticator.RootError:
+            self.status.error(_("Unable to switch to root mode"))
+        except authenticator.LoginError:
+            self.status.error(_("User is not logged-in on Mobile Authenticator"))
+        except authenticator.SteamGuardError:
+            self.status.error(_("Steam Guard is not enabled"))
         else:
             self.adb_data = json_data
 
