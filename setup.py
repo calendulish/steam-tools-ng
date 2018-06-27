@@ -26,13 +26,17 @@ from distutils.sysconfig import get_python_lib
 from importlib.machinery import SourceFileLoader
 from typing import Any, List, Mapping, Tuple
 
-from steam_tools_ng import version
+from src import version
 
 po_build_path = os.path.join('build', 'share', 'locale')
 
 if os.name == 'nt':
     # noinspection PyPackageRequirements
     from cx_Freeze import setup, Executable
+    from distutils.dir_util import copy_tree
+
+    # FIXME: cx_freeze doesn't have an option like `package_dir'
+    copy_tree('src', 'steam_tools_ng')
 
     if sys.maxsize > 2 ** 32:
         arch = 64
