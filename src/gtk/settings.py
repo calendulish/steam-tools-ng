@@ -54,6 +54,8 @@ class SettingsDialog(Gtk.Dialog):
     def __init__(self, parent_window: Gtk.Widget) -> None:
         super().__init__(use_header_bar=True)
         self.parent_window = parent_window
+        self.session = parent_window.session
+
         self.set_default_size(300, 150)
         self.set_title(_('Settings'))
         self.set_transient_for(self.parent_window)

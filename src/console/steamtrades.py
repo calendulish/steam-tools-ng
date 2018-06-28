@@ -106,6 +106,7 @@ async def on_get_code(shared_secret: Optional[config.ConfigStr] = None) -> Any:
 
 @config.Check("steamtrades")
 async def run(
+        session: aiohttp.ClientSession,
         trade_ids: Optional[config.ConfigStr] = None,
         wait_min: Union[config.ConfigInt, int] = 3700,
         wait_max: Union[config.ConfigInt, int] = 4100,
@@ -116,50 +117,49 @@ async def run(
 
     authenticator_code, server_time = await on_get_code()
 
-    async with aiohttp.ClientSession(raise_for_status=True) as session:
-        login_data = await on_get_login_data(session, authenticator_code)
-        session.cookie_jar.update_cookies(login_data)
-        steam_trades = webapi.SteamTrades(session, api_url="https://lara.click/api")
+    login_data = await on_get_login_data(session, authenticator_code)
+    session.cookie_jar.update_cookies(login_data)
+    steam_trades = webapi.SteamTrades(session, api_url="https://lara.click/api")
 
-        try:
-            await steam_trades.do_openid_login('https://steamtrades.com/?login')
-        except aiohttp.ClientConnectionError:
-            logging.critical(_("No connection"))
-            sys.exit(1)
+    try:
+        await steam_trades.do_openid_login('https://steamtrades.com/?login')
+    except aiohttp.ClientConnectionError:
+        logging.critical(_("No connection"))
+        sys.exit(1)
 
-        while True:
-            current_datetime = time.strftime('%B, %d, %Y - %H:%M:%S')
-            trades = [trade.strip() for trade in trade_ids.split(',')]
+    while True:
+        current_datetime = time.strftime('%B, %d, %Y - %H:%M:%S')
+        trades = [trade.strip() for trade in trade_ids.split(',')]
 
-            for trade_id in trades:
-                try:
-                    trade_info = await steam_trades.get_trade_info(trade_id)
-                except (IndexError, aiohttp.ClientResponseError):
-                    logging.error('Unable to find id: %s. Ignoring...', trade_id)
-                    continue
+        for trade_id in trades:
+            try:
+                trade_info = await steam_trades.get_trade_info(trade_id)
+            except (IndexError, aiohttp.ClientResponseError):
+                logging.error('Unable to find id: %s. Ignoring...', trade_id)
+                continue
 
-                try:
-                    bump_result = await steam_trades.bump(trade_info)
-                except webapi.NotReadyError as exception:
-                    log.warning(
-                        "%s (%s) Already bumped. Waiting more %d minutes",
-                        trade_info.id,
-                        trade_info.title,
-                        exception.time_left,
-                    )
-                    wait_min = exception.time_left * 60
-                    wait_max = wait_min + 400
-                except webapi.ClosedError:
-                    log.error("%s (%s) is closed. Ignoring...", trade_info.id, trade_info.title)
-                    continue
+            try:
+                bump_result = await steam_trades.bump(trade_info)
+            except webapi.NotReadyError as exception:
+                log.warning(
+                    "%s (%s) Already bumped. Waiting more %d minutes",
+                    trade_info.id,
+                    trade_info.title,
+                    exception.time_left,
+                )
+                wait_min = exception.time_left * 60
+                wait_max = wait_min + 400
+            except webapi.ClosedError:
+                log.error("%s (%s) is closed. Ignoring...", trade_info.id, trade_info.title)
+                continue
+            else:
+                if bump_result:
+                    log.info("%s (%s) Bumped! [%s]", trade_info.id, trade_info.title, current_datetime)
                 else:
-                    if bump_result:
-                        log.info("%s (%s) Bumped! [%s]", trade_info.id, trade_info.title, current_datetime)
-                    else:
-                        log.error('Unable to bump %s (%s). Ignoring...', trade_info.id, trade_info.title)
+                    log.error('Unable to bump %s (%s). Ignoring...', trade_info.id, trade_info.title)
 
-            wait_offset = random.randint(wait_min, wait_max)
-            for past_time in range(wait_offset):
-                print("Waiting: {:4d} seconds".format(wait_offset - past_time), end='\r')
-                await asyncio.sleep(1)
-            print()  # keep history
+        wait_offset = random.randint(wait_min, wait_max)
+        for past_time in range(wait_offset):
+            print("Waiting: {:4d} seconds".format(wait_offset - past_time), end='\r')
+            await asyncio.sleep(1)
+        print()  # keep history

@@ -20,7 +20,6 @@ import contextlib
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-import aiohttp
 from gi.repository import Gtk
 from stlib import webapi
 
@@ -35,12 +34,13 @@ _ = i18n.get_translation
 class FinalizeDialog(Gtk.Dialog):
     def __init__(
             self,
-            parent_window: Gtk.Widget,
+            parent_window: Gtk.Window,
             action: str,
             model: Gtk.TreeModel,
             iter_: Union[Gtk.TreeIter, bool, None] = False,
     ) -> None:
         super().__init__(use_header_bar=True)
+        self.session = parent_window.session
         self.confirmation_data = None
 
         if action == "allow":
@@ -167,24 +167,23 @@ class FinalizeDialog(Gtk.Dialog):
             keep_iter: bool = False,
     ) -> Dict[str, Any]:
         self.status.info(_("Processing {}").format(self.model[self.iter][1]))
-        async with aiohttp.ClientSession(raise_for_status=True) as session:
-            session.cookie_jar.update_cookies(config.login_cookies())
-            steam_webapi = webapi.SteamWebAPI(session, 'https://lara.click/api')
 
-            result = await steam_webapi.finalize_confirmation(
-                identity_secret,
-                steamid,
-                deviceid,
-                self.model[self.iter][1],
-                self.model[self.iter][2],
-                self.raw_action,
-            )
-            assert isinstance(result, dict), "finalize_confirmation return is not a dict"
+        steam_webapi = webapi.SteamWebAPI(self.session, 'https://lara.click/api')
 
-            if not keep_iter:
-                self.model.remove(self.iter)
+        result = await steam_webapi.finalize_confirmation(
+            identity_secret,
+            steamid,
+            deviceid,
+            self.model[self.iter][1],
+            self.model[self.iter][2],
+            self.raw_action,
+        )
+        assert isinstance(result, dict), "finalize_confirmation return is not a dict"
 
-            return result
+        if not keep_iter:
+            self.model.remove(self.iter)
+
+        return result
 
     @config.Check("login")
     async def batch_finalize(

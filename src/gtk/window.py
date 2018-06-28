@@ -21,7 +21,6 @@ import logging
 import os
 
 from gi.repository import GdkPixbuf, Gio, Gtk
-from stlib import webapi
 
 from . import confirmation, utils
 from .. import config, i18n
@@ -35,6 +34,7 @@ class Main(Gtk.ApplicationWindow):
     def __init__(self, application: Gtk.Application) -> None:
         super().__init__(application=application, title="Steam Tools NG")
         self.application = application
+        self.session = application.session
 
         header_bar = Gtk.HeaderBar()
         header_bar.set_show_close_button(True)

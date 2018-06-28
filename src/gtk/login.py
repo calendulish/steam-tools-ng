@@ -21,7 +21,6 @@ import binascii
 import logging
 from typing import Optional
 
-import aiohttp
 from gi.repository import Gdk, Gtk
 from stlib import authenticator, webapi
 
@@ -36,6 +35,7 @@ _ = i18n.get_translation
 class LogInDialog(Gtk.Dialog):
     def __init__(self, parent_window: Gtk.Widget) -> None:
         super().__init__(use_header_bar=True)
+        self.session = parent_window.session
         self.login_data = None
 
         self.header_bar = self.get_header_bar()
@@ -137,21 +137,20 @@ class LogInDialog(Gtk.Dialog):
             self.status.error(_("Unable to log-in!\nYour username/password is blank."))
             return None
 
-        async with aiohttp.ClientSession(raise_for_status=True) as session:
-            steam_webapi = webapi.SteamWebAPI(session, 'https://lara.click/api')
-            steam_key = await steam_webapi.get_steam_key(username)
-            encrypted_password = webapi.encrypt_password(steam_key, password)
-            authenticator_code, server_time = authenticator.get_code(shared_secret)
+        steam_webapi = webapi.SteamWebAPI(self.session, 'https://lara.click/api')
+        steam_key = await steam_webapi.get_steam_key(username)
+        encrypted_password = webapi.encrypt_password(steam_key, password)
+        authenticator_code, server_time = authenticator.get_code(shared_secret)
 
-            steam_login_data = await steam_webapi.do_login(
-                username,
-                encrypted_password,
-                steam_key.timestamp,
-                authenticator_code,
-            )
+        steam_login_data = await steam_webapi.do_login(
+            username,
+            encrypted_password,
+            steam_key.timestamp,
+            authenticator_code,
+        )
 
-            if steam_login_data['success']:
-                self.login_data = {**steam_login_data["transfer_parameters"], 'account_name': username}
-            else:
-                self.status.error(_("Unable to log-in on Steam!\nPlease, try again."))
-                return None
+        if steam_login_data['success']:
+            self.login_data = {**steam_login_data["transfer_parameters"], 'account_name': username}
+        else:
+            self.status.error(_("Unable to log-in on Steam!\nPlease, try again."))
+            return None

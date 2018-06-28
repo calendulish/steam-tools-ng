@@ -26,6 +26,8 @@ from distutils.sysconfig import get_python_lib
 from importlib.machinery import SourceFileLoader
 from typing import Any, List, Mapping, Tuple
 
+import certifi
+
 from src import version
 
 po_build_path = os.path.join('build', 'share', 'locale')
@@ -186,7 +188,7 @@ def freeze_options() -> Mapping[str, Any]:
     paths = ['.']
     paths.extend(sys.path)
 
-    includes = [*fix_gtk()]
+    includes = [*fix_gtk(), (certifi.where(), os.path.join('etc', 'cacert.pem'))]
 
     for file in os.listdir('icons'):
         if file != 'settings.ini':

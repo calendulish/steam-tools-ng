@@ -22,8 +22,11 @@ import contextlib
 import importlib
 import logging
 import os
+import ssl
 import sys
 import textwrap
+
+import aiohttp
 
 if os.environ.get('GTK_DEBUG', False) or os.environ.get('DEBUG', False):
     from src import config, i18n, version
@@ -95,14 +98,21 @@ if __name__ == "__main__":
     log.info(f'Steam Tools NG version {version.__version__} (Made with Girl Power <33)')
     log.info('Copyright (C) 2015 ~ 2018 Lara Maia - <dev@lara.click>')
 
+    ssl_context = ssl.SSLContext()
+
+    if hasattr(sys, 'frozen'):
+        _executable_path = os.path.dirname(sys.executable)
+        ssl_context.load_verify_locations(cafile=os.path.join(_executable_path, 'etc', 'cacert.pem'))
+
+    tcp_connector = aiohttp.TCPConnector(ssl=ssl_context)
+    http_session = aiohttp.ClientSession(raise_for_status=True, connector=tcp_connector)
+
     if console_params.module:
         module_name = console_params.module[0]
         module_options = console_params.options
         module = importlib.import_module(f'.{module_name}', 'steam_tools_ng.console')
 
-        return_code = event_loop.run_until_complete(module.run(*module_options))  # type: ignore
-
-        sys.exit(return_code)
+        asyncio.ensure_future(module.run(*module_options))  # type: ignore
     else:
         if os.environ.get('GTK_DEBUG', False):
             from src.gtk import application
@@ -117,7 +127,7 @@ if __name__ == "__main__":
             log.critical('Use -c / --cli <module> for the command line interface.')
             sys.exit(1)
 
-        app = application.Application()
+        app = application.Application(http_session)
         app.register()
         app.activate()
 
@@ -132,24 +142,25 @@ if __name__ == "__main__":
                 asyncio.ensure_future(async_gtk_iterator())
             else:
                 event_loop.stop()
+                app.quit()
 
 
         asyncio.ensure_future(async_gtk_iterator())
 
-        try:
-            event_loop.run_forever()
-        finally:
-            log.info(_("Exiting..."))
+    try:
+        event_loop.run_forever()
+    finally:
+        log.info(_("Exiting..."))
 
-            unfinished_tasks = asyncio.Task.all_tasks()
+        unfinished_tasks = asyncio.Task.all_tasks()
 
-            for task in unfinished_tasks:
-                task.cancel()
+        for task in unfinished_tasks:
+            task.cancel()
 
-                with contextlib.suppress(asyncio.CancelledError):
-                    event_loop.run_until_complete(task)
+            with contextlib.suppress(asyncio.CancelledError):
+                event_loop.run_until_complete(task)
 
-            # FIXME https://github.com/aio-libs/aiohttp/issues/1925
-            event_loop.run_until_complete(asyncio.sleep(1))
-            event_loop.close()
-            app.quit()
+        event_loop.run_until_complete(http_session.close())
+        # FIXME https://github.com/aio-libs/aiohttp/issues/1925
+        event_loop.run_until_complete(asyncio.sleep(1))
+        event_loop.close()
