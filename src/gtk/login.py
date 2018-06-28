@@ -140,7 +140,12 @@ class LogInDialog(Gtk.Dialog):
         steam_webapi = webapi.SteamWebAPI(self.session, 'https://lara.click/api')
         steam_key = await steam_webapi.get_steam_key(username)
         encrypted_password = webapi.encrypt_password(steam_key, password)
-        authenticator_code, server_time = authenticator.get_code(shared_secret)
+
+        try:
+            authenticator_code, server_time = authenticator.get_code(shared_secret)
+        except ProcessLookupError:
+            self.status.error(_("Unable to log-in!\nSteam Client is not running."))
+            return None
 
         steam_login_data = await steam_webapi.do_login(
             username,
