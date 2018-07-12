@@ -81,6 +81,13 @@ if __name__ == "__main__":
     )
 
     command_parser.add_argument(
+        '--reset',
+        action='store_true',
+        help='Clean up settings and log files',
+        dest='reset',
+    )
+
+    command_parser.add_argument(
         'options',
         nargs='*',
         help=argparse.SUPPRESS
@@ -91,8 +98,22 @@ if __name__ == "__main__":
     if console_params.config_dir:
         os.system(f'{file_manager} {config.config_file_directory}')
         sys.exit(0)
-    elif console_params.log_dir:
+
+    if console_params.log_dir:
         os.system(f'{file_manager} {config.DefaultConfig.log_directory}')
+        sys.exit(0)
+
+    if console_params.reset:
+        with contextlib.suppress(FileNotFoundError):
+            os.remove(config.config_file)
+
+        logging.root.removeHandler(logging.root.handlers[0])
+
+        log_directory = config.config_parser.get("logger", "log_directory", fallback=config.DefaultConfig.log_directory)
+        os.remove(os.path.join(log_directory, 'steam-tools-ng.log'))
+        os.remove(os.path.join(log_directory, 'steam-tools-ng.log.1'))
+
+        log.info(_('Done!'))
         sys.exit(0)
 
     log.info(f'Steam Tools NG version {version.__version__} (Made with Girl Power <33)')
