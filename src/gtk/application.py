@@ -19,13 +19,13 @@ import asyncio
 import binascii
 import logging
 import random
-from typing import Any
+from typing import Any, Optional
 
 import aiohttp
 from gi.repository import Gio, Gtk
-from stlib import authenticator, webapi
+from stlib import authenticator, client, plugins, webapi
 
-from . import about, settings, window
+from . import about, login, settings, window, setup
 from .. import config, i18n
 
 _ = i18n.get_translation
@@ -40,14 +40,16 @@ class Application(Gtk.Application):
 
         self.session = session
 
-        self.window: Gtk.ApplicationWindow = None
+        self.window: Optional[Gtk.ApplicationWindow] = None
         self.gtk_settings = Gtk.Settings.get_default()
+
+        self.api_login: Optional[webapi.Login] = None
 
         self.steamguard_status = {'running': False, 'message': "SteamGuard is not running"}
         self.confirmations_status = {'running': False, 'message': "Confirmations is not running"}
         self.steamtrades_status = {'running': False, 'message': "Steamtrades is not running", 'trade_id': ''}
 
-    def do_startup(self) -> None:
+    def do_startup(self):
         Gtk.Application.do_startup(self)
 
         settings_action = Gio.SimpleAction.new('settings')
@@ -65,11 +67,20 @@ class Application(Gtk.Application):
         else:
             self.gtk_settings.props.gtk_application_prefer_dark_theme = False
 
-    def do_activate(self) -> None:
+    @config.Check("login")
+    def do_activate(
+            self,
+            token: Optional[config.ConfigStr] = None,
+            token_secure: Optional[config.ConfigStr] = None,
+    ) -> None:
         if not self.window:
             self.window = window.Main(application=self)
 
         self.window.present()
+
+        if not token or not token_secure:
+            setup_dialog = setup.SetupDialog(self.window, self.session)
+            setup_dialog.show()
 
         asyncio.ensure_future(self.run_steamguard())
         asyncio.ensure_future(self.run_confirmations())
@@ -83,7 +94,10 @@ class Application(Gtk.Application):
                 if not shared_secret:
                     raise TypeError
 
-                auth_code, server_time = authenticator.get_code(shared_secret)
+                with client.SteamGameServer() as server:
+                    server_time = server.get_server_time()
+
+                auth_code = authenticator.get_code(server_time, shared_secret)
             except (TypeError, binascii.Error):
                 self.steamguard_status = {'running': False, 'message': _("The currently secret is invalid")}
                 await asyncio.sleep(10)
@@ -160,7 +174,8 @@ class Application(Gtk.Application):
             await asyncio.sleep(15)
 
     async def run_steamtrades(self) -> None:
-        steam_trades = webapi.SteamTrades(self.session, api_url='https://lara.click/api')
+        steamtrades_plugin = plugins.get_plugin("steamtrades")
+        steamtrades = steamtrades_plugin.Main(self.session, api_url='https://lara.click/api')
 
         while self.window.get_realized():
             self.steamtrades_status = {'running': True, 'message': "Loading...", 'trade_id': ''}
@@ -192,7 +207,7 @@ class Application(Gtk.Application):
             if cookies:
                 self.session.cookie_jar.update_cookies(cookies)
                 try:
-                    await steam_trades.do_openid_login('https://steamtrades.com/?login')
+                    await steamtrades.do_openid_login('https://steamtrades.com/?login')
                 except aiohttp.ClientConnectionError:
                     self.steamtrades_status = {'running': False, 'message': _("No connection"), 'trade_id': ''}
                     await asyncio.sleep(15)
@@ -219,7 +234,7 @@ class Application(Gtk.Application):
 
             for trade_id in trades:
                 try:
-                    trade_info = await steam_trades.get_trade_info(trade_id)
+                    trade_info = await steamtrades.get_trade_info(trade_id)
                 except (IndexError, aiohttp.ClientResponseError):
                     self.steamtrades_status = {
                         'running': False,
@@ -234,7 +249,7 @@ class Application(Gtk.Application):
                     continue
 
                 try:
-                    if await steam_trades.bump(trade_info):
+                    if await steamtrades.bump(trade_info):
                         self.steamtrades_status = {
                             'running': True,
                             'message': _("Waiting anti-ban timer"),
@@ -254,15 +269,15 @@ class Application(Gtk.Application):
                         log.critical(f"Unable to bump {trade_info.id}")
                         await asyncio.sleep(5)
                         continue
-                except webapi.NoTradesError as exception:
+                except steamtrades_plugin.NoTradesError as exception:
                     log.error(exception)
                     await asyncio.sleep(15)
                     continue
-                except webapi.NotReadyError as exception:
+                except steamtrades_plugin.NotReadyError as exception:
                     wait_min = exception.time_left * 60
                     wait_max = wait_min + 400
                     bumped = True
-                except webapi.ClosedError as exception:
+                except steamtrades_plugin.ClosedError as exception:
                     self.steamtrades_status = {
                         'running': False,
                         'message': str(exception),

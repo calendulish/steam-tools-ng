@@ -17,7 +17,7 @@
 #
 import asyncio
 import logging
-from typing import Optional
+from typing import Optional, Dict
 
 from gi.repository import Gtk
 from stlib import authenticator
@@ -75,11 +75,12 @@ class AdbDialog(Gtk.Dialog):
 
     def on_task_finish(self, future: asyncio.Future) -> None:
         if not self.adb_data:
+            self.set_size_request(300, 60)
             self.header_bar.set_show_close_button(True)
             self.try_again_button.show()
 
     @config.Check("login")
-    async def get_adb_data(self, adb_path: Optional[config.ConfigStr] = None) -> None:
+    async def get_adb_data(self, adb_path: Optional[config.ConfigStr] = None) -> Optional[Dict[str, str]]:
         if not adb_path:
             self.status.error(_(
                 "Unable to run without a valid 'adb path'.\n\n"
@@ -120,6 +121,7 @@ class AdbDialog(Gtk.Dialog):
             self.status.error(_("Steam Guard is not enabled"))
         else:
             self.adb_data = json_data
+            return json_data
 
     @staticmethod
     def on_response(dialog: Gtk.Dialog, response_id: int) -> None:

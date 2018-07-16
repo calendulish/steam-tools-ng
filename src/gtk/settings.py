@@ -236,7 +236,7 @@ class SettingsDialog(Gtk.Dialog):
             button: Gtk.Button,
             login_section,
     ) -> None:
-        login_dialog = login.LogInDialog(parent_window=self)
+        login_dialog = login.LogInDialog(parent_window=self, session=self.session)
         login_dialog.show()
 
         asyncio.ensure_future(wait_login_data(login_dialog, login_section))
@@ -266,7 +266,7 @@ async def wait_login_data(
 ) -> None:
     while not login_dialog.login_data:
         await asyncio.sleep(5)
-    print(login_dialog.login_data)
+
     load_settings(login_section, Gtk.Entry, data=login_dialog.login_data, save=True)
 
     login_dialog.destroy()

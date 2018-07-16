@@ -21,6 +21,7 @@ import binascii
 import logging
 from typing import Optional
 
+import aiohttp
 from gi.repository import Gdk, Gtk
 from stlib import authenticator, webapi
 
@@ -33,9 +34,9 @@ _ = i18n.get_translation
 
 # noinspection PyUnusedLocal
 class LogInDialog(Gtk.Dialog):
-    def __init__(self, parent_window: Gtk.Widget) -> None:
+    def __init__(self, parent_window: Gtk.Widget, session: aiohttp.ClientSession) -> None:
         super().__init__(use_header_bar=True)
-        self.session = parent_window.session
+        self.session = session
         self.login_data = None
 
         self.header_bar = self.get_header_bar()
@@ -83,6 +84,10 @@ class LogInDialog(Gtk.Dialog):
         self.content_area.show_all()
         self.header_bar.show_all()
 
+        self.code_item = utils.new_item("code", _("Code:"), self.user_details_section, Gtk.Entry, 0, 2)
+        self.code_item.label.hide()
+        self.code_item.children.hide()
+
         self.connect('response', lambda dialog, response_id: self.destroy())
 
     def on_key_release(self, entry: Gtk.Entry, event: Gdk.EventKey):
@@ -115,7 +120,8 @@ class LogInDialog(Gtk.Dialog):
             self,
             username: str,
             password: str,
-            shared_secret: Optional[config.ConfigStr] = None
+            shared_secret: Optional[config.ConfigStr] = None,
+            mail_code: Optional[str] = None,
     ) -> None:
         if not shared_secret:
             self.status.error(_(
@@ -137,25 +143,36 @@ class LogInDialog(Gtk.Dialog):
             self.status.error(_("Unable to log-in!\nYour username/password is blank."))
             return None
 
+        login = webapi.Login(self.session, username, password)
         steam_webapi = webapi.SteamWebAPI(self.session, 'https://lara.click/api')
-        steam_key = await steam_webapi.get_steam_key(username)
-        encrypted_password = webapi.encrypt_password(steam_key, password)
 
-        try:
-            authenticator_code, server_time = authenticator.get_code(shared_secret)
-        except ProcessLookupError:
-            self.status.error(_("Unable to log-in!\nSteam Client is not running."))
-            return None
+        if mail_code:
+            login_data = await login.do_login(emailauth=mail_code)
+        else:
+            try:
+                login_data = await login.do_login(mobile_login=False)
+            except webapi.MailCodeError:
+                self.status.info("Write code received by email:")
+                self.code_item.label.show()
+                self.code_item.children.show()
 
-        steam_login_data = await steam_webapi.do_login(
-            username,
-            encrypted_password,
-            steam_key.timestamp,
-            authenticator_code,
-        )
+                self.log_in_button.connect(
+                    lambda button: asyncio.ensure_future(self.do_login(self.code_item.children.get_text()))
+                )
 
-        if steam_login_data['success']:
-            self.login_data = {**steam_login_data["transfer_parameters"], 'account_name': username}
+                self.log_in_button.show()
+                self.header_bar.set_show_close_button(True)
+                return
+            except webapi.TwoFactorCodeError:
+                server_time = await steam_webapi.get_server_time()
+                auth_code = authenticator.get_code(server_time, shared_secret)
+                try:
+                    login_data = await login.do_login(authenticator_code=auth_code.code)
+                except webapi.TwoFactorCodeError:
+                    self.status.error(_("Unable to login"))
+
+        if login_data['success']:
+            self.login_data = {**login_data["transfer_parameters"], 'account_name': username}
         else:
             self.status.error(_("Unable to log-in on Steam!\nPlease, try again."))
             return None
