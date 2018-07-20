@@ -25,7 +25,7 @@ import aiohttp
 from gi.repository import Gio, Gtk
 from stlib import authenticator, client, plugins, webapi
 
-from . import about, login, settings, window, setup
+from . import about, settings, setup, window
 from .. import config, i18n
 
 _ = i18n.get_translation
@@ -80,7 +80,7 @@ class Application(Gtk.Application):
 
         if not token or not token_secure:
             setup_dialog = setup.SetupDialog(self.window, self.session)
-            setup_dialog.show()
+            setup_dialog.select_login_mode()
 
         asyncio.ensure_future(self.run_steamguard())
         asyncio.ensure_future(self.run_confirmations())

@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-
+import asyncio
 import logging
 from typing import Any, Callable, List, NamedTuple, Tuple
 
@@ -227,6 +227,15 @@ def safe_confirmation_get(confirmation_: webapi.Confirmation, attribute: str) ->
         result = _("Various")
 
     return result, value
+
+
+def safe_callback(widget: Gtk.Widget, callback: Callable[..., Any], *data: List[Any]) -> None:
+    widget.destroy()
+
+    if asyncio.iscoroutinefunction(callback):
+        asyncio.ensure_future(callback(*data))
+    else:
+        callback(*data)
 
 
 def remove_letters(text: str) -> str:

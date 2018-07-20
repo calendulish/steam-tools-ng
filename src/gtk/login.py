@@ -16,14 +16,11 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
-import base64
-import binascii
 import logging
-from typing import Optional
 
 import aiohttp
 from gi.repository import Gdk, Gtk
-from stlib import authenticator, webapi
+from stlib import webapi
 
 from . import utils
 from .. import config, i18n
@@ -34,9 +31,10 @@ _ = i18n.get_translation
 
 # noinspection PyUnusedLocal
 class LogInDialog(Gtk.Dialog):
-    def __init__(self, parent_window: Gtk.Widget, session: aiohttp.ClientSession) -> None:
+    def __init__(self, parent_window: Gtk.Widget, session: aiohttp.ClientSession, mobile_login: bool = False) -> None:
         super().__init__(use_header_bar=True)
         self.session = session
+        self.mobile_login = mobile_login
         self.login_data = None
 
         self.header_bar = self.get_header_bar()
@@ -73,7 +71,7 @@ class LogInDialog(Gtk.Dialog):
         self.__password_item.children.set_placeholder_text(_("It will not be saved"))
         self.__password_item.children.connect("key-release-event", self.on_key_release)
 
-        self.log_in_button = Gtk.Button(_("Log In"))
+        self.log_in_button = Gtk.Button(_("Log-in"))
         self.log_in_button.connect("clicked", self.on_log_in_button_clicked)
         self.header_bar.pack_end(self.log_in_button)
 
@@ -120,25 +118,9 @@ class LogInDialog(Gtk.Dialog):
             self,
             username: str,
             password: str,
-            shared_secret: Optional[config.ConfigStr] = None,
-            mail_code: Optional[str] = None,
+            mail_code: str = '',
+            authenticator_code: str = '',
     ) -> None:
-        if not shared_secret:
-            self.status.error(_(
-                "Unable to log-in!\n\n"
-                "To login you need to provide at last a valid shared secret.\n"
-                "You can use 'Get login data using ADB' button to get it,\n"
-                "or insert it manually on:\n\n"
-                "settings -> login settings -> mark 'advanced' -> shared secret\n"
-            ))
-            return None
-
-        try:
-            base64.b64decode(shared_secret)
-        except binascii.Error:
-            self.status.error(_("Unable to log-in!\nThe shared secret received is invalid."))
-            return None
-
         if not username or not password:
             self.status.error(_("Unable to log-in!\nYour username/password is blank."))
             return None
@@ -146,33 +128,69 @@ class LogInDialog(Gtk.Dialog):
         login = webapi.Login(self.session, username, password)
         steam_webapi = webapi.SteamWebAPI(self.session, 'https://lara.click/api')
 
-        if mail_code:
-            login_data = await login.do_login(emailauth=mail_code)
-        else:
-            try:
-                login_data = await login.do_login(mobile_login=False)
-            except webapi.MailCodeError:
-                self.status.info("Write code received by email:")
-                self.code_item.label.show()
-                self.code_item.children.show()
+        try:
+            login_data = await login.do_login(
+                emailauth=mail_code,
+                authenticator_code=authenticator_code,
+                mobile_login=self.mobile_login
+            )
+        except webapi.MailCodeError:
+            self.status.info(_("Write code received by email\nand click on 'Try Again?' button"))
+            self.code_item.label.show()
+            self.code_item.children.show()
 
-                self.log_in_button.connect(
-                    lambda button: asyncio.ensure_future(self.do_login(self.code_item.children.get_text()))
+            self.log_in_button.connect("clicked",
+                lambda button: asyncio.ensure_future(
+                    self.do_login(
+                        username,
+                        password,
+                        self.code_item.children.get_text(),
+                        authenticator_code,
+                    )
                 )
+            )
 
-                self.log_in_button.show()
-                self.header_bar.set_show_close_button(True)
-                return
-            except webapi.TwoFactorCodeError:
-                server_time = await steam_webapi.get_server_time()
-                auth_code = authenticator.get_code(server_time, shared_secret)
-                try:
-                    login_data = await login.do_login(authenticator_code=auth_code.code)
-                except webapi.TwoFactorCodeError:
-                    self.status.error(_("Unable to login"))
+            self.log_in_button.show()
+            self.header_bar.set_show_close_button(True)
+            return
+        except webapi.TwoFactorCodeError:
+            self.status.error(_(
+                "Unable to log-in!\n"
+                "You already have a Steam Authenticator active on current account\n\n"
+                "To log-in, you have two options:\n\n"
+                "- Just remove authenticator from your account and use the 'Try Again?' button\n"
+                "    to set STNG as your Steam Authenticator.\n\n"
+                "- Put your shared secret on settings or let us automagically find it using adb\n"
+                "    (settings -> 'get login data using adb' button)\n"
+
+            ))
+            self.header_bar.set_show_close_button(True)
+            return
+        except webapi.LoginError:
+            self.status.error(_(
+                "Unable to log-in!\n"
+                "Please, check your username/password and try again.\n"
+            ))
+            self.header_bar.set_show_close_button(True)
+            return
 
         if login_data['success']:
-            self.login_data = {**login_data["transfer_parameters"], 'account_name': username}
+            if self.mobile_login:
+                async with self.session.get('https://steamcommunity.com') as response:
+                    sessionid = response.cookies['sessionid'].value
+
+                if await login.has_phone(sessionid):
+                    has_phone = True
+                else:
+                    has_phone = False
+            else:
+                has_phone = None
+
+            self.login_data = {
+                **login_data,
+                'account_name': username,
+                'has_phone': has_phone,
+            }
         else:
             self.status.error(_("Unable to log-in on Steam!\nPlease, try again."))
             return None

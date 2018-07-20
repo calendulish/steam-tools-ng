@@ -21,7 +21,7 @@ import logging
 import aiohttp
 from gi.repository import Gtk
 
-from . import adb, login, utils
+from . import adb, add_authenticator, login, utils
 from .. import config, i18n
 
 log = logging.getLogger(__name__)
@@ -61,12 +61,11 @@ class SetupDialog(Gtk.Dialog):
         self.entry = Gtk.Entry()
         self.content_area.add(self.entry)
 
-        self.content_area.show_all()
-        self.header_bar.show_all()
-
         self.connect('response', lambda dialog, response_id: self.destroy())
 
-        self.select_login_mode()
+        self.content_area.show_all()
+        self.header_bar.show_all()
+        self.show()
 
     @staticmethod
     def __back(previous_button: Gtk.Button, next_button: Gtk.Button, callback) -> None:
@@ -99,9 +98,46 @@ class SetupDialog(Gtk.Dialog):
         button.destroy()
 
         if self.combo.get_active() == 0:
-            raise NotImplementedError
+            add_authenticator_dialog = add_authenticator.AddAuthenticator(self.parent_window, self.session)
+            add_authenticator_dialog.do_login()
+            self.hide()
+            asyncio.ensure_future(self.wait_add_authenticator(add_authenticator_dialog))
         else:
             self.insert_adb_path()
+
+    async def wait_add_authenticator(self, dialog: Gtk.Dialog) -> None:
+        while not dialog.auth_data or dialog.oauth_data:
+            if dialog.get_realized():
+                await asyncio.sleep(1)
+            else:
+                self.show()
+                dialog.destroy()
+                return
+
+        dialog.destroy()
+
+        self.status.info(_(
+            "RECOVERY CODE\n\n"
+            "You will need this code to recovery your Steam Account\n"
+            "if you lose access to STNG Authenticator. So, write"
+            "down this recovery code.\n\n"
+            "YOU WILL NOT ABLE TO VIEW IT AGAIN!\n"
+        ))
+
+        revocation_code = utils.Status(6, _("Recovery Code"))
+        revocation_code.set_current(dialog.oauth_data['revocation_code'])
+        revocation_code.set_info('')
+        self.content_area.add(revocation_code)
+
+        revocation_code.show()
+        self.show()
+
+        max_value = 60 * 3
+        for offset in range(max_value):
+            revocation_code.set_level(offset, max_value)
+            await asyncio.sleep(0.3)
+
+        self.header_bar.set_show_close_button(True)
 
     def insert_adb_path(self):
         self.status.info(_(
@@ -139,30 +175,31 @@ class SetupDialog(Gtk.Dialog):
 
         config.new(config.ConfigType("login", "adb_path", self.entry.get_text()))
         adb_dialog = adb.AdbDialog(parent_window=self.parent_window)
-        self.hide()
         adb_dialog.show()
+        self.hide()
 
         asyncio.ensure_future(self.wait_adb_data(adb_dialog))
 
     async def wait_adb_data(self, adb_dialog: Gtk.Dialog) -> None:
         while not adb_dialog.adb_data:
             if adb_dialog.get_realized():
-                await asyncio.sleep(3)
+                await asyncio.sleep(1)
             else:
                 self.show()
                 adb_dialog.destroy()
                 return
 
-        config.new(*[config.ConfigType("login", key, value) for key, value in adb_dialog.adb_data.items()])
         adb_dialog.destroy()
-
         self.show()
+
+        config.new(*[config.ConfigType("login", key, value) for key, value in adb_dialog.adb_data.items()])
+
         self.call_login_dialog()
 
     def call_login_dialog(self):
         login_dialog = login.LogInDialog(parent_window=self.parent_window, session=self.session)
-        self.hide()
         login_dialog.show()
+        self.hide()
 
         asyncio.ensure_future(self.wait_login_data(login_dialog))
 
