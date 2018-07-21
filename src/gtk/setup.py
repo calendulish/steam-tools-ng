@@ -16,6 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
+import json
 import logging
 
 import aiohttp
@@ -106,7 +107,7 @@ class SetupDialog(Gtk.Dialog):
             self.insert_adb_path()
 
     async def wait_add_authenticator(self, dialog: Gtk.Dialog) -> None:
-        while not dialog.auth_data or dialog.oauth_data:
+        while not dialog.data:
             if dialog.get_realized():
                 await asyncio.sleep(1)
             else:
@@ -124,8 +125,10 @@ class SetupDialog(Gtk.Dialog):
             "YOU WILL NOT ABLE TO VIEW IT AGAIN!\n"
         ))
 
+        oauth_data = json.loads(dialog.data['oauth'])
+
         revocation_code = utils.Status(6, _("Recovery Code"))
-        revocation_code.set_current(dialog.oauth_data['revocation_code'])
+        revocation_code.set_current(oauth_data['revocation_code'])
         revocation_code.set_info('')
         self.content_area.add(revocation_code)
 

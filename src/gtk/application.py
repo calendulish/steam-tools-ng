@@ -114,7 +114,7 @@ class Application(Gtk.Application):
                         'running': True,
                         'maximum': seconds * 8,
                         'progress': past_time,
-                        'code': auth_code,
+                        'code': auth_code.code,
                     }
 
                     await asyncio.sleep(0.125)
@@ -207,7 +207,7 @@ class Application(Gtk.Application):
             if cookies:
                 self.session.cookie_jar.update_cookies(cookies)
                 try:
-                    await steamtrades.do_openid_login('https://steamtrades.com/?login')
+                    await steamtrades.do_login()
                 except aiohttp.ClientConnectionError:
                     self.steamtrades_status = {'running': False, 'message': _("No connection"), 'trade_id': ''}
                     await asyncio.sleep(15)

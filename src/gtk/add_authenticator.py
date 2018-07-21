@@ -36,8 +36,7 @@ class AddAuthenticator(Gtk.Dialog):
     def __init__(self, parent_window: Gtk.Widget, session: aiohttp.ClientSession) -> None:
         super().__init__(use_header_bar=True)
         self.session = session
-        self.auth_data = None
-        self.oauth_data = None
+        self.data = None
 
         self.header_bar = self.get_header_bar()
         self.header_bar.set_show_close_button(False)
@@ -97,13 +96,12 @@ class AddAuthenticator(Gtk.Dialog):
         if not login_dialog.login_data['has_phone']:
             raise NotImplementedError
 
-        oauth_data = json.loads(login_dialog.login_data['oauth'])
+        await self.on_add_authenticator(login_dialog.login_data)
 
-        await self.on_add_authenticator(oauth_data)
-
-    async def on_add_authenticator(self, oauth_data: Dict[str, Any]):
+    async def on_add_authenticator(self, login_data: Dict[str, Any]):
         self.set_size_request(300, 60)
         self.status.info(_("Waiting Steam Server..."))
+        oauth_data = json.loads(login_data['oauth'])
         deviceid = authenticator.generate_device_id(token=oauth_data['oauth_token'])
 
         auth_data = await self.steam_webapi.add_authenticator(
@@ -124,7 +122,7 @@ class AddAuthenticator(Gtk.Dialog):
             "clicked",
             utils.safe_callback,
             self.on_finalize_add_authenticator,
-            oauth_data,
+            login_data,
             auth_data,
             deviceid,
         )
@@ -134,7 +132,7 @@ class AddAuthenticator(Gtk.Dialog):
 
     async def on_finalize_add_authenticator(
             self,
-            oauth_data: Dict[str, Any],
+            login_data: Dict[str, Any],
             auth_data: Dict[str, Any],
             deviceid: str,
     ) -> None:
@@ -142,6 +140,7 @@ class AddAuthenticator(Gtk.Dialog):
         self.status.info(_("Waiting Steam Server..."))
 
         authenticator_code = authenticator.get_code(int(auth_data['server_time']), auth_data['shared_secret'])
+        oauth_data = json.loads(login_data['oauth'])
 
         try:
             complete = await self.steam_webapi.finalize_add_authenticator(
@@ -160,7 +159,7 @@ class AddAuthenticator(Gtk.Dialog):
                 "clicked",
                 utils.safe_callback,
                 self.on_finalize_add_authenticator,
-                oauth_data,
+                login_data,
                 auth_data,
                 deviceid,
             )
@@ -176,6 +175,8 @@ class AddAuthenticator(Gtk.Dialog):
             new_configs = {
                 'steamid': oauth_data['steamid'],
                 'deviceid': deviceid,
+                'token': oauth_data['wgtoken'],
+                'token_secure': oauth_data['wgtoken_secure'],
                 'oauth_token': oauth_data['oauth_token'],
                 'account_name': oauth_data['account_name'],
                 'shared_secret': auth_data['shared_secret'],
@@ -186,8 +187,7 @@ class AddAuthenticator(Gtk.Dialog):
                 config.ConfigType("login", key, value) for key, value in new_configs.items()
             ])
 
-            self.oauth_data = oauth_data
-            self.auth_data = auth_data
+            self.data = {**login_data, **auth_data}
         else:
             self.status.error(_("Unable to add a new authenticator"))
             self.header_bar.set_show_close_button(True)
