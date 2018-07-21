@@ -39,9 +39,3 @@ build:
         override:
             - py-scrutinizer-run
             - command: pylint-run stlib --rcfile=pylintrc
-            - command: mypy steam-tools-ng.py --linecoverage-report mypy.report
-            - command: echo -n "!coverage.py: This is a private format, don't read it directly!">.mypy_coverage
-            - command: cat mypy.report/coverage.json>>.mypy_coverage
-              coverage:
-                  file: '.mypy_coverage'
-                  format: 'py-cc'
