@@ -13,7 +13,7 @@ services:
 
 
 install:
-    - pip install --upgrade setuptools aiodns cchardet ujson aiohttp asyncio beautifulsoup4
+    - pip install --upgrade setuptools aiodns cchardet ujson aiohttp asyncio beautifulsoup4 certifi
 
 before_script:
     - git clone https://github.com/ShyPixie/stlib
