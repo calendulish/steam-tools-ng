@@ -36,7 +36,7 @@ class AddAuthenticator(Gtk.Dialog):
     def __init__(self, parent_window: Gtk.Widget, session: aiohttp.ClientSession) -> None:
         super().__init__(use_header_bar=True)
         self.session = session
-        self.data = None
+        self.data: Dict[str, Any] = {}
 
         self.header_bar = self.get_header_bar()
         self.header_bar.set_show_close_button(False)
@@ -69,16 +69,17 @@ class AddAuthenticator(Gtk.Dialog):
 
         self.steam_webapi = webapi.SteamWebAPI(self.session, 'https://lara.click/api')
 
-    def do_login(self):
+    def do_login(self) -> None:
         self.code.hide()
 
         login_dialog = login.LogInDialog(self.parent_window, self.session, True)
         login_dialog.show()
         self.hide()
 
+        # noinspection PyTypeChecker
         asyncio.ensure_future(self.wait_login_data(login_dialog))
 
-    async def wait_login_data(self, login_dialog: Gtk.Dialog):
+    async def wait_login_data(self, login_dialog: Gtk.Dialog) -> None:
         while not login_dialog.login_data:
             if login_dialog.get_realized():
                 await asyncio.sleep(1)
@@ -98,7 +99,7 @@ class AddAuthenticator(Gtk.Dialog):
 
         await self.on_add_authenticator(login_dialog.login_data)
 
-    async def on_add_authenticator(self, login_data: Dict[str, Any]):
+    async def on_add_authenticator(self, login_data: Dict[str, Any]) -> None:
         self.set_size_request(300, 60)
         self.status.info(_("Waiting Steam Server..."))
         oauth_data = json.loads(login_data['oauth'])

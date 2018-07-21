@@ -47,7 +47,7 @@ class SimpleTextTree(Gtk.ScrolledWindow):
             resizable: bool = True,
             fixed_width: int = 0,
             model: Callable[..., Gtk.TreeModel] = Gtk.TreeStore,
-    ):
+    ) -> None:
         super().__init__()
         self._store = model(*[str for number in range(len(elements))])
         renderer = Gtk.CellRendererText()
@@ -124,7 +124,7 @@ class Status(Gtk.Frame):
         self._level_bar = Gtk.LevelBar()
         self._grid.attach(self._level_bar, 0, 2, 1, 1)
 
-    def set_current(self, text) -> None:
+    def set_current(self, text: str) -> None:
         self._current.set_markup(markup(text, font_size='large', font_weight='bold'))
 
     def set_info(self, text: str) -> None:

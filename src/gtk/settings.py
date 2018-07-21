@@ -229,16 +229,18 @@ class SettingsDialog(Gtk.Dialog):
         adb_dialog = adb.AdbDialog(parent_window=self)
         adb_dialog.show()
 
+        # noinspection PyTypeChecker
         asyncio.ensure_future(wait_adb_data(adb_dialog, login_section))
 
     def on_log_in_clicked(
             self,
             button: Gtk.Button,
-            login_section,
+            login_section: utils.Section,
     ) -> None:
         login_dialog = login.LogInDialog(parent_window=self, session=self.session)
         login_dialog.show()
 
+        # noinspection PyTypeChecker
         asyncio.ensure_future(wait_login_data(login_dialog, login_section))
 
     def update_language(self, combo: Gtk.ComboBoxText) -> None:
@@ -424,6 +426,7 @@ def load_settings(
                         continue
 
             if isinstance(children, Gtk.ComboBox):
+                assert isinstance(combo_items, dict), "No combo_items"
                 children.set_active(list(combo_items).index(config_value))
             else:
                 children.set_text(config_value)

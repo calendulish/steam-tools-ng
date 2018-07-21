@@ -19,7 +19,7 @@ import asyncio
 import binascii
 import logging
 import random
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 import aiohttp
 from gi.repository import Gio, Gtk
@@ -34,13 +34,13 @@ log = logging.getLogger(__name__)
 
 # noinspection PyUnusedLocal
 class Application(Gtk.Application):
-    def __init__(self, session) -> None:
+    def __init__(self, session: aiohttp.ClientSession) -> None:
         super().__init__(application_id="click.lara.SteamToolsNG",
                          flags=Gio.ApplicationFlags.FLAGS_NONE)
 
         self.session = session
 
-        self.window: Optional[Gtk.ApplicationWindow] = None
+        self.window = None
         self.gtk_settings = Gtk.Settings.get_default()
 
         self.api_login: Optional[webapi.Login] = None
@@ -49,7 +49,7 @@ class Application(Gtk.Application):
         self.confirmations_status = {'running': False, 'message': "Confirmations is not running"}
         self.steamtrades_status = {'running': False, 'message': "Steamtrades is not running", 'trade_id': ''}
 
-    def do_startup(self):
+    def do_startup(self) -> None:
         Gtk.Application.do_startup(self)
 
         settings_action = Gio.SimpleAction.new('settings')
@@ -76,7 +76,7 @@ class Application(Gtk.Application):
         if not self.window:
             self.window = window.Main(application=self)
 
-        self.window.present()
+        self.window.present()  # type: ignore
 
         if not token or not token_secure:
             setup_dialog = setup.SetupDialog(self.window, self.session)
@@ -87,6 +87,8 @@ class Application(Gtk.Application):
         asyncio.ensure_future(self.run_steamtrades())
 
     async def run_steamguard(self) -> None:
+        assert isinstance(self.window, Gtk.Window), "No window"
+
         while self.window.get_realized():
             shared_secret = config.config_parser.get("login", "shared_secret", fallback='')
 
@@ -121,7 +123,9 @@ class Application(Gtk.Application):
 
     async def run_confirmations(self) -> None:
         steam_webapi = webapi.SteamWebAPI(self.session, 'https://lara.click/api')
-        old_confirmations = {}
+        old_confirmations: List[webapi.Confirmation] = []
+
+        assert isinstance(self.window, Gtk.Window), "No window"
 
         while self.window.get_realized():
             identity_secret = config.config_parser.get("login", "identity_secret", fallback='')
@@ -155,8 +159,7 @@ class Application(Gtk.Application):
             try:
                 confirmations = await steam_webapi.get_confirmations(identity_secret, steamid, deviceid)
             except AttributeError as exception:
-                log.error("Error when fetch confirmations: %s", exception)
-                confirmations = {}
+                self.confirmations_status = {'running': False, 'message': _("Error when fetch confirmations")}
             except aiohttp.ClientConnectorError:
                 self.confirmations_status = {'running': False, 'message': _("No connection")}
             except ProcessLookupError:
@@ -176,6 +179,8 @@ class Application(Gtk.Application):
     async def run_steamtrades(self) -> None:
         steamtrades_plugin = plugins.get_plugin("steamtrades")
         steamtrades = steamtrades_plugin.Main(self.session, api_url='https://lara.click/api')
+
+        assert isinstance(self.window, Gtk.Window), "No window"
 
         while self.window.get_realized():
             self.steamtrades_status = {'running': True, 'message': "Loading...", 'trade_id': ''}

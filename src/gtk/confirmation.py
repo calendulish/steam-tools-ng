@@ -149,7 +149,9 @@ class FinalizeDialog(Gtk.Dialog):
 
         task.add_done_callback(self.on_task_finish)
 
-    def on_task_finish(self, future: asyncio.Future) -> None:
+    # FIXME: https://github.com/python/typing/issues/446
+    # noinspection PyUnresolvedReferences
+    def on_task_finish(self, future: 'asyncio.Future[Any]') -> None:
         if future.exception():
             self.status.error(_("An error occurred:\n\n{}").format(future.exception()))
             self.header_bar.set_show_close_button(True)

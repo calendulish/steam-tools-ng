@@ -18,6 +18,7 @@
 import asyncio
 import json
 import logging
+from typing import Any, Callable
 
 import aiohttp
 from gi.repository import Gtk
@@ -69,12 +70,12 @@ class SetupDialog(Gtk.Dialog):
         self.show()
 
     @staticmethod
-    def __back(previous_button: Gtk.Button, next_button: Gtk.Button, callback) -> None:
+    def __back(previous_button: Gtk.Button, next_button: Gtk.Button, callback: Callable[..., Any]) -> None:
         previous_button.destroy()
         next_button.destroy()
         callback()
 
-    def select_login_mode(self):
+    def select_login_mode(self) -> None:
         self.status.info(_(
             "Welcome to STNG Setup\n\n"
             "How do you want to log-in?"
@@ -102,6 +103,7 @@ class SetupDialog(Gtk.Dialog):
             add_authenticator_dialog = add_authenticator.AddAuthenticator(self.parent_window, self.session)
             add_authenticator_dialog.do_login()
             self.hide()
+            # noinspection PyTypeChecker
             asyncio.ensure_future(self.wait_add_authenticator(add_authenticator_dialog))
         else:
             self.insert_adb_path()
@@ -142,7 +144,7 @@ class SetupDialog(Gtk.Dialog):
 
         self.header_bar.set_show_close_button(True)
 
-    def insert_adb_path(self):
+    def insert_adb_path(self) -> None:
         self.status.info(_(
             "To automatic get login data using adb, you will need:\n"
             "- A 'rooted' Android phone\n"
@@ -170,7 +172,7 @@ class SetupDialog(Gtk.Dialog):
 
         self.set_size_request(300, 60)
 
-    def on_adb_path_inserted(self, button: Gtk.Button):
+    def on_adb_path_inserted(self, button: Gtk.Button) -> None:
         if not self.entry.get_text():
             self.status.error(_("Unable to run without a valid adb path."))
             self.set_size_request(300, 60)
@@ -181,6 +183,7 @@ class SetupDialog(Gtk.Dialog):
         adb_dialog.show()
         self.hide()
 
+        # noinspection PyTypeChecker
         asyncio.ensure_future(self.wait_adb_data(adb_dialog))
 
     async def wait_adb_data(self, adb_dialog: Gtk.Dialog) -> None:
@@ -199,11 +202,12 @@ class SetupDialog(Gtk.Dialog):
 
         self.call_login_dialog()
 
-    def call_login_dialog(self):
+    def call_login_dialog(self) -> None:
         login_dialog = login.LogInDialog(parent_window=self.parent_window, session=self.session)
         login_dialog.show()
         self.hide()
 
+        # noinspection PyTypeChecker
         asyncio.ensure_future(self.wait_login_data(login_dialog))
 
     async def wait_login_data(self, login_dialog: Gtk.Dialog) -> None:
@@ -221,5 +225,5 @@ class SetupDialog(Gtk.Dialog):
         self.show()
         self.finish()
 
-    def finish(self):
+    def finish(self) -> None:
         self.destroy()

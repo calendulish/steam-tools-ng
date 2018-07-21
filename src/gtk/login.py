@@ -17,6 +17,7 @@
 #
 import asyncio
 import logging
+from typing import Any, Dict, Optional
 
 import aiohttp
 from gi.repository import Gdk, Gtk
@@ -35,7 +36,7 @@ class LogInDialog(Gtk.Dialog):
         super().__init__(use_header_bar=True)
         self.session = session
         self.mobile_login = mobile_login
-        self.login_data = None
+        self.login_data: Dict[str, Any] = {}
 
         self.header_bar = self.get_header_bar()
         self.header_bar.set_show_close_button(False)
@@ -88,7 +89,7 @@ class LogInDialog(Gtk.Dialog):
 
         self.connect('response', lambda dialog, response_id: self.destroy())
 
-    def on_key_release(self, entry: Gtk.Entry, event: Gdk.EventKey):
+    def on_key_release(self, entry: Gtk.Entry, event: Gdk.EventKey) -> None:
         if event.keyval == Gdk.KEY_Return:
             self.log_in_button.clicked()
 
@@ -104,7 +105,9 @@ class LogInDialog(Gtk.Dialog):
         task = asyncio.ensure_future(self.do_login(username, password))
         task.add_done_callback(self.on_task_finish)
 
-    def on_task_finish(self, future: asyncio.Future) -> None:
+    # FIXME: https://github.com/python/typing/issues/446
+    # noinspection PyUnresolvedReferences
+    def on_task_finish(self, future: 'asyncio.Future[Any]') -> None:
         if not self.login_data:
             self.header_bar.set_show_close_button(True)
             self.log_in_button.set_label(_("Try again?"))
@@ -140,15 +143,15 @@ class LogInDialog(Gtk.Dialog):
             self.code_item.children.show()
 
             self.log_in_button.connect("clicked",
-                lambda button: asyncio.ensure_future(
-                    self.do_login(
-                        username,
-                        password,
-                        self.code_item.children.get_text(),
-                        authenticator_code,
-                    )
-                )
-            )
+                                       lambda button: asyncio.ensure_future(
+                                           self.do_login(
+                                               username,
+                                               password,
+                                               self.code_item.children.get_text(),
+                                               authenticator_code,
+                                           )
+                                       )
+                                       )
 
             self.log_in_button.show()
             self.header_bar.set_show_close_button(True)
@@ -178,6 +181,8 @@ class LogInDialog(Gtk.Dialog):
             if self.mobile_login:
                 async with self.session.get('https://steamcommunity.com') as response:
                     sessionid = response.cookies['sessionid'].value
+
+                has_phone: Optional[bool]
 
                 if await login.has_phone(sessionid):
                     has_phone = True

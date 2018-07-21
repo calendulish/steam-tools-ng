@@ -17,7 +17,7 @@
 #
 import asyncio
 import logging
-from typing import Optional, Dict
+from typing import Any, Dict, Optional
 
 from gi.repository import Gtk
 from stlib import authenticator
@@ -33,7 +33,7 @@ _ = i18n.get_translation
 class AdbDialog(Gtk.Dialog):
     def __init__(self, parent_window: Gtk.Widget) -> None:
         super().__init__(use_header_bar=True)
-        self.adb_data = None
+        self.adb_data: Dict[str, Any] = {}
 
         self.header_bar = self.get_header_bar()
         self.header_bar.set_show_close_button(False)
@@ -73,7 +73,9 @@ class AdbDialog(Gtk.Dialog):
         task = asyncio.ensure_future(self.get_adb_data())
         task.add_done_callback(self.on_task_finish)
 
-    def on_task_finish(self, future: asyncio.Future) -> None:
+    # FIXME: https://github.com/python/typing/issues/446
+    # noinspection PyUnresolvedReferences
+    def on_task_finish(self, future: 'asyncio.Future[Any]') -> None:
         if not self.adb_data:
             self.set_size_request(300, 60)
             self.header_bar.set_show_close_button(True)
@@ -122,6 +124,8 @@ class AdbDialog(Gtk.Dialog):
         else:
             self.adb_data = json_data
             return json_data
+
+        return None
 
     @staticmethod
     def on_response(dialog: Gtk.Dialog, response_id: int) -> None:
