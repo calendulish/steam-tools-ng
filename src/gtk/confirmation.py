@@ -171,8 +171,10 @@ class FinalizeDialog(Gtk.Dialog):
         self.status.info(_("Processing {}").format(self.model[self.iter][1]))
 
         steam_webapi = webapi.SteamWebAPI(self.session, 'https://lara.click/api')
+        server_time = await steam_webapi.get_server_time()
 
         result = await steam_webapi.finalize_confirmation(
+            server_time,
             identity_secret,
             steamid,
             deviceid,
