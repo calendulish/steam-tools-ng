@@ -31,7 +31,13 @@ _ = i18n.get_translation
 
 # noinspection PyUnusedLocal
 class AdbDialog(Gtk.Dialog):
-    def __init__(self, parent_window: Gtk.Widget) -> None:
+    @config.Check("login")
+    def __init__(
+            self,
+            parent_window: Gtk.Widget,
+            shared_secret: Optional[config.ConfigStr] = None,
+            identity_secret: Optional[config.ConfigStr] = None,
+    ) -> None:
         super().__init__(use_header_bar=True)
         self.adb_data: Dict[str, Any] = {}
 
@@ -63,9 +69,20 @@ class AdbDialog(Gtk.Dialog):
 
         self.content_area.show_all()
 
-        self.try_again_button.clicked()
+        if shared_secret or identity_secret:
+            self.status.info(_(
+                "You will lost access to current authenticator!\n"
+                "Do you really want to do that?"
+            ))
+
+            self.try_again_button.set_label(_("Continue"))
+            self.try_again_button.show()
+            self.header_bar.set_show_close_button(True)
+        else:
+            self.try_again_button.clicked()
 
     def on_try_again_button_clicked(self, button: Gtk.Button) -> None:
+        self.try_again_button.set_label(_("Try again?"))
         self.try_again_button.hide()
         self.set_size_request(300, 60)
         self.status.info(_("Running... Please wait"))

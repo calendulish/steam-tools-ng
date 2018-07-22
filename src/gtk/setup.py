@@ -179,6 +179,7 @@ class SetupDialog(Gtk.Dialog):
 
         config.new(config.ConfigType("login", "adb_path", self.entry.get_text()))
         adb_dialog = adb.AdbDialog(parent_window=self.parent_window)
+        adb_dialog.try_again_button.clicked()
         adb_dialog.show()
         self.hide()
 
