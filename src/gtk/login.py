@@ -137,6 +137,9 @@ class LogInDialog(Gtk.Dialog):
                 authenticator_code=authenticator_code,
                 mobile_login=self.mobile_login
             )
+
+            if not login_data['success']:
+                raise webapi.LoginError
         except webapi.MailCodeError:
             self.status.info(_("Write code received by email\nand click on 'Try Again?' button"))
             self.code_item.label.show()
@@ -181,26 +184,21 @@ class LogInDialog(Gtk.Dialog):
             self.header_bar.set_show_close_button(True)
             return
 
+        if self.mobile_login:
+            async with self.session.get('https://steamcommunity.com') as response:
+                sessionid = response.cookies['sessionid'].value
 
-        if login_data['success']:
-            if self.mobile_login:
-                async with self.session.get('https://steamcommunity.com') as response:
-                    sessionid = response.cookies['sessionid'].value
+            has_phone: Optional[bool]
 
-                has_phone: Optional[bool]
-
-                if await login.has_phone(sessionid):
-                    has_phone = True
-                else:
-                    has_phone = False
+            if await login.has_phone(sessionid):
+                has_phone = True
             else:
-                has_phone = None
-
-            self.login_data = {
-                **login_data,
-                'account_name': username,
-                'has_phone': has_phone,
-            }
+                has_phone = False
         else:
-            self.status.error(_("Unable to log-in on Steam!\nPlease, try again."))
-            return None
+            has_phone = None
+
+        self.login_data = {
+            **login_data,
+            'account_name': username,
+            'has_phone': has_phone,
+        }
