@@ -84,8 +84,8 @@ class AddAuthenticator(Gtk.Dialog):
             if login_dialog.get_realized():
                 await asyncio.sleep(1)
             else:
-                self.show()
                 login_dialog.destroy()
+                self.destroy()
                 return
 
         login_dialog.destroy()

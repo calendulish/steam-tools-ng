@@ -111,6 +111,7 @@ class SetupDialog(Gtk.Dialog):
             if dialog.get_realized():
                 await asyncio.sleep(1)
             else:
+                self.select_login_mode()
                 self.show()
                 dialog.destroy()
                 return
