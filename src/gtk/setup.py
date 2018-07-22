@@ -88,7 +88,7 @@ class SetupDialog(Gtk.Dialog):
         self.combo.show()
 
         next_button = Gtk.Button(_("Next"))
-        next_button.connect("clicked", self.on_login_mode_selected)
+        next_button.connect("clicked", utils.safe_callback, self.on_login_mode_selected)
         self.header_bar.pack_end(next_button)
         next_button.show()
 
@@ -96,9 +96,7 @@ class SetupDialog(Gtk.Dialog):
 
         self.set_size_request(300, 60)
 
-    def on_login_mode_selected(self, button: Gtk.Button) -> None:
-        button.destroy()
-
+    def on_login_mode_selected(self) -> None:
         if self.combo.get_active() == 0:
             add_authenticator_dialog = add_authenticator.AddAuthenticator(self.parent_window, self.session)
             add_authenticator_dialog.do_login()
