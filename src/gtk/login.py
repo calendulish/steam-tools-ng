@@ -176,6 +176,11 @@ class LogInDialog(Gtk.Dialog):
             ))
             self.header_bar.set_show_close_button(True)
             return
+        except aiohttp.ClientConnectionError:
+            self.status.error(_("No Connection"))
+            self.header_bar.set_show_close_button(True)
+            return
+
 
         if login_data['success']:
             if self.mobile_login:
