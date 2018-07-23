@@ -38,7 +38,7 @@ class SetupDialog(Gtk.Dialog):
         self.login_data = None
 
         self.header_bar = self.get_header_bar()
-        self.header_bar.set_show_close_button(False)
+        self.header_bar.set_show_close_button(True)
 
         self.parent_window = parent_window
         self.set_default_size(300, 60)
