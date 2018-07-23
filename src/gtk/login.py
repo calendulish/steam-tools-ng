@@ -160,17 +160,21 @@ class LogInDialog(Gtk.Dialog):
             self.header_bar.set_show_close_button(True)
             return
         except webapi.TwoFactorCodeError:
-            self.status.error(_(
-                "Unable to log-in!\n"
-                "You already have a Steam Authenticator active on current account\n\n"
-                "To log-in, you have two options:\n\n"
-                "- Just remove authenticator from your account and use the 'Try Again?' button\n"
-                "    to set STNG as your Steam Authenticator.\n\n"
-                "- Put your shared secret on settings or let us automagically find it using adb\n"
-                "    (settings -> 'get login data using adb' button)\n"
+            if self.mobile_login:
+                self.status.error(_(
+                    "Unable to log-in!\n"
+                    "You already have a Steam Authenticator active on current account\n\n"
+                    "To log-in, you have two options:\n\n"
+                    "- Just remove authenticator from your account and use the 'Try Again?' button\n"
+                    "    to set STNG as your Steam Authenticator.\n\n"
+                    "- Put your shared secret on settings or let us automagically find it using adb\n"
+                    "    (settings -> 'get login data using adb' button)\n"
 
-            ))
-            self.header_bar.set_show_close_button(True)
+                ))
+                self.header_bar.set_show_close_button(True)
+            else:
+                self.log_in_button.clicked()
+
             return
         except webapi.LoginError:
             self.status.error(_(
