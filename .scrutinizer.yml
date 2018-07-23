@@ -29,11 +29,11 @@ build:
             - command: tar xfv steamworks.tar.gz
             - command: cd ../..
             - command: python setup.py build
-            - command: python setup.py install
+            - command: sudo -E `which python` setup.py install
             - command: cd ..
         override:
             - command: python setup.py build
-            - command: python setup.py install
+            - command: sudo -E `which python` setup.py install
 
     tests:
         override:

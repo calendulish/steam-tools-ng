@@ -24,12 +24,12 @@ before_script:
     - tar xfv steamworks.tar.gz
     - cd ../..
     - python setup.py build
-    - python setup.py install
+    - sudo -E `which python` setup.py install
     - cd ..
 
 script:
     - python setup.py build
-    - python setup.py install
+    - sudo -E `which python` setup.py install
 
 env:
   global:
