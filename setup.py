@@ -18,15 +18,15 @@
 
 import os
 import sys
-from distutils.command.build_py import build_py
-from distutils.command.install import install
 from distutils.command.install_data import install_data
-from distutils.command.install_scripts import install_scripts
 from distutils.sysconfig import get_python_lib
 from importlib.machinery import SourceFileLoader
 from typing import Any, List, Mapping, Tuple
 
 import certifi
+from setuptools.command.build_py import build_py
+from setuptools.command.install import install
+from setuptools.command.install_scripts import install_scripts
 
 from src import version
 
@@ -47,7 +47,7 @@ if os.name == 'nt':
 
     icon_path = os.path.join(get_python_lib(), 'steam_tools_ng', 'share', 'icons')
 else:
-    from distutils.core import setup
+    from setuptools import setup
 
     icon_path = os.path.abspath(os.path.join(os.path.sep, 'usr', 'share', 'steam-tools-ng', 'icons'))
 
@@ -238,7 +238,7 @@ setup(
     ],
     package_dir={'steam_tools_ng': 'src'},
     scripts=['steam-tools-ng.py'],
-    requires=['stlib>=0.6.1', 'aiohttp'],
+    install_requires=['stlib>=0.6.1', 'aiohttp'],
     cmdclass={
         'build_py': BuildTranslations,
         'install': Install,
