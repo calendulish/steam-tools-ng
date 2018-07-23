@@ -31,7 +31,7 @@ config_parser = configparser.RawConfigParser()
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
-if os.environ.get('GTK_DEBUG', False):
+if os.path.isdir(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'src')):
     data_dir = 'config'
     icons_dir = 'icons'
 elif sys.platform == 'win32':

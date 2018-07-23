@@ -28,11 +28,14 @@ import textwrap
 
 import aiohttp
 
-if os.environ.get('GTK_DEBUG', False) or os.environ.get('DEBUG', False):
-    from src import config, i18n, version
+if os.path.isdir(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'src')):
+    module_folder = 'src'
 else:
-    # noinspection PyUnresolvedReferences
-    from steam_tools_ng import config, i18n, version
+    module_folder = 'steam_tools_ng'
+
+config = importlib.import_module('.config', module_folder)
+i18n = importlib.import_module('.i18n', module_folder)
+version = importlib.import_module('.version', module_folder)
 
 config.init()
 _ = i18n.get_translation
@@ -131,7 +134,7 @@ if __name__ == "__main__":
     if console_params.module:
         module_name = console_params.module[0]
         module_options = console_params.options
-        module = importlib.import_module(f'.{module_name}', 'steam_tools_ng.console')
+        module = importlib.import_module(f'.{module_name}', f'{module_folder}.console')
 
         asyncio.ensure_future(module.run(*module_options))  # type: ignore
     else:
