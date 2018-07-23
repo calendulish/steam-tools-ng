@@ -25,7 +25,7 @@ import time
 from typing import Any, Dict, Optional, Union
 
 import aiohttp
-from stlib import authenticator, webapi
+from stlib import authenticator, plugins, webapi
 
 from . import utils
 from .. import config, i18n
@@ -42,7 +42,8 @@ async def on_get_login_data(
         token: Optional[config.ConfigStr] = None,
         token_secure: Optional[config.ConfigStr] = None,
 ) -> Dict[str, str]:
-    steam_trades = webapi.SteamTrades(session, api_url='https://lara.click/api')
+    steamtrades_plugin = plugins.get_plugin('steamtrades')
+    steamtrades = steamtrades_plugin.Main(session, api_url='https://lara.click/api')
 
     while True:
         if not steamid or not token or not token_secure:
@@ -52,13 +53,13 @@ async def on_get_login_data(
             assert isinstance(username, str), "safe_input is returning an invalid username"
             password = getpass.getpass(_("Please, write your password (it's hidden, and will be encrypted):"))
             assert isinstance(password, str), "safe_input is returning and invalid password"
-            steam_key = await steam_trades.get_steam_key(username)
+            steam_key = await steamtrades.get_steam_key(username)
             encrypted_password = webapi.encrypt_password(steam_key, password)
             del password
 
             log.debug(_("Trying to login on Steam..."))
 
-            steam_login_data = await steam_trades.do_login(
+            steam_login_data = await steamtrades.do_login(
                 username,
                 encrypted_password,
                 steam_key.timestamp,
@@ -74,7 +75,7 @@ async def on_get_login_data(
                 else:
                     continue
 
-            logging.info(_("Success!"))
+            log.info(_("Success!"))
 
             steamid = config.ConfigStr(steam_login_data["transfer_parameters"]["steamid"])
             token = config.ConfigStr(steam_login_data["transfer_parameters"]["token"])
@@ -87,21 +88,23 @@ async def on_get_login_data(
                     config.ConfigType("login", "token", token),
                     config.ConfigType("login", "token_secure", token_secure),
                 )
-                logging.info(_("Configuration has been saved!"))
+                log.info(_("Configuration has been saved!"))
 
         cookies = config.login_cookies(steamid, token, token_secure)
         assert isinstance(cookies, dict), "login_cookies return is not a dict"
         return cookies
 
 
-@config.Check("authenticator")
-async def on_get_code(shared_secret: Optional[config.ConfigStr] = None) -> Any:
+@config.Check("login")
+async def on_get_code(session: aiohttp.ClientSession, shared_secret: Optional[config.ConfigStr] = None) -> Any:
     if not shared_secret:
         log.critical(_("Authenticator module is not configured"))
         log.critical(_("Please, run 'authenticator' module, set up it, and try again"))
         sys.exit(1)
 
-    return authenticator.get_code(shared_secret)
+    steam_webapi = webapi.SteamWebAPI(session, 'https://lara.click/api')
+    server_time = await steam_webapi.get_server_time()
+    return authenticator.get_code(server_time, shared_secret)
 
 
 @config.Check("steamtrades")
@@ -115,14 +118,16 @@ async def run(
         logging.critical("No trade ID found in config file")
         sys.exit(1)
 
-    authenticator_code, server_time = await on_get_code()
+    log.info(_("Loading, please wait..."))
+    authenticator_code = await on_get_code(session)
 
-    login_data = await on_get_login_data(session, authenticator_code)
+    login_data = await on_get_login_data(session, authenticator_code.code)
     session.cookie_jar.update_cookies(login_data)
-    steam_trades = webapi.SteamTrades(session, api_url="https://lara.click/api")
+    steamtrades_plugin = plugins.get_plugin('steamtrades')
+    steamtrades = steamtrades_plugin.Main(session, api_url='https://lara.click/api')
 
     try:
-        await steam_trades.do_openid_login('https://steamtrades.com/?login')
+        await steamtrades.do_login()
     except aiohttp.ClientConnectionError:
         logging.critical(_("No connection"))
         sys.exit(1)
@@ -133,14 +138,14 @@ async def run(
 
         for trade_id in trades:
             try:
-                trade_info = await steam_trades.get_trade_info(trade_id)
+                trade_info = await steamtrades.get_trade_info(trade_id)
             except (IndexError, aiohttp.ClientResponseError):
-                logging.error('Unable to find id: %s. Ignoring...', trade_id)
+                log.error('Unable to find id: %s. Ignoring...', trade_id)
                 continue
 
             try:
-                bump_result = await steam_trades.bump(trade_info)
-            except webapi.NotReadyError as exception:
+                bump_result = await steamtrades.bump(trade_info)
+            except steamtrades_plugin.TradeNotReadyError as exception:
                 log.warning(
                     "%s (%s) Already bumped. Waiting more %d minutes",
                     trade_info.id,
@@ -149,7 +154,7 @@ async def run(
                 )
                 wait_min = exception.time_left * 60
                 wait_max = wait_min + 400
-            except webapi.ClosedError:
+            except steamtrades_plugin.TradeClosedError:
                 log.error("%s (%s) is closed. Ignoring...", trade_info.id, trade_info.title)
                 continue
             else:

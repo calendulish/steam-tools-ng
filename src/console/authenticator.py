@@ -21,7 +21,8 @@ import logging
 import time
 from typing import Any, Dict, Optional
 
-from stlib import authenticator
+import aiohttp
+from stlib import authenticator, client
 
 from . import utils
 from .. import config, i18n
@@ -30,7 +31,7 @@ log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
 
-@config.Check('authenticator')
+@config.Check('login')
 def on_connect_to_adb(adb_path: Optional[config.ConfigStr] = None) -> Any:
     while True:
         if not adb_path:
@@ -67,8 +68,8 @@ async def on_get_json_from_adb(adb: Any, *names: str) -> Dict[str, str]:
             return json_data
 
 
-@config.Check('authenticator')
-async def run(shared_secret: Optional[config.ConfigStr] = None) -> int:
+@config.Check('login')
+async def run(session: aiohttp.ClientSession, shared_secret: Optional[config.ConfigStr] = None) -> int:
     if shared_secret:
         try:
             base64.b64decode(shared_secret)
@@ -101,7 +102,10 @@ async def run(shared_secret: Optional[config.ConfigStr] = None) -> int:
 
     while True:
         try:
-            auth_code, server_time = authenticator.get_code(shared_secret)
+            with client.SteamGameServer() as server:
+                server_time = server.get_server_time()
+
+            auth_code = authenticator.get_code(server_time, shared_secret)
         except ProcessLookupError:
             logging.critical(_("Steam Client is not running."))
             try_again = utils.safe_input(_("Try again?"), True)
@@ -114,5 +118,5 @@ async def run(shared_secret: Optional[config.ConfigStr] = None) -> int:
 
         for past_time in range(seconds):
             progress = '█' * int(past_time / seconds * 10)
-            print(_("SteamGuard Code:"), "{} ┌{:10}┐".format(auth_code, progress), end='\r')
+            print(_("SteamGuard Code:"), "{} ┌{:10}┐".format(auth_code.code, progress), end='\r')
             time.sleep(1)

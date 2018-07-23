@@ -136,7 +136,8 @@ if __name__ == "__main__":
         module_options = console_params.options
         module = importlib.import_module(f'.{module_name}', f'{module_folder}.console')
 
-        asyncio.ensure_future(module.run(*module_options))  # type: ignore
+        task = asyncio.ensure_future(module.run(http_session, *module_options))  # type: ignore
+        task.add_done_callback(lambda future: event_loop.stop())
     else:
         if os.environ.get('GTK_DEBUG', False):
             from src.gtk import application
