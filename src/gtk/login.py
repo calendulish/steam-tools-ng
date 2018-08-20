@@ -41,10 +41,9 @@ class LogInDialog(Gtk.Dialog):
         self.header_bar = self.get_header_bar()
         self.header_bar.set_show_close_button(False)
 
-        self.parent_window = parent_window
         self.set_default_size(300, 60)
         self.set_title(_('Log-in on Steam'))
-        self.set_transient_for(self.parent_window)
+        self.set_transient_for(parent_window)
         self.set_modal(True)
         self.set_destroy_with_parent(True)
         self.set_resizable(False)
@@ -129,7 +128,6 @@ class LogInDialog(Gtk.Dialog):
             return None
 
         login = webapi.Login(self.session, username, password)
-        steam_webapi = webapi.SteamWebAPI(self.session, 'https://lara.click/api')
 
         try:
             login_data = await login.do_login(

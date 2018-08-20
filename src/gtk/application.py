@@ -39,6 +39,7 @@ class Application(Gtk.Application):
                          flags=Gio.ApplicationFlags.FLAGS_NONE)
 
         self.session = session
+        self.webapi_session = webapi.SteamWebAPI(session, 'https://lara.click/api')
 
         self.window = None
         self.gtk_settings = Gtk.Settings.get_default()
@@ -79,7 +80,7 @@ class Application(Gtk.Application):
         self.window.present()  # type: ignore
 
         if not token or not token_secure:
-            setup_dialog = setup.SetupDialog(self.window, self.session)
+            setup_dialog = setup.SetupDialog(self.window, self.session, self.webapi_session)
             setup_dialog.select_login_mode()
 
         asyncio.ensure_future(self.run_steamguard())
@@ -122,7 +123,6 @@ class Application(Gtk.Application):
                     await asyncio.sleep(0.125)
 
     async def run_confirmations(self) -> None:
-        steam_webapi = webapi.SteamWebAPI(self.session, 'https://lara.click/api')
         old_confirmations: List[webapi.Confirmation] = []
 
         assert isinstance(self.window, Gtk.Window), "No window"
@@ -157,7 +157,7 @@ class Application(Gtk.Application):
                 continue
 
             try:
-                confirmations = await steam_webapi.get_confirmations(identity_secret, steamid, deviceid)
+                confirmations = await self.webapi_session.get_confirmations(identity_secret, steamid, deviceid)
             except AttributeError as exception:
                 self.confirmations_status = {'running': False, 'message': _("Error when fetch confirmations")}
             except aiohttp.ClientConnectorError:
@@ -308,9 +308,9 @@ class Application(Gtk.Application):
                 await asyncio.sleep(1)
 
     def on_settings_activate(self, action: Any, data: Any) -> None:
-        settings_dialog = settings.SettingsDialog(parent_window=self.window)
+        settings_dialog = settings.SettingsDialog(self.window, self.session)
         settings_dialog.show()
 
     def on_about_activate(self, action: Any, data: Any) -> None:
-        dialog = about.AboutDialog(parent_window=self.window)
+        dialog = about.AboutDialog(self.window)
         dialog.show()

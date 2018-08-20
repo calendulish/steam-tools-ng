@@ -22,6 +22,7 @@ import logging
 from collections import OrderedDict
 from typing import Any, Dict, Optional
 
+import aiohttp
 from gi.repository import Gtk, Pango
 
 from . import adb, login, utils
@@ -51,14 +52,14 @@ translations = OrderedDict([
 
 # noinspection PyUnusedLocal
 class SettingsDialog(Gtk.Dialog):
-    def __init__(self, parent_window: Gtk.Widget) -> None:
+    def __init__(self, parent_window: Gtk.Widget, session: aiohttp.ClientSession) -> None:
         super().__init__(use_header_bar=True)
         self.parent_window = parent_window
-        self.session = parent_window.session
+        self.session = session
 
         self.set_default_size(300, 150)
         self.set_title(_('Settings'))
-        self.set_transient_for(self.parent_window)
+        self.set_transient_for(parent_window)
         self.set_modal(True)
         self.set_destroy_with_parent(True)
         self.set_resizable(False)
@@ -226,7 +227,7 @@ class SettingsDialog(Gtk.Dialog):
         return logger_section.frame
 
     def on_adb_clicked(self, button: Gtk.Button, login_section: utils.Section) -> None:
-        adb_dialog = adb.AdbDialog(parent_window=self)
+        adb_dialog = adb.AdbDialog(self)
         adb_dialog.show()
 
         # noinspection PyTypeChecker
@@ -237,7 +238,7 @@ class SettingsDialog(Gtk.Dialog):
             button: Gtk.Button,
             login_section: utils.Section,
     ) -> None:
-        login_dialog = login.LogInDialog(parent_window=self, session=self.session)
+        login_dialog = login.LogInDialog(self, session=self.session)
         login_dialog.show()
 
         # noinspection PyTypeChecker

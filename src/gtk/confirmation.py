@@ -35,12 +35,13 @@ class FinalizeDialog(Gtk.Dialog):
     def __init__(
             self,
             parent_window: Gtk.Window,
+            webapi_session: webapi.SteamWebAPI,
             action: str,
             model: Gtk.TreeModel,
             iter_: Union[Gtk.TreeIter, bool, None] = False,
     ) -> None:
         super().__init__(use_header_bar=True)
-        self.session = parent_window.session
+        self.webapi_session = webapi_session
         self.confirmation_data = None
 
         if action == "allow":
@@ -55,10 +56,9 @@ class FinalizeDialog(Gtk.Dialog):
         self.header_bar = self.get_header_bar()
         self.header_bar.set_show_close_button(False)
 
-        self.parent_window = parent_window
         self.set_default_size(300, 60)
         self.set_title(_('Finalize Confirmation'))
-        self.set_transient_for(self.parent_window)
+        self.set_transient_for(parent_window)
         self.set_modal(True)
         self.set_destroy_with_parent(True)
         self.set_resizable(False)
@@ -170,10 +170,9 @@ class FinalizeDialog(Gtk.Dialog):
     ) -> Dict[str, Any]:
         self.status.info(_("Processing {}").format(self.model[self.iter][1]))
 
-        steam_webapi = webapi.SteamWebAPI(self.session, 'https://lara.click/api')
-        server_time = await steam_webapi.get_server_time()
+        server_time = await self.webapi_session.get_server_time()
 
-        result = await steam_webapi.finalize_confirmation(
+        result = await self.webapi_session.finalize_confirmation(
             server_time,
             identity_secret,
             steamid,

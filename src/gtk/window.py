@@ -35,6 +35,7 @@ class Main(Gtk.ApplicationWindow):
         super().__init__(application=application, title="Steam Tools NG")
         self.application = application
         self.session = application.session
+        self.webapi_session = application.webapi_session
 
         header_bar = Gtk.HeaderBar()
         header_bar.set_show_close_button(True)
@@ -222,19 +223,19 @@ class Main(Gtk.ApplicationWindow):
             return False
 
     def on_accept_button_clicked(self, button: Gtk.Button, selection: Gtk.TreeSelection) -> None:
-        finalize_dialog = confirmation.FinalizeDialog(self, "allow", *selection.get_selected())
+        finalize_dialog = confirmation.FinalizeDialog(self, self.webapi_session, "allow", *selection.get_selected())
         finalize_dialog.show()
 
     def on_cancel_button_clicked(self, button: Gtk.Button, selection: Gtk.TreeSelection) -> None:
-        finalize_dialog = confirmation.FinalizeDialog(self, "cancel", *selection.get_selected())
+        finalize_dialog = confirmation.FinalizeDialog(self, self.webapi_session, "cancel", *selection.get_selected())
         finalize_dialog.show()
 
     def on_accept_all_button_clicked(self, button: Gtk.Button, model: Gtk.TreeModel) -> None:
-        finalize_dialog = confirmation.FinalizeDialog(self, "allow", model)
+        finalize_dialog = confirmation.FinalizeDialog(self, self.webapi_session, "allow", model)
         finalize_dialog.show()
 
     def on_cancel_all_button_clicked(self, button: Gtk.Button, model: Gtk.TreeModel) -> None:
-        finalize_dialog = confirmation.FinalizeDialog(self, "cancel", model)
+        finalize_dialog = confirmation.FinalizeDialog(self, self.webapi_session, "cancel", model)
         finalize_dialog.show()
 
     @staticmethod

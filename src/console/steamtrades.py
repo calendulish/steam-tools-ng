@@ -96,14 +96,13 @@ async def on_get_login_data(
 
 
 @config.Check("login")
-async def on_get_code(session: aiohttp.ClientSession, shared_secret: Optional[config.ConfigStr] = None) -> Any:
+async def on_get_code(webapi_session: webapi.SteamWebAPI, shared_secret: Optional[config.ConfigStr] = None) -> Any:
     if not shared_secret:
         log.critical(_("Authenticator module is not configured"))
         log.critical(_("Please, run 'authenticator' module, set up it, and try again"))
         sys.exit(1)
 
-    steam_webapi = webapi.SteamWebAPI(session, 'https://lara.click/api')
-    server_time = await steam_webapi.get_server_time()
+    server_time = await webapi_session.get_server_time()
     return authenticator.get_code(server_time, shared_secret)
 
 
@@ -119,7 +118,8 @@ async def run(
         sys.exit(1)
 
     log.info(_("Loading, please wait..."))
-    authenticator_code = await on_get_code(session)
+    webapi_session = webapi.SteamWebAPI(session, 'https://lara.click/api')
+    authenticator_code = await on_get_code(webapi_session)
 
     login_data = await on_get_login_data(session, authenticator_code.code)
     session.cookie_jar.update_cookies(login_data)

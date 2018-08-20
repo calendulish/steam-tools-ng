@@ -22,6 +22,7 @@ from typing import Any, Callable
 
 import aiohttp
 from gi.repository import Gtk
+from stlib import webapi
 
 from . import adb, add_authenticator, login, utils
 from .. import config, i18n
@@ -32,7 +33,12 @@ _ = i18n.get_translation
 
 # noinspection PyUnusedLocal
 class SetupDialog(Gtk.Dialog):
-    def __init__(self, parent_window: Gtk.Widget, session: aiohttp.ClientSession) -> None:
+    def __init__(
+            self,
+            parent_window: Gtk.Widget,
+            session: aiohttp.ClientSession,
+            webapi_session: webapi.SteamWebAPI,
+    ) -> None:
         super().__init__(use_header_bar=True)
         self.session = session
         self.login_data = None
@@ -43,7 +49,7 @@ class SetupDialog(Gtk.Dialog):
         self.parent_window = parent_window
         self.set_default_size(300, 60)
         self.set_title(_('Setup'))
-        self.set_transient_for(self.parent_window)
+        self.set_transient_for(parent_window)
         self.set_modal(True)
         self.set_destroy_with_parent(True)
         self.set_resizable(False)
@@ -98,11 +104,11 @@ class SetupDialog(Gtk.Dialog):
 
     def on_login_mode_selected(self) -> None:
         if self.combo.get_active() == 0:
-            add_authenticator_dialog = add_authenticator.AddAuthenticator(self.parent_window, self.session)
-            add_authenticator_dialog.do_login()
+            add_auth_dialog = add_authenticator.AddAuthenticator(self.parent_window, self.session, self.webapi_session)
+            add_auth_dialog.do_login()
             self.hide()
             # noinspection PyTypeChecker
-            asyncio.ensure_future(self.wait_add_authenticator(add_authenticator_dialog))
+            asyncio.ensure_future(self.wait_add_authenticator(add_auth_dialog))
         else:
             self.insert_adb_path()
 
@@ -178,7 +184,7 @@ class SetupDialog(Gtk.Dialog):
             return
 
         config.new(config.ConfigType("login", "adb_path", self.entry.get_text()))
-        adb_dialog = adb.AdbDialog(parent_window=self.parent_window)
+        adb_dialog = adb.AdbDialog(self.parent_window)
         adb_dialog.try_again_button.clicked()
         adb_dialog.show()
         self.hide()
@@ -203,7 +209,7 @@ class SetupDialog(Gtk.Dialog):
         self.call_login_dialog()
 
     def call_login_dialog(self) -> None:
-        login_dialog = login.LogInDialog(parent_window=self.parent_window, session=self.session)
+        login_dialog = login.LogInDialog(self.parent_window, self.session)
         login_dialog.show()
         self.hide()
 

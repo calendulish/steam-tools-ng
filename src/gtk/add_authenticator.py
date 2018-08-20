@@ -33,9 +33,15 @@ _ = i18n.get_translation
 
 # noinspection PyUnusedLocal
 class AddAuthenticator(Gtk.Dialog):
-    def __init__(self, parent_window: Gtk.Widget, session: aiohttp.ClientSession) -> None:
+    def __init__(
+            self,
+            parent_window: Gtk.Widget,
+            session: aiohttp.ClientSession,
+            webapi_session: webapi.SteamWebAPI,
+    ) -> None:
         super().__init__(use_header_bar=True)
         self.session = session
+        self.webapi_session = webapi_session
         self.data: Dict[str, Any] = {}
 
         self.header_bar = self.get_header_bar()
@@ -44,7 +50,7 @@ class AddAuthenticator(Gtk.Dialog):
         self.parent_window = parent_window
         self.set_default_size(300, 60)
         self.set_title(_("Add Authenticator"))
-        self.set_transient_for(self.parent_window)
+        self.set_transient_for(parent_window)
         self.set_modal(True)
         self.set_destroy_with_parent(True)
         self.set_resizable(False)
@@ -66,8 +72,6 @@ class AddAuthenticator(Gtk.Dialog):
         self.content_area.show_all()
         self.header_bar.show_all()
         self.show()
-
-        self.steam_webapi = webapi.SteamWebAPI(self.session, 'https://lara.click/api')
 
     def do_login(self) -> None:
         self.code.hide()
@@ -105,7 +109,7 @@ class AddAuthenticator(Gtk.Dialog):
         oauth_data = json.loads(login_data['oauth'])
         deviceid = authenticator.generate_device_id(token=oauth_data['oauth_token'])
 
-        auth_data = await self.steam_webapi.add_authenticator(
+        auth_data = await self.webapi_session.add_authenticator(
             oauth_data['steamid'],
             deviceid,
             oauth_data['oauth_token'],
@@ -144,7 +148,7 @@ class AddAuthenticator(Gtk.Dialog):
         oauth_data = json.loads(login_data['oauth'])
 
         try:
-            complete = await self.steam_webapi.finalize_add_authenticator(
+            complete = await self.webapi_session.finalize_add_authenticator(
                 oauth_data['steamid'],
                 oauth_data['oauth_token'],
                 authenticator_code.code,
