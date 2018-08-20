@@ -96,10 +96,10 @@ class SettingsDialog(Gtk.Dialog):
         account_name = utils.new_item('account_name', _("Username:"), login_section, Gtk.Entry, 0, 2)
         account_name.children.connect('changed', on_account_name_changed)
 
+        login_section.frame.show_all()
+
         shared_secret = utils.new_item('shared_secret', _("Shared Secret:"), login_section, Gtk.Entry, 0, 4)
         shared_secret.children.connect('changed', on_shared_secret_changed)
-
-        login_section.frame.show_all()
 
         token_item = utils.new_item("token", _("Token:"), login_section, Gtk.Entry, 0, 6)
         token_item.children.connect("changed", on_token_changed)
@@ -145,7 +145,7 @@ class SettingsDialog(Gtk.Dialog):
             section.frame.set_label_align(0.017, 0.5)
         else:
             childrens = Gtk.Container.get_children(section.grid)
-            keep_list = ['adb_path', 'account_name', 'shared_secret', 'advanced_button', 'log_in_button', 'adb_button']
+            keep_list = ['adb_path', 'account_name', 'advanced_button', 'log_in_button', 'adb_button']
 
             for children in childrens:
                 if children.get_name() in keep_list:
