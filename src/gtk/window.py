@@ -20,7 +20,9 @@ import itertools
 import logging
 import os
 
+import aiohttp
 from gi.repository import GdkPixbuf, Gio, Gtk
+from stlib import plugins, webapi
 
 from . import confirmation, utils
 from .. import config, i18n
@@ -115,13 +117,51 @@ class Main(Gtk.ApplicationWindow):
         cancel_all_button.connect('clicked', self.on_cancel_all_button_clicked, text_tree._store)
         main_grid.attach(cancel_all_button, 3, 5, 1, 1)
 
+        icon_bar = Gtk.Grid()
+        icon_bar.set_column_spacing(5)
+        main_grid.attach(icon_bar, 0, 6, 4, 1)
+
+        steam_icon = Gtk.Image.new_from_file(os.path.join(config.icons_dir, 'steam_yellow.png'))
+        steam_icon.set_hexpand(True)
+        steam_icon.set_halign(Gtk.Align.END)
+        icon_bar.add(steam_icon)
+
+        steamtrades_icon = Gtk.Image.new_from_file(os.path.join(config.icons_dir, 'steamtrades_yellow.png'))
+        icon_bar.attach_next_to(steamtrades_icon, steam_icon, Gtk.PositionType.RIGHT, 1, 1)
+
+        icon_bar.show_all()
         main_grid.show_all()
 
+        asyncio.ensure_future(self.check_login_status(steam_icon, steamtrades_icon))
         asyncio.ensure_future(self.check_steamguard_status(steamguard_status))
         asyncio.ensure_future(self.check_confirmations_status(text_tree, warning_label))
         asyncio.ensure_future(self.check_steamtrades_status(steamtrades_status))
 
         self.show_all()
+
+    async def check_login_status(self, steam_icon, steamtrades_icon) -> None:
+        while self.get_realized():
+            steamid = config.config_parser.getint('login', 'steamid', fallback=0)
+            nickname = await self.webapi_session.get_nickname(steamid)
+            cookies = config.login_cookies()
+            steamtrades_plugin = plugins.get_plugin("steamtrades")
+            steamtrades = steamtrades_plugin.Main(self.session, api_url='https://lara.click/api')
+
+            if await self.webapi_session.is_logged_in(nickname):
+                steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_green.png'))
+            else:
+                steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_red.png'))
+
+            if cookies:
+                self.session.cookie_jar.update_cookies(cookies)
+
+                try:
+                    await steamtrades.do_login()
+                    steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_green.png'))
+                except (aiohttp.ClientConnectionError, webapi.LoginError):
+                    steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_red.png'))
+
+            await asyncio.sleep(10)
 
     async def check_confirmations_status(
             self,

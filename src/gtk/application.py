@@ -102,7 +102,7 @@ class Application(Gtk.Application):
                     setup_dialog.select_login_mode()
                     setup_requested = True
 
-                await asyncio.sleep(4)
+                await asyncio.sleep(5)
                 continue
 
             setup_requested = False
@@ -121,7 +121,7 @@ class Application(Gtk.Application):
                 # (login dialog will return to setup dialog)
                 if setup_dialog.get_visible():
                     break
-                await asyncio.sleep(4)
+                await asyncio.sleep(5)
                 continue
 
             login_requested = False
