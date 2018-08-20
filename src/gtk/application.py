@@ -69,19 +69,66 @@ class Application(Gtk.Application):
             self.gtk_settings.props.gtk_application_prefer_dark_theme = False
 
     @config.Check("login")
-    def do_activate(
-            self,
-            token: Optional[config.ConfigStr] = None,
-            token_secure: Optional[config.ConfigStr] = None,
-    ) -> None:
+    def do_activate(self) -> None:
         if not self.window:
             self.window = window.Main(application=self)
 
         self.window.present()  # type: ignore
 
-        if not token or not token_secure:
-            setup_dialog = setup.SetupDialog(self.window, self.session, self.webapi_session)
-            setup_dialog.select_login_mode()
+        asyncio.ensure_future(self.async_activate())
+
+    @config.Check("login")
+    async def async_activate(
+            self,
+            token: Optional[config.ConfigStr] = None,
+            token_secure: Optional[config.ConfigStr] = None,
+            steamid: config.ConfigInt = 0,
+    ) -> None:
+        setup_dialog = setup.SetupDialog(self.window, self.session, self.webapi_session)
+        setup_dialog.status.info(_("Waiting Steam Server..."))
+        setup_dialog.entry.hide()
+        setup_dialog.combo.hide()
+        setup_dialog.set_size_request(100, 80)
+        setup_requested = False
+        login_requested = False
+
+        while True:
+            token = config.config_parser.get("login", "token", fallback='')
+            token_secure = config.config_parser.get("login", "token_secure", fallback='')
+            steamid = config.config_parser.get("login", "steamid", fallback=0)
+
+            if not token or not token_secure or not steamid:
+                if not setup_requested:
+                    setup_dialog.select_login_mode()
+                    setup_requested = True
+
+                await asyncio.sleep(4)
+                continue
+
+            setup_requested = False
+
+            try:
+                nickname = await self.webapi_session.get_nickname(steamid)
+            except ValueError:
+                raise NotImplementedError
+
+            if not await self.webapi_session.is_logged_in(nickname):
+                if not login_requested:
+                    setup_dialog.call_login_dialog()
+                    login_requested = True
+
+                # when user cancel setup process
+                # (login dialog will return to setup dialog)
+                if setup_dialog.get_visible():
+                    break
+                await asyncio.sleep(4)
+                continue
+
+            login_requested = False
+
+            break
+
+        setup_dialog.destroy()
 
         asyncio.ensure_future(self.run_steamguard())
         asyncio.ensure_future(self.run_confirmations())
