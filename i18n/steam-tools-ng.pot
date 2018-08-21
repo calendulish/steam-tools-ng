@@ -4,7 +4,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.0.0-DEV\n"
-"POT-Creation-Date: 2018-06-27 22:49Hora oficial do Brasil\n"
+"POT-Creation-Date: 2018-08-21 17:51Hora oficial do Brasil\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -14,160 +14,164 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: steam-tools-ng.py:153
-msgid "Exiting..."
-msgstr ""
-
-#: steam_tools_ng\config.py:87
+#: src\config.py:84
 msgid "Loading %s:%s from config file"
 msgstr ""
 
-#: steam_tools_ng\config.py:90
+#: src\config.py:87
 msgid "A positional argument already exists for %s. Ignoring..."
 msgstr ""
 
-#: steam_tools_ng\config.py:106
+#: src\config.py:103
 msgid "Nothing to do with %s. Ignoring."
 msgstr ""
 
-#: steam_tools_ng\config.py:109
+#: src\config.py:106
 msgid "Option not found in config: %s"
 msgstr ""
 
-#: steam_tools_ng\config.py:111
+#: src\config.py:108
 msgid "Section not found in config: %s"
 msgstr ""
 
-#: steam_tools_ng\config.py:114
+#: src\config.py:111
 msgid "%s will be injected into %s"
 msgstr ""
 
-#: steam_tools_ng\config.py:157
+#: src\config.py:154
 msgid "Unable to open steam-tools-ng.log"
 msgstr ""
 
-#: steam_tools_ng\config.py:177
+#: src\config.py:174
 msgid "Saving %s:%s on config file"
 msgstr ""
 
-#: steam_tools_ng\console\authenticator.py:37
+#: src\console\authenticator.py:38
 msgid "Paste here the path to your adb 'binary'"
 msgstr ""
 
-#: steam_tools_ng\console\authenticator.py:45
-#: steam_tools_ng\console\authenticator.py:62
-#: steam_tools_ng\console\steamtrades.py:70
+#: src\console\authenticator.py:46 src\console\authenticator.py:63
+#: src\console\steamtrades.py:70
 msgid "Do you want to try again?"
 msgstr ""
 
-#: steam_tools_ng\console\authenticator.py:76
+#: src\console\authenticator.py:77
 msgid "%s is not a valid parameter"
 msgstr ""
 
-#: steam_tools_ng\console\authenticator.py:79
+#: src\console\authenticator.py:80
 msgid "No shared_secret found on config file or command line"
 msgstr ""
 
-#: steam_tools_ng\console\authenticator.py:81
+#: src\console\authenticator.py:82
 msgid "Do you want to get it now using adb?"
 msgstr ""
 
-#: steam_tools_ng\console\authenticator.py:88
+#: src\console\authenticator.py:89
 msgid "Failed to get shared_secret!"
 msgstr ""
 
-#: steam_tools_ng\console\authenticator.py:92
-#: steam_tools_ng\console\steamtrades.py:77
+#: src\console\authenticator.py:93 src\console\steamtrades.py:77
 msgid "Success!"
 msgstr ""
 
-#: steam_tools_ng\console\authenticator.py:94
-#: steam_tools_ng\console\steamtrades.py:83
+#: src\console\authenticator.py:95 src\console\steamtrades.py:83
 msgid "Do you want to save this configuration?"
 msgstr ""
 
-#: steam_tools_ng\console\authenticator.py:98
-#: steam_tools_ng\console\steamtrades.py:90
+#: src\console\authenticator.py:99 src\console\steamtrades.py:90
 msgid "Configuration has been saved!"
 msgstr ""
 
-#: steam_tools_ng\console\authenticator.py:106
+#: src\console\authenticator.py:110
 msgid "Steam Client is not running."
 msgstr ""
 
-#: steam_tools_ng\console\authenticator.py:107 steam_tools_ng\gtk\adb.py:60
-#: steam_tools_ng\gtk\confirmation.py:157 steam_tools_ng\gtk\login.py:108
+#: src\console\authenticator.py:111 src\gtk\adb.py:65 src\gtk\adb.py:84
+#: src\gtk\confirmation.py:158 src\gtk\login.py:121
 msgid "Try again?"
 msgstr ""
 
-#: steam_tools_ng\console\authenticator.py:117
+#: src\console\authenticator.py:121
 msgid "SteamGuard Code:"
 msgstr ""
 
-#: steam_tools_ng\console\steamtrades.py:49
+#: src\console\steamtrades.py:49
 msgid "Unable to find a valid login data on config file or command line"
 msgstr ""
 
-#: steam_tools_ng\console\steamtrades.py:51
+#: src\console\steamtrades.py:51
 msgid "Please, write your username"
 msgstr ""
 
-#: steam_tools_ng\console\steamtrades.py:53
+#: src\console\steamtrades.py:53
 msgid "Please, write your password (it's hidden, and will be encrypted):"
 msgstr ""
 
-#: steam_tools_ng\console\steamtrades.py:59
+#: src\console\steamtrades.py:59
 msgid "Trying to login on Steam..."
 msgstr ""
 
-#: steam_tools_ng\console\steamtrades.py:100
+#: src\console\steamtrades.py:100
 msgid "Authenticator module is not configured"
 msgstr ""
 
-#: steam_tools_ng\console\steamtrades.py:101
+#: src\console\steamtrades.py:101
 msgid "Please, run 'authenticator' module, set up it, and try again"
 msgstr ""
 
-#: steam_tools_ng\console\steamtrades.py:127
-#: steam_tools_ng\gtk\application.py:147 steam_tools_ng\gtk\application.py:197
-#: steam_tools_ng\gtk\application.py:232
+#: src\console\steamtrades.py:119
+msgid "Loading, please wait..."
+msgstr ""
+
+#: src\console\steamtrades.py:130 src\gtk\application.py:214
+#: src\gtk\application.py:266 src\gtk\application.py:301
 msgid "No connection"
 msgstr ""
 
-#: steam_tools_ng\console\utils.py:30
+#: src\console\utils.py:30
 msgid "[Y/n]"
 msgstr ""
 
-#: steam_tools_ng\console\utils.py:32
+#: src\console\utils.py:32
 msgid "[y/N]"
 msgstr ""
 
-#: steam_tools_ng\console\utils.py:44
+#: src\console\utils.py:44
 msgid "Invalid response from user"
 msgstr ""
 
-#: steam_tools_ng\console\utils.py:48
+#: src\console\utils.py:48
 msgid "y"
 msgstr ""
 
-#: steam_tools_ng\console\utils.py:50
+#: src\console\utils.py:50
 msgid "n"
 msgstr ""
 
-#: steam_tools_ng\console\utils.py:53
+#: src\console\utils.py:53
 msgid "{} is not an accepted value"
 msgstr ""
 
-#: steam_tools_ng\console\utils.py:56
+#: src\console\utils.py:56
 msgid "Please, try again."
 msgstr ""
 
-#: steam_tools_ng\gtk\adb.py:71 steam_tools_ng\gtk\confirmation.py:143
-#: steam_tools_ng\gtk\login.py:100
+#: src\gtk\adb.py:72
+msgid ""
+"You will lost access to current authenticator!\n"
+"Do you really want to do that?"
+msgstr ""
+
+#: src\gtk\adb.py:77 src\gtk\confirmation.py:75
+msgid "Continue"
+msgstr ""
+
+#: src\gtk\adb.py:87 src\gtk\confirmation.py:142 src\gtk\login.py:111
 msgid "Running... Please wait"
 msgstr ""
 
-#: steam_tools_ng\gtk\adb.py:84
+#: src\gtk\adb.py:103
 msgid ""
 "Unable to run without a valid 'adb path'.\n"
 "\n"
@@ -180,7 +184,7 @@ msgid ""
 "It's a one-time config\n"
 msgstr ""
 
-#: steam_tools_ng\gtk\adb.py:98
+#: src\gtk\adb.py:117
 msgid ""
 "Unable to find adb in:\n"
 "\n"
@@ -189,395 +193,519 @@ msgid ""
 "Please, enter a valid 'adb path' and try again."
 msgstr ""
 
-#: steam_tools_ng\gtk\adb.py:114
+#: src\gtk\adb.py:133
 msgid "No phone connected"
 msgstr ""
 
-#: steam_tools_ng\gtk\adb.py:116
+#: src\gtk\adb.py:135
 msgid "Unable to switch to root mode"
 msgstr ""
 
-#: steam_tools_ng\gtk\adb.py:118
+#: src\gtk\adb.py:137
 msgid "User is not logged-in on Mobile Authenticator"
 msgstr ""
 
-#: steam_tools_ng\gtk\adb.py:120
+#: src\gtk\adb.py:139
 msgid "Steam Guard is not enabled"
 msgstr ""
 
-#: steam_tools_ng\gtk\application.py:88
+#: src\gtk\add_authenticator.py:52 src\gtk\add_authenticator.py:127
+msgid "Add Authenticator"
+msgstr ""
+
+#: src\gtk\add_authenticator.py:102
+msgid "Loading data..."
+msgstr ""
+
+#: src\gtk\add_authenticator.py:111 src\gtk\add_authenticator.py:148
+msgid "Waiting Steam Server..."
+msgstr ""
+
+#: src\gtk\add_authenticator.py:124
+msgid ""
+"Write code received by SMS\n"
+"and click on 'Add Authenticator' button"
+msgstr ""
+
+#: src\gtk\add_authenticator.py:161
+msgid ""
+"Invalid SMS Code. Please,\n"
+"check the code and try again."
+msgstr ""
+
+#: src\gtk\add_authenticator.py:164
+msgid "Try Again?"
+msgstr ""
+
+#: src\gtk\add_authenticator.py:181
+msgid "Success! Saving..."
+msgstr ""
+
+#: src\gtk\add_authenticator.py:200
+msgid "Unable to add a new authenticator"
+msgstr ""
+
+#: src\gtk\application.py:155
 msgid "The currently secret is invalid"
 msgstr ""
 
-#: steam_tools_ng\gtk\application.py:91
+#: src\gtk\application.py:158
 msgid "Steam Client is not running"
 msgstr ""
 
-#: steam_tools_ng\gtk\application.py:94 steam_tools_ng\gtk\utils.py:121
+#: src\gtk\application.py:161 src\gtk\utils.py:121
 msgid "Loading..."
 msgstr ""
 
-#: steam_tools_ng\gtk\application.py:121
+#: src\gtk\application.py:189
 msgid "Unable to get confirmations without a valid identity secret"
 msgstr ""
 
-#: steam_tools_ng\gtk\application.py:127
+#: src\gtk\application.py:195
 msgid "Unable to find deviceid. Generating from identity."
 msgstr ""
 
-#: steam_tools_ng\gtk\application.py:136
+#: src\gtk\application.py:204
 msgid "Unable to find a valid login data"
 msgstr ""
 
-#: steam_tools_ng\gtk\application.py:149
+#: src\gtk\application.py:212
+msgid "Error when fetch confirmations"
+msgstr ""
+
+#: src\gtk\application.py:216
 msgid "Steam is not running"
 msgstr ""
 
-#: steam_tools_ng\gtk\application.py:151 steam_tools_ng\gtk\application.py:203
+#: src\gtk\application.py:218 src\gtk\application.py:272
 msgid "User is not logged in"
 msgstr ""
 
-#: steam_tools_ng\gtk\application.py:186
+#: src\gtk\application.py:255
 msgid "No trade ID found in config file"
 msgstr ""
 
-#: steam_tools_ng\gtk\application.py:240
+#: src\gtk\application.py:309
 msgid "Waiting anti-ban timer"
 msgstr ""
 
-#: steam_tools_ng\gtk\application.py:279
+#: src\gtk\application.py:348
 msgid "Setting wait_offset from steamtrades to {}"
 msgstr ""
 
-#: steam_tools_ng\gtk\confirmation.py:48
+#: src\gtk\confirmation.py:48
 msgid "accept"
 msgstr ""
 
-#: steam_tools_ng\gtk\confirmation.py:50
+#: src\gtk\confirmation.py:50
 msgid "cancel"
 msgstr ""
 
-#: steam_tools_ng\gtk\confirmation.py:61
+#: src\gtk\confirmation.py:60
 msgid "Finalize Confirmation"
 msgstr ""
 
-#: steam_tools_ng\gtk\confirmation.py:76
-msgid "Continue"
-msgstr ""
-
-#: steam_tools_ng\gtk\confirmation.py:80 steam_tools_ng\gtk\login.py:80
+#: src\gtk\confirmation.py:79 src\gtk\login.py:87
 msgid "Cancel"
 msgstr ""
 
-#: steam_tools_ng\gtk\confirmation.py:85
+#: src\gtk\confirmation.py:84
 msgid "No items to accept or cancel"
 msgstr ""
 
-#: steam_tools_ng\gtk\confirmation.py:89
+#: src\gtk\confirmation.py:88
 msgid ""
 "Do you really want to {} ALL confirmations?\n"
 "It can't be undone!"
 msgstr ""
 
-#: steam_tools_ng\gtk\confirmation.py:103
+#: src\gtk\confirmation.py:102
 msgid "You are trading the following items with {}:"
 msgstr ""
 
-#: steam_tools_ng\gtk\confirmation.py:108
+#: src\gtk\confirmation.py:107
 msgid ""
 "Do you really want to {} that?\n"
 "It can't be undone!"
 msgstr ""
 
-#: steam_tools_ng\gtk\confirmation.py:113
+#: src\gtk\confirmation.py:112
 msgid "You will give"
 msgstr ""
 
-#: steam_tools_ng\gtk\confirmation.py:120
+#: src\gtk\confirmation.py:119
 msgid "You will receive"
 msgstr ""
 
-#: steam_tools_ng\gtk\confirmation.py:155
+#: src\gtk\confirmation.py:156
 msgid ""
 "An error occurred:\n"
 "\n"
 "{}"
 msgstr ""
 
-#: steam_tools_ng\gtk\confirmation.py:170
+#: src\gtk\confirmation.py:171
 msgid "Processing {}"
 msgstr ""
 
-#: steam_tools_ng\gtk\confirmation.py:204
+#: src\gtk\confirmation.py:206
 msgid "Updating tree"
 msgstr ""
 
-#: steam_tools_ng\gtk\login.py:47
+#: src\gtk\login.py:54
 msgid "Log-in on Steam"
 msgstr ""
 
-#: steam_tools_ng\gtk\login.py:62
+#: src\gtk\login.py:69
 msgid "User Details"
 msgstr ""
 
-#: steam_tools_ng\gtk\login.py:66 steam_tools_ng\gtk\settings.py:95
+#: src\gtk\login.py:73 src\gtk\settings.py:96
 msgid "Username:"
 msgstr ""
 
-#: steam_tools_ng\gtk\login.py:70
+#: src\gtk\login.py:77
 msgid "Password:"
 msgstr ""
 
-#: steam_tools_ng\gtk\login.py:73
+#: src\gtk\login.py:80
 msgid "It will not be saved"
 msgstr ""
 
-#: steam_tools_ng\gtk\login.py:76
-msgid "Log In"
+#: src\gtk\login.py:83 src\gtk\settings.py:128
+msgid "Log-in"
 msgstr ""
 
-#: steam_tools_ng\gtk\login.py:122
-msgid ""
-"Unable to log-in!\n"
-"\n"
-"To login you need to provide at last a valid shared secret.\n"
-"You can use 'Get login data using ADB' button to get it,\n"
-"or insert it manually on:\n"
-"\n"
-"settings -> login settings -> mark 'advanced' -> shared secret\n"
+#: src\gtk\login.py:94
+msgid "Code:"
 msgstr ""
 
-#: steam_tools_ng\gtk\login.py:134
-msgid ""
-"Unable to log-in!\n"
-"The shared secret received is invalid."
-msgstr ""
-
-#: steam_tools_ng\gtk\login.py:138
+#: src\gtk\login.py:137
 msgid ""
 "Unable to log-in!\n"
 "Your username/password is blank."
 msgstr ""
 
-#: steam_tools_ng\gtk\login.py:156
+#: src\gtk\login.py:158
 msgid ""
-"Unable to log-in on Steam!\n"
-"Please, try again."
+"Write code received by email\n"
+"and click on 'Try Again?' button"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:34
+#: src\gtk\login.py:178
+msgid ""
+"Unable to log-in!\n"
+"You already have a Steam Authenticator active on current account\n"
+"\n"
+"To log-in, you have two options:\n"
+"\n"
+"- Just remove authenticator from your account and use the 'Try Again?' button\n"
+"    to set STNG as your Steam Authenticator.\n"
+"\n"
+"- Put your shared secret on settings or let us automagically find it using adb\n"
+"    (settings -> 'get login data using adb' button)\n"
+msgstr ""
+
+#: src\gtk\login.py:190
+msgid ""
+"Unable to log-in!\n"
+"The authenticator code is invalid!\n"
+msgstr ""
+
+#: src\gtk\login.py:194
+msgid ""
+"Your network is blocked!\n"
+"It'll take some time until unblocked. Please, try again later\n"
+msgstr ""
+
+#: src\gtk\login.py:203
+msgid ""
+"Unable to log-in!\n"
+"Please, check your username/password and try again.\n"
+msgstr ""
+
+#: src\gtk\login.py:210
+msgid "No Connection"
+msgstr ""
+
+#: src\gtk\settings.py:35
 msgid "Light"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:35
+#: src\gtk\settings.py:36
 msgid "Dark"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:39
+#: src\gtk\settings.py:40
 msgid "Critical"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:40
+#: src\gtk\settings.py:41
 msgid "Error"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:41
+#: src\gtk\settings.py:42
 msgid "Warning"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:42
+#: src\gtk\settings.py:43
 msgid "Info"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:43
+#: src\gtk\settings.py:44
 msgid "Debug"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:47
+#: src\gtk\settings.py:48
 msgid "English"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:48
+#: src\gtk\settings.py:49
 msgid "Portuguese (Brazil)"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:60 steam_tools_ng\gtk\window.py:49
+#: src\gtk\settings.py:61 src\gtk\window.py:51
 msgid "Settings"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:88
+#: src\gtk\settings.py:89
 msgid "Login Settings"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:91
+#: src\gtk\settings.py:92
 msgid "Adb Path:"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:98
+#: src\gtk\settings.py:101
 msgid "Shared Secret:"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:103
+#: src\gtk\settings.py:104
 msgid "Token:"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:106
+#: src\gtk\settings.py:107
 msgid "Token Secure:"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:109
+#: src\gtk\settings.py:110
 msgid "Identity Secret:"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:112
+#: src\gtk\settings.py:113
 msgid "Device ID:"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:115
+#: src\gtk\settings.py:116
 msgid "Steam ID:"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:119
+#: src\gtk\settings.py:120
 msgid "Advanced"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:127
-msgid "Log-in"
-msgstr ""
-
-#: steam_tools_ng\gtk\settings.py:133
+#: src\gtk\settings.py:134
 msgid "Get login data using ADB"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:159
+#: src\gtk\settings.py:160
 msgid "Gtk Settings"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:161
+#: src\gtk\settings.py:162
 msgid "Theme:"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:181
+#: src\gtk\settings.py:182
 msgid "Steamtrades Settings"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:183
+#: src\gtk\settings.py:184
 msgid "Trade IDs:"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:187
+#: src\gtk\settings.py:188
 msgid "Wait MIN:"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:190
+#: src\gtk\settings.py:191
 msgid "Wait MAX:"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:199
+#: src\gtk\settings.py:200
 msgid "Locale settings"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:200
+#: src\gtk\settings.py:201
 msgid "Language"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:209
+#: src\gtk\settings.py:210
 msgid "Logger settings"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:210
+#: src\gtk\settings.py:211
 msgid "Level:"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:214
+#: src\gtk\settings.py:215
 msgid "Console level:"
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:406
+#: src\gtk\settings.py:397
 msgid "Unable to find %s in prefilled data. Ignoring."
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:415
+#: src\gtk\settings.py:406
 msgid "Unable to find %s in section %s at config file. Using fallback value."
 msgstr ""
 
-#: steam_tools_ng\gtk\settings.py:423
+#: src\gtk\settings.py:414
 msgid "Unable to find fallback value to %s. Ignoring"
 msgstr ""
 
-#: steam_tools_ng\gtk\utils.py:83
+#: src\gtk\setup.py:52
+msgid "Setup"
+msgstr ""
+
+#: src\gtk\setup.py:86
+msgid ""
+"Welcome to STNG Setup\n"
+"\n"
+"How do you want to log-in?"
+msgstr ""
+
+#: src\gtk\setup.py:92
+msgid "Using Steam Tools NG as Steam Authenticator"
+msgstr ""
+
+#: src\gtk\setup.py:93
+msgid "Using a rooted Android phone and ADB"
+msgstr ""
+
+#: src\gtk\setup.py:97 src\gtk\setup.py:173
+msgid "Next"
+msgstr ""
+
+#: src\gtk\setup.py:132
+msgid ""
+"RECOVERY CODE\n"
+"\n"
+"You will need this code to recovery your Steam Account\n"
+"if you lose access to STNG Authenticator. So, writedown this recovery code.\n"
+"\n"
+"YOU WILL NOT ABLE TO VIEW IT AGAIN!\n"
+msgstr ""
+
+#: src\gtk\setup.py:142
+msgid "Recovery Code"
+msgstr ""
+
+#: src\gtk\setup.py:158
+msgid ""
+"To automatic get login data using adb, you will need:\n"
+"- A 'rooted' Android phone\n"
+"- adb tool from Google\n"
+"- adb path (set bellow)\n"
+"- USB debugging up and running (on phone)\n"
+"\n"
+"It's a one-time config\n"
+"\n"
+"Please, write path where you adb is located. E.g:\n"
+"\n"
+"Windows: C:\\platform-tools\\adb.exe\n"
+"Linux: /usr/bin/adb"
+msgstr ""
+
+#: src\gtk\setup.py:178
+msgid "Previous"
+msgstr ""
+
+#: src\gtk\setup.py:187
+msgid "Unable to run without a valid adb path."
+msgstr ""
+
+#: src\gtk\utils.py:83
 msgid "Waiting"
 msgstr ""
 
-#: steam_tools_ng\gtk\utils.py:209
+#: src\gtk\utils.py:209
 msgid "Ignoring value from %s on column %s item %s because value is empty"
 msgstr ""
 
-#: steam_tools_ng\gtk\utils.py:223
+#: src\gtk\utils.py:223
 msgid "Nothing"
 msgstr ""
 
-#: steam_tools_ng\gtk\utils.py:227
+#: src\gtk\utils.py:227
 msgid "Various"
 msgstr ""
 
-#: steam_tools_ng\gtk\window.py:50
+#: src\gtk\window.py:52
 msgid "About"
 msgstr ""
 
-#: steam_tools_ng\gtk\window.py:74
+#: src\gtk\window.py:76
 msgid "Steam Guard Code"
 msgstr ""
 
-#: steam_tools_ng\gtk\window.py:78
+#: src\gtk\window.py:80
 msgid "If you have confirmations, they will be shown here. (15 seconds delay)"
 msgstr ""
 
-#: steam_tools_ng\gtk\window.py:84
+#: src\gtk\window.py:86
 msgid "give"
 msgstr ""
 
-#: steam_tools_ng\gtk\window.py:84
+#: src\gtk\window.py:86
 msgid "id"
 msgstr ""
 
-#: steam_tools_ng\gtk\window.py:84
+#: src\gtk\window.py:86
 msgid "key"
 msgstr ""
 
-#: steam_tools_ng\gtk\window.py:84
+#: src\gtk\window.py:86
 msgid "mode"
 msgstr ""
 
-#: steam_tools_ng\gtk\window.py:84
+#: src\gtk\window.py:86
 msgid "receive"
 msgstr ""
 
-#: steam_tools_ng\gtk\window.py:84
+#: src\gtk\window.py:86
 msgid "to"
 msgstr ""
 
-#: steam_tools_ng\gtk\window.py:102
+#: src\gtk\window.py:104
 msgid "Accept selected"
 msgstr ""
 
-#: steam_tools_ng\gtk\window.py:106
+#: src\gtk\window.py:108
 msgid "Cancel selected"
 msgstr ""
 
-#: steam_tools_ng\gtk\window.py:110
+#: src\gtk\window.py:112
 msgid "Accept all"
 msgstr ""
 
-#: steam_tools_ng\gtk\window.py:114
+#: src\gtk\window.py:116
 msgid "Cancel all"
 msgstr ""
 
-#: steam_tools_ng\gtk\window.py:142
+#: src\gtk\window.py:188
 msgid "Skipping because `update' is set to False"
 msgstr ""
 
-#: steam_tools_ng\gtk\window.py:195
+#: src\gtk\window.py:241
 msgid "Running"
+msgstr ""
+
+#: steam-tools-ng.py:119
+msgid "Done!"
+msgstr ""
+
+#: steam-tools-ng.py:178
+msgid "Exiting..."
 msgstr ""
 

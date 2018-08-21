@@ -74,7 +74,7 @@ if __name__ == "__main__":
     output_file = os.path.join('i18n', 'steam-tools-ng.pot')
     translatable_files = []
 
-    for root, dirs, files in os.walk('steam_tools_ng'):
+    for root, dirs, files in os.walk('src'):
         for file in files:
             if file.endswith(".py"):
                 translatable_files.append(os.path.join(root, file))
