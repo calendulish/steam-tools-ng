@@ -142,7 +142,7 @@ class Main(Gtk.ApplicationWindow):
     async def check_login_status(self, steam_icon, steamtrades_icon) -> None:
         while self.get_realized():
             steamid = config.config_parser.getint('login', 'steamid', fallback=0)
-            nickname = config.config_parser.getint('login', 'nickname', fallback='')
+            nickname = config.config_parser.get('login', 'nickname', fallback='')
             cookies = config.login_cookies()
             steamtrades = plugins.get_plugin("steamtrades", self.session, api_url='https://lara.click/api')
 

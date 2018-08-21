@@ -90,7 +90,7 @@ class Application(Gtk.Application):
         while True:
             token = config.config_parser.get("login", "token", fallback='')
             token_secure = config.config_parser.get("login", "token_secure", fallback='')
-            steamid = config.config_parser.get("login", "steamid", fallback=0)
+            steamid = config.config_parser.getint("login", "steamid", fallback=0)
             nickname = config.config_parser.get("login", "nickname", fallback='')
 
             if not token or not token_secure or not steamid:
