@@ -142,9 +142,16 @@ class Main(Gtk.ApplicationWindow):
     async def check_login_status(self, steam_icon, steamtrades_icon) -> None:
         while self.get_realized():
             steamid = config.config_parser.getint('login', 'steamid', fallback=0)
-            nickname = await self.webapi_session.get_nickname(steamid)
+            nickname = config.config_parser.getint('login', 'nickname', fallback='')
             cookies = config.login_cookies()
             steamtrades = plugins.get_plugin("steamtrades", self.session, api_url='https://lara.click/api')
+
+            if not nickname:
+                try:
+                    nickname = await self.webapi_session.get_nickname(steamid)
+                    config.new(config.ConfigType("login", "nickname", config.ConfigStr(nickname)))
+                except ValueError:
+                    raise NotImplementedError
 
             if await self.webapi_session.is_logged_in(nickname):
                 steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_green.png'))

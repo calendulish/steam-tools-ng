@@ -96,6 +96,7 @@ class Application(Gtk.Application):
             token = config.config_parser.get("login", "token", fallback='')
             token_secure = config.config_parser.get("login", "token_secure", fallback='')
             steamid = config.config_parser.get("login", "steamid", fallback=0)
+            nickname = config.config_parser.get("login", "nickname", fallback='')
 
             if not token or not token_secure or not steamid:
                 if not setup_requested:
@@ -107,10 +108,12 @@ class Application(Gtk.Application):
 
             setup_requested = False
 
-            try:
-                nickname = await self.webapi_session.get_nickname(steamid)
-            except ValueError:
-                raise NotImplementedError
+            if not nickname:
+                try:
+                    nickname = await self.webapi_session.get_nickname(steamid)
+                    config.new(config.ConfigType("login", "nickname", config.ConfigStr(nickname)))
+                except ValueError:
+                    raise NotImplementedError
 
             if not await self.webapi_session.is_logged_in(nickname):
                 if not login_requested:
