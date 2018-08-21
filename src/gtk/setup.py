@@ -104,15 +104,19 @@ class SetupDialog(Gtk.Dialog):
 
     def on_login_mode_selected(self) -> None:
         if self.combo.get_active() == 0:
-            add_auth_dialog = add_authenticator.AddAuthenticator(self.parent_window, self.session, self.webapi_session)
-            add_auth_dialog.do_login()
             self.hide()
-            # noinspection PyTypeChecker
-            asyncio.ensure_future(self.wait_add_authenticator(add_auth_dialog))
+
+            utils.async_wait_dialog(
+                add_authenticator.AddAuthenticator,
+                self.add_authenticator_callback,
+                self.parent_window,
+                self.session,
+                self.webapi_session
+            )
         else:
             self.insert_adb_path()
 
-    async def wait_add_authenticator(self, dialog: Gtk.Dialog) -> None:
+    async def add_authenticator_callback(self, dialog: Gtk.Dialog) -> None:
         while not dialog.data:
             if dialog.get_realized():
                 await asyncio.sleep(1)
@@ -184,15 +188,13 @@ class SetupDialog(Gtk.Dialog):
             return
 
         config.new(config.ConfigType("login", "adb_path", self.entry.get_text()))
-        adb_dialog = adb.AdbDialog(self.parent_window)
-        adb_dialog.try_again_button.clicked()
-        adb_dialog.show()
+
         self.hide()
 
-        # noinspection PyTypeChecker
-        asyncio.ensure_future(self.wait_adb_data(adb_dialog))
+        dialog = utils.async_wait_dialog(adb.AdbDialog, self.adb_dialog_callback, self.parent_window)
+        dialog.try_again_button.clicked()
 
-    async def wait_adb_data(self, adb_dialog: Gtk.Dialog) -> None:
+    async def adb_dialog_callback(self, adb_dialog: Gtk.Dialog) -> None:
         while not adb_dialog.adb_data:
             if adb_dialog.get_realized():
                 await asyncio.sleep(1)
@@ -206,17 +208,9 @@ class SetupDialog(Gtk.Dialog):
 
         config.new(*[config.ConfigType("login", key, value) for key, value in adb_dialog.adb_data.items()])
 
-        self.call_login_dialog()
+        utils.async_wait_dialog(login.LogInDialog, self.login_dialog_callback, self.parent_window, self.session)
 
-    def call_login_dialog(self) -> None:
-        login_dialog = login.LogInDialog(self.parent_window, self.session)
-        login_dialog.show()
-        self.hide()
-
-        # noinspection PyTypeChecker
-        asyncio.ensure_future(self.wait_login_data(login_dialog))
-
-    async def wait_login_data(self, login_dialog: Gtk.Dialog) -> None:
+    async def login_dialog_callback(self, login_dialog: Gtk.Dialog) -> None:
         while not login_dialog.login_data:
             if login_dialog.get_realized():
                 await asyncio.sleep(3)

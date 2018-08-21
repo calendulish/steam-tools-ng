@@ -86,65 +86,65 @@ class SettingsDialog(Gtk.Dialog):
         self.show()
 
     def login_settings(self) -> Gtk.Frame:
-        login_section = utils.new_section("login", _("Login Settings"))
-        login_section.grid.set_row_spacing(5)
+        self.login_section = utils.new_section("login", _("Login Settings"))
+        self.login_section.grid.set_row_spacing(5)
 
-        adb_path = utils.new_item('adb_path', _("Adb Path:"), login_section, Gtk.Entry, 0, 0)
+        adb_path = utils.new_item('adb_path', _("Adb Path:"), self.login_section, Gtk.Entry, 0, 0)
         adb_path.children.set_placeholder_text('E.g.: c:\\adb.exe or /opt/adb')
         adb_path.children.connect('changed', on_adb_path_changed)
 
-        account_name = utils.new_item('account_name', _("Username:"), login_section, Gtk.Entry, 0, 2)
+        account_name = utils.new_item('account_name', _("Username:"), self.login_section, Gtk.Entry, 0, 2)
         account_name.children.connect('changed', on_account_name_changed)
 
-        login_section.frame.show_all()
+        self.login_section.frame.show_all()
 
-        shared_secret = utils.new_item('shared_secret', _("Shared Secret:"), login_section, Gtk.Entry, 0, 4)
+        shared_secret = utils.new_item('shared_secret', _("Shared Secret:"), self.login_section, Gtk.Entry, 0, 4)
         shared_secret.children.connect('changed', on_shared_secret_changed)
 
-        token_item = utils.new_item("token", _("Token:"), login_section, Gtk.Entry, 0, 6)
+        token_item = utils.new_item("token", _("Token:"), self.login_section, Gtk.Entry, 0, 6)
         token_item.children.connect("changed", on_token_changed)
 
-        token_secure_item = utils.new_item("token_secure", _("Token Secure:"), login_section, Gtk.Entry, 2, 0)
+        token_secure_item = utils.new_item("token_secure", _("Token Secure:"), self.login_section, Gtk.Entry, 2, 0)
         token_secure_item.children.connect("changed", on_token_secure_changed)
 
-        identity_secret = utils.new_item('identity_secret', _("Identity Secret:"), login_section, Gtk.Entry, 2, 2)
+        identity_secret = utils.new_item('identity_secret', _("Identity Secret:"), self.login_section, Gtk.Entry, 2, 2)
         identity_secret.children.connect('changed', on_identity_secret_changed)
 
-        deviceid = utils.new_item('deviceid', _("Device ID:"), login_section, Gtk.Entry, 2, 4)
+        deviceid = utils.new_item('deviceid', _("Device ID:"), self.login_section, Gtk.Entry, 2, 4)
         deviceid.children.connect('changed', on_device_id_changed)
 
-        steamid_item = utils.new_item("steamid", _("Steam ID:"), login_section, Gtk.Entry, 2, 6)
+        steamid_item = utils.new_item("steamid", _("Steam ID:"), self.login_section, Gtk.Entry, 2, 6)
         steamid_item.children.set_input_purpose(Gtk.InputPurpose.DIGITS)
         steamid_item.children.connect("changed", on_steamid_changed)
 
         advanced = Gtk.CheckButton(_("Advanced"))
         advanced.set_name("advanced_button")
-        advanced.connect("toggled", self.on_advanced_button_toggled, login_section)
-        login_section.grid.attach(advanced, 0, 7, 1, 1)
+        advanced.connect("toggled", self.on_advanced_button_toggled)
+        self.login_section.grid.attach(advanced, 0, 7, 1, 1)
         advanced.show()
 
-        load_settings(login_section, Gtk.Entry)
+        load_settings(self.login_section, Gtk.Entry)
 
         log_in = Gtk.Button(_("Log-in"))
         log_in.set_name("log_in_button")
-        log_in.connect('clicked', self.on_log_in_clicked, login_section)
-        login_section.grid.attach(log_in, 0, 8, 4, 1)
+        log_in.connect('clicked', self.on_log_in_clicked)
+        self.login_section.grid.attach(log_in, 0, 8, 4, 1)
         log_in.show()
 
         adb_button = Gtk.Button(_("Get login data using ADB"))
         adb_button.set_name("adb_button")
-        adb_button.connect('clicked', self.on_adb_clicked, login_section)
-        login_section.grid.attach(adb_button, 0, 9, 4, 1)
+        adb_button.connect('clicked', self.on_adb_clicked)
+        self.login_section.grid.attach(adb_button, 0, 9, 4, 1)
         adb_button.show()
 
-        return login_section.frame
+        return self.login_section.frame
 
-    def on_advanced_button_toggled(self, button: Gtk.Button, section: utils.Section) -> None:
+    def on_advanced_button_toggled(self, button: Gtk.Button) -> None:
         if button.get_active():
-            section.grid.show_all()
-            section.frame.set_label_align(0.017, 0.5)
+            self.login_section.grid.show_all()
+            self.login_section.frame.set_label_align(0.017, 0.5)
         else:
-            childrens = Gtk.Container.get_children(section.grid)
+            childrens = Gtk.Container.get_children(self.login_section.grid)
             keep_list = ['adb_path', 'account_name', 'advanced_button', 'log_in_button', 'adb_button']
 
             for children in childrens:
@@ -154,7 +154,7 @@ class SettingsDialog(Gtk.Dialog):
                     children.hide()
 
             self.set_size_request(300, 150)
-            section.frame.set_label_align(0.03, 0.5)
+            self.login_section.frame.set_label_align(0.03, 0.5)
 
     def gtk_settings(self) -> Gtk.Frame:
         gtk_section = utils.new_section('gtk', _('Gtk Settings'))
@@ -226,23 +226,11 @@ class SettingsDialog(Gtk.Dialog):
         logger_section.frame.show_all()
         return logger_section.frame
 
-    def on_adb_clicked(self, button: Gtk.Button, login_section: utils.Section) -> None:
-        adb_dialog = adb.AdbDialog(self)
-        adb_dialog.show()
+    def on_adb_clicked(self, button: Gtk.Button) -> None:
+        utils.async_wait_dialog(adb.AdbDialog, self.adb_dialog_callback, self)
 
-        # noinspection PyTypeChecker
-        asyncio.ensure_future(wait_adb_data(adb_dialog, login_section))
-
-    def on_log_in_clicked(
-            self,
-            button: Gtk.Button,
-            login_section: utils.Section,
-    ) -> None:
-        login_dialog = login.LogInDialog(self, session=self.session)
-        login_dialog.show()
-
-        # noinspection PyTypeChecker
-        asyncio.ensure_future(wait_login_data(login_dialog, login_section))
+    def on_log_in_clicked(self, button: Gtk.Button) -> None:
+        utils.async_wait_dialog(login.LogInDialog, self.login_dialog_callback, self, session=self.session)
 
     def update_language(self, combo: Gtk.ComboBoxText) -> None:
         language = config.ConfigStr(list(translations)[combo.get_active()])
@@ -251,28 +239,22 @@ class SettingsDialog(Gtk.Dialog):
         Gtk.Container.foreach(self.parent_window, refresh_widget_text)
 
 
-async def wait_adb_data(
-        adb_dialog: Gtk.Dialog,
-        login_section: utils.Section,
-) -> None:
-    while not adb_dialog.adb_data:
-        await asyncio.sleep(5)
+    async def adb_dialog_callback(self, adb_dialog: Gtk.Dialog) -> None:
+        while not adb_dialog.adb_data:
+            await asyncio.sleep(5)
 
-    load_settings(login_section, Gtk.Entry, data=adb_dialog.adb_data, save=True)
+        load_settings(self.login_section, Gtk.Entry, data=adb_dialog.adb_data, save=True)
 
-    adb_dialog.destroy()
+        adb_dialog.destroy()
 
 
-async def wait_login_data(
-        login_dialog: Gtk.Dialog,
-        login_section: utils.Section,
-) -> None:
-    while not login_dialog.login_data:
-        await asyncio.sleep(5)
+    async def login_dialog_callback(self, login_dialog: Gtk.Dialog) -> None:
+        while not login_dialog.login_data:
+            await asyncio.sleep(5)
 
-    load_settings(login_section, Gtk.Entry, data=login_dialog.login_data, save=True)
+        load_settings(self.login_section, Gtk.Entry, data=login_dialog.login_data, save=True)
 
-    login_dialog.destroy()
+        login_dialog.destroy()
 
 
 def on_steamid_changed(entry: Gtk.Entry) -> None:

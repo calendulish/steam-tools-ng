@@ -246,3 +246,12 @@ def remove_letters(text: str) -> str:
             new_text.append(char)
 
     return ''.join(new_text)
+
+
+def async_wait_dialog(dialog: Gtk.Dialog, async_callback: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+    dialog_instance = dialog(*args, **kwargs)
+    dialog_instance.show()
+
+    asyncio.ensure_future(async_callback(dialog_instance))
+
+    return dialog_instance

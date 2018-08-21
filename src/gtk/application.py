@@ -25,7 +25,7 @@ import aiohttp
 from gi.repository import Gio, Gtk
 from stlib import authenticator, client, plugins, webapi
 
-from . import about, settings, setup, window
+from . import about, login, settings, setup, window
 from .. import config, i18n
 
 _ = i18n.get_translation
@@ -84,11 +84,6 @@ class Application(Gtk.Application):
             token_secure: Optional[config.ConfigStr] = None,
             steamid: config.ConfigInt = 0,
     ) -> None:
-        setup_dialog = setup.SetupDialog(self.window, self.session, self.webapi_session)
-        setup_dialog.status.info(_("Waiting Steam Server..."))
-        setup_dialog.entry.hide()
-        setup_dialog.combo.hide()
-        setup_dialog.set_size_request(100, 80)
         setup_requested = False
         login_requested = False
 
@@ -100,6 +95,7 @@ class Application(Gtk.Application):
 
             if not token or not token_secure or not steamid:
                 if not setup_requested:
+                    setup_dialog = setup.SetupDialog(self.window, self.session, self.webapi_session)
                     setup_dialog.select_login_mode()
                     setup_requested = True
 
@@ -117,21 +113,16 @@ class Application(Gtk.Application):
 
             if not await self.webapi_session.is_logged_in(nickname):
                 if not login_requested:
-                    setup_dialog.call_login_dialog()
+                    login_dialog = login.LogInDialog(self.window, self.session)
+                    login_dialog.show()
                     login_requested = True
 
-                # when user cancel setup process
-                # (login dialog will return to setup dialog)
-                if setup_dialog.get_visible():
-                    break
                 await asyncio.sleep(5)
                 continue
 
             login_requested = False
 
             break
-
-        setup_dialog.destroy()
 
         asyncio.ensure_future(self.run_steamguard())
         asyncio.ensure_future(self.run_confirmations())

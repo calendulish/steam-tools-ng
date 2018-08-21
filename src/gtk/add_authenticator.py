@@ -75,15 +75,10 @@ class AddAuthenticator(Gtk.Dialog):
 
     def do_login(self) -> None:
         self.code.hide()
-
-        login_dialog = login.LogInDialog(self.parent_window, self.session, True)
-        login_dialog.show()
         self.hide()
+        utils.async_wait_dialog(login.LogInDialog, self.login_dialog_callback, self.parent_window, self.session, True)
 
-        # noinspection PyTypeChecker
-        asyncio.ensure_future(self.wait_login_data(login_dialog))
-
-    async def wait_login_data(self, login_dialog: Gtk.Dialog) -> None:
+    async def login_dialog_callback(self, login_dialog: Gtk.Dialog) -> None:
         while not login_dialog.login_data:
             if login_dialog.get_realized():
                 await asyncio.sleep(1)
