@@ -230,7 +230,13 @@ class SettingsDialog(Gtk.Dialog):
         utils.async_wait_dialog(adb.AdbDialog, self.adb_dialog_callback, self)
 
     def on_log_in_clicked(self, button: Gtk.Button) -> None:
-        utils.async_wait_dialog(login.LogInDialog, self.login_dialog_callback, self, session=self.session)
+        utils.async_wait_dialog(
+            login.LogInDialog,
+            self.login_dialog_callback,
+            self,
+            self.session,
+            self.webapi_session,
+        )
 
     def update_language(self, combo: Gtk.ComboBoxText) -> None:
         language = config.ConfigStr(list(translations)[combo.get_active()])

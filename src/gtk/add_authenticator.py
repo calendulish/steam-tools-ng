@@ -76,7 +76,15 @@ class AddAuthenticator(Gtk.Dialog):
     def do_login(self) -> None:
         self.code.hide()
         self.hide()
-        utils.async_wait_dialog(login.LogInDialog, self.login_dialog_callback, self.parent_window, self.session, True)
+
+        utils.async_wait_dialog(
+            login.LogInDialog,
+            self.login_dialog_callback,
+            self.parent_window,
+            self.session,
+            self.webapi_session,
+            True,
+        )
 
     async def login_dialog_callback(self, login_dialog: Gtk.Dialog) -> None:
         while not login_dialog.login_data:

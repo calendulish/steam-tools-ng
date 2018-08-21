@@ -119,6 +119,7 @@ class Application(Gtk.Application):
                         self.login_dialog_callback,
                         self.window,
                         self.session,
+                        self.webapi_session,
                         mobile_login,
                         True
                     )

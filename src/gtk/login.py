@@ -21,7 +21,7 @@ from typing import Any, Dict, Optional
 
 import aiohttp
 from gi.repository import Gdk, Gtk
-from stlib import webapi
+from stlib import webapi, authenticator
 
 from . import utils
 from .. import config, i18n
@@ -36,11 +36,13 @@ class LogInDialog(Gtk.Dialog):
             self,
             parent_window: Gtk.Widget,
             session: aiohttp.ClientSession,
+            webapi_session: webapi.SteamWebAPI,
             mobile_login: bool = False,
             relogin: bool = False,
     ) -> None:
         super().__init__(use_header_bar=True)
         self.session = session
+        self.webapi_session = webapi_session
         self.mobile_login = mobile_login
         self.relogin = relogin
         self.login_data: Dict[str, Any] = {}
@@ -129,12 +131,19 @@ class LogInDialog(Gtk.Dialog):
             password: str,
             mail_code: str = '',
             authenticator_code: str = '',
+            shared_secret: Optional[config.ConfigStr] = None,
     ) -> None:
         if not username or not password:
             self.status.error(_("Unable to log-in!\nYour username/password is blank."))
             return None
 
         login = webapi.Login(self.session, username, password)
+
+        if shared_secret:
+            server_time = await self.webapi_session.get_server_time()
+            authenticator_code = authenticator.get_code(server_time, shared_secret).code
+        else:
+            log.warning("No shared secret found. Trying to log-in without two-factor authentication.")
 
         try:
             login_data = await login.do_login(
@@ -178,7 +187,7 @@ class LogInDialog(Gtk.Dialog):
                 ))
                 self.header_bar.set_show_close_button(True)
             else:
-                self.log_in_button.clicked()
+                self.status.error(_("Unable to log-in!\nThe authenticator code is invalid!\n"))
 
             return
         except webapi.LoginBlockedError:

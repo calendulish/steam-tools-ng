@@ -41,6 +41,7 @@ class SetupDialog(Gtk.Dialog):
     ) -> None:
         super().__init__(use_header_bar=True)
         self.session = session
+        self.webapi_session = webapi_session
         self.login_data = None
 
         self.header_bar = self.get_header_bar()
@@ -111,7 +112,7 @@ class SetupDialog(Gtk.Dialog):
                 self.add_authenticator_callback,
                 self.parent_window,
                 self.session,
-                self.webapi_session
+                self.webapi_session,
             )
         else:
             self.insert_adb_path()
@@ -208,7 +209,13 @@ class SetupDialog(Gtk.Dialog):
 
         config.new(*[config.ConfigType("login", key, value) for key, value in adb_dialog.adb_data.items()])
 
-        utils.async_wait_dialog(login.LogInDialog, self.login_dialog_callback, self.parent_window, self.session)
+        utils.async_wait_dialog(
+            login.LogInDialog,
+            self.login_dialog_callback,
+            self.parent_window,
+            self.session,
+            self.webapi_session,
+        )
 
     async def login_dialog_callback(self, login_dialog: Gtk.Dialog) -> None:
         while not login_dialog.login_data:
