@@ -144,8 +144,7 @@ class Main(Gtk.ApplicationWindow):
             steamid = config.config_parser.getint('login', 'steamid', fallback=0)
             nickname = await self.webapi_session.get_nickname(steamid)
             cookies = config.login_cookies()
-            steamtrades_plugin = plugins.get_plugin("steamtrades")
-            steamtrades = steamtrades_plugin.Main(self.session, api_url='https://lara.click/api')
+            steamtrades = plugins.get_plugin("steamtrades", self.session, api_url='https://lara.click/api')
 
             if await self.webapi_session.is_logged_in(nickname):
                 steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_green.png'))

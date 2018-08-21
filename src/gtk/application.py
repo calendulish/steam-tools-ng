@@ -224,8 +224,7 @@ class Application(Gtk.Application):
             await asyncio.sleep(15)
 
     async def run_steamtrades(self) -> None:
-        steamtrades_plugin = plugins.get_plugin("steamtrades")
-        steamtrades = steamtrades_plugin.Main(self.session, api_url='https://lara.click/api')
+        steamtrades = plugins.get_plugin("steamtrades", self.session, api_url='https://lara.click/api')
 
         assert isinstance(self.window, Gtk.Window), "No window"
 

@@ -42,8 +42,7 @@ async def on_get_login_data(
         token: Optional[config.ConfigStr] = None,
         token_secure: Optional[config.ConfigStr] = None,
 ) -> Dict[str, str]:
-    steamtrades_plugin = plugins.get_plugin('steamtrades')
-    steamtrades = steamtrades_plugin.Main(session, api_url='https://lara.click/api')
+    steamtrades = plugins.get_plugin('steamtrades', session, api_url='https://lara.click/api')
 
     while True:
         if not steamid or not token or not token_secure:
