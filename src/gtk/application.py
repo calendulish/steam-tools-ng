@@ -322,15 +322,15 @@ class Application(Gtk.Application):
                         log.critical(f"Unable to bump {trade_info.id}")
                         await asyncio.sleep(5)
                         continue
-                except steamtrades_plugin.NoTradesError as exception:
+                except plugins.steamtrades.NoTradesError as exception:
                     log.error(exception)
                     await asyncio.sleep(15)
                     continue
-                except steamtrades_plugin.NotReadyError as exception:
+                except plugins.steamtrades.NotReadyError as exception:
                     wait_min = exception.time_left * 60
                     wait_max = wait_min + 400
                     bumped = True
-                except steamtrades_plugin.ClosedError as exception:
+                except plugins.steamtrades.ClosedError as exception:
                     self.steamtrades_status = {
                         'running': False,
                         'message': str(exception),

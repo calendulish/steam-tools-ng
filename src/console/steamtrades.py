@@ -122,8 +122,7 @@ async def run(
 
     login_data = await on_get_login_data(session, authenticator_code.code)
     session.cookie_jar.update_cookies(login_data)
-    steamtrades_plugin = plugins.get_plugin('steamtrades')
-    steamtrades = steamtrades_plugin.Main(session, api_url='https://lara.click/api')
+    steamtrades = plugins.get_plugin('steamtrades', session, api_url='https://lara.click/api')
 
     try:
         await steamtrades.do_login()
@@ -144,7 +143,7 @@ async def run(
 
             try:
                 bump_result = await steamtrades.bump(trade_info)
-            except steamtrades_plugin.TradeNotReadyError as exception:
+            except plugins.steamtrades.TradeNotReadyError as exception:
                 log.warning(
                     "%s (%s) Already bumped. Waiting more %d minutes",
                     trade_info.id,
@@ -153,7 +152,7 @@ async def run(
                 )
                 wait_min = exception.time_left * 60
                 wait_max = wait_min + 400
-            except steamtrades_plugin.TradeClosedError:
+            except plugins.steamtrades.TradeClosedError:
                 log.error("%s (%s) is closed. Ignoring...", trade_info.id, trade_info.title)
                 continue
             else:
