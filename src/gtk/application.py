@@ -25,7 +25,7 @@ import aiohttp
 from gi.repository import Gio, Gtk
 from stlib import authenticator, client, plugins, webapi
 
-from . import about, login, settings, setup, window
+from . import about, login, settings, setup, window, utils
 from .. import config, i18n
 
 _ = i18n.get_translation
@@ -92,6 +92,7 @@ class Application(Gtk.Application):
             token_secure = config.config_parser.get("login", "token_secure", fallback='')
             steamid = config.config_parser.getint("login", "steamid", fallback=0)
             nickname = config.config_parser.get("login", "nickname", fallback='')
+            mobile_login = True if config.config_parser.get("login", "oauth_token") else False
 
             if not token or not token_secure or not steamid:
                 if not setup_requested:
@@ -113,8 +114,15 @@ class Application(Gtk.Application):
 
             if not await self.webapi_session.is_logged_in(nickname):
                 if not login_requested:
-                    login_dialog = login.LogInDialog(self.window, self.session)
-                    login_dialog.show()
+                    utils.async_wait_dialog(
+                        login.LogInDialog,
+                        self.login_dialog_callback,
+                        self.window,
+                        self.session,
+                        mobile_login,
+                        True
+                    )
+
                     login_requested = True
 
                 await asyncio.sleep(5)
@@ -354,3 +362,14 @@ class Application(Gtk.Application):
     def on_about_activate(self, action: Any, data: Any) -> None:
         dialog = about.AboutDialog(self.window)
         dialog.show()
+
+    async def login_dialog_callback(self, dialog: Gtk.Dialog) -> None:
+        while not dialog.login_data:
+            await asyncio.sleep(5)
+
+        # FIXME: We can't known useful values without login_section
+        settings_dialog = settings.SettingsDialog(self.window, self.session)
+        settings.load_settings(settings_dialog.login_section, Gtk.Entry, data=dialog.login_data, save=True)
+
+        dialog.destroy()
+        settings_dialog.destroy()

@@ -32,10 +32,17 @@ _ = i18n.get_translation
 
 # noinspection PyUnusedLocal
 class LogInDialog(Gtk.Dialog):
-    def __init__(self, parent_window: Gtk.Widget, session: aiohttp.ClientSession, mobile_login: bool = False) -> None:
+    def __init__(
+            self,
+            parent_window: Gtk.Widget,
+            session: aiohttp.ClientSession,
+            mobile_login: bool = False,
+            relogin: bool = False,
+    ) -> None:
         super().__init__(use_header_bar=True)
         self.session = session
         self.mobile_login = mobile_login
+        self.relogin = relogin
         self.login_data: Dict[str, Any] = {}
 
         self.header_bar = self.get_header_bar()
@@ -158,7 +165,7 @@ class LogInDialog(Gtk.Dialog):
             self.header_bar.set_show_close_button(True)
             return
         except webapi.TwoFactorCodeError:
-            if self.mobile_login:
+            if self.mobile_login and not self.relogin:
                 self.status.error(_(
                     "Unable to log-in!\n"
                     "You already have a Steam Authenticator active on current account\n\n"
@@ -174,7 +181,16 @@ class LogInDialog(Gtk.Dialog):
                 self.log_in_button.clicked()
 
             return
-        except webapi.LoginError:
+        except webapi.LoginBlockedError:
+            self.status.error(_(
+                "Your network is blocked!\n"
+                "It'll take some time until unblocked. Please, try again later\n"
+            ))
+            self.header_bar.set_show_close_button(True)
+            return
+        except webapi.LoginError as exception:
+            log.debug("Login error: %s", exception)
+
             self.status.error(_(
                 "Unable to log-in!\n"
                 "Please, check your username/password and try again.\n"
