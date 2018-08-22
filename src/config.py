@@ -76,10 +76,11 @@ class Check(object):
 
     def __call__(self, function_: Callable[..., Any]) -> Any:
         config_parser.read(config_file)
-        new_parameters = {}
         signature = inspect.signature(function_)
 
         def wrapped_function(*args: Any, **kwargs: Any) -> Any:
+            new_parameters = {}
+
             for index, option in enumerate(signature.parameters.values()):
                 if len(args) >= index + 1:
                     log.debug(_("A positional argument already exists for %s. Ignoring..."), option.name)
