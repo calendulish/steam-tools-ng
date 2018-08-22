@@ -81,11 +81,11 @@ class Check(object):
 
         def wrapped_function(*args: Any, **kwargs: Any) -> Any:
             for index, option in enumerate(signature.parameters.values()):
-                log.debug(_('Loading %s:%s from config file'), self.section, option.name)
-
                 if len(args) >= index + 1:
                     log.debug(_("A positional argument already exists for %s. Ignoring..."), option.name)
                     continue
+
+                log.debug(_('Loading %s:%s from config file'), self.section, option.name)
 
                 # noinspection PyUnusedLocal
                 value: Union[ConfigStr, ConfigInt, ConfigBool, ConfigFloat]
