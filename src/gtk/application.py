@@ -92,7 +92,7 @@ class Application(Gtk.Application):
             token_secure = config.config_parser.get("login", "token_secure", fallback='')
             steamid = config.config_parser.getint("login", "steamid", fallback=0)
             nickname = config.config_parser.get("login", "nickname", fallback='')
-            mobile_login = True if config.config_parser.get("login", "oauth_token") else False
+            mobile_login = True if config.config_parser.get("login", "oauth_token", fallback='') else False
 
             if not token or not token_secure or not steamid:
                 if not setup_requested:

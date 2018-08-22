@@ -149,9 +149,13 @@ class Main(Gtk.ApplicationWindow):
             if not nickname:
                 try:
                     nickname = await self.webapi_session.get_nickname(steamid)
-                    config.new(config.ConfigType("login", "nickname", config.ConfigStr(nickname)))
                 except ValueError:
-                    raise NotImplementedError
+                    # invalid steamid or setup process is running
+                    steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_yellow.png'))
+                    steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_yellow.png'))
+                    return
+
+                config.new(config.ConfigType("login", "nickname", config.ConfigStr(nickname)))
 
             if await self.webapi_session.is_logged_in(nickname):
                 steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_green.png'))
