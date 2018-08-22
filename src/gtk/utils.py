@@ -248,10 +248,24 @@ def remove_letters(text: str) -> str:
     return ''.join(new_text)
 
 
-def async_wait_dialog(dialog: Gtk.Dialog, async_callback: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
-    dialog_instance = dialog(*args, **kwargs)
+def async_wait_dialog(dialog: Callable[..., Any], async_callback: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+    future = asyncio.Future()
+    dialog_instance = dialog(future, *args, **kwargs)
     dialog_instance.show()
 
-    asyncio.ensure_future(async_callback(dialog_instance))
+    asyncio.ensure_future(__async_wait(future, dialog_instance, async_callback))
 
     return dialog_instance
+
+
+async def __async_wait(future: asyncio.Future, dialog_instance: Gtk.Dialog, async_callback: Callable[..., Any]) -> None:
+    while not future.done():
+        if dialog_instance.get_realized():
+            await asyncio.sleep(1)
+        else:
+            await async_callback(dialog_instance, None)
+            return
+
+    dialog_instance.destroy()
+
+    await async_callback(dialog_instance, future.result())
