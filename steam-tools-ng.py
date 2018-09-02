@@ -139,13 +139,9 @@ if __name__ == "__main__":
         task = asyncio.ensure_future(module.run(http_session, *module_options))  # type: ignore
         task.add_done_callback(lambda future: event_loop.stop())
     else:
-        if os.environ.get('GTK_DEBUG', False):
-            from src.gtk import application
-        else:
-            # noinspection PyUnresolvedReferences
-            from steam_tools_ng.gtk import application
-
         from gi.repository import Gtk
+
+        application = importlib.import_module('.application', f'{module_folder}.gtk')
 
         if sys.platform.startswith("linux") and not os.getenv('DISPLAY'):
             log.critical('The DISPLAY is not set!')
