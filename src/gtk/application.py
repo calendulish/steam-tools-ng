@@ -16,16 +16,16 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
-import binascii
 import logging
 import random
 from typing import Any, List, Optional
 
 import aiohttp
+import binascii
 from gi.repository import Gio, Gtk
 from stlib import authenticator, client, plugins, webapi
 
-from . import about, login, settings, setup, window, utils
+from . import about, settings, setup, window
 from .. import config, i18n
 
 _ = i18n.get_translation
@@ -97,7 +97,8 @@ class Application(Gtk.Application):
             if not token or not token_secure or not steamid:
                 if not setup_requested:
                     setup_dialog = setup.SetupDialog(self.window, self.session, self.webapi_session)
-                    setup_dialog.select_login_mode()
+                    setup_dialog.login_mode()
+                    setup_dialog.show()
                     setup_requested = True
 
                 await asyncio.sleep(5)
@@ -112,18 +113,14 @@ class Application(Gtk.Application):
                 except ValueError:
                     raise NotImplementedError
 
+            self.session.cookie_jar.update_cookies(config.login_cookies())
+
             if not await self.webapi_session.is_logged_in(nickname):
                 if not login_requested:
-                    utils.async_wait_dialog(
-                        login.LogInDialog,
-                        self.login_dialog_callback,
-                        self.window,
-                        self.session,
-                        self.webapi_session,
-                        mobile_login,
-                        True
-                    )
-
+                    setup_dialog = setup.SetupDialog(self.window, self.session, self.webapi_session)
+                    setup_dialog.prepare_login(lambda dialog: dialog.destroy(), mobile_login)
+                    setup_dialog.previous_button.hide()
+                    setup_dialog.show()
                     login_requested = True
 
                 await asyncio.sleep(5)
@@ -363,14 +360,3 @@ class Application(Gtk.Application):
     def on_about_activate(self, action: Any, data: Any) -> None:
         dialog = about.AboutDialog(self.window)
         dialog.show()
-
-    async def login_dialog_callback(self, dialog: Gtk.Dialog) -> None:
-        while not dialog.login_data:
-            await asyncio.sleep(5)
-
-        # FIXME: We can't known useful values without login_section
-        settings_dialog = settings.SettingsDialog(self.window, self.session)
-        settings.load_settings(settings_dialog.login_section, Gtk.Entry, data=dialog.login_data, save=True)
-
-        dialog.destroy()
-        settings_dialog.destroy()

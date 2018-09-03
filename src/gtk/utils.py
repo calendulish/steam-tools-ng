@@ -39,6 +39,29 @@ class Item(NamedTuple):
     children: Gtk.Widget
 
 
+class VariableButton(Gtk.Button):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        super().connect('clicked', lambda button: self.__callback())
+        self.user_callback = None
+        self.user_args = None
+        self.user_kwargs = None
+
+    def __callback(self) -> None:
+        if not self.user_callback:
+            return
+
+        self.user_callback(*self.user_args, **self.user_kwargs)
+
+    def connect(self, signal: str, callback: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
+        if signal != "clicked":
+            raise NotImplementedError
+
+        self.user_callback = callback
+        self.user_args = args
+        self.user_kwargs = kwargs
+
+
 class SimpleTextTree(Gtk.ScrolledWindow):
     def __init__(
             self,
@@ -227,15 +250,6 @@ def safe_confirmation_get(confirmation_: webapi.Confirmation, attribute: str) ->
         result = _("Various")
 
     return result, value
-
-
-def safe_callback(widget: Gtk.Widget, callback: Callable[..., Any], *data: List[Any]) -> None:
-    widget.destroy()
-
-    if asyncio.iscoroutinefunction(callback):
-        asyncio.ensure_future(callback(*data))
-    else:
-        callback(*data)
 
 
 def remove_letters(text: str) -> str:

@@ -25,7 +25,7 @@ from typing import Any, Dict, Optional
 import aiohttp
 from gi.repository import Gtk, Pango
 
-from . import adb, login, utils
+from . import utils
 from .. import config, i18n
 
 log = logging.getLogger(__name__)
@@ -244,7 +244,6 @@ class SettingsDialog(Gtk.Dialog):
         Gtk.Container.foreach(self, refresh_widget_text)
         Gtk.Container.foreach(self.parent_window, refresh_widget_text)
 
-
     async def adb_dialog_callback(self, adb_dialog: Gtk.Dialog) -> None:
         while not adb_dialog.adb_data:
             await asyncio.sleep(5)
@@ -252,7 +251,6 @@ class SettingsDialog(Gtk.Dialog):
         load_settings(self.login_section, Gtk.Entry, data=adb_dialog.adb_data, save=True)
 
         adb_dialog.destroy()
-
 
     async def login_dialog_callback(self, login_dialog: Gtk.Dialog) -> None:
         while not login_dialog.login_data:

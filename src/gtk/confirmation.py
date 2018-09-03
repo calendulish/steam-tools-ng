@@ -34,6 +34,7 @@ _ = i18n.get_translation
 class FinalizeDialog(Gtk.Dialog):
     def __init__(
             self,
+            future: asyncio.Future,
             parent_window: Gtk.Window,
             webapi_session: webapi.SteamWebAPI,
             action: str,
@@ -41,8 +42,8 @@ class FinalizeDialog(Gtk.Dialog):
             iter_: Union[Gtk.TreeIter, bool, None] = False,
     ) -> None:
         super().__init__(use_header_bar=True)
+        self.future = future
         self.webapi_session = webapi_session
-        self.confirmation_data = None
 
         if action == "allow":
             self.action = _("accept")
