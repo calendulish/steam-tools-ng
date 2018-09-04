@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Encoding=UTF-8
+Name=Steam Tools NG
+Comment=Useful tools for Steam
+Icon=/usr/share/steam-tools-ng/icons/steam-tools-ng.png
+Exec=steam-tools-ng
+Terminal=false
+Categories=Game;Utility
