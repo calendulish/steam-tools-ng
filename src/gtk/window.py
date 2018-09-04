@@ -16,8 +16,6 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
-import contextlib
-import itertools
 import logging
 import os
 
@@ -71,23 +69,23 @@ class Main(Gtk.ApplicationWindow):
         status_grid = Gtk.Grid()
         main_grid.attach(status_grid, 0, 0, 4, 1)
 
-        steamtrades_status = utils.Status(5, "SteamTrades (bump)")
-        status_grid.attach(steamtrades_status, 0, 0, 1, 1)
+        self.steamtrades_status = utils.Status(5, "SteamTrades (bump)")
+        status_grid.attach(self.steamtrades_status, 0, 0, 1, 1)
 
-        steamguard_status = utils.Status(4, _('Steam Guard Code'))
-        status_grid.attach(steamguard_status, 1, 0, 1, 1)
+        self.steamguard_status = utils.Status(4, _('Steam Guard Code'))
+        status_grid.attach(self.steamguard_status, 1, 0, 1, 1)
 
         info_label = Gtk.Label()
         info_label.set_text(_("If you have confirmations, they will be shown here. (15 seconds delay)"))
         main_grid.attach(info_label, 0, 2, 4, 1)
 
-        warning_label = Gtk.Label()
-        main_grid.attach(warning_label, 0, 3, 4, 1)
+        self.warning_label = Gtk.Label()
+        main_grid.attach(self.warning_label, 0, 3, 4, 1)
 
-        text_tree = utils.SimpleTextTree((_('mode'), _('id'), _('key'), _('give'), _('to'), _('receive')), False)
-        main_grid.attach(text_tree, 0, 4, 4, 1)
+        self.text_tree = utils.SimpleTextTree((_('mode'), _('id'), _('key'), _('give'), _('to'), _('receive')), False)
+        main_grid.attach(self.text_tree, 0, 4, 4, 1)
 
-        for index, column in enumerate(text_tree._view.get_columns()):
+        for index, column in enumerate(self.text_tree._view.get_columns()):
             if index == 0 or index == 1 or index == 2:
                 column.set_visible(False)
 
@@ -96,10 +94,10 @@ class Main(Gtk.ApplicationWindow):
             else:
                 column.set_fixed_width(220)
 
-        text_tree._view.set_has_tooltip(True)
-        text_tree._view.connect('query-tooltip', self.on_query_confirmations_tooltip)
+        self.text_tree._view.set_has_tooltip(True)
+        self.text_tree._view.connect('query-tooltip', self.on_query_confirmations_tooltip)
 
-        tree_selection = text_tree._view.get_selection()
+        tree_selection = self.text_tree._view.get_selection()
         tree_selection.connect("changed", self.on_tree_selection_changed)
 
         accept_button = Gtk.Button(_('Accept selected'))
@@ -111,39 +109,33 @@ class Main(Gtk.ApplicationWindow):
         main_grid.attach(cancel_button, 1, 5, 1, 1)
 
         accept_all_button = Gtk.Button(_('Accept all'))
-        accept_all_button.connect('clicked', self.on_accept_all_button_clicked, text_tree._store)
+        accept_all_button.connect('clicked', self.on_accept_all_button_clicked)
         main_grid.attach(accept_all_button, 2, 5, 1, 1)
 
         cancel_all_button = Gtk.Button(_('Cancel all'))
-        cancel_all_button.connect('clicked', self.on_cancel_all_button_clicked, text_tree._store)
+        cancel_all_button.connect('clicked', self.on_cancel_all_button_clicked)
         main_grid.attach(cancel_all_button, 3, 5, 1, 1)
 
         icon_bar = Gtk.Grid()
         icon_bar.set_column_spacing(5)
         main_grid.attach(icon_bar, 0, 6, 4, 1)
 
-        steam_icon = Gtk.Image.new_from_file(os.path.join(config.icons_dir, 'steam_yellow.png'))
-        steam_icon.set_hexpand(True)
-        steam_icon.set_halign(Gtk.Align.END)
-        icon_bar.add(steam_icon)
+        self.steam_icon = Gtk.Image.new_from_file(os.path.join(config.icons_dir, 'steam_yellow.png'))
+        self.steam_icon.set_hexpand(True)
+        self.steam_icon.set_halign(Gtk.Align.END)
+        icon_bar.add(self.steam_icon)
 
-        steamtrades_icon = Gtk.Image.new_from_file(os.path.join(config.icons_dir, 'steamtrades_yellow.png'))
-        icon_bar.attach_next_to(steamtrades_icon, steam_icon, Gtk.PositionType.RIGHT, 1, 1)
+        self.steamtrades_icon = Gtk.Image.new_from_file(os.path.join(config.icons_dir, 'steamtrades_yellow.png'))
+        icon_bar.attach_next_to(self.steamtrades_icon, self.steam_icon, Gtk.PositionType.RIGHT, 1, 1)
 
         icon_bar.show_all()
         main_grid.show_all()
         self.show_all()
 
-        asyncio.ensure_future(self.check_login_status(steam_icon, steamtrades_icon))
-        asyncio.ensure_future(self.check_steamguard_status(steamguard_status))
-        asyncio.ensure_future(self.check_confirmations_status(text_tree, warning_label))
+        if not plugins.has_plugin('steamtrades'):
+            self.steamtrades_status.hide()
 
-        if plugins.has_plugin('steamtrades'):
-            asyncio.ensure_future(self.check_steamtrades_status(steamtrades_status))
-        else:
-            steamtrades_status.hide()
-
-    async def check_login_status(self, steam_icon, steamtrades_icon) -> None:
+    async def update_login_icons(self) -> None:
         while self.get_realized():
             steamid = config.config_parser.getint('login', 'steamid', fallback=0)
             nickname = config.config_parser.get('login', 'nickname', fallback='')
@@ -157,105 +149,27 @@ class Main(Gtk.ApplicationWindow):
                     nickname = await self.webapi_session.get_nickname(steamid)
                 except ValueError:
                     # invalid steamid or setup process is running
-                    steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_yellow.png'))
-                    steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_yellow.png'))
+                    self.steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_yellow.png'))
+                    self.steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_yellow.png'))
                     return
 
                 config.new(config.ConfigType("login", "nickname", config.ConfigStr(nickname)))
 
             if await self.webapi_session.is_logged_in(nickname):
-                steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_green.png'))
+                self.steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_green.png'))
             else:
-                steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_red.png'))
+                self.steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_red.png'))
 
             if cookies:
                 self.session.cookie_jar.update_cookies(cookies)
 
                 try:
                     await steamtrades.do_login()
-                    steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_green.png'))
+                    self.steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_green.png'))
                 except (aiohttp.ClientConnectionError, webapi.LoginError, NameError):
-                    steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_red.png'))
+                    self.steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_red.png'))
 
             await asyncio.sleep(10)
-
-    async def check_confirmations_status(
-            self,
-            text_tree: utils.SimpleTextTree,
-            warning_label: Gtk.Label,
-    ) -> None:
-        while self.get_realized():
-            status = self.application.confirmations_status
-            tree_store = text_tree._store
-            warning_label.hide()
-
-            if not status['running']:
-                warning_label.set_markup(utils.markup(status['message'], color='white', background='red'))
-                warning_label.show()
-            elif not status['confirmations']:
-                tree_store.clear()
-            elif not status['update']:
-                log.debug(_("Skipping because `update' is set to False"))
-            else:
-                tree_store.clear()
-
-                for confirmation_index, confirmation_ in enumerate(status['confirmations']):
-                    safe_give, give = utils.safe_confirmation_get(confirmation_, 'give')
-                    safe_receive, receive = utils.safe_confirmation_get(confirmation_, 'receive')
-
-                    iter_ = tree_store.append(None, [
-                        confirmation_.mode,
-                        str(confirmation_.id),
-                        str(confirmation_.key),
-                        safe_give,
-                        confirmation_.to,
-                        safe_receive,
-                    ])
-
-                    if len(give) > 1 or len(receive) > 1:
-                        for item_index, item in enumerate(itertools.zip_longest(give, receive)):
-                            tree_store.append(iter_, ['', '', '', item[0], '', item[1]])
-
-            await asyncio.sleep(15)
-
-    async def check_steamtrades_status(
-            self,
-            status: utils.Status,
-    ) -> None:
-        while self.get_realized():
-            steamtrades_status = self.application.steamtrades_status
-
-            if steamtrades_status['trade_id']:
-                status.set_current(steamtrades_status['trade_id'])
-            else:
-                status.set_current('_ _ _ _ _')
-
-            if steamtrades_status['running']:
-                status.set_info(steamtrades_status['message'])
-                try:
-                    status.set_level(steamtrades_status['progress'], steamtrades_status['maximum'])
-                except KeyError:
-                    status.set_level(0, 0)
-            else:
-                status.set_error(steamtrades_status['message'])
-
-            await asyncio.sleep(0.5)
-
-    async def check_steamguard_status(
-            self,
-            status: utils.Status,
-    ) -> None:
-        while self.get_realized():
-            steamguard_status = self.application.steamguard_status
-
-            if steamguard_status['running']:
-                status.set_current(steamguard_status['code'])
-                status.set_info(_("Running"))
-                status.set_level(steamguard_status['progress'], steamguard_status['maximum'])
-            else:
-                status.set_error(steamguard_status['message'])
-
-            await asyncio.sleep(0.125)
 
     @staticmethod
     def on_query_confirmations_tooltip(
@@ -288,12 +202,12 @@ class Main(Gtk.ApplicationWindow):
         finalize_dialog = confirmation.FinalizeDialog(self, self.webapi_session, "cancel", *selection.get_selected())
         finalize_dialog.show()
 
-    def on_accept_all_button_clicked(self, button: Gtk.Button, model: Gtk.TreeModel) -> None:
-        finalize_dialog = confirmation.FinalizeDialog(self, self.webapi_session, "allow", model)
+    def on_accept_all_button_clicked(self, button: Gtk.Button) -> None:
+        finalize_dialog = confirmation.FinalizeDialog(self, self.webapi_session, "allow", self.text_tree._store)
         finalize_dialog.show()
 
-    def on_cancel_all_button_clicked(self, button: Gtk.Button, model: Gtk.TreeModel) -> None:
-        finalize_dialog = confirmation.FinalizeDialog(self, self.webapi_session, "cancel", model)
+    def on_cancel_all_button_clicked(self, button: Gtk.Button) -> None:
+        finalize_dialog = confirmation.FinalizeDialog(self, self.webapi_session, "cancel", self.text_tree._store)
         finalize_dialog.show()
 
     @staticmethod

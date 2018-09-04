@@ -16,6 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
+import itertools
 import logging
 import random
 from typing import Any, List, Optional
@@ -25,7 +26,7 @@ import binascii
 from gi.repository import Gio, Gtk
 from stlib import authenticator, client, plugins, webapi
 
-from . import about, settings, setup, window
+from . import about, settings, setup, window, utils
 from .. import config, i18n
 
 _ = i18n.get_translation
@@ -45,10 +46,6 @@ class Application(Gtk.Application):
         self.gtk_settings = Gtk.Settings.get_default()
 
         self.api_login: Optional[webapi.Login] = None
-
-        self.steamguard_status = {'running': False, 'message': "SteamGuard is not running"}
-        self.confirmations_status = {'running': False, 'message': "Confirmations is not running"}
-        self.steamtrades_status = {'running': False, 'message': "Steamtrades is not running", 'trade_id': ''}
 
     def do_startup(self) -> None:
         Gtk.Application.do_startup(self)
@@ -130,6 +127,7 @@ class Application(Gtk.Application):
 
             break
 
+        asyncio.ensure_future(self.window.update_login_icons())
         asyncio.ensure_future(self.run_steamguard())
         asyncio.ensure_future(self.run_confirmations())
         asyncio.ensure_future(self.run_steamtrades())
@@ -149,28 +147,29 @@ class Application(Gtk.Application):
 
                 auth_code = authenticator.get_code(server_time, shared_secret)
             except (TypeError, binascii.Error):
-                self.steamguard_status = {'running': False, 'message': _("The currently secret is invalid")}
+                self.window.steamguard_status.set_error(_("The currently secret is invalid"))
                 await asyncio.sleep(10)
             except ProcessLookupError:
-                self.steamguard_status = {'running': False, 'message': _("Steam Client is not running")}
+                self.window.steamguard_status.set_error(_("Steam Client is not running"))
                 await asyncio.sleep(10)
             else:
-                self.steamguard_status = {'running': False, 'message': _("Loading...")}
+                self.window.steamguard_status.set_error(_("Loading..."))
 
                 seconds = 30 - (server_time % 30)
 
                 for past_time in range(seconds * 9):
-                    self.steamguard_status = {
-                        'running': True,
-                        'maximum': seconds * 8,
-                        'progress': past_time,
-                        'code': auth_code.code,
-                    }
+                    self.window.steamguard_status.set_current(auth_code.code)
+                    self.window.steamguard_status.set_info(_("Running"))
+                    self.window.steamguard_status.set_level(past_time, seconds * 8)
 
                     await asyncio.sleep(0.125)
 
     async def run_confirmations(self) -> None:
         old_confirmations: List[webapi.Confirmation] = []
+
+        def warning(message: str) -> None:
+            self.window.warning_label.set_markup(utils.markup(message, color='white', background='red'))
+            self.window.warning_label.show()
 
         assert isinstance(self.window, Gtk.Window), "No window"
 
@@ -181,10 +180,7 @@ class Application(Gtk.Application):
             cookies = config.login_cookies()
 
             if not identity_secret:
-                self.confirmations_status = {
-                    'running': False,
-                    'message': _("Unable to get confirmations without a valid identity secret"),
-                }
+                warning(_("Unable to get confirmations without a valid identity secret"))
                 await asyncio.sleep(10)
                 continue
 
@@ -196,44 +192,66 @@ class Application(Gtk.Application):
             if cookies:
                 self.session.cookie_jar.update_cookies(cookies)
             else:
-                self.confirmations_status = {
-                    'running': False,
-                    'message': _("Unable to find a valid login data"),
-                }
+                warning(_("Unable to find a valid login data"))
                 await asyncio.sleep(5)
                 continue
 
             try:
                 confirmations = await self.webapi_session.get_confirmations(identity_secret, steamid, deviceid)
             except AttributeError as exception:
-                self.confirmations_status = {'running': False, 'message': _("Error when fetch confirmations")}
+                warning(_("Error when fetch confirmations"))
             except aiohttp.ClientConnectorError:
-                self.confirmations_status = {'running': False, 'message': _("No connection")}
+                warning(_("No connection"))
             except ProcessLookupError:
-                self.confirmations_status = {'running': False, 'message': _("Steam is not running")}
+                warning(_("Steam is not running"))
             except webapi.LoginError:
-                self.confirmations_status = {'running': False, 'message': _("User is not logged in")}
+                warning(_("User is not logged in"))
             else:
                 if old_confirmations != confirmations:
-                    self.confirmations_status = {'running': True, 'update': True, 'confirmations': confirmations}
+                    self.window.tree_store.clear()
+
+                    for confirmation_index, confirmation_ in enumerate(confirmations):
+                        safe_give, give = utils.safe_confirmation_get(confirmation_, 'give')
+                        safe_receive, receive = utils.safe_confirmation_get(confirmation_, 'receive')
+
+                        iter_ = self.window.tree_store.append(None, [
+                            confirmation_.mode,
+                            str(confirmation_.id),
+                            str(confirmation_.key),
+                            safe_give,
+                            confirmation_.to,
+                            safe_receive,
+                        ])
+
+                        if len(give) > 1 or len(receive) > 1:
+                            for item_index, item in enumerate(itertools.zip_longest(give, receive)):
+                                self.window.tree_store.append(iter_, ['', '', '', item[0], '', item[1]])
                 else:
-                    self.confirmations_status = {'running': True, 'update': False, 'confirmations': confirmations}
+                    log.debug(_("Skipping confirmations update because data doesn't seem to have changed"))
 
                 old_confirmations = confirmations
 
             await asyncio.sleep(15)
 
     async def run_steamtrades(self) -> None:
+        def error(message: str) -> None:
+            self.window.steamtrades_status.set_current('_ _ _ _ _')
+            self.window.steamtrades_status.set_error(message)
+
+        def info(message: str, tradeid: str = '_ _ _ _ _') -> None:
+            self.window.steamtrades_status.set_current(tradeid)
+            self.window.steamtrades_status.set_info(message)
+
         if plugins.has_plugin("steamtrades"):
             steamtrades = plugins.get_plugin("steamtrades", self.session, api_url='https://lara.click/api')
         else:
-            self.steamtrades_status = {'running': False, 'message': "Unable to find Steamtrades plugin", "trade_id": ''}
+            error(_("Unable to find Steamtrades plugin"))
             return
 
         assert isinstance(self.window, Gtk.Window), "No window"
 
         while self.window.get_realized():
-            self.steamtrades_status = {'running': True, 'message': "Loading...", 'trade_id': ''}
+            info(_("Loading"))
             trade_ids = config.config_parser.get("steamtrades", "trade_ids", fallback='')
 
             wait_min = config.config_parser.getint(
@@ -251,11 +269,7 @@ class Application(Gtk.Application):
             cookies = config.login_cookies()
 
             if not trade_ids:
-                self.steamtrades_status = {
-                    'running': False,
-                    'message': _("No trade ID found in config file"),
-                    'trade_id': '',
-                }
+                error(_("No trade ID found in config file"))
                 await asyncio.sleep(5)
                 continue
 
@@ -264,23 +278,15 @@ class Application(Gtk.Application):
                 try:
                     await steamtrades.do_login()
                 except aiohttp.ClientConnectionError:
-                    self.steamtrades_status = {'running': False, 'message': _("No connection"), 'trade_id': ''}
+                    error(_("No connection"))
                     await asyncio.sleep(15)
                     continue
                 except webapi.LoginError:
-                    self.steamtrades_status = {
-                        'running': False,
-                        'message': _("User is not logged in"),
-                        'trade_id': ''
-                    }
+                    error(_("User is not logged in"))
                     await asyncio.sleep(15)
                     continue
             else:
-                self.steamtrades_status = {
-                    'running': False,
-                    'message': "Unable to find a valid login data",
-                    'trade_id': '',
-                }
+                error(_("Unable to find a valid login data"))
                 await asyncio.sleep(5)
                 continue
 
@@ -291,37 +297,22 @@ class Application(Gtk.Application):
                 try:
                     trade_info = await steamtrades.get_trade_info(trade_id)
                 except (IndexError, aiohttp.ClientResponseError):
-                    self.steamtrades_status = {
-                        'running': False,
-                        'message': f"Unable to find id {trade_id}",
-                        'trade_id': trade_id,
-                    }
+                    error(_("Unable to find TradeID {}").format(trade_id))
                     await asyncio.sleep(5)
                     continue
                 except aiohttp.ClientConnectionError:
-                    self.steamtrades_status = {'running': False, 'message': _("No connection"), 'trade_id': ''}
+                    error(_("No connection"))
                     await asyncio.sleep(15)
                     continue
 
                 try:
                     if await steamtrades.bump(trade_info):
-                        self.steamtrades_status = {
-                            'running': True,
-                            'message': _("Waiting anti-ban timer"),
-                            'trade_id': ''
-                        }
-
+                        info(_("Waiting anti-ban timer"))
                         await asyncio.sleep(random.randint(3, 8))
-
-                        self.steamtrades_status = {
-                            'running': True,
-                            'message': 'Bumped!',
-                            'trade_id': trade_info.id,
-                        }
-
+                        info(_("Bumped!"), trade_info.id)
                         bumped = True
                     else:
-                        log.critical(f"Unable to bump {trade_info.id}")
+                        error(_("Unable to bump {}").format(trade_info.id))
                         await asyncio.sleep(5)
                         continue
                 except plugins.steamtrades.NoTradesError as exception:
@@ -333,11 +324,7 @@ class Application(Gtk.Application):
                     wait_max = wait_min + 400
                     bumped = True
                 except plugins.steamtrades.ClosedError as exception:
-                    self.steamtrades_status = {
-                        'running': False,
-                        'message': str(exception),
-                        'trade_id': exception.id,
-                    }
+                    self.error(str(exception))
                     await asyncio.sleep(5)
                     continue
 
@@ -348,13 +335,13 @@ class Application(Gtk.Application):
             wait_offset = random.randint(wait_min, wait_max)
             log.debug(_("Setting wait_offset from steamtrades to {}").format(wait_offset))
             for past_time in range(wait_offset):
-                self.steamtrades_status = {
-                    'running': True,
-                    'message': f"Waiting more {round(wait_offset / 60)} minutes",
-                    'trade_id': None,
-                    'maximum': wait_offset,
-                    'progress': past_time,
-                }
+                info(_("Waiting more {} minutes").format(round(wait_offset / 60)))
+
+                try:
+                    self.window.steamtrades_status.set_level(past_time, wait_offset)
+                except KeyError:
+                    self.window.steamtrades_status.set_level(0, 0)
+
                 await asyncio.sleep(1)
 
     def on_settings_activate(self, action: Any, data: Any) -> None:
