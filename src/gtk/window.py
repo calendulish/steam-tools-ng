@@ -227,6 +227,8 @@ class Main(Gtk.ApplicationWindow):
 
             if steamtrades_status['trade_id']:
                 status.set_current(steamtrades_status['trade_id'])
+            else:
+                status.set_current('_ _ _ _ _')
 
             if steamtrades_status['running']:
                 status.set_info(steamtrades_status['message'])
