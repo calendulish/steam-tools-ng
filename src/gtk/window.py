@@ -16,6 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
+import contextlib
 import itertools
 import logging
 import os
@@ -131,20 +132,25 @@ class Main(Gtk.ApplicationWindow):
 
         icon_bar.show_all()
         main_grid.show_all()
+        self.show_all()
 
         asyncio.ensure_future(self.check_login_status(steam_icon, steamtrades_icon))
         asyncio.ensure_future(self.check_steamguard_status(steamguard_status))
         asyncio.ensure_future(self.check_confirmations_status(text_tree, warning_label))
-        asyncio.ensure_future(self.check_steamtrades_status(steamtrades_status))
 
-        self.show_all()
+        if plugins.has_plugin('steamtrades'):
+            asyncio.ensure_future(self.check_steamtrades_status(steamtrades_status))
+        else:
+            steamtrades_status.hide()
 
     async def check_login_status(self, steam_icon, steamtrades_icon) -> None:
         while self.get_realized():
             steamid = config.config_parser.getint('login', 'steamid', fallback=0)
             nickname = config.config_parser.get('login', 'nickname', fallback='')
             cookies = config.login_cookies()
-            steamtrades = plugins.get_plugin("steamtrades", self.session, api_url='https://lara.click/api')
+
+            if plugins.has_plugin('steamtrades'):
+                steamtrades = plugins.get_plugin("steamtrades", self.session, api_url='https://lara.click/api')
 
             if not nickname:
                 try:
@@ -168,7 +174,7 @@ class Main(Gtk.ApplicationWindow):
                 try:
                     await steamtrades.do_login()
                     steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_green.png'))
-                except (aiohttp.ClientConnectionError, webapi.LoginError):
+                except (aiohttp.ClientConnectionError, webapi.LoginError, NameError):
                     steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_red.png'))
 
             await asyncio.sleep(10)
