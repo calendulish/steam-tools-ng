@@ -16,7 +16,6 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-import asyncio
 import configparser
 import logging
 from collections import OrderedDict
@@ -24,8 +23,9 @@ from typing import Any, Dict, Optional
 
 import aiohttp
 from gi.repository import Gtk, Pango
+from stlib import webapi
 
-from . import utils
+from . import utils, setup
 from .. import config, i18n
 
 log = logging.getLogger(__name__)
@@ -52,10 +52,16 @@ translations = OrderedDict([
 
 # noinspection PyUnusedLocal
 class SettingsDialog(Gtk.Dialog):
-    def __init__(self, parent_window: Gtk.Widget, session: aiohttp.ClientSession) -> None:
+    def __init__(
+            self,
+            parent_window: Gtk.Widget,
+            session: aiohttp.ClientSession,
+            webapi_session: webapi.SteamWebAPI,
+    ) -> None:
         super().__init__(use_header_bar=True)
         self.parent_window = parent_window
         self.session = session
+        self.webapi_session = webapi_session
 
         self.set_default_size(300, 150)
         self.set_title(_('Settings'))
@@ -125,17 +131,11 @@ class SettingsDialog(Gtk.Dialog):
 
         load_settings(self.login_section, Gtk.Entry)
 
-        log_in = Gtk.Button(_("Log-in"))
-        log_in.set_name("log_in_button")
-        log_in.connect('clicked', self.on_log_in_clicked)
-        self.login_section.grid.attach(log_in, 0, 8, 4, 1)
-        log_in.show()
-
-        adb_button = Gtk.Button(_("Get login data using ADB"))
-        adb_button.set_name("adb_button")
-        adb_button.connect('clicked', self.on_adb_clicked)
-        self.login_section.grid.attach(adb_button, 0, 9, 4, 1)
-        adb_button.show()
+        setup = Gtk.Button(_("Setup"))
+        setup.set_name("setup_button")
+        setup.connect('clicked', self.on_setup_clicked)
+        self.login_section.grid.attach(setup, 0, 8, 4, 1)
+        setup.show()
 
         return self.login_section.frame
 
@@ -145,7 +145,7 @@ class SettingsDialog(Gtk.Dialog):
             self.login_section.frame.set_label_align(0.017, 0.5)
         else:
             childrens = Gtk.Container.get_children(self.login_section.grid)
-            keep_list = ['adb_path', 'account_name', 'advanced_button', 'log_in_button', 'adb_button']
+            keep_list = ['adb_path', 'account_name', 'advanced_button', 'setup_button']
 
             for children in childrens:
                 if children.get_name() in keep_list:
@@ -226,39 +226,16 @@ class SettingsDialog(Gtk.Dialog):
         logger_section.frame.show_all()
         return logger_section.frame
 
-    def on_adb_clicked(self, button: Gtk.Button) -> None:
-        utils.async_wait_dialog(adb.AdbDialog, self.adb_dialog_callback, self)
-
-    def on_log_in_clicked(self, button: Gtk.Button) -> None:
-        utils.async_wait_dialog(
-            login.LogInDialog,
-            self.login_dialog_callback,
-            self,
-            self.session,
-            self.webapi_session,
-        )
+    def on_setup_clicked(self, button: Gtk.Button) -> None:
+        setup_dialog = setup.SetupDialog(self, self.session, self.webapi_session)
+        setup_dialog.login_mode()
+        setup_dialog.show()
 
     def update_language(self, combo: Gtk.ComboBoxText) -> None:
         language = config.ConfigStr(list(translations)[combo.get_active()])
         config.new(config.ConfigType('locale', 'language', language))
         Gtk.Container.foreach(self, refresh_widget_text)
         Gtk.Container.foreach(self.parent_window, refresh_widget_text)
-
-    async def adb_dialog_callback(self, adb_dialog: Gtk.Dialog) -> None:
-        while not adb_dialog.adb_data:
-            await asyncio.sleep(5)
-
-        load_settings(self.login_section, Gtk.Entry, data=adb_dialog.adb_data, save=True)
-
-        adb_dialog.destroy()
-
-    async def login_dialog_callback(self, login_dialog: Gtk.Dialog) -> None:
-        while not login_dialog.login_data:
-            await asyncio.sleep(5)
-
-        load_settings(self.login_section, Gtk.Entry, data=login_dialog.login_data, save=True)
-
-        login_dialog.destroy()
 
 
 def on_steamid_changed(entry: Gtk.Entry) -> None:

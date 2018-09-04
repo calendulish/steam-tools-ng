@@ -358,7 +358,7 @@ class Application(Gtk.Application):
                 await asyncio.sleep(1)
 
     def on_settings_activate(self, action: Any, data: Any) -> None:
-        settings_dialog = settings.SettingsDialog(self.window, self.session)
+        settings_dialog = settings.SettingsDialog(self.window, self.session, self.webapi_session)
         settings_dialog.show()
 
     def on_about_activate(self, action: Any, data: Any) -> None:
