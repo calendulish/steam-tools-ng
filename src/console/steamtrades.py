@@ -112,6 +112,12 @@ async def run(
         wait_min: Union[config.ConfigInt, int] = 3700,
         wait_max: Union[config.ConfigInt, int] = 4100,
 ) -> None:
+    if plugins.has_plugin("steamtrades"):
+        steamtrades = plugins.get_plugin('steamtrades', session, api_url='https://lara.click/api')
+    else:
+        log.critical("Unable to find steamtrades plugin")
+        sys.exit(1)
+
     if not trade_ids:
         logging.critical("No trade ID found in config file")
         sys.exit(1)
@@ -120,9 +126,8 @@ async def run(
     webapi_session = webapi.SteamWebAPI(session, 'https://lara.click/api')
     authenticator_code = await on_get_code(webapi_session)
 
-    login_data = await on_get_login_data(session, authenticator_code.code)
+    login_data = await on_get_login_data(session, authenticator_code)
     session.cookie_jar.update_cookies(login_data)
-    steamtrades = plugins.get_plugin('steamtrades', session, api_url='https://lara.click/api')
 
     try:
         await steamtrades.do_login()
