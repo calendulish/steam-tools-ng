@@ -118,5 +118,5 @@ async def run(session: aiohttp.ClientSession, shared_secret: Optional[config.Con
 
         for past_time in range(seconds):
             progress = '█' * int(past_time / seconds * 10)
-            print(_("SteamGuard Code:"), "{} ┌{:10}┐".format(auth_code.code, progress), end='\r')
+            print(_("SteamGuard Code:"), "{} ┌{:10}┐".format(auth_code, progress), end='\r')
             time.sleep(1)

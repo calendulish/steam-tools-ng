@@ -158,7 +158,7 @@ class Application(Gtk.Application):
                 seconds = 30 - (server_time % 30)
 
                 for past_time in range(seconds * 9):
-                    self.window.steamguard_status.set_current(auth_code.code)
+                    self.window.steamguard_status.set_current(auth_code)
                     self.window.steamguard_status.set_info(_("Running"))
                     self.window.steamguard_status.set_level(past_time, seconds * 8)
 
