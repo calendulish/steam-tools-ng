@@ -57,6 +57,7 @@ if __name__ == "__main__":
         epilog=textwrap.dedent('''
                 Available modules for console mode:
                     - authenticator
+                    - steamtrades
                        '''))
 
     command_parser.add_argument(
