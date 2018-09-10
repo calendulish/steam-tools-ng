@@ -387,7 +387,7 @@ class SetupDialog(Gtk.Dialog):
 
         if shared_secret:
             server_time = await self.webapi_session.get_server_time()
-            authenticator_code = authenticator.get_code(server_time, shared_secret).code
+            authenticator_code = authenticator.get_code(server_time, shared_secret)
         else:
             log.warning("No shared secret found. Trying to log-in without two-factor authentication.")
 
@@ -452,11 +452,10 @@ class SetupDialog(Gtk.Dialog):
             self.previous_button.show()
             return
 
+        has_phone: Optional[bool]
+        
         if mobile_login:
-            async with self.session.get('https://steamcommunity.com') as response:
-                sessionid = response.cookies['sessionid'].value
-
-            has_phone: Optional[bool]
+            sessionid = await self.webapi_session.get_session_id()
 
             if await login.has_phone(sessionid):
                 has_phone = True
@@ -552,7 +551,7 @@ class SetupDialog(Gtk.Dialog):
             complete = await self.webapi_session.finalize_add_authenticator(
                 oauth_data['steamid'],
                 oauth_data['oauth_token'],
-                authenticator_code.code,
+                authenticator_code,
                 self.code_item.children.get_text(),
             )
         except webapi.SMSCodeError:
