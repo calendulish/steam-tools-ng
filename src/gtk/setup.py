@@ -96,7 +96,8 @@ class SetupDialog(Gtk.Dialog):
         self.connect('response', lambda dialog, response_id: self.destroy())
 
     def __fatal_error(self, exception: Type[BaseException]) -> None:
-        self.status.error("{}\n\n{}".format(_("IT'S A FATAL ERROR!!! PLEASE, REPORT!!!"), exception))
+        self.status.error("{}\n\n{}".format(_("IT'S A FATAL ERROR!!! PLEASE, REPORT!!!"), repr(exception)))
+        self.status.show_all()
         self.user_details_section.frame.hide()
         self.adb_section.frame.hide()
         self.previous_button.hide()
@@ -112,6 +113,9 @@ class SetupDialog(Gtk.Dialog):
         self.user_details_section.frame.hide()
         self.previous_button.hide()
         self.next_button.hide()
+        self.status.show_all()
+        self.set_size_request(0, 0)
+
         username = self.username_item.children.get_text()
         password = self.__password_item.children.get_text()
         mail_code = self.code_item.children.get_text()
@@ -375,6 +379,10 @@ class SetupDialog(Gtk.Dialog):
             self.previous_button.show()
             return None
 
+        self.status.info(_("Waiting Steam Server..."))
+        self.status.show_all()
+        self.set_size_request(0, 0)
+
         login = webapi.Login(self.session, username, password)
 
         if shared_secret:
@@ -478,6 +486,8 @@ class SetupDialog(Gtk.Dialog):
         self.previous_button.hide()
         self.next_button.hide()
         self.status.info(_("Waiting Steam Server..."))
+        self.status.show_all()
+        self.set_size_request(0, 0)
 
         auth_data = await self.webapi_session.add_authenticator(
             oauth_data['steamid'],
@@ -532,6 +542,8 @@ class SetupDialog(Gtk.Dialog):
         self.next_button.hide()
         self.user_details_section.frame.hide()
         self.status.info(_("Waiting Steam Server..."))
+        self.status.show_all()
+        self.status.set_size_request(0, 0)
 
         authenticator_code = authenticator.get_code(int(auth_data['server_time']), auth_data['shared_secret'])
         oauth_data = json.loads(login_data['oauth'])
