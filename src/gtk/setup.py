@@ -354,7 +354,7 @@ class SetupDialog(Gtk.Dialog):
 
         self.next_button.set_label(_("Next"))
         username = self.username_item.children.get_text()
-        password = self.username_item.children.get_text()
+        password = self.__password_item.children.get_text()
         self.next_button.connect("clicked", self._prepare_login_callback, next_stage, mobile_login)
         self.next_button.show()
 
