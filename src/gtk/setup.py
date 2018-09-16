@@ -453,7 +453,7 @@ class SetupDialog(Gtk.Dialog):
             return
 
         has_phone: Optional[bool]
-        
+
         if mobile_login:
             sessionid = await self.webapi_session.get_session_id()
 
