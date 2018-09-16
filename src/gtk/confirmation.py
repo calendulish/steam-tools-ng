@@ -34,7 +34,6 @@ _ = i18n.get_translation
 class FinalizeDialog(Gtk.Dialog):
     def __init__(
             self,
-            future: asyncio.Future,
             parent_window: Gtk.Window,
             webapi_session: webapi.SteamWebAPI,
             action: str,
@@ -42,7 +41,6 @@ class FinalizeDialog(Gtk.Dialog):
             iter_: Union[Gtk.TreeIter, bool, None] = False,
     ) -> None:
         super().__init__(use_header_bar=True)
-        self.future = future
         self.webapi_session = webapi_session
 
         if action == "allow":
@@ -139,8 +137,7 @@ class FinalizeDialog(Gtk.Dialog):
             self.arrow.hide()
             self.receive_tree.hide()
 
-        self.set_size_request(300, 60)
-        self.status.info(_("Running... Please wait"))
+        self.set_size_request(0, 0)
         self.header_bar.set_show_close_button(False)
 
         if self.iter:
@@ -169,7 +166,7 @@ class FinalizeDialog(Gtk.Dialog):
             deviceid: Optional[config.ConfigStr] = None,
             keep_iter: bool = False,
     ) -> Dict[str, Any]:
-        self.status.info(_("Processing {}").format(self.model[self.iter][1]))
+        self.status.info(_("Waiting Steam Server (OP: {})").format(self.model[self.iter][1]))
 
         server_time = await self.webapi_session.get_server_time()
 
