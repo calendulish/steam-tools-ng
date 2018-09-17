@@ -85,7 +85,7 @@ class Main(Gtk.ApplicationWindow):
         self.text_tree = utils.SimpleTextTree((_('mode'), _('id'), _('key'), _('give'), _('to'), _('receive')), False)
         main_grid.attach(self.text_tree, 0, 4, 4, 1)
 
-        for index, column in enumerate(self.text_tree._view.get_columns()):
+        for index, column in enumerate(self.text_tree.view.get_columns()):
             if index == 0 or index == 1 or index == 2:
                 column.set_visible(False)
 
@@ -94,10 +94,10 @@ class Main(Gtk.ApplicationWindow):
             else:
                 column.set_fixed_width(220)
 
-        self.text_tree._view.set_has_tooltip(True)
-        self.text_tree._view.connect('query-tooltip', self.on_query_confirmations_tooltip)
+        self.text_tree.view.set_has_tooltip(True)
+        self.text_tree.view.connect('query-tooltip', self.on_query_confirmations_tooltip)
 
-        tree_selection = self.text_tree._view.get_selection()
+        tree_selection = self.text_tree.view.get_selection()
         tree_selection.connect("changed", self.on_tree_selection_changed)
 
         accept_button = Gtk.Button(_('Accept selected'))
@@ -203,11 +203,11 @@ class Main(Gtk.ApplicationWindow):
         finalize_dialog.show()
 
     def on_accept_all_button_clicked(self, button: Gtk.Button) -> None:
-        finalize_dialog = confirmation.FinalizeDialog(self, self.webapi_session, "allow", self.text_tree._store)
+        finalize_dialog = confirmation.FinalizeDialog(self, self.webapi_session, "allow", self.text_tree.store)
         finalize_dialog.show()
 
     def on_cancel_all_button_clicked(self, button: Gtk.Button) -> None:
-        finalize_dialog = confirmation.FinalizeDialog(self, self.webapi_session, "cancel", self.text_tree._store)
+        finalize_dialog = confirmation.FinalizeDialog(self, self.webapi_session, "cancel", self.text_tree.store)
         finalize_dialog.show()
 
     @staticmethod

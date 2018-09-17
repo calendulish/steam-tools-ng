@@ -73,13 +73,14 @@ class SimpleTextTree(Gtk.ScrolledWindow):
     ) -> None:
         super().__init__()
         self._store = model(*[str for number in range(len(elements))])
-        renderer = Gtk.CellRendererText()
         self._view = Gtk.TreeView(model=self._store)
         self.add(self._view)
 
         self.set_hexpand(True)
         self.set_vexpand(True)
         self.set_overlay_scrolling(overlay_scrolling)
+
+        renderer = Gtk.CellRendererText()
 
         for index, header in enumerate(elements):
             column = Gtk.TreeViewColumn(header, renderer, text=index)
@@ -89,6 +90,14 @@ class SimpleTextTree(Gtk.ScrolledWindow):
                 column.set_fixed_width(fixed_width)
 
             self._view.append_column(column)
+
+    @property
+    def store(self):
+        return self._store
+
+    @property
+    def view(self):
+        return self._view
 
 
 class SimpleStatus(Gtk.Frame):

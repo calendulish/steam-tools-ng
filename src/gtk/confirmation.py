@@ -118,8 +118,8 @@ class FinalizeDialog(Gtk.Dialog):
             self.receive_tree = utils.SimpleTextTree((_("You will receive"),), fixed_width=300, model=Gtk.ListStore)
             self.grid.attach(self.receive_tree, 2, 0, 1, 1)
 
-            utils.copy_childrens(self.model, self.give_tree._store, self.iter, 3)
-            utils.copy_childrens(self.model, self.receive_tree._store, self.iter, 5)
+            utils.copy_childrens(self.model, self.give_tree.store, self.iter, 3)
+            utils.copy_childrens(self.model, self.receive_tree.store, self.iter, 5)
 
             self.header_bar.show_all()
 
