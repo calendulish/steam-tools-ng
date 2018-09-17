@@ -59,15 +59,45 @@ class ConfigType(NamedTuple):
     value: ConfigValue
 
 
-class DefaultConfig(object):
-    log_directory = ConfigStr(os.path.join(data_dir, 'steam-tools-ng'))
-    log_level = ConfigStr('debug')
-    log_console_level = ConfigStr('info')
-    log_color = ConfigBool(True)
-    language = ConfigStr(str(locale.getdefaultlocale()[0]))
-    wait_min = ConfigInt(3700)
-    wait_max = ConfigInt(4100)
-    theme = ConfigStr("light")
+class Default:
+    @staticmethod
+    def _logger(option: str) -> Union[str, bool]:
+        log_directory = ConfigStr(os.path.join(data_dir, 'steam-tools-ng'))
+        log_level = ConfigStr('debug')
+        log_console_level = ConfigStr('info')
+        log_color = ConfigBool(True)
+
+        return locals()[option]
+
+    @staticmethod
+    def _locale(option: str) -> str:
+        language = ConfigStr(str(locale.getdefaultlocale()[0]))
+
+        return locals()[option]
+
+    @staticmethod
+    def _steamtrades(option: str) -> int:
+        wait_min = ConfigInt(3700)
+        wait_max = ConfigInt(4100)
+
+        return locals()[option]
+
+    @staticmethod
+    def _gtk(option: str) -> str:
+        theme = ConfigStr("light")
+
+        return locals()[option]
+
+    @classmethod
+    def get(cls, section: str, option: str) -> Optional[ConfigType]:
+        try:
+            default_value = getattr(cls(), f'_{section}')(option)
+            log.debug(_("Using fallback value for {}:{} ({})".format(section, option, default_value)))
+        except (AttributeError, ValueError, KeyError):
+            default_value = None
+            log.debug(_("No value found for {}:{}. Using None").format(section, option))
+
+        return default_value
 
 
 class Check(object):
@@ -131,23 +161,54 @@ def update_log_level(type_: str, level_string: ConfigValue) -> None:
         file_handler.setLevel(level)
 
 
+def _get(section: str, option: str, type_: str) -> ConfigValue:
+    log.debug(_("Loading {}:{} from config file").format(section, option))
+
+    if type_ == 'str':
+        get_method = config_parser.get
+    else:
+        get_method = getattr(config_parser, f'get{type_}')
+
+    return get_method(section, option, fallback=Default.get(section, option))
+
+
+def get(section: str, option: str) -> ConfigType:
+    value = ConfigStr(_get(section, option, 'str'))
+    return ConfigType(section, option, value)
+
+
+def getint(section: str, option: str) -> ConfigType:
+    value = ConfigInt(_get(section, option, 'int'))
+    return ConfigType(section, option, value)
+
+
+def getfloat(section: str, option: str) -> ConfigType:
+    value = ConfigInt(_get(section, option, 'float'))
+    return ConfigType(section, option, value)
+
+
+def getboolean(section: str, option: str) -> ConfigType:
+    value = ConfigInt(_get(section, option, 'boolean'))
+    return ConfigType(section, option, value)
+
+
 def init() -> None:
     os.makedirs(config_file_directory, exist_ok=True)
 
     if os.path.isfile(config_file):
         config_parser.read(config_file)
 
-    log_directory = config_parser.get("logger", "log_directory", fallback=DefaultConfig.log_directory)
-    log_level = config_parser.get("logger", "log_level", fallback=DefaultConfig.log_level)
-    log_console_level = config_parser.get("logger", "log_console_level", fallback=DefaultConfig.log_console_level)
+    log_directory = get("logger", "log_directory")
+    log_level = get("logger", "log_level")
+    log_console_level = get("logger", "log_console_level")
 
-    os.makedirs(log_directory, exist_ok=True)
+    os.makedirs(log_directory.value, exist_ok=True)
 
-    log_file_handler = logger_handlers.RotatingFileHandler(os.path.join(log_directory, 'steam-tools-ng.log'),
+    log_file_handler = logger_handlers.RotatingFileHandler(os.path.join(log_directory.value, 'steam-tools-ng.log'),
                                                            backupCount=1,
                                                            encoding='utf-8')
     log_file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s'))
-    log_file_handler.setLevel(getattr(logging, log_level.upper()))
+    log_file_handler.setLevel(getattr(logging, log_level.value.upper()))
 
     try:
         log_file_handler.doRollover()
@@ -157,7 +218,7 @@ def init() -> None:
         log_file_handler = logger_handlers.NullHandler()  # type: ignore
 
     log_console_handler = logger_handlers.ColoredStreamHandler()
-    log_console_handler.setLevel(getattr(logging, log_console_level.upper()))
+    log_console_handler.setLevel(getattr(logging, log_console_level.value.upper()))
 
     logging.basicConfig(level=logging.DEBUG, handlers=[log_file_handler, log_console_handler])
 

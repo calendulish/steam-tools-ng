@@ -16,6 +16,10 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+# Never use VHL methods in this file (config.get, Default.get, log etc) because some strings is
+# translatable in these functions causing a infinite recursion:
+# [method>get_translation->vhlm->get_translation->vhlm] IT'S NOT A BUG!
+
 import gettext
 import hashlib
 from typing import Dict
@@ -32,7 +36,7 @@ def new_hash(text: str) -> bytes:
 
 
 def get_translation(text: str) -> str:
-    language = config.config_parser.get('locale', 'language', fallback=config.DefaultConfig.language)
+    language = config.config_parser.get('locale', 'language', fallback=config.Default._locale("language"))
     translation = gettext.translation("steam-tools-ng", languages=[language], fallback=True)
     translated_text = translation.gettext(text)
     cache[new_hash(translated_text)] = text

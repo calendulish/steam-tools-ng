@@ -16,7 +16,6 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-import configparser
 import logging
 from collections import OrderedDict
 from typing import Any, Dict, Optional
@@ -366,7 +365,7 @@ def load_settings(
 
             if data:
                 try:
-                    config_value = data[config_option]
+                    new_config = config.ConfigType(config_section, config_option, config.ConfigStr(data[config_option]))
                 except KeyError:
                     log.debug(
                         _("Unable to find %s in prefilled data. Ignoring."),
@@ -374,26 +373,16 @@ def load_settings(
                     )
                     continue
             else:
-                try:
-                    config_value = config.config_parser.get(config_section, config_option)
-                except (configparser.NoOptionError, configparser.NoSectionError):
-                    log.debug(
-                        _("Unable to find %s in section %s at config file. Using fallback value."),
-                        config_option,
-                        config_section,
-                    )
+                new_config = config.get(config_section, config_option)
 
-                    try:
-                        config_value = str(getattr(config.DefaultConfig, config_option))
-                    except AttributeError:
-                        log.debug(_("Unable to find fallback value to %s. Ignoring"), config_option)
-                        continue
+                if not new_config.value:
+                    continue
 
             if isinstance(children, Gtk.ComboBox):
                 assert isinstance(combo_items, dict), "No combo_items"
-                children.set_active(list(combo_items).index(config_value))
+                children.set_active(list(combo_items).index(new_config.value))
             else:
-                children.set_text(config_value)
+                children.set_text(new_config.value)
 
             if save:
-                config.new(config.ConfigType(config_section, config_option, config.ConfigStr(config_value)))
+                config.new(new_config)

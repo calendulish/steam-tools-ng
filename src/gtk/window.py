@@ -137,25 +137,25 @@ class Main(Gtk.ApplicationWindow):
 
     async def update_login_icons(self) -> None:
         while self.get_realized():
-            steamid = config.config_parser.getint('login', 'steamid', fallback=0)
-            nickname = config.config_parser.get('login', 'nickname', fallback='')
+            steamid = config.getint('login', 'steamid')
+            nickname = config.get('login', 'nickname')
             cookies = config.login_cookies()
 
             if plugins.has_plugin('steamtrades'):
                 steamtrades = plugins.get_plugin("steamtrades", self.session, api_url='https://lara.click/api')
 
-            if not nickname:
+            if not nickname.value:
                 try:
-                    nickname = await self.webapi_session.get_nickname(steamid)
+                    nickname.value = await self.webapi_session.get_nickname(steamid.value)
                 except ValueError:
                     # invalid steamid or setup process is running
                     self.steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_yellow.png'))
                     self.steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_yellow.png'))
                     return
 
-                config.new(config.ConfigType("login", "nickname", config.ConfigStr(nickname)))
+                config.new(nickname)
 
-            if await self.webapi_session.is_logged_in(nickname):
+            if await self.webapi_session.is_logged_in(nickname.value):
                 self.steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_green.png'))
             else:
                 self.steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_red.png'))
