@@ -16,6 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+import importlib
 import os
 import platform
 import sys
@@ -24,6 +25,8 @@ from importlib.machinery import SourceFileLoader
 from tokenize import TokenError, tokenize
 from typing import NamedTuple
 
+sys.path.append('..')
+version = importlib.import_module('.version', 'src')
 script_path = os.path.dirname(__file__)
 
 if script_path:
@@ -66,7 +69,7 @@ pygettext.pot_header = f'''\
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: 0.0.0-DEV\\n"
+"Project-Id-Version: {version.__version__}\\n"
 "POT-Creation-Date: {current_datetime}\\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\\n"
