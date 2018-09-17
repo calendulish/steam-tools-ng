@@ -1,4 +1,4 @@
-Steam Tools NG
+Steam Tools NG (formerly as Steam Tools)
 ==============
 
 [![transifex](https://img.shields.io/badge/transifex-contribute%20now-blue.svg)](https://www.transifex.com/steam-tools-ng)
@@ -12,8 +12,23 @@ Steam Tools NG
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=WVQ5XM935XNLN&item_name=steam-tools-ng)
 
 
-WORK IN PROGRESS
+Some useful tools to use with steam client or compatible programs and websites.
 
+You can run the follow modules from steam-tools:
+
+* Steam Guard: Will provide codes for login on steam (mobile authenticator clone)
+
+* Trade Card (**Coming Soon**): Accept/decline trades from steam
+
+* Confirmations: Confirm trades and/or market listing
+
+* SteamTrades: Bump trades at steamtrades.com
+
+* SteamGifts: Join in giveaway at steamgifts.com
+
+* Card Farming (**Coming Soon**): Drop cards from steam games
+
+* More (**Coming Soon**)
 ___________________________________________________________________________________________
 
 You can request improvements and/or new features at https://github.com/ShyPixie/steam-tools-ng/issues
