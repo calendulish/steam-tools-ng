@@ -19,6 +19,7 @@
 import os
 import platform
 import sys
+from datetime import datetime
 from importlib.machinery import SourceFileLoader
 from tokenize import TokenError, tokenize
 from typing import NamedTuple
@@ -52,14 +53,21 @@ class Options(NamedTuple):
     width = 78
 
 
-pygettext.pot_header = '''\
+now = datetime.now()
+current_datetime = '{:%Y-%m-%d %H:%M}{}'.format(
+    now,
+    # ensure tz as number
+    now.astimezone(tz=None).strftime('%z'),
+)
+
+pygettext.pot_header = f'''\
 # Steam Tools NG - Useful tools for Steam
 # Lara Maia <dev@lara.click> (C) 2015 ~ 2018
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.0.0-DEV\\n"
-"POT-Creation-Date: %(time)s\\n"
+"POT-Creation-Date: {current_datetime}\\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\\n"
 "Language-Team: LANGUAGE <LL@li.org>\\n"
