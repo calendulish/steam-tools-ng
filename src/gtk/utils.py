@@ -43,23 +43,23 @@ class VariableButton(Gtk.Button):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         super().connect('clicked', lambda button: self.__callback())
-        self.user_callback = None
-        self.user_args = None
-        self.user_kwargs = None
+        self._user_callback = None
+        self._user_args = None
+        self._user_kwargs = None
 
     def __callback(self) -> None:
-        if not self.user_callback:
+        if not self._user_callback:
             return
 
-        self.user_callback(*self.user_args, **self.user_kwargs)
+        self._user_callback(*self._user_args, **self._user_kwargs)
 
     def connect(self, signal: str, callback: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
         if signal != "clicked":
             raise NotImplementedError
 
-        self.user_callback = callback
-        self.user_args = args
-        self.user_kwargs = kwargs
+        self._user_callback = callback
+        self._user_args = args
+        self._user_kwargs = kwargs
 
 
 class SimpleTextTree(Gtk.ScrolledWindow):
@@ -131,7 +131,7 @@ class SimpleStatus(Gtk.Frame):
 class Status(Gtk.Frame):
     def __init__(self, current_text_size: int, label_text: str) -> None:
         super().__init__()
-        self.gtk_settings = Gtk.Settings.get_default()
+        self._gtk_settings = Gtk.Settings.get_default()
 
         self.set_label(label_text)
         self.set_label_align(0.02, 0.5)
@@ -160,7 +160,7 @@ class Status(Gtk.Frame):
         self._current.set_markup(markup(text, font_size='large', font_weight='bold'))
 
     def set_info(self, text: str) -> None:
-        if self.gtk_settings.props.gtk_application_prefer_dark_theme:
+        if self._gtk_settings.props.gtk_application_prefer_dark_theme:
             color = 'lightgreen'
         else:
             color = 'green'
@@ -168,7 +168,7 @@ class Status(Gtk.Frame):
         self._status.set_markup(markup(text, color=color, font_size='small'))
 
     def set_error(self, text: str) -> None:
-        if self.gtk_settings.props.gtk_application_prefer_dark_theme:
+        if self._gtk_settings.props.gtk_application_prefer_dark_theme:
             color = 'hotpink'
         else:
             color = 'red'
