@@ -170,19 +170,7 @@ if __name__ == "__main__":
         asyncio.ensure_future(async_gtk_iterator())
 
     try:
-        event_loop.run_forever()
+        with contextlib.suppress(KeyboardInterrupt):
+            event_loop.run_forever()
     finally:
         log.info(_("Exiting..."))
-
-        unfinished_tasks = asyncio.all_tasks()
-
-        for task in unfinished_tasks:
-            task.cancel()
-
-            with contextlib.suppress(asyncio.CancelledError):
-                event_loop.run_until_complete(task)
-
-        event_loop.run_until_complete(http_session.close())
-        # FIXME https://github.com/aio-libs/aiohttp/issues/1925
-        event_loop.run_until_complete(asyncio.sleep(1))
-        event_loop.close()
