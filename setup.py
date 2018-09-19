@@ -35,10 +35,6 @@ po_build_path = os.path.join('build', 'share', 'locale')
 if os.name == 'nt':
     # noinspection PyPackageRequirements
     from cx_Freeze import setup, Executable
-    from distutils.dir_util import copy_tree
-
-    # FIXME: cx_freeze doesn't have an option like `package_dir'
-    copy_tree('src', 'steam_tools_ng')
 
     if sys.maxsize > 2 ** 32:
         arch = 64
@@ -183,7 +179,7 @@ def freeze_options() -> Mapping[str, Any]:
         )
     ]
 
-    packages = ['asyncio', 'steam_tools_ng', 'gi', 'idna']  # idna for cx_freeze <= 5.1.1
+    packages = ['asyncio', 'src', 'gi', 'idna', 'six', 'pkg_resources']  # idna for cx_freeze <= 5.1.1
 
     paths = ['.']
     paths.extend(sys.path)

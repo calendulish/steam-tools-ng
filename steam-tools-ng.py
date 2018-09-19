@@ -28,7 +28,7 @@ import textwrap
 
 import aiohttp
 
-if os.path.isdir(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'src')):
+if hasattr(sys, 'frozen') or os.path.isdir(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'src')):
     module_folder = 'src'
 else:
     module_folder = 'steam_tools_ng'
