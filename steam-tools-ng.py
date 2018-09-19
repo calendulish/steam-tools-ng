@@ -174,7 +174,7 @@ if __name__ == "__main__":
     finally:
         log.info(_("Exiting..."))
 
-        unfinished_tasks = asyncio.all_tasks()
+        unfinished_tasks = asyncio.Task.all_tasks()
 
         for task in unfinished_tasks:
             task.cancel()
