@@ -56,7 +56,7 @@ class SetupDialog(Gtk.Dialog):
 
         self.parent_window = parent_window
         self.set_default_size(300, 60)
-        self.set_title(_('Setup'))
+        self.set_title(_('Magic Box'))
         self.set_transient_for(parent_window)
         self.set_modal(True)
         self.set_destroy_with_parent(True)

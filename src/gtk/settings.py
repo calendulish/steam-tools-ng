@@ -130,7 +130,7 @@ class SettingsDialog(Gtk.Dialog):
 
         load_settings(self.login_section, Gtk.Entry)
 
-        setup = Gtk.Button(_("Setup"))
+        setup = Gtk.Button(_("Magic Box"))
         setup.set_name("setup_button")
         setup.connect('clicked', self.on_setup_clicked)
         self.login_section.grid.attach(setup, 0, 8, 4, 1)
