@@ -382,7 +382,7 @@ def load_settings(
                 assert isinstance(combo_items, dict), "No combo_items"
                 children.set_active(list(combo_items).index(new_config.value))
             else:
-                children.set_text(new_config.value)
+                children.set_text(str(new_config.value))
 
             if save:
                 config.new(new_config)
