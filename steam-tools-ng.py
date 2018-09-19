@@ -142,6 +142,13 @@ if __name__ == "__main__":
     else:
         from gi.repository import Gtk
 
+        if os.name == 'nt' and hasattr(sys, 'frozen'):
+            import ctypes
+
+            console = ctypes.windll.kernel32.GetConsoleWindow()
+            ctypes.windll.user32.ShowWindow(console, 0)
+            ctypes.windll.kernel32.CloseHandle(console)
+
         application = importlib.import_module('.application', f'{module_folder}.gtk')
 
         if sys.platform.startswith("linux") and not os.getenv('DISPLAY'):
