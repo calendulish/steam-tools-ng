@@ -82,9 +82,11 @@ class SetupDialog(Gtk.Dialog):
         self.user_details_section = utils.new_section("login", _("User Details"))
         self.content_area.add(self.user_details_section.frame)
 
-        config_username = config.get("login", "account_name")
         self.username_item = utils.new_item("username", _("Username:"), self.user_details_section, Gtk.Entry, 0, 0)
-        self.username_item.children.set_text(config_username.value)
+        config_username = config.get("login", "account_name")
+
+        if config_username.value:
+            self.username_item.children.set_text(config_username.value)
 
         self.__password_item = utils.new_item("password", _("Password:"), self.user_details_section, Gtk.Entry, 0, 1)
         self.__password_item.children.set_visibility(False)
