@@ -253,6 +253,7 @@ class SetupDialog(Gtk.Dialog):
         self.previous_button.hide()
         self.user_details_section.frame.hide()
         self.adb_section.frame.hide()
+        self.set_size_request(0, 0)
 
         self.status.info(_(
             "Welcome to STNG Setup\n\n"
@@ -278,6 +279,7 @@ class SetupDialog(Gtk.Dialog):
         self.previous_button.connect('clicked', self.login_mode)
         self.previous_button.show()
         self.next_button.hide()
+        self.set_size_request(0, 0)
 
         # FIXME: ADB is unstable, stderr and return codes lies
         return
