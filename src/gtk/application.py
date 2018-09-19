@@ -140,6 +140,8 @@ class Application(Gtk.Application):
 
                     setup_dialog.prepare_login(__save_new_login_data, mobile_login)
                     setup_dialog.previous_button.hide()
+                    setup_dialog.status.info(_("Could not connect to the Steam Servers.\nPlease, relogin."))
+                    setup_dialog.status.show_all()
                     setup_dialog.show()
                     login_requested = True
 
