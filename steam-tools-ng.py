@@ -104,7 +104,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     if console_params.log_dir:
-        os.system(f'{file_manager} {config.DefaultConfig.log_directory}')
+        os.system(f'{file_manager} {config.get("logger", "log_directory")}')
         sys.exit(0)
 
     if console_params.reset:
@@ -113,7 +113,7 @@ if __name__ == "__main__":
 
         logging.root.removeHandler(logging.root.handlers[0])
 
-        log_directory = config.config_parser.get("logger", "log_directory", fallback=config.DefaultConfig.log_directory)
+        log_directory = config.get("logger", "log_directory")
         os.remove(os.path.join(log_directory, 'steam-tools-ng.log'))
         os.remove(os.path.join(log_directory, 'steam-tools-ng.log.1'))
 
