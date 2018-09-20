@@ -61,7 +61,7 @@ class FinalizeDialog(Gtk.Dialog):
         self.set_modal(True)
         self.set_destroy_with_parent(True)
         self.set_resizable(False)
-        self.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
+        self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
 
         self.content_area = self.get_content_area()
         self.content_area.set_orientation(Gtk.Orientation.VERTICAL)
