@@ -190,7 +190,21 @@ def freeze_options() -> Mapping[str, Any]:
         if file != 'settings.ini':
             includes.append((os.path.join('icons', file), os.path.join('share', 'icons', file)))
 
-    excludes = ['tkinter']
+    excludes = [
+        'tkinter',
+        'chardet',
+        'distutils',
+        'pydoc_data',
+        'unittest',
+        'xmlrpc',
+        'doctest',
+        'ftplib',
+        'lzma',
+        'pdb',
+        'py_compile',
+        'tarfile',
+        'webbrowser',
+    ]
 
     build_exe_options = {
         "packages": packages,
