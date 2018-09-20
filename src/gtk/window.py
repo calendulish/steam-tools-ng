@@ -146,12 +146,14 @@ class Main(Gtk.ApplicationWindow):
 
             if not nickname.value:
                 try:
-                    nickname.value = await self.webapi_session.get_nickname(steamid.value)
+                    new_nickname = await self.webapi_session.get_nickname(steamid.value)
                 except ValueError:
                     # invalid steamid or setup process is running
                     self.steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_yellow.png'))
                     self.steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_yellow.png'))
                     return
+                else:
+                    nickname = nickname._replace(value=config.ConfigStr(new_nickname))
 
                 config.new(nickname)
 

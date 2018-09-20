@@ -106,10 +106,12 @@ class Application(Gtk.Application):
 
             if not nickname.value:
                 try:
-                    nickname.value = await self.webapi_session.get_nickname(steamid.value)
-                    config.new(nickname)
+                    new_nickname = await self.webapi_session.get_nickname(steamid.value)
                 except ValueError:
                     raise NotImplementedError
+                else:
+                    nickname = nickname._replace(value=config.ConfigStr(new_nickname))
+                    config.new(nickname)
 
             self.session.cookie_jar.update_cookies(config.login_cookies())
 
@@ -211,7 +213,8 @@ class Application(Gtk.Application):
 
             if not deviceid.value:
                 log.debug(_("Unable to find deviceid. Generating from identity."))
-                deviceid.value = authenticator.generate_device_id(identity_secret.value)
+                new_deviceid = authenticator.generate_device_id(identity_secret.value)
+                deviceid = deviceid._replace(value=config.ConfigStr(new_deviceid))
                 config.new(deviceid)
 
             if cookies:
