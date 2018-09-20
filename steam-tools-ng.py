@@ -29,6 +29,13 @@ import textwrap
 import aiohttp
 
 if hasattr(sys, 'frozen') or os.path.isdir(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'src')):
+    # noinspection PyUnresolvedReferences
+    import stlib_plugins
+    # noinspection PyUnresolvedReferences
+    import stlib_plugins.steamtrades
+    # noinspection PyUnresolvedReferences
+    import stlib_plugins.steamgifts
+
     module_folder = 'src'
 else:
     module_folder = 'steam_tools_ng'
