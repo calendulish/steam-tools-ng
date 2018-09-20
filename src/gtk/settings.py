@@ -80,6 +80,7 @@ class SettingsDialog(Gtk.Dialog):
         content_area.add(content_grid)
 
         content_grid.attach(self.login_settings(), 0, 0, 1, 3)
+        content_grid.attach(self.plugins_settings(), 0, 3, 2, 1)
         content_grid.attach(self.logger_settings(), 1, 0, 1, 2)
         content_grid.attach(self.locale_settings(), 1, 2, 1, 1)
         content_grid.attach(self.gtk_settings(), 2, 0, 1, 1)
@@ -154,6 +155,26 @@ class SettingsDialog(Gtk.Dialog):
 
             self.set_size_request(300, 150)
             self.login_section.frame.set_label_align(0.03, 0.5)
+
+    def plugins_settings(self) -> Gtk.Frame:
+        plugins_section = utils.new_section('plugins', _('Plugins Settings'))
+
+        info_label = Gtk.Label()
+        info_label.set_text(_("It can take some time to enable/disable plugins (3 ~ 15 seconds)"))
+        plugins_section.grid.attach(info_label, 0, 0, 4, 1)
+
+        steamguard = utils.new_item("steamguard", _("SteamGuard:"), plugins_section, Gtk.CheckButton, 0, 1)
+        steamguard.children.set_active(True)
+        steamguard.children.connect('toggled', on_steamguard_plugin_toggled)
+
+        steamtrades = utils.new_item("steamtrades", _("Steamtrades:"), plugins_section, Gtk.CheckButton, 2, 1)
+        steamguard.children.set_active(True)
+        steamtrades.children.connect('toggled', on_steamtrades_plugin_toggled)
+
+        load_settings(plugins_section, Gtk.CheckButton)
+
+        plugins_section.frame.show_all()
+        return plugins_section.frame
 
     def gtk_settings(self) -> Gtk.Frame:
         gtk_section = utils.new_section('gtk', _('Gtk Settings'))
@@ -237,6 +258,11 @@ class SettingsDialog(Gtk.Dialog):
         Gtk.Container.foreach(self.parent_window, refresh_widget_text)
 
 
+def on_steamguard_plugin_toggled(checkbutton: Gtk.CheckButton) -> None:
+    activate = config.ConfigBool(checkbutton.get_active())
+    config.new(config.ConfigType('plugins', 'steamguard', activate))
+
+
 def on_steamid_changed(entry: Gtk.Entry) -> None:
     text = entry.get_text()
 
@@ -283,6 +309,11 @@ def on_log_level_changed(combo: Gtk.ComboBoxText) -> None:
 def on_log_console_level_changed(combo: Gtk.ComboBoxText) -> None:
     log_console_level = config.ConfigStr(list(log_levels)[combo.get_active()])
     config.new(config.ConfigType('logger', 'log_console_level', log_console_level))
+
+
+def on_steamtrades_plugin_toggled(checkbutton: Gtk.CheckButton) -> None:
+    activate = config.ConfigBool(checkbutton.get_active())
+    config.new(config.ConfigType('plugins', 'steamtrades', activate))
 
 
 def on_trade_ids_changed(entry: Gtk.Entry) -> None:
@@ -373,6 +404,7 @@ def load_settings(
                     )
                     continue
             else:
+                # FIXME: Type can be wrong
                 new_config = config.get(config_section, config_option)
 
                 if not new_config.value:
@@ -381,6 +413,8 @@ def load_settings(
             if isinstance(children, Gtk.ComboBox):
                 assert isinstance(combo_items, dict), "No combo_items"
                 children.set_active(list(combo_items).index(new_config.value))
+            elif isinstance(children, Gtk.CheckButton):
+                children.set_active(True if new_config.value == 'True' else False)
             else:
                 children.set_text(str(new_config.value))
 

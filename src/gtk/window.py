@@ -132,8 +132,26 @@ class Main(Gtk.ApplicationWindow):
         main_grid.show_all()
         self.show_all()
 
-        if not plugins.has_plugin('steamtrades'):
-            self.steamtrades_status.hide()
+        self.plugin_switch("steamtrades")
+        self.plugin_switch("steamguard")
+
+    def plugin_switch(self, name: str) -> bool:
+        plugin_config = config.getboolean("plugins", name)
+        frame = getattr(self, f'{name}_status')
+        result = False
+
+        # steamguard always behave like a plugin, but it's not a plugin in really
+        if name != 'steamguard' and not plugins.has_plugin(name):
+            frame.hide()
+            return result
+
+        if plugin_config.value is None or plugin_config.value is True:
+            frame.show()
+            result = True
+        else:
+            frame.hide()
+
+        return result
 
     async def update_login_icons(self) -> None:
         while self.get_realized():

@@ -163,6 +163,10 @@ class Application(Gtk.Application):
         assert isinstance(self.window, Gtk.Window), "No window"
 
         while self.window.get_realized():
+            if not self.window.plugin_switch("steamguard"):
+                await asyncio.sleep(5)
+                continue
+
             shared_secret = config.get("login", "shared_secret")
 
             try:
@@ -284,6 +288,10 @@ class Application(Gtk.Application):
         assert isinstance(self.window, Gtk.Window), "No window"
 
         while self.window.get_realized():
+            if not self.window.plugin_switch("steamtrades"):
+                await asyncio.sleep(5)
+                continue
+
             info(_("Loading"))
             trade_ids = config.get("steamtrades", "trade_ids")
             wait_min = config.getint("steamtrades", "wait_min")
