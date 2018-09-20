@@ -239,6 +239,7 @@ class Application(Gtk.Application):
             except webapi.LoginError:
                 warning(_("User is not logged in"))
             else:
+                self.window.warning_label.hide()
                 if old_confirmations != confirmations:
                     self.window.text_tree._store.clear()
 
