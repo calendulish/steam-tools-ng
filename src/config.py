@@ -105,7 +105,6 @@ class Check(object):
         self.section = section
 
     def __call__(self, function_: Callable[..., Any]) -> Any:
-        config_parser.read(config_file)
         signature = inspect.signature(function_)
 
         def wrapped_function(*args: Any, **kwargs: Any) -> Any:
@@ -116,7 +115,7 @@ class Check(object):
                     log.debug(_("A positional argument already exists for %s. Ignoring..."), option.name)
                     continue
 
-                log.debug(_('Loading %s:%s from config file'), self.section, option.name)
+                log.debug(_('Loading config for %s:%s'), self.section, option.name)
 
                 # noinspection PyUnusedLocal
                 value: Union[ConfigStr, ConfigInt, ConfigBool, ConfigFloat]
@@ -162,7 +161,7 @@ def update_log_level(type_: str, level_string: ConfigValue) -> None:
 
 
 def _get(section: str, option: str, type_: str) -> ConfigValue:
-    log.debug(_("Loading {}:{} from config file").format(section, option))
+    log.debug(_("Loading config for {}:{}").format(section, option))
 
     if type_ == 'str':
         get_method = config_parser.get
@@ -233,11 +232,14 @@ def new(*new_configs: ConfigType) -> None:
         if not config_parser.has_section(config.section):
             config_parser.add_section(config.section)
 
-        log.debug(_('Saving %s:%s on config file'), config.section, config.option)
-        config_parser.set(config.section, config.option, str(config.value))
+        if get(config.section, config.option).value != str(config.value):
+            log.debug(_('Saving %s:%s on config file'), config.section, config.option)
+            config_parser.set(config.section, config.option, str(config.value))
 
-    with open(config_file, 'w') as config_file_object:
-        config_parser.write(config_file_object)
+            with open(config_file, 'w') as config_file_object:
+                config_parser.write(config_file_object)
+        else:
+            log.debug(_('Not saving %s:%s because values are already updated'), config.section, config.option)
 
 
 @Check("login")
