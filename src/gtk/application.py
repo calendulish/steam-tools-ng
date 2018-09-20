@@ -241,13 +241,13 @@ class Application(Gtk.Application):
             else:
                 self.window.warning_label.hide()
                 if old_confirmations != confirmations:
-                    self.window.text_tree._store.clear()
+                    self.window.text_tree.store.clear()
 
                     for confirmation_index, confirmation_ in enumerate(confirmations):
                         safe_give, give = utils.safe_confirmation_get(confirmation_, 'give')
                         safe_receive, receive = utils.safe_confirmation_get(confirmation_, 'receive')
 
-                        iter_ = self.window.text_tree._store.append(None, [
+                        iter_ = self.window.text_tree.store.append(None, [
                             confirmation_.mode,
                             str(confirmation_.id),
                             str(confirmation_.key),
@@ -258,7 +258,7 @@ class Application(Gtk.Application):
 
                         if len(give) > 1 or len(receive) > 1:
                             for item_index, item in enumerate(itertools.zip_longest(give, receive)):
-                                self.window.text_tree._store.append(iter_, ['', '', '', item[0], '', item[1]])
+                                self.window.text_tree.store.append(iter_, ['', '', '', item[0], '', item[1]])
                 else:
                     log.debug(_("Skipping confirmations update because data doesn't seem to have changed"))
 
