@@ -28,7 +28,7 @@ import textwrap
 
 import aiohttp
 
-if hasattr(sys, 'frozen') or os.path.isdir(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'src')):
+if hasattr(sys, 'frozen') or os.path.isdir('src'):
     # noinspection PyUnresolvedReferences
     import stlib_plugins
     # noinspection PyUnresolvedReferences

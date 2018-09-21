@@ -31,12 +31,12 @@ config_parser = configparser.RawConfigParser()
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
-if os.path.isdir(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'src')):
+if os.path.isdir('src'):
     data_dir = 'config'
     icons_dir = 'icons'
-elif sys.platform == 'win32':
+elif hasattr(sys, 'frozen') or sys.platform == 'win32':
     data_dir = os.environ['LOCALAPPDATA']
-    icons_dir = os.path.join('share', 'icons')
+    icons_dir = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'share', 'icons')
 else:
     data_dir = os.getenv('XDG_CONFIG_HOME', os.path.join(os.path.expanduser('~'), '.config'))
     icons_dir = os.path.abspath(os.path.join(os.path.sep, 'usr', 'share', 'steam-tools-ng', 'icons'))
