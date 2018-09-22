@@ -22,7 +22,7 @@ import logging
 from typing import Any, Callable, Dict, Optional, Type
 
 import aiohttp
-from gi.repository import Gtk
+from gi.repository import Gtk, GdkPixbuf
 from stlib import authenticator, webapi
 
 from . import utils
@@ -95,6 +95,12 @@ class SetupDialog(Gtk.Dialog):
 
         self.code_item = utils.new_item("code", _("Code:"), self.user_details_section, Gtk.Entry, 0, 2)
 
+        self.captcha_gid = -1
+        self.captcha_item = utils.new_item("captcha", _("Code:"), self.user_details_section, Gtk.Image, 0, 3)
+        self.captcha_text_item = utils.new_item(
+            "captcha_text", _("Captcha Text:"), self.user_details_section, Gtk.Entry, 0, 4,
+        )
+
         self.connect('response', lambda dialog, response_id: self.destroy())
 
     def __fatal_error(self, exception: Type[BaseException]) -> None:
@@ -121,7 +127,12 @@ class SetupDialog(Gtk.Dialog):
         username = self.username_item.children.get_text()
         password = self.__password_item.children.get_text()
         mail_code = self.code_item.children.get_text()
-        task = asyncio.ensure_future(self.do_login(username, password, mail_code, mobile_login=mobile_login))
+        captcha_text = self.captcha_text.children.get_text()
+
+        task = asyncio.ensure_future(
+            self.do_login(username, password, mail_code, captcha_text=captcha_text, mobile_login=mobile_login)
+        )
+
         task.add_done_callback(functools.partial(self._do_login_callback, next_stage, mobile_login))
 
     def _do_login_callback(
@@ -355,6 +366,10 @@ class SetupDialog(Gtk.Dialog):
         self.combo.hide()
         self.code_item.label.hide()
         self.code_item.children.hide()
+        self.captcha_item.label.hide()
+        self.captcha_item.children.hide()
+        self.captcha_text_item.label.hide()
+        self.captcha_text_item.children.hide()
 
         self.next_button.set_label(_("Next"))
         username = self.username_item.children.get_text()
@@ -373,6 +388,8 @@ class SetupDialog(Gtk.Dialog):
             password: str,
             mail_code: str = '',
             authenticator_code: str = '',
+            captcha_gid: int = -1,
+            captcha_text: str = '',
             mobile_login: bool = False,
             relogin: bool = False,
             shared_secret: Optional[config.ConfigStr] = None,
@@ -395,12 +412,17 @@ class SetupDialog(Gtk.Dialog):
         else:
             log.warning("No shared secret found. Trying to log-in without two-factor authentication.")
 
+        if self.captcha_gid == -1:
+            # no reason to send captcha_text if no gid is found
+            captcha_text = ''
+        else:
+            captcha_gid = self.captcha_gid
+            # if login fails for some reason, gid must be unset
+            # CaptchaError exception will reset it if needed
+            self.captcha_gid = -1
+
         try:
-            login_data = await login.do_login(
-                emailauth=mail_code,
-                authenticator_code=authenticator_code,
-                mobile_login=mobile_login
-            )
+            login_data = await login.do_login(authenticator_code, mail_code, captcha_gid, captcha_text, mobile_login)
 
             if not login_data['success']:
                 raise webapi.LoginError
@@ -440,6 +462,26 @@ class SetupDialog(Gtk.Dialog):
             self.username_item.children.hide()
             self.__password_item.children.hide()
             self.previous_button.hide()
+            return
+        except webapi.CaptchaError as exception:
+            self.status.info(_("Write captcha code as shown bellow\nand click on 'Try Again?' button"))
+            self.captcha_gid = exception.captcha_gid
+
+            pixbuf_loader = GdkPixbuf.PixbufLoader()
+            pixbuf_loader.write(await login.get_captcha(self.captcha_gid))
+            pixbuf_loader.close()
+            self.captcha_item.children.set_from_pixbuf(pixbuf_loader.get_pixbuf())
+
+            self.captcha_item.label.show()
+            self.captcha_item.children.show()
+            self.captcha_text_item.label.show()
+            self.captcha_text_item.children.set_text("")
+            self.captcha_text_item.children.show()
+            self.username_item.label.hide()
+            self.username_item.children.hide()
+            self.__password_item.label.hide()
+            self.__password_item.children.hide()
+            self.user_details_section.frame.show()
             return
         except webapi.LoginError as exception:
             log.debug("Login error: %s", exception)
