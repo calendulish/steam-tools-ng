@@ -127,7 +127,7 @@ class SetupDialog(Gtk.Dialog):
         username = self.username_item.children.get_text()
         password = self.__password_item.children.get_text()
         mail_code = self.code_item.children.get_text()
-        captcha_text = self.captcha_text.children.get_text()
+        captcha_text = self.captcha_text_item.children.get_text()
 
         task = asyncio.ensure_future(
             self.do_login(username, password, mail_code, captcha_text=captcha_text, mobile_login=mobile_login)
