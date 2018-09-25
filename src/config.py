@@ -92,10 +92,10 @@ class Default:
     def get(cls, section: str, option: str) -> Optional[ConfigType]:
         try:
             default_value = getattr(cls(), f'_{section}')(option)
-            log.debug(_("Using fallback value for {}:{} ({})".format(section, option, default_value)))
+            log.debug(_("Using fallback value for %s:%s (%s)"), section, option, default_value)
         except (AttributeError, ValueError, KeyError):
             default_value = None
-            log.debug(_("No value found for {}:{}. Using None").format(section, option))
+            log.debug(_("No value found for %s:%s. Using None"), section, option)
 
         return default_value
 
@@ -161,7 +161,7 @@ def update_log_level(type_: str, level_string: ConfigValue) -> None:
 
 
 def _get(section: str, option: str, type_: str) -> ConfigValue:
-    log.debug(_("Loading config for {}:{}").format(section, option))
+    log.debug(_("Loading config for %s:%s"), section, option)
 
     if type_ == 'str':
         get_method = config_parser.get

@@ -362,7 +362,7 @@ class Application(Gtk.Application):
                 continue
 
             wait_offset = random.randint(wait_min.value, wait_max.value)
-            log.debug(_("Setting wait_offset from steamtrades to {}").format(wait_offset))
+            log.debug(_("Setting wait_offset from steamtrades to %s"), wait_offset)
             for past_time in range(wait_offset):
                 info(_("Waiting more {} minutes").format(round(wait_offset / 60)))
 
