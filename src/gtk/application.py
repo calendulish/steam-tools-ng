@@ -66,7 +66,6 @@ class Application(Gtk.Application):
         else:
             self.gtk_settings.props.gtk_application_prefer_dark_theme = False
 
-    @config.Check("login")
     def do_activate(self) -> None:
         if not self.window:
             self.window = window.Main(application=self)
