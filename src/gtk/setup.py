@@ -200,8 +200,7 @@ class SetupDialog(Gtk.Dialog):
             return
 
         if future.result():
-            oauth_data = json.loads(future.result()['oauth'])
-            self.recovery_code(oauth_data['revocation_code'])
+            self.recovery_code(future.result()['revocation_code'])
         else:
             self.next_button.set_label(_("Try Again?"))
 
@@ -575,7 +574,7 @@ class SetupDialog(Gtk.Dialog):
 
         self.header_bar.set_show_close_button(False)
 
-        asyncio.ensure_future(functools.partial(self._recovery_code_timer, revocation_code))
+        asyncio.ensure_future(self._recovery_code_timer(revocation_code))
 
     async def finalize_add_authenticator(
             self,
