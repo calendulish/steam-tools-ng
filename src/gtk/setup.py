@@ -16,9 +16,11 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
+import contextlib
 import functools
 import json
 import logging
+import os
 from typing import Any, Callable, Dict, Optional, Type
 
 import aiohttp
@@ -105,10 +107,27 @@ class SetupDialog(Gtk.Dialog):
 
     def __fatal_error(self, exception: Type[BaseException]) -> None:
         self.status.error("{}\n\n{}".format(_("IT'S A FATAL ERROR!!! PLEASE, REPORT!!!"), repr(exception)))
-        self.status.show_all()
+        self.status.show()
         self.user_details_section.frame.hide()
         self.adb_section.frame.hide()
         self.previous_button.hide()
+
+    def __reset_and_restart(self) -> None:
+        self.status.info(_("Removing old config files..."))
+        self.user_details_section.frame.hide()
+        self.adb_section.frame.hide()
+        self.previous_button.hide()
+        self.next_button.hide()
+
+        with contextlib.suppress(FileNotFoundError):
+            os.remove(config.config_file)
+
+        config.config_parser.clear()
+        config.init()
+        self.status.info(_("Restarting Magic Box..."))
+        # destroy that dialog after 5 seconds (time for main application loop)
+        # setup dialog will be automatically reopened with new parameters
+        asyncio.get_event_loop().call_later(5, self.destroy)
 
     def _login_mode_callback(self) -> None:
         if self.combo.get_active() == 0:
@@ -121,7 +140,7 @@ class SetupDialog(Gtk.Dialog):
         self.user_details_section.frame.hide()
         self.previous_button.hide()
         self.next_button.hide()
-        self.status.show_all()
+        self.status.show()
         self.set_size_request(0, 0)
 
         username = self.username_item.children.get_text()
@@ -165,6 +184,10 @@ class SetupDialog(Gtk.Dialog):
 
         if future.result():
             self.status.info(_("Write code received by SMS\nand click on 'Add Authenticator' button"))
+            self.captcha_item.label.hide()
+            self.captcha_item.children.hide()
+            self.captcha_text_item.label.hide()
+            self.captcha_text_item.children.hide()
             self.code_item.label.show()
             self.code_item.children.set_text("")
             self.code_item.children.show()
@@ -270,7 +293,7 @@ class SetupDialog(Gtk.Dialog):
             "How do you want to log-in?"
         ))
 
-        self.status.show_all()
+        self.status.show()
 
         self.combo.get_model().clear()
         self.combo.append_text(_("Using Steam Tools NG as Steam Authenticator"))
@@ -400,7 +423,7 @@ class SetupDialog(Gtk.Dialog):
             return None
 
         self.status.info(_("Waiting Steam Server..."))
-        self.status.show_all()
+        self.status.show()
         self.set_size_request(0, 0)
 
         login = webapi.Login(self.session, username, password)
@@ -421,12 +444,33 @@ class SetupDialog(Gtk.Dialog):
             self.captcha_gid = -1
 
         try:
-            login_data = await login.do_login(authenticator_code, mail_code, captcha_gid, captcha_text, mobile_login)
+            try:
+                login_data = await login.do_login(
+                    authenticator_code,
+                    mail_code,
+                    captcha_gid,
+                    captcha_text,
+                    mobile_login,
+                )
+            except webapi.CaptchaError as exception:
+                # If user insert a wrong captcha AND a wrong password us
+                # must allow user to insert a new password, so raise LoginError.
+                # CaptchaError must be raised only if user never tried to insert
+                # a captcha code before.
+                # FIXME: It can be checked in stlib
+                if captcha_text and captcha_gid:
+                    raise webapi.LoginError(str(exception)) from None
+                else:
+                    raise webapi.CaptchaError(exception.captcha_gid, str(exception)) from None
 
             if not login_data['success']:
                 raise webapi.LoginError
         except webapi.MailCodeError:
             self.status.info(_("Write code received by email\nand click on 'Try Again?' button"))
+            self.captcha_item.label.hide()
+            self.captcha_item.children.hide()
+            self.captcha_text_item.label.hide()
+            self.captcha_text_item.children.hide()
             self.code_item.label.show()
             self.code_item.children.set_text("")
             self.code_item.children.show()
@@ -484,10 +528,27 @@ class SetupDialog(Gtk.Dialog):
             return
         except webapi.LoginError as exception:
             log.debug("Login error: %s", exception)
+            self.captcha_item.label.hide()
+            self.captcha_item.children.hide()
+            self.captcha_text_item.label.hide()
+            self.captcha_text_item.children.hide()
+            self.username_item.label.show()
+            self.username_item.children.show()
+            self.__password_item.label.show()
+            self.__password_item.children.set_text('')
+            self.__password_item.children.show()
+
             self.status.error(_(
                 "Unable to log-in!\n"
                 "Please, check your username/password and try again.\n"
             ))
+
+            self.status.append_link(
+                _("click here"),
+                self.__reset_and_restart,
+                _("You removed the authenticator? If yes, "),
+            )
+
             self.user_details_section.frame.show()
             self.previous_button.show()
             return
@@ -530,7 +591,7 @@ class SetupDialog(Gtk.Dialog):
         self.previous_button.hide()
         self.next_button.hide()
         self.status.info(_("Waiting Steam Server..."))
-        self.status.show_all()
+        self.status.show()
         self.set_size_request(0, 0)
 
         auth_data = await self.webapi_session.add_authenticator(
@@ -570,7 +631,7 @@ class SetupDialog(Gtk.Dialog):
         revocation_code.set_current(code)
         revocation_code.set_info('')
         self.content_area.add(revocation_code)
-        revocation_code.show()
+        revocation_code.show_all()
 
         self.header_bar.set_show_close_button(False)
 
@@ -586,7 +647,7 @@ class SetupDialog(Gtk.Dialog):
         self.next_button.hide()
         self.user_details_section.frame.hide()
         self.status.info(_("Waiting Steam Server..."))
-        self.status.show_all()
+        self.status.show()
         self.status.set_size_request(0, 0)
 
         authenticator_code = authenticator.get_code(int(auth_data['server_time']), auth_data['shared_secret'])
