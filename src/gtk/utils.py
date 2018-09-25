@@ -17,10 +17,10 @@
 #
 import asyncio
 import logging
-from typing import Any, Callable, List, NamedTuple, Tuple
+from typing import Any, Callable, List, NamedTuple, Tuple, Optional
 
 import cairo
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk
 from stlib import webapi
 
 from .. import i18n
@@ -106,13 +106,44 @@ class SimpleStatus(Gtk.Frame):
         self.connect('draw', self.__do_status_draw)
 
         self._grid = Gtk.Grid()
+        self._grid.show()
         self._grid.set_border_width(10)
         self.add(self._grid)
 
         self._label = Gtk.Label()
+        self._label.show()
         self._grid.attach(self._label, 0, 0, 1, 1)
 
+        self._link_grid = Gtk.Grid()
+        self._grid.attach(self._link_grid, 0, 1, 1, 1)
+
+        self._before_link_label = Gtk.Label()
+        self._link_grid.add(self._before_link_label)
+
+        hand_cursor = Gdk.Cursor.new(Gdk.CursorType.HAND2)
+
+        self._link_event = Gtk.EventBox()
+        self._link_event.connect("button-press-event", lambda event, button: self.__callback())
+        self._link_event.connect("enter-notify-event", lambda event, button: self.get_window().set_cursor(hand_cursor))
+        self._link_event.connect("leave-notify-event", lambda event, button: self.get_window().set_cursor(None))
+        self._user_callback = None
+
+        self._link_label = Gtk.Label()
+        self._link_event.add(self._link_label)
+        self._link_grid.add(self._link_event)
+
+        self._after_link_label = Gtk.Label()
+        self._link_grid.add(self._after_link_label)
+
         self.info(_("Waiting"))
+
+    def __callback(self) -> None:
+        if not self._user_callback:
+            log.error("user callback is not defined!")
+            return
+
+        self._link_grid.hide()
+        self._user_callback()
 
     @staticmethod
     def __do_status_draw(frame: Gtk.Frame, cairo_context: cairo.Context) -> None:
@@ -122,10 +153,31 @@ class SimpleStatus(Gtk.Frame):
         cairo_context.fill()
 
     def error(self, text: str) -> None:
+        self._link_grid.hide()
         self._label.set_markup(markup(text, color='hotpink', face='monospace'))
 
     def info(self, text: str) -> None:
+        self._link_grid.hide()
         self._label.set_markup(markup(text, color='cyan', face='monospace'))
+
+    def append_link(
+            self,
+            text: str,
+            callback: Callable[..., Any],
+            add_before: Optional[str] = None,
+            add_after: Optional[str] = None,
+    ) -> None:
+        self._user_callback = callback
+
+        if add_before:
+            self._before_link_label.set_markup(markup(add_before, color='cyan', face='monospace'))
+
+        self._link_label.set_markup(markup(text, color='lightblue', face='monospace'))
+
+        if add_after:
+            self._after_link_label.set_markup(markup(add_after, color='cyan', face='monospace'))
+
+        self._link_grid.show()
 
 
 class Status(Gtk.Frame):
