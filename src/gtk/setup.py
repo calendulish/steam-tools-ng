@@ -252,7 +252,7 @@ class SetupDialog(Gtk.Dialog):
             self.previous_button.show()
 
     async def _recovery_code_timer(self, revocation_code: utils.Status) -> None:
-        max_value = 60 * 3
+        max_value = 30 * 3
         for offset in range(max_value):
             revocation_code.set_level(offset, max_value)
             await asyncio.sleep(0.3)
