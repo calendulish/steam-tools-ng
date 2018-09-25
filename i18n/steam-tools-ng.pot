@@ -3,8 +3,8 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: 0.4.0.dev1\n"
-"POT-Creation-Date: 2018-09-16 22:47-0300\n"
+"Project-Id-Version: 0.5.2.dev1\n"
+"POT-Creation-Date: 2018-09-25 01:20-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -14,36 +14,48 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: src\config.py:86
+#: src\config.py:95
+msgid "Using fallback value for %s:%s (%s)"
+msgstr ""
+
+#: src\config.py:98
+msgid "No value found for %s:%s. Using None"
+msgstr ""
+
+#: src\config.py:115
 msgid "A positional argument already exists for %s. Ignoring..."
 msgstr ""
 
-#: src\config.py:89
-msgid "Loading %s:%s from config file"
+#: src\config.py:118 src\config.py:164
+msgid "Loading config for %s:%s"
 msgstr ""
 
-#: src\config.py:104
+#: src\config.py:133
 msgid "Nothing to do with %s. Ignoring."
 msgstr ""
 
-#: src\config.py:107
+#: src\config.py:136
 msgid "Option not found in config: %s"
 msgstr ""
 
-#: src\config.py:109
+#: src\config.py:138
 msgid "Section not found in config: %s"
 msgstr ""
 
-#: src\config.py:112
+#: src\config.py:141
 msgid "%s will be injected into %s"
 msgstr ""
 
-#: src\config.py:155
+#: src\config.py:215
 msgid "Unable to open steam-tools-ng.log"
 msgstr ""
 
-#: src\config.py:175
+#: src\config.py:236
 msgid "Saving %s:%s on config file"
+msgstr ""
+
+#: src\config.py:242
+msgid "Not saving %s:%s because values are already updated"
 msgstr ""
 
 #: src\console\authenticator.py:38
@@ -123,8 +135,8 @@ msgstr ""
 msgid "Loading, please wait..."
 msgstr ""
 
-#: src\console\steamtrades.py:135 src\gtk\application.py:227
-#: src\gtk\application.py:304 src\gtk\application.py:327
+#: src\console\steamtrades.py:135 src\gtk\application.py:239
+#: src\gtk\application.py:310 src\gtk\application.py:333
 msgid "No connection"
 msgstr ""
 
@@ -156,83 +168,89 @@ msgstr ""
 msgid "Please, try again."
 msgstr ""
 
-#: src\gtk\application.py:173
+#: src\gtk\application.py:144
+msgid ""
+"Could not connect to the Steam Servers.\n"
+"Please, relogin."
+msgstr ""
+
+#: src\gtk\application.py:180
 msgid "The currently secret is invalid"
 msgstr ""
 
-#: src\gtk\application.py:176
+#: src\gtk\application.py:183
 msgid "Steam Client is not running"
 msgstr ""
 
-#: src\gtk\application.py:179 src\gtk\utils.py:144
+#: src\gtk\application.py:186 src\gtk\utils.py:205
 msgid "Loading..."
 msgstr ""
 
-#: src\gtk\application.py:185
+#: src\gtk\application.py:192
 msgid "Running"
 msgstr ""
 
-#: src\gtk\application.py:206
+#: src\gtk\application.py:213
 msgid "Unable to get confirmations without a valid identity secret"
 msgstr ""
 
-#: src\gtk\application.py:211
+#: src\gtk\application.py:218
 msgid "Unable to find deviceid. Generating from identity."
 msgstr ""
 
-#: src\gtk\application.py:218 src\gtk\application.py:312
+#: src\gtk\application.py:226 src\gtk\application.py:318
 msgid "Unable to find a valid login data"
 msgstr ""
 
-#: src\gtk\application.py:225
+#: src\gtk\application.py:237
 msgid "Error when fetch confirmations"
 msgstr ""
 
-#: src\gtk\application.py:229
+#: src\gtk\application.py:241
 msgid "Steam is not running"
 msgstr ""
 
-#: src\gtk\application.py:231 src\gtk\application.py:308
+#: src\gtk\application.py:243 src\gtk\application.py:314
 msgid "User is not logged in"
 msgstr ""
 
-#: src\gtk\application.py:253
+#: src\gtk\application.py:266
 msgid "Skipping confirmations update because data doesn't seem to have changed"
 msgstr ""
 
-#: src\gtk\application.py:271
+#: src\gtk\application.py:284
 msgid "Unable to find Steamtrades plugin"
 msgstr ""
 
-#: src\gtk\application.py:277
+#: src\gtk\application.py:294
 msgid "Loading"
 msgstr ""
 
-#: src\gtk\application.py:295
+#: src\gtk\application.py:301
 msgid "No trade ID found in config file"
 msgstr ""
 
-#: src\gtk\application.py:323
+#: src\gtk\application.py:329
 msgid "Unable to find TradeID {}"
 msgstr ""
 
-#: src\gtk\application.py:333
+#: src\gtk\application.py:339
 msgid "Waiting anti-ban timer"
 msgstr ""
 
-#: src\gtk\application.py:335
+#: src\gtk\application.py:341
 msgid "Bumped!"
 msgstr ""
 
-#: src\gtk\application.py:338
+#: src\gtk\application.py:344
 msgid "Unable to bump {}"
 msgstr ""
 
-#: src\gtk\application.py:359
-msgid "Setting wait_offset from steamtrades to {}"
+#: src\gtk\application.py:365
+msgid "Setting wait_offset from steamtrades to %s"
 msgstr ""
 
-#: src\gtk\application.py:361
+#: src\gtk\application.py:367
 msgid "Waiting more {} minutes"
 msgstr ""
 
@@ -299,43 +317,43 @@ msgstr ""
 msgid "Updating tree"
 msgstr ""
 
-#: src\gtk\settings.py:35
+#: src\gtk\settings.py:34
 msgid "Light"
 msgstr ""
 
-#: src\gtk\settings.py:36
+#: src\gtk\settings.py:35
 msgid "Dark"
 msgstr ""
 
-#: src\gtk\settings.py:40
+#: src\gtk\settings.py:39
 msgid "Critical"
 msgstr ""
 
-#: src\gtk\settings.py:41
+#: src\gtk\settings.py:40
 msgid "Error"
 msgstr ""
 
-#: src\gtk\settings.py:42
+#: src\gtk\settings.py:41
 msgid "Warning"
 msgstr ""
 
-#: src\gtk\settings.py:43
+#: src\gtk\settings.py:42
 msgid "Info"
 msgstr ""
 
-#: src\gtk\settings.py:44
+#: src\gtk\settings.py:43
 msgid "Debug"
 msgstr ""
 
-#: src\gtk\settings.py:48
+#: src\gtk\settings.py:47
 msgid "English"
 msgstr ""
 
-#: src\gtk\settings.py:49
+#: src\gtk\settings.py:48
 msgid "Portuguese (Brazil)"
 msgstr ""
 
-#: src\gtk\settings.py:67 src\gtk\window.py:50
+#: src\gtk\settings.py:66 src\gtk\window.py:50
 msgid "Settings"
 msgstr ""
 
@@ -343,11 +361,11 @@ msgstr ""
 msgid "Login Settings"
 msgstr ""
 
-#: src\gtk\settings.py:98 src\gtk\setup.py:80
+#: src\gtk\settings.py:98 src\gtk\setup.py:82
 msgid "Adb Path:"
 msgstr ""
 
-#: src\gtk\settings.py:102 src\gtk\setup.py:86
+#: src\gtk\settings.py:102 src\gtk\setup.py:87
 msgid "Username:"
 msgstr ""
 
@@ -379,146 +397,166 @@ msgstr ""
 msgid "Advanced"
 msgstr ""
 
-#: src\gtk\settings.py:134 src\gtk\setup.py:59
-msgid "Setup"
+#: src\gtk\settings.py:134 src\gtk\setup.py:61
+msgid "Magic Box"
 msgstr ""
 
 #: src\gtk\settings.py:160
+msgid "Plugins Settings"
+msgstr ""
+
+#: src\gtk\settings.py:163
+msgid "It can take some time to enable/disable plugins (3 ~ 15 seconds)"
+msgstr ""
+
+#: src\gtk\settings.py:166
+msgid "SteamGuard:"
+msgstr ""
+
+#: src\gtk\settings.py:170
+msgid "Steamtrades:"
+msgstr ""
+
+#: src\gtk\settings.py:180
 msgid "Gtk Settings"
 msgstr ""
 
-#: src\gtk\settings.py:162
+#: src\gtk\settings.py:182
 msgid "Theme:"
 msgstr ""
 
-#: src\gtk\settings.py:182
+#: src\gtk\settings.py:202
 msgid "Steamtrades Settings"
 msgstr ""
 
-#: src\gtk\settings.py:184
+#: src\gtk\settings.py:204
 msgid "Trade IDs:"
 msgstr ""
 
-#: src\gtk\settings.py:188
+#: src\gtk\settings.py:208
 msgid "Wait MIN:"
 msgstr ""
 
-#: src\gtk\settings.py:191
+#: src\gtk\settings.py:211
 msgid "Wait MAX:"
 msgstr ""
 
-#: src\gtk\settings.py:200
+#: src\gtk\settings.py:220
 msgid "Locale settings"
 msgstr ""
 
-#: src\gtk\settings.py:201
+#: src\gtk\settings.py:221
 msgid "Language"
 msgstr ""
 
-#: src\gtk\settings.py:210
+#: src\gtk\settings.py:230
 msgid "Logger settings"
 msgstr ""
 
-#: src\gtk\settings.py:211
+#: src\gtk\settings.py:231
 msgid "Level:"
 msgstr ""
 
-#: src\gtk\settings.py:215
+#: src\gtk\settings.py:235
 msgid "Console level:"
 msgstr ""
 
-#: src\gtk\settings.py:372
+#: src\gtk\settings.py:402
 msgid "Unable to find %s in prefilled data. Ignoring."
 msgstr ""
 
-#: src\gtk\settings.py:381
-msgid "Unable to find %s in section %s at config file. Using fallback value."
-msgstr ""
-
-#: src\gtk\settings.py:389
-msgid "Unable to find fallback value to %s. Ignoring"
-msgstr ""
-
-#: src\gtk\setup.py:82
+#: src\gtk\setup.py:84
 msgid "User Details"
 msgstr ""
 
-#: src\gtk\setup.py:89
+#: src\gtk\setup.py:93
 msgid "Password:"
 msgstr ""
 
-#: src\gtk\setup.py:92
+#: src\gtk\setup.py:96
 msgid "It will not be saved"
 msgstr ""
 
-#: src\gtk\setup.py:94
+#: src\gtk\setup.py:98 src\gtk\setup.py:101
 msgid "Code:"
 msgstr ""
 
-#: src\gtk\setup.py:99
+#: src\gtk\setup.py:103
+msgid "Captcha Text:"
+msgstr ""
+
+#: src\gtk\setup.py:109
 msgid "IT'S A FATAL ERROR!!! PLEASE, REPORT!!!"
 msgstr ""
 
-#: src\gtk\setup.py:112 src\gtk\setup.py:382 src\gtk\setup.py:487
-#: src\gtk\setup.py:543
+#: src\gtk\setup.py:116
+msgid "Removing old config files..."
+msgstr ""
+
+#: src\gtk\setup.py:127
+msgid "Restarting Magic Box..."
+msgstr ""
+
+#: src\gtk\setup.py:139 src\gtk\setup.py:425 src\gtk\setup.py:593
+#: src\gtk\setup.py:649
 msgid "Waiting Steam Server..."
 msgstr ""
 
-#: src\gtk\setup.py:139 src\gtk\setup.py:193 src\gtk\setup.py:234
+#: src\gtk\setup.py:171 src\gtk\setup.py:228 src\gtk\setup.py:269
 msgid "Try Again?"
 msgstr ""
 
-#: src\gtk\setup.py:154
+#: src\gtk\setup.py:186
 msgid ""
 "Write code received by SMS\n"
 "and click on 'Add Authenticator' button"
 msgstr ""
 
-#: src\gtk\setup.py:164
+#: src\gtk\setup.py:200
 msgid "Add Authenticator"
 msgstr ""
 
-#: src\gtk\setup.py:210
+#: src\gtk\setup.py:245
 msgid "Unable to run without a valid adb path."
 msgstr ""
 
-#: src\gtk\setup.py:212 src\gtk\setup.py:238 src\gtk\setup.py:275
-#: src\gtk\setup.py:301 src\gtk\setup.py:361
+#: src\gtk\setup.py:247 src\gtk\setup.py:273 src\gtk\setup.py:311
+#: src\gtk\setup.py:338 src\gtk\setup.py:402
 msgid "Previous"
 msgstr ""
 
-#: src\gtk\setup.py:228
+#: src\gtk\setup.py:263
 msgid "Loading Data..."
 msgstr ""
 
-#: src\gtk\setup.py:231 steam-tools-ng.py:120
+#: src\gtk\setup.py:266 steam-tools-ng.py:127
 msgid "Done!"
 msgstr ""
 
-#: src\gtk\setup.py:255
+#: src\gtk\setup.py:291
 msgid ""
 "Welcome to STNG Setup\n"
 "\n"
 "How do you want to log-in?"
 msgstr ""
 
-#: src\gtk\setup.py:263
+#: src\gtk\setup.py:299
 msgid "Using Steam Tools NG as Steam Authenticator"
 msgstr ""
 
-#: src\gtk\setup.py:264
+#: src\gtk\setup.py:300
 msgid "Using a rooted Android phone and ADB"
 msgstr ""
 
-#: src\gtk\setup.py:268 src\gtk\setup.py:297 src\gtk\setup.py:355
+#: src\gtk\setup.py:304 src\gtk\setup.py:334 src\gtk\setup.py:396
 msgid "Next"
 msgstr ""
 
-#: src\gtk\setup.py:274
+#: src\gtk\setup.py:310
 msgid "ADB support is currently disabled. Please, go back."
 msgstr ""
 
-#: src\gtk\setup.py:283
+#: src\gtk\setup.py:320
 msgid ""
 "To automatic get login data using adb, you will need:\n"
 "- A 'rooted' Android phone\n"
@@ -534,17 +572,17 @@ msgid ""
 "Linux: /usr/bin/adb"
 msgstr ""
 
-#: src\gtk\setup.py:306
+#: src\gtk\setup.py:343
 msgid "Running... Please wait"
 msgstr ""
 
-#: src\gtk\setup.py:313
+#: src\gtk\setup.py:350
 msgid ""
 "Unable to run without a valid 'adb path'\n"
 "\n"
 msgstr ""
 
-#: src\gtk\setup.py:319
+#: src\gtk\setup.py:356
 msgid ""
 "Unable to find adb in:\n"
 "\n"
@@ -553,39 +591,39 @@ msgid ""
 "Please, enter a valid 'adb path' and try again."
 msgstr ""
 
-#: src\gtk\setup.py:336
+#: src\gtk\setup.py:373
 msgid "No phone connected"
 msgstr ""
 
-#: src\gtk\setup.py:338
+#: src\gtk\setup.py:375
 msgid "Unable to switch to root mode"
 msgstr ""
 
-#: src\gtk\setup.py:340
+#: src\gtk\setup.py:377
 msgid "User is not logged-in on Mobile Authenticator"
 msgstr ""
 
-#: src\gtk\setup.py:342
+#: src\gtk\setup.py:379
 msgid "Steam Guard is not enabled"
 msgstr ""
 
-#: src\gtk\setup.py:349
+#: src\gtk\setup.py:386
 msgid "Waiting user input..."
 msgstr ""
 
-#: src\gtk\setup.py:377
+#: src\gtk\setup.py:420
 msgid ""
 "Unable to log-in!\n"
 "Your username/password is blank."
 msgstr ""
 
-#: src\gtk\setup.py:404
+#: src\gtk\setup.py:469
 msgid ""
 "Write code received by email\n"
 "and click on 'Try Again?' button"
 msgstr ""
 
-#: src\gtk\setup.py:416
+#: src\gtk\setup.py:485
 msgid ""
 "Unable to log-in!\n"
 "You already have a Steam Authenticator active on current account\n"
@@ -599,29 +637,43 @@ msgid ""
 "    (settings -> 'get login data using adb' button)\n"
 msgstr ""
 
-#: src\gtk\setup.py:427
+#: src\gtk\setup.py:496
 msgid ""
 "Unable to log-in!\n"
 "The authenticator code is invalid!\n"
 msgstr ""
 
-#: src\gtk\setup.py:432
+#: src\gtk\setup.py:501
 msgid ""
 "Your network is blocked!\n"
 "It'll take some time until unblocked. Please, try again later\n"
 msgstr ""
 
-#: src\gtk\setup.py:442
+#: src\gtk\setup.py:510
+msgid ""
+"Write captcha code as shown bellow\n"
+"and click on 'Try Again?' button"
+msgstr ""
+
+#: src\gtk\setup.py:541
 msgid ""
 "Unable to log-in!\n"
 "Please, check your username/password and try again.\n"
 msgstr ""
 
-#: src\gtk\setup.py:450
+#: src\gtk\setup.py:547
+msgid "click here"
+msgstr ""
+
+#: src\gtk\setup.py:549
+msgid "You removed the authenticator? If yes, "
+msgstr ""
+
+#: src\gtk\setup.py:556
 msgid "No Connection"
 msgstr ""
 
-#: src\gtk\setup.py:516
+#: src\gtk\setup.py:622
 msgid ""
 "RECOVERY CODE\n"
 "\n"
@@ -631,37 +683,37 @@ msgid ""
 "YOU WILL NOT ABLE TO VIEW IT AGAIN!\n"
 msgstr ""
 
-#: src\gtk\setup.py:524
+#: src\gtk\setup.py:630
 msgid "Recovery Code"
 msgstr ""
 
-#: src\gtk\setup.py:558
+#: src\gtk\setup.py:664
 msgid ""
 "Invalid SMS Code. Please,\n"
 "check the code and try again."
 msgstr ""
 
-#: src\gtk\setup.py:564
+#: src\gtk\setup.py:670
 msgid "Success! Saving..."
 msgstr ""
 
-#: src\gtk\setup.py:583
+#: src\gtk\setup.py:689
 msgid "Unable to add a new authenticator"
 msgstr ""
 
-#: src\gtk\utils.py:106
+#: src\gtk\utils.py:138
 msgid "Waiting"
 msgstr ""
 
-#: src\gtk\utils.py:232
+#: src\gtk\utils.py:293
 msgid "Ignoring value from %s on column %s item %s because value is empty"
 msgstr ""
 
-#: src\gtk\utils.py:246
+#: src\gtk\utils.py:307
 msgid "Nothing"
 msgstr ""
 
-#: src\gtk\utils.py:250
+#: src\gtk\utils.py:311
 msgid "Various"
 msgstr ""
 
@@ -717,7 +769,7 @@ msgstr ""
 msgid "Cancel all"
 msgstr ""
 
-#: steam-tools-ng.py:175
+#: steam-tools-ng.py:191
 msgid "Exiting..."
 msgstr ""
 
