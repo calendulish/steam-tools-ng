@@ -206,7 +206,7 @@ def init() -> None:
     log_file_handler = logger_handlers.RotatingFileHandler(os.path.join(log_directory.value, 'steam-tools-ng.log'),
                                                            backupCount=1,
                                                            encoding='utf-8')
-    log_file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s'))
+    log_file_handler.setFormatter(logging.Formatter('%(module)s:%(levelname)s => %(message)s'))
     log_file_handler.setLevel(getattr(logging, log_level.value.upper()))
 
     try:
