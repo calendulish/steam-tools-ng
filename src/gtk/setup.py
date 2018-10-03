@@ -76,31 +76,31 @@ class SetupDialog(Gtk.Dialog):
         self.combo = Gtk.ComboBoxText()
         self.content_area.add(self.combo)
 
-        self.adb_section = utils.new_section("adb", "Adb")
-        self.content_area.add(self.adb_section.frame)
+        self.adb_section = utils.Section("adb", "Adb")
+        self.content_area.add(self.adb_section)
 
-        self.adb_path_item = utils.new_item("adb_path", _("Adb Path:"), self.adb_section, Gtk.Entry, 0, 0)
+        self.adb_path_item = self.adb_section.new("adb_path", _("Adb Path:"), Gtk.Entry, 0, 0)
 
-        self.user_details_section = utils.new_section("login", _("User Details"))
-        self.content_area.add(self.user_details_section.frame)
+        self.user_details_section = utils.Section("login", _("User Details"))
+        self.content_area.add(self.user_details_section)
 
-        self.username_item = utils.new_item("username", _("Username:"), self.user_details_section, Gtk.Entry, 0, 0)
+        self.username_item = self.user_details_section.new("username", _("Username:"), Gtk.Entry, 0, 0)
         config_username = config.get("login", "account_name")
 
         if config_username.value:
-            self.username_item.children.set_text(config_username.value)
+            self.username_item.set_text(config_username.value)
 
-        self.__password_item = utils.new_item("password", _("Password:"), self.user_details_section, Gtk.Entry, 0, 1)
-        self.__password_item.children.set_visibility(False)
-        self.__password_item.children.set_invisible_char('*')
-        self.__password_item.children.set_placeholder_text(_("It will not be saved"))
+        self.__password_item = self.user_details_section.new("password", _("Password:"), Gtk.Entry, 0, 1)
+        self.__password_item.set_visibility(False)
+        self.__password_item.set_invisible_char('*')
+        self.__password_item.set_placeholder_text(_("It will not be saved"))
 
-        self.code_item = utils.new_item("code", _("Code:"), self.user_details_section, Gtk.Entry, 0, 2)
+        self.code_item = self.user_details_section.new("code", _("Code:"), Gtk.Entry, 0, 2)
 
         self.captcha_gid = -1
-        self.captcha_item = utils.new_item("captcha", _("Code:"), self.user_details_section, Gtk.Image, 0, 3)
-        self.captcha_text_item = utils.new_item(
-            "captcha_text", _("Captcha Text:"), self.user_details_section, Gtk.Entry, 0, 4,
+        self.captcha_item = self.user_details_section.new("captcha", _("Code:"), Gtk.Image, 0, 3)
+        self.captcha_text_item = self.user_details_section.new(
+            "captcha_text", _("Captcha Text:"), Gtk.Entry, 0, 4,
         )
 
         self.connect('response', lambda dialog, response_id: self.destroy())
@@ -108,14 +108,14 @@ class SetupDialog(Gtk.Dialog):
     def __fatal_error(self, exception: Type[BaseException]) -> None:
         self.status.error("{}\n\n{}".format(_("IT'S A FATAL ERROR!!! PLEASE, REPORT!!!"), repr(exception)))
         self.status.show()
-        self.user_details_section.frame.hide()
-        self.adb_section.frame.hide()
+        self.user_details_section.hide()
+        self.adb_section.hide()
         self.previous_button.hide()
 
     def __reset_and_restart(self) -> None:
         self.status.info(_("Removing old config files..."))
-        self.user_details_section.frame.hide()
-        self.adb_section.frame.hide()
+        self.user_details_section.hide()
+        self.adb_section.hide()
         self.previous_button.hide()
         self.next_button.hide()
 
@@ -137,16 +137,16 @@ class SetupDialog(Gtk.Dialog):
 
     def _prepare_login_callback(self, next_stage: Callable[..., Any], mobile_login: bool) -> None:
         self.status.info(_("Waiting Steam Server..."))
-        self.user_details_section.frame.hide()
+        self.user_details_section.hide()
         self.previous_button.hide()
         self.next_button.hide()
         self.status.show()
         self.set_size_request(0, 0)
 
-        username = self.username_item.children.get_text()
-        password = self.__password_item.children.get_text()
-        mail_code = self.code_item.children.get_text()
-        captcha_text = self.captcha_text_item.children.get_text()
+        username = self.username_item.get_text()
+        password = self.__password_item.get_text()
+        mail_code = self.code_item.get_text()
+        captcha_text = self.captcha_text_item.get_text()
 
         task = asyncio.ensure_future(
             self.do_login(username, password, mail_code, captcha_text=captcha_text, mobile_login=mobile_login)
@@ -166,7 +166,7 @@ class SetupDialog(Gtk.Dialog):
 
         if future.result():
             next_stage(future.result())
-            self.__password_item.children.set_text("")
+            self.__password_item.set_text("")
         else:
             self.next_button.set_label(_("Try Again?"))
             self.next_button.connect("clicked", self._prepare_login_callback, next_stage, mobile_login)
@@ -185,17 +185,17 @@ class SetupDialog(Gtk.Dialog):
         if future.result():
             self.status.info(_("Write code received by SMS\nand click on 'Add Authenticator' button"))
             self.captcha_item.label.hide()
-            self.captcha_item.children.hide()
+            self.captcha_item.hide()
             self.captcha_text_item.label.hide()
-            self.captcha_text_item.children.hide()
+            self.captcha_text_item.hide()
             self.code_item.label.show()
-            self.code_item.children.set_text("")
-            self.code_item.children.show()
+            self.code_item.set_text("")
+            self.code_item.show()
             self.username_item.label.hide()
-            self.username_item.children.hide()
+            self.username_item.hide()
             self.__password_item.label.hide()
-            self.__password_item.children.hide()
-            self.user_details_section.frame.show()
+            self.__password_item.hide()
+            self.user_details_section.show()
 
             self.next_button.set_label(_("Add Authenticator"))
 
@@ -236,12 +236,12 @@ class SetupDialog(Gtk.Dialog):
             )
 
             self.next_button.show()
-            self.user_details_section.frame.show()
+            self.user_details_section.show()
 
     def _adb_path_callback(self) -> None:
-        self.adb_section.frame.hide()
+        self.adb_section.hide()
 
-        if not self.adb_path_item.children.get_text():
+        if not self.adb_path_item.get_text():
             self.status.error(_("Unable to run without a valid adb path."))
             self.next_button.hide()
             self.previous_button.set_label(_("Previous"))
@@ -284,8 +284,8 @@ class SetupDialog(Gtk.Dialog):
 
     def login_mode(self) -> None:
         self.previous_button.hide()
-        self.user_details_section.frame.hide()
-        self.adb_section.frame.hide()
+        self.user_details_section.hide()
+        self.adb_section.hide()
         self.set_size_request(0, 0)
 
         self.status.info(_(
@@ -329,7 +329,7 @@ class SetupDialog(Gtk.Dialog):
             "Linux: /usr/bin/adb"
         ))
 
-        self.adb_section.frame.show_all()
+        self.adb_section.show_all()
 
         self.next_button.set_label(_("Next"))
         self.next_button.connect("clicked", self._adb_path_callback)
@@ -341,10 +341,10 @@ class SetupDialog(Gtk.Dialog):
 
     async def adb_data(self) -> Optional[Dict[str, Any]]:
         self.status.info(_("Running... Please wait"))
-        self.adb_section.frame.hide()
+        self.adb_section.hide()
         self.previous_button.hide()
         self.next_button.hide()
-        adb_path = self.adb_path_item.children.get_text()
+        adb_path = self.adb_path_item.get_text()
 
         if not adb_path:
             self.status.error(_("Unable to run without a valid 'adb path'\n\n"))
@@ -357,7 +357,7 @@ class SetupDialog(Gtk.Dialog):
                 "Unable to find adb in:\n\n{}\n\n"
                 "Please, enter a valid 'adb path' and try again."
             ).format(adb_path))
-            self.adb_section.frame.show_all()
+            self.adb_section.show_all()
             return
 
         try:
@@ -384,18 +384,18 @@ class SetupDialog(Gtk.Dialog):
 
     def prepare_login(self, next_stage: Callable[..., Any], mobile_login: bool = False) -> None:
         self.status.info(_("Waiting user input..."))
-        self.user_details_section.frame.show_all()
+        self.user_details_section.show_all()
         self.combo.hide()
         self.code_item.label.hide()
-        self.code_item.children.hide()
+        self.code_item.hide()
         self.captcha_item.label.hide()
-        self.captcha_item.children.hide()
+        self.captcha_item.hide()
         self.captcha_text_item.label.hide()
-        self.captcha_text_item.children.hide()
+        self.captcha_text_item.hide()
 
         self.next_button.set_label(_("Next"))
-        username = self.username_item.children.get_text()
-        password = self.__password_item.children.get_text()
+        username = self.username_item.get_text()
+        password = self.__password_item.get_text()
         self.next_button.connect("clicked", self._prepare_login_callback, next_stage, mobile_login)
         self.next_button.show()
 
@@ -418,7 +418,7 @@ class SetupDialog(Gtk.Dialog):
     ) -> Optional[Dict[str, Any]]:
         if not username or not password:
             self.status.error(_("Unable to log-in!\nYour username/password is blank."))
-            self.user_details_section.frame.show()
+            self.user_details_section.show()
             self.previous_button.show()
             return None
 
@@ -468,17 +468,17 @@ class SetupDialog(Gtk.Dialog):
         except webapi.MailCodeError:
             self.status.info(_("Write code received by email\nand click on 'Try Again?' button"))
             self.captcha_item.label.hide()
-            self.captcha_item.children.hide()
+            self.captcha_item.hide()
             self.captcha_text_item.label.hide()
-            self.captcha_text_item.children.hide()
+            self.captcha_text_item.hide()
             self.code_item.label.show()
-            self.code_item.children.set_text("")
-            self.code_item.children.show()
+            self.code_item.set_text("")
+            self.code_item.show()
             self.username_item.label.hide()
-            self.username_item.children.hide()
+            self.username_item.hide()
             self.__password_item.label.hide()
-            self.__password_item.children.hide()
-            self.user_details_section.frame.show()
+            self.__password_item.hide()
+            self.user_details_section.show()
             return
         except webapi.TwoFactorCodeError:
             if mobile_login and not relogin:
@@ -502,8 +502,8 @@ class SetupDialog(Gtk.Dialog):
                 "Your network is blocked!\n"
                 "It'll take some time until unblocked. Please, try again later\n"
             ))
-            self.username_item.children.hide()
-            self.__password_item.children.hide()
+            self.username_item.hide()
+            self.__password_item.hide()
             self.previous_button.hide()
             return
         except webapi.CaptchaError as exception:
@@ -513,30 +513,30 @@ class SetupDialog(Gtk.Dialog):
             pixbuf_loader = GdkPixbuf.PixbufLoader()
             pixbuf_loader.write(await login.get_captcha(self.captcha_gid))
             pixbuf_loader.close()
-            self.captcha_item.children.set_from_pixbuf(pixbuf_loader.get_pixbuf())
+            self.captcha_item.set_from_pixbuf(pixbuf_loader.get_pixbuf())
 
             self.captcha_item.label.show()
-            self.captcha_item.children.show()
+            self.captcha_item.show()
             self.captcha_text_item.label.show()
-            self.captcha_text_item.children.set_text("")
-            self.captcha_text_item.children.show()
+            self.captcha_text_item.set_text("")
+            self.captcha_text_item.show()
             self.username_item.label.hide()
-            self.username_item.children.hide()
+            self.username_item.hide()
             self.__password_item.label.hide()
-            self.__password_item.children.hide()
-            self.user_details_section.frame.show()
+            self.__password_item.hide()
+            self.user_details_section.show()
             return
         except webapi.LoginError as exception:
             log.debug("Login error: %s", exception)
             self.captcha_item.label.hide()
-            self.captcha_item.children.hide()
+            self.captcha_item.hide()
             self.captcha_text_item.label.hide()
-            self.captcha_text_item.children.hide()
+            self.captcha_text_item.hide()
             self.username_item.label.show()
-            self.username_item.children.show()
+            self.username_item.show()
             self.__password_item.label.show()
-            self.__password_item.children.set_text('')
-            self.__password_item.children.show()
+            self.__password_item.set_text('')
+            self.__password_item.show()
 
             self.status.error(_(
                 "Unable to log-in!\n"
@@ -549,12 +549,12 @@ class SetupDialog(Gtk.Dialog):
                 _("You removed the authenticator? If yes, "),
             )
 
-            self.user_details_section.frame.show()
+            self.user_details_section.show()
             self.previous_button.show()
             return
         except aiohttp.ClientConnectionError:
             self.status.error(_("No Connection"))
-            self.user_details_section.frame.show()
+            self.user_details_section.show()
             self.previous_button.show()
             return
 
@@ -617,7 +617,7 @@ class SetupDialog(Gtk.Dialog):
         task.add_done_callback(callback)
 
     def recovery_code(self, code):
-        self.user_details_section.frame.hide()
+        self.user_details_section.hide()
         self.previous_button.hide()
         self.status.info(_(
             "RECOVERY CODE\n\n"
@@ -645,7 +645,7 @@ class SetupDialog(Gtk.Dialog):
     ) -> Optional[Dict[str, Any]]:
         self.previous_button.hide()
         self.next_button.hide()
-        self.user_details_section.frame.hide()
+        self.user_details_section.hide()
         self.status.info(_("Waiting Steam Server..."))
         self.status.show()
         self.status.set_size_request(0, 0)
@@ -658,12 +658,12 @@ class SetupDialog(Gtk.Dialog):
                 oauth_data['steamid'],
                 oauth_data['oauth_token'],
                 authenticator_code,
-                self.code_item.children.get_text(),
+                self.code_item.get_text(),
             )
         except webapi.SMSCodeError:
             self.status.info(_("Invalid SMS Code. Please,\ncheck the code and try again."))
-            self.code_item.children.set_text("")
-            self.code_item.children.show()
+            self.code_item.set_text("")
+            self.code_item.show()
             return
 
         if complete:

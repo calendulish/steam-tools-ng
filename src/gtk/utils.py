@@ -17,7 +17,7 @@
 #
 import asyncio
 import logging
-from typing import Any, Callable, List, NamedTuple, Tuple, Optional
+from typing import Any, Callable, List, Tuple, Optional
 
 import cairo
 from gi.repository import Gtk, Gdk
@@ -27,16 +27,6 @@ from .. import i18n
 
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
-
-
-class Section(NamedTuple):
-    frame: Gtk.Frame
-    grid: Gtk.Grid
-
-
-class Item(NamedTuple):
-    label: Gtk.Label
-    children: Gtk.Widget
 
 
 class VariableButton(Gtk.Button):
@@ -232,39 +222,41 @@ class Status(Gtk.Frame):
         self._level_bar.set_max_value(max_value)
 
 
-def new_section(name: str, label_text: str) -> Section:
-    frame = Gtk.Frame(label=label_text)
-    frame.set_label_align(0.03, 0.5)
-    frame.set_name(name)
+class Section(Gtk.Frame):
+    def __init__(self, name: str, label: str) -> None:
+        super().__init__(label=label)
+        self.set_label_align(0.03, 0.5)
+        self.set_name(name)
 
-    grid = Gtk.Grid()
-    grid.set_name(name)
-    grid.set_row_spacing(10)
-    grid.set_column_spacing(10)
-    grid.set_border_width(10)
-    frame.add(grid)
+        self.grid = Gtk.Grid()
+        self.grid.set_name(name)
+        self.grid.set_row_spacing(10)
+        self.grid.set_column_spacing(10)
+        self.grid.set_border_width(10)
 
-    return Section(frame, grid)
+        self.add(self.grid)
 
+    def __item_factory(self, children: Callable[..., Gtk.Widget]) -> Any:
+        class Item(children):
+            def __init__(self, name: str, label: str) -> None:
+                super().__init__()
 
-def new_item(
-        name: str,
-        label_text: str,
-        section: Section,
-        children: Callable[..., Gtk.Widget],
-        *grid_position: int
-) -> Item:
-    label = Gtk.Label(label_text)
-    label.set_name(name)
-    label.set_halign(Gtk.Align.START)
-    section.grid.attach(label, *grid_position, 1, 1)
+                self.label = Gtk.Label(label)
+                self.label.set_name(name)
+                self.label.set_halign(Gtk.Align.START)
 
-    children_widget = children()
-    children_widget.set_hexpand(True)
-    children_widget.set_name(name)
-    section.grid.attach_next_to(children_widget, label, Gtk.PositionType.RIGHT, 1, 1)
+                self.set_hexpand(True)
+                self.set_name(name)
 
-    return Item(label, children_widget)
+        return Item
+
+    def new(self, name: str, label: str, children: Callable[..., Gtk.Widget], *grid_position: int) -> Gtk.Widget:
+        item = self.__item_factory(children)(name, label)
+
+        self.grid.attach(item.label, *grid_position, 1, 1)
+        self.grid.attach_next_to(item, item.label, Gtk.PositionType.RIGHT, 1, 1)
+
+        return item
 
 
 def markup(text: str, **kwargs: Any) -> str:

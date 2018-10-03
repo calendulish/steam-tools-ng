@@ -91,60 +91,60 @@ class SettingsDialog(Gtk.Dialog):
         self.connect('response', lambda dialog, response_id: self.destroy())
         self.show()
 
-    def login_settings(self) -> Gtk.Frame:
-        self.login_section = utils.new_section("login", _("Login Settings"))
-        self.login_section.grid.set_row_spacing(5)
+    def login_settings(self) -> utils.Section:
+        login_section = utils.Section("login", _("Login Settings"))
+        login_section.grid.set_row_spacing(5)
 
-        adb_path = utils.new_item('adb_path', _("Adb Path:"), self.login_section, Gtk.Entry, 0, 0)
-        adb_path.children.set_placeholder_text('E.g.: c:\\adb.exe or /opt/adb')
-        adb_path.children.connect('changed', on_adb_path_changed)
+        adb_path = login_section.new('adb_path', _("Adb Path:"), Gtk.Entry, 0, 0)
+        adb_path.set_placeholder_text('E.g.: c:\\adb.exe or /opt/adb')
+        adb_path.connect('changed', on_adb_path_changed)
 
-        account_name = utils.new_item('account_name', _("Username:"), self.login_section, Gtk.Entry, 0, 2)
-        account_name.children.connect('changed', on_account_name_changed)
+        account_name = login_section.new('account_name', _("Username:"), Gtk.Entry, 0, 2)
+        account_name.connect('changed', on_account_name_changed)
 
-        self.login_section.frame.show_all()
+        login_section.show_all()
 
-        shared_secret = utils.new_item('shared_secret', _("Shared Secret:"), self.login_section, Gtk.Entry, 0, 4)
-        shared_secret.children.connect('changed', on_shared_secret_changed)
+        shared_secret = login_section.new('shared_secret', _("Shared Secret:"), Gtk.Entry, 0, 4)
+        shared_secret.connect('changed', on_shared_secret_changed)
 
-        token_item = utils.new_item("token", _("Token:"), self.login_section, Gtk.Entry, 0, 6)
-        token_item.children.connect("changed", on_token_changed)
+        token_item = login_section.new("token", _("Token:"), Gtk.Entry, 0, 6)
+        token_item.connect("changed", on_token_changed)
 
-        token_secure_item = utils.new_item("token_secure", _("Token Secure:"), self.login_section, Gtk.Entry, 2, 0)
-        token_secure_item.children.connect("changed", on_token_secure_changed)
+        token_secure_item = login_section.new("token_secure", _("Token Secure:"), Gtk.Entry, 2, 0)
+        token_secure_item.connect("changed", on_token_secure_changed)
 
-        identity_secret = utils.new_item('identity_secret', _("Identity Secret:"), self.login_section, Gtk.Entry, 2, 2)
-        identity_secret.children.connect('changed', on_identity_secret_changed)
+        identity_secret = login_section.new('identity_secret', _("Identity Secret:"), Gtk.Entry, 2, 2)
+        identity_secret.connect('changed', on_identity_secret_changed)
 
-        deviceid = utils.new_item('deviceid', _("Device ID:"), self.login_section, Gtk.Entry, 2, 4)
-        deviceid.children.connect('changed', on_device_id_changed)
+        deviceid = login_section.new('deviceid', _("Device ID:"), Gtk.Entry, 2, 4)
+        deviceid.connect('changed', on_device_id_changed)
 
-        steamid_item = utils.new_item("steamid", _("Steam ID:"), self.login_section, Gtk.Entry, 2, 6)
-        steamid_item.children.set_input_purpose(Gtk.InputPurpose.DIGITS)
-        steamid_item.children.connect("changed", on_steamid_changed)
+        steamid_item = login_section.new("steamid", _("Steam ID:"), Gtk.Entry, 2, 6)
+        steamid_item.set_input_purpose(Gtk.InputPurpose.DIGITS)
+        steamid_item.connect("changed", on_steamid_changed)
 
         advanced = Gtk.CheckButton(_("Advanced"))
         advanced.set_name("advanced_button")
-        advanced.connect("toggled", self.on_advanced_button_toggled)
-        self.login_section.grid.attach(advanced, 0, 7, 1, 1)
+        advanced.connect("toggled", self.on_advanced_button_toggled, login_section)
+        login_section.grid.attach(advanced, 0, 7, 1, 1)
         advanced.show()
 
-        load_settings(self.login_section, Gtk.Entry)
+        load_settings(login_section, Gtk.Entry)
 
-        setup = Gtk.Button(_("Magic Box"))
-        setup.set_name("setup_button")
-        setup.connect('clicked', self.on_setup_clicked)
-        self.login_section.grid.attach(setup, 0, 8, 4, 1)
-        setup.show()
+        setup_button = Gtk.Button(_("Magic Box"))
+        setup_button.set_name("setup_button")
+        setup_button.connect('clicked', self.on_setup_clicked)
+        login_section.grid.attach(setup_button, 0, 8, 4, 1)
+        setup_button.show()
 
-        return self.login_section.frame
+        return login_section
 
-    def on_advanced_button_toggled(self, button: Gtk.Button) -> None:
+    def on_advanced_button_toggled(self, button: Gtk.Button, login_section: utils.Section) -> None:
         if button.get_active():
-            self.login_section.grid.show_all()
-            self.login_section.frame.set_label_align(0.017, 0.5)
+            login_section.grid.show_all()
+            login_section.set_label_align(0.017, 0.5)
         else:
-            childrens = Gtk.Container.get_children(self.login_section.grid)
+            childrens = Gtk.Container.get_children(login_section.grid)
             keep_list = ['adb_path', 'account_name', 'advanced_button', 'setup_button']
 
             for children in childrens:
@@ -154,38 +154,38 @@ class SettingsDialog(Gtk.Dialog):
                     children.hide()
 
             self.set_size_request(300, 150)
-            self.login_section.frame.set_label_align(0.03, 0.5)
+            self.login_section.set_label_align(0.03, 0.5)
 
-    def plugins_settings(self) -> Gtk.Frame:
-        plugins_section = utils.new_section('plugins', _('Plugins Settings'))
+    def plugins_settings(self) -> utils.Section:
+        plugins_section = utils.Section('plugins', _('Plugins Settings'))
 
         info_label = Gtk.Label()
         info_label.set_text(_("It can take some time to enable/disable plugins (3 ~ 15 seconds)"))
         plugins_section.grid.attach(info_label, 0, 0, 4, 1)
 
-        steamguard = utils.new_item("steamguard", _("SteamGuard:"), plugins_section, Gtk.CheckButton, 0, 1)
-        steamguard.children.set_active(True)
-        steamguard.children.connect('toggled', on_steamguard_plugin_toggled)
+        steamguard = plugins_section.new("steamguard", _("SteamGuard:"), Gtk.CheckButton, 0, 1)
+        steamguard.set_active(True)
+        steamguard.connect('toggled', on_steamguard_plugin_toggled)
 
-        steamtrades = utils.new_item("steamtrades", _("Steamtrades:"), plugins_section, Gtk.CheckButton, 2, 1)
-        steamguard.children.set_active(True)
-        steamtrades.children.connect('toggled', on_steamtrades_plugin_toggled)
+        steamtrades = plugins_section.new("steamtrades", _("Steamtrades:"), Gtk.CheckButton, 2, 1)
+        steamguard.set_active(True)
+        steamtrades.connect('toggled', on_steamtrades_plugin_toggled)
 
         load_settings(plugins_section, Gtk.CheckButton)
 
-        plugins_section.frame.show_all()
-        return plugins_section.frame
+        plugins_section.show_all()
+        return plugins_section
 
-    def gtk_settings(self) -> Gtk.Frame:
-        gtk_section = utils.new_section('gtk', _('Gtk Settings'))
+    def gtk_settings(self) -> utils.Section:
+        gtk_section = utils.Section('gtk', _('Gtk Settings'))
 
-        theme = utils.new_item("theme", _("Theme:"), gtk_section, Gtk.ComboBoxText, 0, 0)
-        theme.children.connect('changed', self.on_theme_changed)
+        theme = gtk_section.new("theme", _("Theme:"), Gtk.ComboBoxText, 0, 0)
+        theme.connect('changed', self.on_theme_changed)
 
         load_settings(gtk_section, Gtk.ComboBoxText, combo_items=gtk_themes)
 
-        gtk_section.frame.show_all()
-        return gtk_section.frame
+        gtk_section.show_all()
+        return gtk_section
 
     def on_theme_changed(self, combo: Gtk.ComboBoxText) -> None:
         theme = config.ConfigStr(list(gtk_themes)[combo.get_active()])
@@ -198,53 +198,52 @@ class SettingsDialog(Gtk.Dialog):
         config.new(config.ConfigType('gtk', 'theme', theme))
 
     @staticmethod
-    def steamtrades_settings() -> Gtk.Frame:
-        steamtrades_section = utils.new_section('steamtrades', _('Steamtrades Settings'))
+    def steamtrades_settings() -> utils.Section:
+        steamtrades_section = utils.Section('steamtrades', _('Steamtrades Settings'))
 
-        trade_ids = utils.new_item("trade_ids", _("Trade IDs:"), steamtrades_section, Gtk.Entry, 0, 0)
-        trade_ids.children.set_placeholder_text('12345, asdfg, ...')
-        trade_ids.children.connect("changed", on_trade_ids_changed)
+        trade_ids = steamtrades_section.new("trade_ids", _("Trade IDs:"), Gtk.Entry, 0, 0)
+        trade_ids.set_placeholder_text('12345, asdfg, ...')
+        trade_ids.connect("changed", on_trade_ids_changed)
 
-        wait_min = utils.new_item("wait_min", _("Wait MIN:"), steamtrades_section, Gtk.Entry, 0, 1)
-        wait_min.children.connect("changed", on_wait_min_changed)
+        wait_min = steamtrades_section.new("wait_min", _("Wait MIN:"), Gtk.Entry, 0, 1)
+        wait_min.connect("changed", on_wait_min_changed)
 
-        wait_max = utils.new_item("wait_max", _("Wait MAX:"), steamtrades_section, Gtk.Entry, 0, 2)
-        wait_max.children.connect("changed", on_wait_max_changed)
+        wait_max = steamtrades_section.new("wait_max", _("Wait MAX:"), Gtk.Entry, 0, 2)
+        wait_max.connect("changed", on_wait_max_changed)
 
         load_settings(steamtrades_section, Gtk.Entry)
 
-        steamtrades_section.frame.show_all()
-        return steamtrades_section.frame
+        steamtrades_section.show_all()
+        return steamtrades_section
 
-    def locale_settings(self) -> Gtk.Frame:
-        locale_section = utils.new_section("locale", _('Locale settings'))
-        language_item = utils.new_item("language", _("Language"), locale_section, Gtk.ComboBoxText, 0, 0)
+    def locale_settings(self) -> utils.Section:
+        locale_section = utils.Section("locale", _('Locale settings'))
+        language_item = locale_section.new("language", _("Language"), Gtk.ComboBoxText, 0, 0)
 
         load_settings(locale_section, Gtk.ComboBoxText, combo_items=translations)
-        language_item.children.connect("changed", self.update_language)
+        language_item.connect("changed", self.update_language)
 
-        locale_section.frame.show_all()
-        return locale_section.frame
+        locale_section.show_all()
+        return locale_section
 
-    def logger_settings(self) -> Gtk.Frame:
-        logger_section = utils.new_section("logger", _('Logger settings'))
-        log_level_item = utils.new_item("log_level", _("Level:"), logger_section, Gtk.ComboBoxText, 0, 0)
+    def logger_settings(self) -> utils.Section:
+        logger_section = utils.Section("logger", _('Logger settings'))
+        log_level_item = logger_section.new("log_level", _("Level:"), Gtk.ComboBoxText, 0, 0)
 
-        log_console_level_item = utils.new_item(
+        log_console_level_item = logger_section.new(
             "log_console_level",
             _("Console level:"),
-            logger_section,
             Gtk.ComboBoxText,
             0, 1,
         )
 
         load_settings(logger_section, Gtk.ComboBoxText, combo_items=log_levels)
 
-        log_level_item.children.connect("changed", on_log_level_changed)
-        log_console_level_item.children.connect("changed", on_log_console_level_changed)
+        log_level_item.connect("changed", on_log_level_changed)
+        log_console_level_item.connect("changed", on_log_console_level_changed)
 
-        logger_section.frame.show_all()
-        return logger_section.frame
+        logger_section.show_all()
+        return logger_section
 
     def on_setup_clicked(self, button: Gtk.Button) -> None:
         setup_dialog = setup.SetupDialog(self, self.session, self.webapi_session)
@@ -384,7 +383,7 @@ def load_settings(
         save: bool = False,
 ) -> None:
     childrens = Gtk.Container.get_children(section.grid)
-    config_section = section.frame.get_name()
+    config_section = section.get_name()
 
     for children in childrens:
         if isinstance(children, children_type):
