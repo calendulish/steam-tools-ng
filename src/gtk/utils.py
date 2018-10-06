@@ -167,7 +167,7 @@ class SimpleStatus(Gtk.Frame):
         if add_after:
             self._after_link_label.set_markup(markup(add_after, color='cyan', face='monospace'))
 
-        self._link_grid.show()
+        self._link_grid.show_all()
 
 
 class Status(Gtk.Frame):
