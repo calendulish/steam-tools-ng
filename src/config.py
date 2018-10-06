@@ -76,6 +76,12 @@ class Default:
         return locals()[option]
 
     @staticmethod
+    def _steam(option: str) -> str:
+        api_url = ConfigStr('https://lara.click/api')
+
+        return locals()[option]
+
+    @staticmethod
     def _steamtrades(option: str) -> int:
         wait_min = ConfigInt(3700)
         wait_max = ConfigInt(4100)

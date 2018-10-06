@@ -42,7 +42,8 @@ async def on_get_login_data(
         token: Optional[config.ConfigStr] = None,
         token_secure: Optional[config.ConfigStr] = None,
 ) -> Dict[str, str]:
-    steamtrades = plugins.get_plugin('steamtrades', session, api_url='https://lara.click/api')
+    api_url = config.get('steam', 'api_url')
+    steamtrades = plugins.get_plugin('steamtrades', session, api_url=api_url.value)
 
     while True:
         if not steamid or not token or not token_secure:
@@ -112,8 +113,10 @@ async def run(
         wait_min: Union[config.ConfigInt, int] = 3700,
         wait_max: Union[config.ConfigInt, int] = 4100,
 ) -> None:
+    api_url = config.get('steam', 'api_url')
+
     if plugins.has_plugin("steamtrades"):
-        steamtrades = plugins.get_plugin('steamtrades', session, api_url='https://lara.click/api')
+        steamtrades = plugins.get_plugin('steamtrades', session, api_url=api_url.value)
     else:
         log.critical("Unable to find steamtrades plugin")
         sys.exit(1)
@@ -123,7 +126,7 @@ async def run(
         sys.exit(1)
 
     log.info(_("Loading, please wait..."))
-    webapi_session = webapi.SteamWebAPI(session, 'https://lara.click/api')
+    webapi_session = webapi.SteamWebAPI(session, api_url.value)
     authenticator_code = await on_get_code(webapi_session)
 
     login_data = await on_get_login_data(session, authenticator_code)

@@ -157,10 +157,11 @@ class Main(Gtk.ApplicationWindow):
         while self.get_realized():
             steamid = config.getint('login', 'steamid')
             nickname = config.get('login', 'nickname')
+            api_url = config.get('steam', 'api_url')
             cookies = config.login_cookies()
 
             if plugins.has_plugin('steamtrades'):
-                steamtrades = plugins.get_plugin("steamtrades", self.session, api_url='https://lara.click/api')
+                steamtrades = plugins.get_plugin("steamtrades", self.session, api_url=api_url.value)
 
             if not nickname.value:
                 try:

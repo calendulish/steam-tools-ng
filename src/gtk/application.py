@@ -41,7 +41,8 @@ class Application(Gtk.Application):
                          flags=Gio.ApplicationFlags.FLAGS_NONE)
 
         self.session = session
-        self.webapi_session = webapi.SteamWebAPI(session, 'https://lara.click/api')
+        self.api_url = config.get('steam', 'api_url')
+        self.webapi_session = webapi.SteamWebAPI(session, self.api_url.value)
 
         self.window = None
         self.gtk_settings = Gtk.Settings.get_default()
@@ -279,7 +280,7 @@ class Application(Gtk.Application):
             self.window.steamtrades_status.set_info(message)
 
         if plugins.has_plugin("steamtrades"):
-            steamtrades = plugins.get_plugin("steamtrades", self.session, api_url='https://lara.click/api')
+            steamtrades = plugins.get_plugin("steamtrades", self.session, api_url=self.api_url.value)
         else:
             error(_("Unable to find Steamtrades plugin"))
             return
