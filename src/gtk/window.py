@@ -72,8 +72,11 @@ class Main(Gtk.ApplicationWindow):
         self.steamtrades_status = utils.Status(5, "SteamTrades (bump)")
         status_grid.attach(self.steamtrades_status, 0, 0, 1, 1)
 
+        self.steamgifts_status = utils.Status(5, "SteamGifts (join)")
+        status_grid.attach(self.steamgifts_status, 1, 0, 1, 1)
+
         self.steamguard_status = utils.Status(4, _('Steam Guard Code'))
-        status_grid.attach(self.steamguard_status, 1, 0, 1, 1)
+        status_grid.attach(self.steamguard_status, 0, 2, 2, 1)
 
         info_label = Gtk.Label()
         info_label.set_text(_("If you have confirmations, they will be shown here. (15 seconds delay)"))

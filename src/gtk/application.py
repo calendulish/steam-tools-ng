@@ -158,6 +158,7 @@ class Application(Gtk.Application):
         asyncio.ensure_future(self.run_steamguard())
         asyncio.ensure_future(self.run_confirmations())
         asyncio.ensure_future(self.run_steamtrades())
+        asyncio.ensure_future(self.run_steamgifts())
 
     async def run_steamguard(self) -> None:
         assert isinstance(self.window, Gtk.Window), "No window"
@@ -373,6 +374,56 @@ class Application(Gtk.Application):
                     self.window.steamtrades_status.set_level(0, 0)
 
                 await asyncio.sleep(1)
+
+    async def run_steamgifts(self) -> None:
+        def error(message: str) -> None:
+            self.window.steamgifts_status.set_current('_ _ _ _ _')
+            self.window.steamgifts_status.set_error(message)
+
+        def info(message: str, giftid: str = '_ _ _ _ _') -> None:
+            self.window.steamgifts_status.set_current(giftid)
+            self.window.steamgifts_status.set_info(message)
+
+        if plugins.has_plugin("steamgifts"):
+            steamgifts = plugins.get_plugin("steamgifts", self.session, api_url='https://lara.click/api')
+        else:
+            error(_("Unable to find Steamgifts plugin"))
+            return
+
+        assert isinstance(self.window, Gtk.Window), "No window"
+
+        while self.window.get_realized():
+            if not self.window.plugin_switch("steamgifts"):
+                await asyncio.sleep(5)
+                continue
+
+            info(_("Loading"))
+            wait_min = config.getint("steamgifts", "wait_min")
+            wait_max = config.getint("steamgifts", "wait_max")
+            cookies = config.login_cookies()
+
+            if cookies:
+                self.session.cookie_jar.update_cookies(cookies)
+                try:
+                    await steamgifts.do_login()
+                except aiohttp.ClientConnectionError:
+                    error(_("No Connection"))
+                    await asyncio.sleep(15)
+                    continue
+                except webapi.LoginError:
+                    error(_("User is not logged in"))
+                    await asyncio.sleep(15)
+                    continue
+            else:
+                error(_("Unable to find a valid login data"))
+                await asyncio.sleep(5)
+                continue
+
+            await steamgifts.configure()
+
+            await asyncio.sleep(30)
+
+            raise NotImplementedError
 
     def on_settings_activate(self, action: Any, data: Any) -> None:
         settings_dialog = settings.SettingsDialog(self.window, self.session, self.webapi_session)
