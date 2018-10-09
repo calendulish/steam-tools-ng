@@ -184,16 +184,11 @@ class SetupDialog(Gtk.Dialog):
 
         if future.result():
             self.status.info(_("Write code received by SMS\nand click on 'Add Authenticator' button"))
-            self.captcha_item.label.hide()
             self.captcha_item.hide()
-            self.captcha_text_item.label.hide()
             self.captcha_text_item.hide()
-            self.code_item.label.show()
             self.code_item.set_text("")
             self.code_item.show()
-            self.username_item.label.hide()
             self.username_item.hide()
-            self.__password_item.label.hide()
             self.__password_item.hide()
             self.user_details_section.show()
 
@@ -386,11 +381,8 @@ class SetupDialog(Gtk.Dialog):
         self.status.info(_("Waiting user input..."))
         self.user_details_section.show_all()
         self.combo.hide()
-        self.code_item.label.hide()
         self.code_item.hide()
-        self.captcha_item.label.hide()
         self.captcha_item.hide()
-        self.captcha_text_item.label.hide()
         self.captcha_text_item.hide()
 
         self.next_button.set_label(_("Next"))
@@ -467,16 +459,11 @@ class SetupDialog(Gtk.Dialog):
                 raise webapi.LoginError
         except webapi.MailCodeError:
             self.status.info(_("Write code received by email\nand click on 'Try Again?' button"))
-            self.captcha_item.label.hide()
             self.captcha_item.hide()
-            self.captcha_text_item.label.hide()
             self.captcha_text_item.hide()
-            self.code_item.label.show()
             self.code_item.set_text("")
             self.code_item.show()
-            self.username_item.label.hide()
             self.username_item.hide()
-            self.__password_item.label.hide()
             self.__password_item.hide()
             self.user_details_section.show()
             return
@@ -515,26 +502,18 @@ class SetupDialog(Gtk.Dialog):
             pixbuf_loader.close()
             self.captcha_item.set_from_pixbuf(pixbuf_loader.get_pixbuf())
 
-            self.captcha_item.label.show()
             self.captcha_item.show()
-            self.captcha_text_item.label.show()
             self.captcha_text_item.set_text("")
             self.captcha_text_item.show()
-            self.username_item.label.hide()
             self.username_item.hide()
-            self.__password_item.label.hide()
             self.__password_item.hide()
             self.user_details_section.show()
             return
         except webapi.LoginError as exception:
             log.debug("Login error: %s", exception)
-            self.captcha_item.label.hide()
             self.captcha_item.hide()
-            self.captcha_text_item.label.hide()
             self.captcha_text_item.hide()
-            self.username_item.label.show()
             self.username_item.show()
-            self.__password_item.label.show()
             self.__password_item.set_text('')
             self.__password_item.show()
 

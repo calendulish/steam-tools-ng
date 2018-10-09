@@ -248,6 +248,14 @@ class Section(Gtk.Frame):
                 self.set_hexpand(True)
                 self.set_name(name)
 
+            def show_all(self) -> None:
+                self.label.show()
+                super().show()
+
+            def hide(self) -> None:
+                self.label.hide()
+                super().hide()
+
         return Item
 
     def new(self, name: str, label: str, children: Callable[..., Gtk.Widget], *grid_position: int) -> Gtk.Widget:
