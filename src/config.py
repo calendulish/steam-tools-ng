@@ -77,7 +77,7 @@ class Default:
 
     @staticmethod
     def _steam(option: str) -> str:
-        api_url = ConfigStr('https://lara.click/api')
+        api_url = ConfigStr('https://api.lara.click')
 
         return locals()[option]
 
