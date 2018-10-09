@@ -154,11 +154,16 @@ class Application(Gtk.Application):
 
             break
 
-        asyncio.ensure_future(self.window.update_login_icons())
-        asyncio.ensure_future(self.run_steamguard())
-        asyncio.ensure_future(self.run_confirmations())
-        asyncio.ensure_future(self.run_steamtrades())
-        asyncio.ensure_future(self.run_steamgifts())
+        modules = [
+            self.window.update_login_icons(),
+            self.run_confirmations(),
+            self.run_steamguard(),
+            self.run_steamtrades(),
+            self.run_steamgifts(),
+        ]
+
+        for module in modules:
+            asyncio.ensure_future(module)
 
     async def run_steamguard(self) -> None:
         assert isinstance(self.window, Gtk.Window), "No window"
