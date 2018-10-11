@@ -134,7 +134,7 @@ async def check_login(
 
         __password = getpass.getpass(_("Please, write your password (it's hidden, and will be not saved)"))
 
-        login = webapi.Login(session, username.value, __password.value)
+        login = webapi.Login(session, username.value, __password)
 
         if shared_secret:
             server_time = await webapi_session.get_server_time()
@@ -216,7 +216,7 @@ async def check_login(
                     'steamid': login_data['transfer_parameters']['steamid'],
                     'token': login_data['transfer_parameters']['webcookie'],
                     'token_secure': login_data['transfer_parameters']['token_secure'],
-                    'account_name': username,
+                    'account_name': username.value,
                     'shared_secret': shared_secret.value,
                     'identity_secret': identity_secret.value,
                 }

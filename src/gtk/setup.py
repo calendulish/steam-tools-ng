@@ -394,7 +394,7 @@ class SetupDialog(Gtk.Dialog):
                     "(STNG will add itself as Steam Authenticator in your account)\n"
                 ))
             else:
-                self.status.error(_("Unable to log-in!\nThe secret keys is invalid!\n"))
+                self.status.error(_("Unable to log-in!\nThe secret keys are invalid!\n"))
 
             self.previous_button.show()
             return

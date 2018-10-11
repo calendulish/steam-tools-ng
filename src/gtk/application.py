@@ -351,7 +351,7 @@ class Application(Gtk.Application):
                     await asyncio.sleep(15)
                     continue
                 except plugins.steamtrades.NotReadyError as exception:
-                    wait_min = config.ConfigType('staemtrades', 'wait_min', config.ConfigInt(exception.time_left * 60))
+                    wait_min = config.ConfigType('steamtrades', 'wait_min', config.ConfigInt(exception.time_left * 60))
                     wait_max = config.ConfigType('steamtrades', 'wait_max', config.ConfigInt(wait_min.value + 400))
                     bumped = True
                 except plugins.steamtrades.ClosedError as exception:
