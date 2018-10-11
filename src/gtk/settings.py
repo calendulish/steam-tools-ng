@@ -48,6 +48,12 @@ translations = OrderedDict([
     ('pt_BR', _("Portuguese (Brazil)")),
 ])
 
+giveaway_types = OrderedDict([
+    ('main', _("Main Giveaways")),
+    ('new', _("New Giveaways")),
+    ('wishlist', _("Wishlist Only")),
+])
+
 
 # noinspection PyUnusedLocal
 class SettingsDialog(Gtk.Dialog):
@@ -79,12 +85,15 @@ class SettingsDialog(Gtk.Dialog):
         content_grid.set_column_spacing(10)
         content_area.add(content_grid)
 
-        content_grid.attach(self.login_settings(), 0, 0, 1, 3)
-        content_grid.attach(self.plugins_settings(), 0, 3, 2, 1)
-        content_grid.attach(self.logger_settings(), 1, 0, 1, 2)
-        content_grid.attach(self.locale_settings(), 1, 2, 1, 1)
-        content_grid.attach(self.gtk_settings(), 2, 0, 1, 1)
-        content_grid.attach(self.steamtrades_settings(), 2, 1, 1, 2)
+        content_grid.attach(self.login_settings(), 0, 0, 1, 2)
+        content_grid.attach(self.logger_settings(), 1, 0, 1, 1)
+        content_grid.attach(self.locale_settings(), 1, 1, 1, 1)
+
+        content_grid.attach(self.steamtrades_settings(), 0, 2, 1, 1)
+        content_grid.attach(self.steamgifts_settings(), 1, 2, 1, 1)
+
+        content_grid.attach(self.gtk_settings(), 0, 3, 1, 1)
+        content_grid.attach(self.plugins_settings(), 1, 3, 1, 1)
 
         content_grid.show()
 
@@ -93,7 +102,6 @@ class SettingsDialog(Gtk.Dialog):
 
     def login_settings(self) -> utils.Section:
         login_section = utils.Section("login", _("Login Settings"))
-        login_section.grid.set_row_spacing(5)
 
         adb_path = login_section.new('adb_path', _("Adb Path:"), Gtk.Entry, 0, 0)
         adb_path.set_placeholder_text('E.g.: c:\\adb.exe or /opt/adb')
@@ -154,22 +162,26 @@ class SettingsDialog(Gtk.Dialog):
                     children.hide()
 
             self.set_size_request(300, 150)
-            self.login_section.set_label_align(0.03, 0.5)
+            login_section.set_label_align(0.03, 0.5)
 
     def plugins_settings(self) -> utils.Section:
         plugins_section = utils.Section('plugins', _('Plugins Settings'))
 
         info_label = Gtk.Label()
-        info_label.set_text(_("It can take some time to enable/disable plugins (3 ~ 15 seconds)"))
+        info_label.set_text(_("It take effect in 3 ~ 15 seconds"))
         plugins_section.grid.attach(info_label, 0, 0, 4, 1)
 
         steamguard = plugins_section.new("steamguard", _("SteamGuard:"), Gtk.CheckButton, 0, 1)
         steamguard.set_active(True)
         steamguard.connect('toggled', on_steamguard_plugin_toggled)
 
-        steamtrades = plugins_section.new("steamtrades", _("Steamtrades:"), Gtk.CheckButton, 2, 1)
-        steamguard.set_active(True)
+        steamtrades = plugins_section.new("steamtrades", _("Steamtrades:"), Gtk.CheckButton, 0, 2)
+        steamtrades.set_active(True)
         steamtrades.connect('toggled', on_steamtrades_plugin_toggled)
+
+        steamgifts = plugins_section.new("steamgifts", _("Steamgifts:"), Gtk.CheckButton, 2, 1)
+        steamgifts.set_active(True)
+        steamgifts.connect('toggled', on_steamgifts_plugin_toggled)
 
         load_settings(plugins_section, Gtk.CheckButton)
 
@@ -206,15 +218,34 @@ class SettingsDialog(Gtk.Dialog):
         trade_ids.connect("changed", on_trade_ids_changed)
 
         wait_min = steamtrades_section.new("wait_min", _("Wait MIN:"), Gtk.Entry, 0, 1)
-        wait_min.connect("changed", on_wait_min_changed)
+        wait_min.connect("changed", save_digit_only, "steamtrades", "wait_min")
 
         wait_max = steamtrades_section.new("wait_max", _("Wait MAX:"), Gtk.Entry, 0, 2)
-        wait_max.connect("changed", on_wait_max_changed)
+        wait_max.connect("changed", save_digit_only, "steamtrades", "wait_max")
 
         load_settings(steamtrades_section, Gtk.Entry)
 
         steamtrades_section.show_all()
         return steamtrades_section
+
+    def steamgifts_settings(self) -> utils.Section:
+        steamgifts_section = utils.Section("steamgifts", _("Steamgifts Settings"))
+
+        giveaway_type = steamgifts_section.new("giveaway_type", _("Giveaway Type:"), Gtk.ComboBoxText, 0, 0)
+        giveaway_type.connect("changed", on_giveaway_type_changed)
+
+        load_settings(steamgifts_section, Gtk.ComboBoxText, combo_items=giveaway_types)
+
+        wait_min = steamgifts_section.new("wait_min", _("Wait MIN:"), Gtk.Entry, 0, 2)
+        wait_min.connect("changed", save_digit_only, "steamgifts", "wait_min")
+
+        wait_max = steamgifts_section.new("wait_max", _("Wait MAX:"), Gtk.Entry, 0, 3)
+        wait_max.connect("changed", save_digit_only, "steamgifts", "wait_max")
+
+        load_settings(steamgifts_section, Gtk.Entry)
+
+        steamgifts_section.show_all()
+        return steamgifts_section
 
     def locale_settings(self) -> utils.Section:
         locale_section = utils.Section("locale", _('Locale settings'))
@@ -319,22 +350,23 @@ def on_trade_ids_changed(entry: Gtk.Entry) -> None:
     config.new(config.ConfigType('steamtrades', 'trade_ids', entry.get_text()))
 
 
-def on_wait_min_changed(entry: Gtk.Entry) -> None:
+def save_digit_only(entry: Gtk.Entry, section: str, option: str) -> None:
     text = entry.get_text()
 
     if text.isdigit():
-        config.new(config.ConfigType('steamtrades', 'wait_min', text))
+        config.new(config.ConfigType(section, option, config.ConfigInt(int(text))))
     else:
         entry.set_text(utils.remove_letters(text))
 
 
-def on_wait_max_changed(entry: Gtk.Entry) -> None:
-    text = entry.get_text()
+def on_steamgifts_plugin_toggled(checkbutton: Gtk.CheckButton) -> None:
+    activate = config.ConfigBool(checkbutton.get_active())
+    config.new(config.ConfigType('plugins', 'steamgifts', activate))
 
-    if text.isdigit():
-        config.new(config.ConfigType('steamtrades', 'wait_max', text))
-    else:
-        entry.set_text(utils.remove_letters(text))
+
+def on_giveaway_type_changed(combo: Gtk.ComboBoxText) -> None:
+    current_type = config.ConfigStr(list(giveaway_types)[combo.get_active()])
+    config.new(config.ConfigType('steamgifts', 'giveaway_type', current_type))
 
 
 def refresh_widget_text(widget: Gtk.Widget) -> None:

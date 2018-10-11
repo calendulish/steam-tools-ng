@@ -436,8 +436,6 @@ class Application(Gtk.Application):
                 await asyncio.sleep(5)
                 continue
 
-            joined = False
-
             try:
                 await steamgifts.configure()
             except plugins.steamgifts.ConfigureError:
@@ -445,7 +443,10 @@ class Application(Gtk.Application):
                 await asyncio.sleep(20)
                 continue
 
-            for giveaway in await steamgifts.get_giveaways(giveaway_type.value):
+            giveaways = await steamgifts.get_giveaways(giveaway_type.value)
+            joined = False
+
+            for giveaway in giveaways:
                 try:
                     user = await steamgifts.get_user_info()
                 except aiohttp.ClientConnectionError:
@@ -455,6 +456,7 @@ class Application(Gtk.Application):
 
                 if user.level < giveaway.level or user.points < giveaway.points:
                     info(_("User don't meet all the requirements to join"), giveaway)
+                    await asyncio.sleep(5)
                     continue
 
                 info(_("Waiting anti-ban timer"), giveaway)
