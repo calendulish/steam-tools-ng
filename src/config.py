@@ -101,7 +101,7 @@ class Default:
         return locals()[option]
 
     @classmethod
-    def get(cls, section: str, option: str) -> Optional[ConfigType]:
+    def get(cls, section: str, option: str) -> Optional[ConfigValue]:
         try:
             default_value = getattr(cls(), f'_{section}')(option)
             log.debug(_("Using fallback value for %s:%s (%s)"), section, option, default_value)
@@ -128,10 +128,19 @@ def _get(section: str, option: str, type_: str) -> ConfigValue:
 
     if type_ == 'str':
         get_method = config_parser.get
+        type_method = ConfigStr
     else:
         get_method = getattr(config_parser, f'get{type_}')
 
-    return get_method(section, option, fallback=Default.get(section, option))
+        if type_ == 'boolean':
+            type_method = ConfigBool
+        else:
+            type_method = getattr(sys.modules[__name__], f'Config{type_.capitalize()}')
+
+    try:
+        return type_method(get_method(section, option))
+    except(configparser.NoOptionError, configparser.NoSectionError):
+        return Default.get(section, option)
 
 
 def get(section: str, option: str) -> ConfigType:
