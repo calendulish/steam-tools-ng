@@ -103,31 +103,27 @@ class SettingsDialog(Gtk.Dialog):
     def login_settings(self) -> utils.Section:
         login_section = utils.Section("login", _("Login Settings"))
 
-        adb_path = login_section.new('adb_path', _("Adb Path:"), Gtk.Entry, 0, 0)
-        adb_path.set_placeholder_text('E.g.: c:\\adb.exe or /opt/adb')
-        adb_path.connect('changed', on_adb_path_changed)
-
-        account_name = login_section.new('account_name', _("Username:"), Gtk.Entry, 0, 2)
+        account_name = login_section.new('account_name', _("Username:"), Gtk.Entry, 0, 0)
         account_name.connect('changed', on_account_name_changed)
 
         login_section.show_all()
 
-        shared_secret = login_section.new('shared_secret', _("Shared Secret:"), Gtk.Entry, 0, 4)
+        shared_secret = login_section.new('shared_secret', _("Shared Secret:"), Gtk.Entry, 0, 1)
         shared_secret.connect('changed', on_shared_secret_changed)
 
-        token_item = login_section.new("token", _("Token:"), Gtk.Entry, 0, 6)
+        token_item = login_section.new("token", _("Token:"), Gtk.Entry, 0, 2)
         token_item.connect("changed", on_token_changed)
 
-        token_secure_item = login_section.new("token_secure", _("Token Secure:"), Gtk.Entry, 2, 0)
+        token_secure_item = login_section.new("token_secure", _("Token Secure:"), Gtk.Entry, 0, 3)
         token_secure_item.connect("changed", on_token_secure_changed)
 
-        identity_secret = login_section.new('identity_secret', _("Identity Secret:"), Gtk.Entry, 2, 2)
+        identity_secret = login_section.new('identity_secret', _("Identity Secret:"), Gtk.Entry, 2, 0)
         identity_secret.connect('changed', on_identity_secret_changed)
 
-        deviceid = login_section.new('deviceid', _("Device ID:"), Gtk.Entry, 2, 4)
+        deviceid = login_section.new('deviceid', _("Device ID:"), Gtk.Entry, 2, 1)
         deviceid.connect('changed', on_device_id_changed)
 
-        steamid_item = login_section.new("steamid", _("Steam ID:"), Gtk.Entry, 2, 6)
+        steamid_item = login_section.new("steamid", _("Steam ID:"), Gtk.Entry, 2, 2)
         steamid_item.set_input_purpose(Gtk.InputPurpose.DIGITS)
         steamid_item.connect("changed", on_steamid_changed)
 
@@ -153,7 +149,7 @@ class SettingsDialog(Gtk.Dialog):
             login_section.set_label_align(0.017, 0.5)
         else:
             childrens = Gtk.Container.get_children(login_section.grid)
-            keep_list = ['adb_path', 'account_name', 'advanced_button', 'setup_button']
+            keep_list = ['account_name', 'advanced_button', 'setup_button']
 
             for children in childrens:
                 if children.get_name() in keep_list:
@@ -308,11 +304,6 @@ def on_token_changed(entry: Gtk.Entry) -> None:
 
 def on_token_secure_changed(entry: Gtk.Entry) -> None:
     config.new(config.ConfigType('login', 'token_secure', entry.get_text()))
-
-
-def on_adb_path_changed(entry: Gtk.Entry) -> None:
-    if len(entry.get_text()) > 2:
-        config.new(config.ConfigType('login', 'adb_path', entry.get_text()))
 
 
 def on_shared_secret_changed(entry: Gtk.Entry) -> None:

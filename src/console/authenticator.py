@@ -32,43 +32,6 @@ _ = i18n.get_translation
 
 
 @config.Check('login')
-def on_connect_to_adb(adb_path: Optional[config.ConfigStr] = None) -> Any:
-    while True:
-        if not adb_path:
-            user_input = utils.safe_input(_("Paste here the path to your adb 'binary'"))
-            assert isinstance(user_input, str), "safe_input is returning an invalid user_input"
-            adb_path = config.ConfigStr(user_input)
-
-        try:
-            adb = authenticator.AndroidDebugBridge(adb_path)
-        except FileNotFoundError as exception:
-            log.critical(exception.args[0])
-            try_again = utils.safe_input(_("Do you want to try again?"), True)
-
-            if not try_again:
-                raise exception
-            else:
-                adb_path = None
-        else:
-            return adb
-
-
-async def on_get_json_from_adb(adb: Any, *names: str) -> Dict[str, str]:
-    while True:
-        try:
-            json_data = await adb.get_json(*names)
-            assert isinstance(json_data, dict), "Invalid json_data"
-        except AttributeError as exception:
-            log.critical(exception.args[0])
-            try_again = utils.safe_input(_("Do you want to try again?"), True)
-
-            if not try_again:
-                raise exception
-        else:
-            return json_data
-
-
-@config.Check('login')
 async def run(session: aiohttp.ClientSession, shared_secret: Optional[config.ConfigStr] = None) -> int:
     if shared_secret:
         try:
@@ -78,27 +41,7 @@ async def run(session: aiohttp.ClientSession, shared_secret: Optional[config.Con
             return 1
     else:
         log.critical(_("No shared_secret found on config file or command line"))
-
-        use_adb = utils.safe_input(_("Do you want to get it now using adb?"), False)
-        if use_adb:
-            try:
-                adb = on_connect_to_adb()
-                json_data = await on_get_json_from_adb(adb, 'shared_secret')
-                shared_secret = config.ConfigStr(json_data['shared_secret'])
-            except (FileNotFoundError, AttributeError) as exception:
-                logging.critical(_("Failed to get shared_secret!"))
-                logging.critical(exception.args[0])
-                return 1
-
-            logging.info(_("Success!"))
-
-            save_config = utils.safe_input(_("Do you want to save this configuration?"), True)
-            if save_config:
-                config.new(config.ConfigType('authenticator', 'shared_secret', shared_secret),
-                           config.ConfigType('authenticator', 'adb_path', adb.adb_path))
-                logging.info(_("Configuration has been saved!"))
-        else:
-            return 1
+        return 1
 
     while True:
         try:
