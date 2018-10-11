@@ -342,9 +342,10 @@ class Application(Gtk.Application):
                     continue
 
                 try:
+                    info(_("Waiting anti-ban timer"))
+                    await asyncio.sleep(random.randint(3, 8))
+
                     if await steamtrades.bump(trade_info):
-                        info(_("Waiting anti-ban timer"))
-                        await asyncio.sleep(random.randint(3, 8))
                         info(_("Bumped!"), trade_info.id)
                         bumped = True
                     else:
@@ -456,10 +457,10 @@ class Application(Gtk.Application):
                     info(_("User don't meet all the requirements to join"), giveaway)
                     continue
 
-                # FIXME: stlib should return join status
-                await steamgifts.join(giveaway)
                 info(_("Waiting anti-ban timer"), giveaway)
                 await asyncio.sleep(random.randint(3, 8))
+                # FIXME: stlib should return join status
+                await steamgifts.join(giveaway)
                 info(_("Joined!"), giveaway)
                 joined = True
 
