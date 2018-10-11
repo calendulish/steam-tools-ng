@@ -76,11 +76,6 @@ class SetupDialog(Gtk.Dialog):
         self.combo = Gtk.ComboBoxText()
         self.content_area.add(self.combo)
 
-        self.adb_section = utils.Section("adb", "Adb")
-        self.content_area.add(self.adb_section)
-
-        self.adb_path_item = self.adb_section.new("adb_path", _("Adb Path:"), Gtk.Entry, 0, 0)
-
         self.user_details_section = utils.Section("login", _("User Details"))
         self.content_area.add(self.user_details_section)
 
@@ -103,19 +98,25 @@ class SetupDialog(Gtk.Dialog):
             "captcha_text", _("Captcha Text:"), Gtk.Entry, 0, 4,
         )
 
+        self.advanced_settings = utils.Section('advanced_settings', _("Advanced Settings"))
+        self.content_area.add(self.advanced_settings)
+
+        self.identity_secret = self.advanced_settings.new('identity_secret', _("Identity Secret:"), Gtk.Entry, 0, 0)
+        self.shared_secret = self.advanced_settings.new('shared_secret', _("Shared Secret:"), Gtk.Entry, 0, 1)
+
         self.connect('response', lambda dialog, response_id: self.destroy())
 
     def __fatal_error(self, exception: Type[BaseException]) -> None:
         self.status.error("{}\n\n{}".format(_("IT'S A FATAL ERROR!!! PLEASE, REPORT!!!"), repr(exception)))
         self.status.show()
         self.user_details_section.hide()
-        self.adb_section.hide()
+        self.advanced_settings.hide()
         self.previous_button.hide()
 
     def __reset_and_restart(self) -> None:
         self.status.info(_("Removing old config files..."))
         self.user_details_section.hide()
-        self.adb_section.hide()
+        self.advanced_settings.hide()
         self.previous_button.hide()
         self.next_button.hide()
 
@@ -129,34 +130,61 @@ class SetupDialog(Gtk.Dialog):
         # setup dialog will be automatically reopened with new parameters
         asyncio.get_event_loop().call_later(5, self.destroy)
 
+    def _save_settings(self, login_data: Dict[str, Any]) -> None:
+        if not login_data:
+            self.__fatal_error(lambda: AttributeError("No login data found."))
+            return
+
+        new_configs = {
+            'steamid': login_data['transfer_parameters']['steamid'],
+            'token': login_data['transfer_parameters']['webcookie'],
+            'token_secure': login_data['transfer_parameters']['token_secure'],
+            'account_name': login_data['account_name'],
+            'shared_secret': self.shared_secret.get_text(),
+            'identity_secret': self.identity_secret.get_text(),
+        }
+
+        config.new(*[
+            config.ConfigType("login", key, value) for key, value in new_configs.items()
+        ])
+
+        self.destroy()
+
     def _login_mode_callback(self) -> None:
         if self.combo.get_active() == 0:
             self.prepare_login(self.prepare_add_authenticator, mobile_login=True)
         else:
-            self.adb_path()
+            self.prepare_login(self._save_settings, advanced=True)
 
-    def _prepare_login_callback(self, next_stage: Callable[..., Any], mobile_login: bool) -> None:
+    def _prepare_login_callback(self, next_stage: Callable[..., Any], advanced: bool, mobile_login: bool) -> None:
         self.status.info(_("Waiting Steam Server..."))
+        self.advanced_settings.hide()
         self.user_details_section.hide()
         self.previous_button.hide()
         self.next_button.hide()
         self.status.show()
         self.set_size_request(0, 0)
 
-        username = self.username_item.get_text()
-        password = self.__password_item.get_text()
         mail_code = self.code_item.get_text()
         captcha_text = self.captcha_text_item.get_text()
+        username = self.username_item.get_text()
+        password = self.__password_item.get_text()
 
-        task = asyncio.ensure_future(
-            self.do_login(username, password, mail_code, captcha_text=captcha_text, mobile_login=mobile_login)
-        )
+        args = [username, password, mail_code]
+        kwargs = {'captcha_text': captcha_text, 'mobile_login': mobile_login}
 
-        task.add_done_callback(functools.partial(self._do_login_callback, next_stage, mobile_login))
+        if advanced:
+            kwargs['advanced'] = True
+            kwargs['shared_secret'] = self.shared_secret.get_text()
+            kwargs['identity_secret'] = self.identity_secret.get_text()
+
+        task = asyncio.ensure_future(self.do_login(*args, **kwargs))
+        task.add_done_callback(functools.partial(self._do_login_callback, next_stage, advanced, mobile_login))
 
     def _do_login_callback(
             self,
             next_stage: Callable[..., Any],
+            advanced: bool,
             mobile_login: bool,
             future: 'asyncio.Future[Any]',
     ) -> None:
@@ -169,7 +197,7 @@ class SetupDialog(Gtk.Dialog):
             self.__password_item.set_text("")
         else:
             self.next_button.set_label(_("Try Again?"))
-            self.next_button.connect("clicked", self._prepare_login_callback, next_stage, mobile_login)
+            self.next_button.connect("clicked", self._prepare_login_callback, next_stage, advanced, mobile_login)
             self.next_button.show()
 
     def _add_authenticator_callback(
@@ -233,42 +261,6 @@ class SetupDialog(Gtk.Dialog):
             self.next_button.show()
             self.user_details_section.show()
 
-    def _adb_path_callback(self) -> None:
-        self.adb_section.hide()
-
-        if not self.adb_path_item.get_text():
-            self.status.error(_("Unable to run without a valid adb path."))
-            self.next_button.hide()
-            self.previous_button.set_label(_("Previous"))
-            self.previous_button.connect('clicked', self.adb_path)
-            return
-
-        self.previous_button.hide()
-        task = asyncio.ensure_future(self.adb_data())
-        task.add_done_callback(self._adb_data_callback)
-
-    def _adb_data_callback(self, future: 'asyncio.Future[Any]') -> None:
-        if future.exception():
-            self.__fatal_error(future.exception())
-            return
-
-        if future.result():
-            self.previous_button.hide()
-            self.next_button.hide()
-            self.status.info(_("Loading Data..."))
-            data = future.result()
-            config.new(*[config.ConfigType("login", key, value) for key, value in data.items()])
-            self.status.info(_("Done!"))
-            self.header_bar.set_show_close_button(True)
-        else:
-            self.next_button.set_label(_("Try Again?"))
-            self.next_button.connect("clicked", self._adb_path_callback)
-            self.next_button.show()
-
-            self.previous_button.set_label(_("Previous"))
-            self.previous_button.connect("clicked", self.login_mode)
-            self.previous_button.show()
-
     async def _recovery_code_timer(self, revocation_code: utils.Status) -> None:
         max_value = 30 * 3
         for offset in range(max_value):
@@ -280,7 +272,7 @@ class SetupDialog(Gtk.Dialog):
     def login_mode(self) -> None:
         self.previous_button.hide()
         self.user_details_section.hide()
-        self.adb_section.hide()
+        self.advanced_settings.hide()
         self.set_size_request(0, 0)
 
         self.status.info(_(
@@ -291,8 +283,8 @@ class SetupDialog(Gtk.Dialog):
         self.status.show()
 
         self.combo.get_model().clear()
-        self.combo.append_text(_("Using Steam Tools NG as Steam Authenticator"))
-        self.combo.append_text(_("Using a rooted Android phone and ADB"))
+        self.combo.append_text(_("Use STNG as Steam Authenticator"))
+        self.combo.append_text(_("Use custom secrets (advanced users only!)"))
         self.combo.set_active(0)
         self.combo.show()
 
@@ -300,95 +292,26 @@ class SetupDialog(Gtk.Dialog):
         self.next_button.connect("clicked", self._login_mode_callback)
         self.next_button.show()
 
-    def adb_path(self) -> None:
-        self.combo.hide()
-        self.status.info(_("ADB support is currently disabled. Please, go back."))
-        self.previous_button.set_label(_("Previous"))
-        self.previous_button.connect('clicked', self.login_mode)
-        self.previous_button.show()
-        self.next_button.hide()
-        self.set_size_request(0, 0)
+    def prepare_login(
+            self,
+            next_stage: Callable[..., Any],
+            advanced: bool = False,
+            mobile_login: bool = False,
+    ) -> None:
 
-        # FIXME: ADB is unstable, stderr and return codes lies
-        return
-
-        self.status.info(_(
-            "To automatic get login data using adb, you will need:\n"
-            "- A 'rooted' Android phone\n"
-            "- adb tool from Google\n"
-            "- adb path (set bellow)\n"
-            "- USB debugging up and running (on phone)\n"
-            "\nIt's a one-time config\n\n"
-            "Please, write here the full path where adb is located. E.g:\n\n"
-            "Windows: C:\platform-tools\\adb.exe\n"
-            "Linux: /usr/bin/adb"
-        ))
-
-        self.adb_section.show_all()
-
-        self.next_button.set_label(_("Next"))
-        self.next_button.connect("clicked", self._adb_path_callback)
-        self.next_button.show()
-
-        self.previous_button.set_label(_("Previous"))
-        self.previous_button.connect("clicked", self.login_mode)
-        self.previous_button.show()
-
-    async def adb_data(self) -> Optional[Dict[str, Any]]:
-        self.status.info(_("Running... Please wait"))
-        self.adb_section.hide()
-        self.previous_button.hide()
-        self.next_button.hide()
-        adb_path = self.adb_path_item.get_text()
-
-        if not adb_path:
-            self.status.error(_("Unable to run without a valid 'adb path'\n\n"))
-            return
-
-        try:
-            adb = authenticator.AndroidDebugBridge(adb_path)
-        except FileNotFoundError:
-            self.status.error(_(
-                "Unable to find adb in:\n\n{}\n\n"
-                "Please, enter a valid 'adb path' and try again."
-            ).format(adb_path))
-            self.adb_section.show_all()
-            return
-
-        try:
-            json_data = await adb.get_json(
-                'shared_secret',
-                'identity_secret',
-                'account_name',
-                'steamid',
-            )
-            assert isinstance(json_data, dict), "Invalid json_data"
-            json_data['deviceid'] = await adb.get_device_id()
-        except authenticator.DeviceError:
-            self.status.error(_("No phone connected"))
-        except authenticator.RootError:
-            self.status.error(_("Unable to switch to root mode"))
-        except authenticator.LoginError:
-            self.status.error(_("User is not logged-in on Mobile Authenticator"))
-        except authenticator.SteamGuardError:
-            self.status.error(_("Steam Guard is not enabled"))
-        else:
-            return json_data
-
-        return None
-
-    def prepare_login(self, next_stage: Callable[..., Any], mobile_login: bool = False) -> None:
         self.status.info(_("Waiting user input..."))
-        self.user_details_section.show_all()
+
         self.combo.hide()
+        self.user_details_section.show_all()
         self.code_item.hide()
         self.captcha_item.hide()
         self.captcha_text_item.hide()
 
+        if advanced:
+            self.advanced_settings.show_all()
+
         self.next_button.set_label(_("Next"))
-        username = self.username_item.get_text()
-        password = self.__password_item.get_text()
-        self.next_button.connect("clicked", self._prepare_login_callback, next_stage, mobile_login)
+        self.next_button.connect("clicked", self._prepare_login_callback, next_stage, advanced, mobile_login)
         self.next_button.show()
 
         self.previous_button.set_label(_("Previous"))
@@ -406,12 +329,25 @@ class SetupDialog(Gtk.Dialog):
             captcha_text: str = '',
             mobile_login: bool = False,
             relogin: bool = False,
+            advanced: bool = False,
             shared_secret: Optional[config.ConfigStr] = None,
+            identity_secret: Optional[config.ConfigStr] = None,
     ) -> Optional[Dict[str, Any]]:
+        if advanced and (not shared_secret or not identity_secret):
+            self.status.error(_("Unable to log-in!\nShared secret or Identity secret is blank."))
+            self.user_details_section.show()
+            self.advanced_settings.show()
+            self.previous_button.show()
+            return None
+
         if not username or not password:
-            self.status.error(_("Unable to log-in!\nYour username/password is blank."))
+            self.status.error(_("Unable to log-in!\nUsername or password is blank."))
             self.user_details_section.show()
             self.previous_button.show()
+
+            if advanced:
+                self.advanced_settings.show()
+
             return None
 
         self.status.info(_("Waiting Steam Server..."))
@@ -471,16 +407,12 @@ class SetupDialog(Gtk.Dialog):
             if mobile_login and not relogin:
                 self.status.error(_(
                     "Unable to log-in!\n"
-                    "You already have a Steam Authenticator active on current account\n\n"
-                    "To log-in, you have two options:\n\n"
-                    "- Just remove authenticator from your account and use the 'Try Again?' button\n"
-                    "    to set STNG as your Steam Authenticator.\n\n"
-                    "- Put your shared secret on settings or let us automagically find it using adb\n"
-                    "    (settings -> 'get login data using adb' button)\n"
-
+                    "You already have a Steam Authenticator active on current account.\n\n"
+                    "To log-in, remove authenticator from your account and use the 'Try Again?' button.\n"
+                    "(STNG will add itself as Steam Authenticator in your account)\n"
                 ))
             else:
-                self.status.error(_("Unable to log-in!\nThe authenticator code is invalid!\n"))
+                self.status.error(_("Unable to log-in!\nThe secret keys is invalid!\n"))
 
             self.previous_button.show()
             return
@@ -522,11 +454,14 @@ class SetupDialog(Gtk.Dialog):
                 "Please, check your username/password and try again.\n"
             ))
 
-            self.status.append_link(
-                _("click here"),
-                self.__reset_and_restart,
-                _("You removed the authenticator? If yes, "),
-            )
+            if advanced:
+                self.advanced_settings.show()
+            else:
+                self.status.append_link(
+                    _("click here"),
+                    self.__reset_and_restart,
+                    _("You removed the authenticator? If yes, "),
+                )
 
             self.user_details_section.show()
             self.previous_button.show()
