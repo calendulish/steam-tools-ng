@@ -334,12 +334,12 @@ class Application(Gtk.Application):
                     trade_info = await steamtrades.get_trade_info(trade_id)
                 except (IndexError, aiohttp.ClientResponseError):
                     error(_("Unable to find TradeID {}").format(trade_id))
-                    await asyncio.sleep(5)
-                    continue
+                    bumped = False
+                    break
                 except aiohttp.ClientConnectionError:
                     error(_("No connection"))
-                    await asyncio.sleep(15)
-                    continue
+                    bumped = False
+                    break
 
                 try:
                     info(_("Waiting anti-ban timer"))
@@ -353,7 +353,7 @@ class Application(Gtk.Application):
                         await asyncio.sleep(5)
                         continue
                 except plugins.steamtrades.NoTradesError as exception:
-                    log.error(exception)
+                    log.error(str(exception))
                     await asyncio.sleep(15)
                     continue
                 except plugins.steamtrades.NotReadyError as exception:
@@ -450,8 +450,8 @@ class Application(Gtk.Application):
                     user = await steamgifts.get_user_info()
                 except aiohttp.ClientConnectionError:
                     error(_("No connection"))
-                    await asyncio.sleep(15)
-                    continue
+                    joined = False
+                    break
 
                 if user.level < giveaway.level or user.points < giveaway.points:
                     info(_("User don't meet all the requirements to join"), giveaway)
