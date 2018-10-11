@@ -89,6 +89,14 @@ class Default:
         return locals()[option]
 
     @staticmethod
+    def _steamgifts(option: str) -> Union[int, str]:
+        wait_min = ConfigInt(3700)
+        wait_max = ConfigInt(4100)
+        giveaway_type = ConfigStr('main')
+
+        return locals()[option]
+
+    @staticmethod
     def _gtk(option: str) -> str:
         theme = ConfigStr("light")
 

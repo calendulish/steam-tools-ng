@@ -385,9 +385,19 @@ class Application(Gtk.Application):
             self.window.steamgifts_status.set_current('_ _ _ _ _')
             self.window.steamgifts_status.set_error(message)
 
-        def info(message: str, giftid: str = '_ _ _ _ _') -> None:
-            self.window.steamgifts_status.set_current(giftid)
-            self.window.steamgifts_status.set_info(message)
+        def info(message: str, giveaway: Optional[plugins.steamgifts.GiveawayInfo] = None) -> None:
+            if giveaway:
+                self.window.steamgifts_status.set_current(giveaway.id)
+                self.window.steamgifts_status.set_info('{} {} ({}:{}:{})'.format(
+                    message,
+                    giveaway.name,
+                    giveaway.copies,
+                    giveaway.points,
+                    giveaway.level,
+                ))
+            else:
+                self.window.steamgifts_status.set_current('_ _ _ _ _')
+                self.window.steamgifts_status.set_info(message)
 
         if plugins.has_plugin("steamgifts"):
             steamgifts = plugins.get_plugin("steamgifts", self.session, api_url='https://lara.click/api')
@@ -405,6 +415,7 @@ class Application(Gtk.Application):
             info(_("Loading"))
             wait_min = config.getint("steamgifts", "wait_min")
             wait_max = config.getint("steamgifts", "wait_max")
+            giveaway_type = config.get("steamgifts", "giveaway_type")
             cookies = config.login_cookies()
 
             if cookies:
@@ -424,11 +435,49 @@ class Application(Gtk.Application):
                 await asyncio.sleep(5)
                 continue
 
-            await steamgifts.configure()
+            joined = False
 
-            await asyncio.sleep(30)
+            try:
+                await steamgifts.configure()
+            except plugins.steamgifts.ConfigureError:
+                error(_("Unable to configure steamgifts"))
+                await asyncio.sleep(20)
+                continue
 
-            raise NotImplementedError
+            for giveaway in await steamgifts.get_giveaways(giveaway_type.value):
+                try:
+                    user = await steamgifts.get_user_info()
+                except aiohttp.ClientConnectionError:
+                    error(_("No connection"))
+                    await asyncio.sleep(15)
+                    continue
+
+                if user.level < giveaway.level or user.points < giveaway.points:
+                    info(_("User don't meet all the requirements to join"), giveaway)
+                    continue
+
+                # FIXME: stlib should return join status
+                await steamgifts.join(giveaway)
+                info(_("Waiting anti-ban timer"), giveaway)
+                await asyncio.sleep(random.randint(3, 8))
+                info(_("Joined!"), giveaway)
+                joined = True
+
+            if not joined:
+                await asyncio.sleep(10)
+                continue
+
+            wait_offset = random.randint(wait_min.value, wait_max.value)
+            log.debug(_("Setting wait_offset from steamgifts to %s"), wait_offset)
+            for past_time in range(wait_offset):
+                info(_("Waiting more {} minutes").format(round(wait_offset / 60)))
+
+                try:
+                    self.window.steamgifts_status.set_level(past_time, wait_offset)
+                except KeyError:
+                    self.window.steamgifts_status.set_level(0, 0)
+
+                await asyncio.sleep(1)
 
     def on_settings_activate(self, action: Any, data: Any) -> None:
         settings_dialog = settings.SettingsDialog(self.window, self.session, self.webapi_session)
