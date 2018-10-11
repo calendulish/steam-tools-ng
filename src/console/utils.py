@@ -89,16 +89,9 @@ async def add_authenticator(
         return
 
 
-@config.Check("login")
 async def check_login(
         session: aiohttp.ClientSession,
         webapi_session: webapi.SteamWebAPI,
-        token: Optional[config.ConfigStr] = None,
-        token_secure: Optional[config.ConfigStr] = None,
-        steamid: Optional[config.ConfigStr] = None,
-        nickname: Optional[config.ConfigStr] = None,
-        identity_secret: Optional[config.ConfigStr] = None,
-        shared_secret: Optional[config.ConfigStr] = None,
         mobile_login: bool = False,
         captcha_gid: int = -1,
         captcha_text: str = '',
@@ -106,6 +99,13 @@ async def check_login(
         mail_code='',
         relogin: bool = False,
 ) -> bool:
+    token = config.get("login", "token")
+    token_secure = config.get("login", "token_secure")
+    steamid = config.getint("login", "steamid")
+    nickname = config.get("login", "nickname")
+    identity_secret = config.get("login", "identity_secret")
+    shared_secret = config.get("login", "shared_secret")
+
     if not token.value or not token_secure.value or not steamid.value:
         log.critical(_("STNG is not configured. Edit config files or setup it using GUI."))
         return False
@@ -138,7 +138,7 @@ async def check_login(
 
         if shared_secret:
             server_time = await webapi_session.get_server_time()
-            auth_code = authenticator.get_code(server_time, shared_secret)
+            auth_code = authenticator.get_code(server_time, shared_secret.value)
         else:
             log.warning(_("No shared secret found. Trying to log-in without two-factor authentication."))
 
@@ -217,8 +217,8 @@ async def check_login(
                     'token': login_data['transfer_parameters']['webcookie'],
                     'token_secure': login_data['transfer_parameters']['token_secure'],
                     'account_name': username,
-                    'shared_secret': shared_secret.get_text(),
-                    'identity_secret': identity_secret.get_text(),
+                    'shared_secret': shared_secret.value,
+                    'identity_secret': identity_secret.value,
                 }
 
                 config.new(*[

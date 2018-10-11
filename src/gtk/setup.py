@@ -318,7 +318,6 @@ class SetupDialog(Gtk.Dialog):
         self.previous_button.connect("clicked", self.login_mode)
         self.previous_button.show()
 
-    @config.Check("login")
     async def do_login(
             self,
             username: str,
@@ -330,8 +329,8 @@ class SetupDialog(Gtk.Dialog):
             mobile_login: bool = False,
             relogin: bool = False,
             advanced: bool = False,
-            shared_secret: Optional[config.ConfigStr] = None,
-            identity_secret: Optional[config.ConfigStr] = None,
+            shared_secret: str = '',
+            identity_secret: str = '',
     ) -> Optional[Dict[str, Any]]:
         if advanced and (not shared_secret or not identity_secret):
             self.status.error(_("Unable to log-in!\nShared secret or Identity secret is blank."))

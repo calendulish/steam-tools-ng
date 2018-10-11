@@ -18,7 +18,7 @@
 import asyncio
 import contextlib
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 from gi.repository import Gtk
 from stlib import webapi
@@ -158,23 +158,20 @@ class FinalizeDialog(Gtk.Dialog):
         else:
             self.destroy()
 
-    @config.Check("login")
-    async def finalize(
-            self,
-            identity_secret: Optional[config.ConfigStr] = None,
-            steamid: Optional[config.ConfigInt] = None,
-            deviceid: Optional[config.ConfigStr] = None,
-            keep_iter: bool = False,
-    ) -> Dict[str, Any]:
+    async def finalize(self, keep_iter: bool = False) -> Dict[str, Any]:
+        identity_secret = config.get("login", "identity_secret")
+        steamid = config.getint("login", "steamid")
+        deviceid = config.get("login", "deviceid")
+
         self.status.info(_("Waiting Steam Server (OP: {})").format(self.model[self.iter][1]))
 
         server_time = await self.webapi_session.get_server_time()
 
         result = await self.webapi_session.finalize_confirmation(
             server_time,
-            identity_secret,
-            steamid,
-            deviceid,
+            identity_secret.value,
+            steamid.value,
+            deviceid.value,
             self.model[self.iter][1],
             self.model[self.iter][2],
             self.raw_action,
@@ -189,19 +186,13 @@ class FinalizeDialog(Gtk.Dialog):
 
         return result
 
-    @config.Check("login")
-    async def batch_finalize(
-            self,
-            identity_secret: Optional[config.ConfigStr] = None,
-            steamid: Optional[config.ConfigInt] = None,
-            deviceid: Optional[config.ConfigStr] = None,
-    ) -> List[Tuple[Gtk.TreeIter, Dict[str, Any]]]:
+    async def batch_finalize(self) -> List[Tuple[Gtk.TreeIter, Dict[str, Any]]]:
         results = []
 
         for index in range(len(self.model)):
             self.iter = self.model[index].iter
 
-            result = await self.finalize(identity_secret, steamid, deviceid, True)
+            result = await self.finalize(True)
             results.append((self.iter, result))
 
         self.status.info(_("Updating tree"))

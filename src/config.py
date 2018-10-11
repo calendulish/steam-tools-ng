@@ -17,13 +17,11 @@
 #
 
 import configparser
-import functools
-import inspect
 import locale
 import logging
 import os
 import sys
-from typing import Any, Callable, Dict, NamedTuple, NewType, Optional, Union
+from typing import Dict, NamedTuple, NewType, Optional, Union
 
 from . import i18n, logger_handlers
 
@@ -112,55 +110,6 @@ class Default:
             log.debug(_("No value found for %s:%s. Using None"), section, option)
 
         return default_value
-
-
-class Check(object):
-    def __init__(self, section: str) -> None:
-        self.section = section
-
-    def __call__(self, function_: Callable[..., Any]) -> Any:
-        signature = inspect.signature(function_)
-
-        def wrapped_function(*args: Any, **kwargs: Any) -> Any:
-            new_parameters = {}
-
-            for index, option in enumerate(signature.parameters.values()):
-                if len(args) >= index + 1:
-                    log.debug(_("A positional argument already exists for %s. Ignoring..."), option.name)
-                    continue
-
-                log.debug(_('Loading config for %s:%s'), self.section, option.name)
-
-                # noinspection PyUnusedLocal
-                value: Union[ConfigStr, ConfigInt, ConfigBool, ConfigFloat]
-
-                try:
-                    if 'ConfigStr' in str(option.annotation):
-                        value = ConfigStr(config_parser.get(self.section, option.name))
-                    elif 'ConfigInt' in str(option.annotation):
-                        value = ConfigInt(config_parser.getint(self.section, option.name))
-                    elif 'ConfigBool' in str(option.annotation):
-                        value = ConfigBool(config_parser.getboolean(self.section, option.name))
-                    elif 'ConfigFloat' in str(option.annotation):
-                        value = ConfigFloat(config_parser.getfloat(self.section, option.name))
-                    else:
-                        log.debug(_('Nothing to do with %s. Ignoring.'), option)
-                        continue
-                except configparser.NoOptionError:
-                    log.debug(_('Option not found in config: %s'), option.name)
-                except configparser.NoSectionError:
-                    log.debug(_('Section not found in config: %s'), self.section)
-                    config_parser.add_section(self.section)
-                else:
-                    log.debug(_('%s will be injected into %s'), option.name, function_.__name__)
-                    new_parameters[option.name] = value
-
-            if new_parameters:
-                return functools.partial(function_, **new_parameters)(*args, **kwargs)
-            else:
-                return function_(*args, **kwargs)
-
-        return wrapped_function
 
 
 def update_log_level(type_: str, level_string: ConfigValue) -> None:
@@ -256,12 +205,11 @@ def new(*new_configs: ConfigType) -> None:
             log.debug(_('Not saving %s:%s because values are already updated'), config.section, config.option)
 
 
-@Check("login")
-def login_cookies(
-        steamid: Optional[ConfigInt] = None,
-        token: Optional[ConfigStr] = None,
-        token_secure: Optional[ConfigStr] = None,
-) -> Dict[str, str]:
+def login_cookies() -> Dict[str, str]:
+    steamid = getint("login", "steamid")
+    token = get("login", "token")
+    token_secure = get("login", "token_secure")
+
     if not steamid or not token or not token_secure:
         return {}
 
