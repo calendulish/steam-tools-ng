@@ -75,13 +75,7 @@ class Application(Gtk.Application):
 
         asyncio.ensure_future(self.async_activate())
 
-    @config.Check("login")
-    async def async_activate(
-            self,
-            token: Optional[config.ConfigStr] = None,
-            token_secure: Optional[config.ConfigStr] = None,
-            steamid: config.ConfigInt = 0,
-    ) -> None:
+    async def async_activate(self) -> None:
         setup_requested = False
         login_requested = False
 
