@@ -324,7 +324,7 @@ class SetupDialog(Gtk.Dialog):
             username: str,
             password: str,
             mail_code: str = '',
-            authenticator_code: str = '',
+            auth_code: str = '',
             captcha_gid: int = -1,
             captcha_text: str = '',
             mobile_login: bool = False,
@@ -358,7 +358,7 @@ class SetupDialog(Gtk.Dialog):
 
         if shared_secret:
             server_time = await self.webapi_session.get_server_time()
-            authenticator_code = authenticator.get_code(server_time, shared_secret)
+            auth_code = authenticator.get_code(server_time, shared_secret)
         else:
             log.warning("No shared secret found. Trying to log-in without two-factor authentication.")
 
@@ -372,24 +372,7 @@ class SetupDialog(Gtk.Dialog):
             self.captcha_gid = -1
 
         try:
-            try:
-                login_data = await login.do_login(
-                    authenticator_code,
-                    mail_code,
-                    captcha_gid,
-                    captcha_text,
-                    mobile_login,
-                )
-            except webapi.CaptchaError as exception:
-                # If user insert a wrong captcha AND a wrong password us
-                # must allow user to insert a new password, so raise LoginError.
-                # CaptchaError must be raised only if user never tried to insert
-                # a captcha code before.
-                # FIXME: It can be checked in stlib
-                if captcha_text and captcha_gid:
-                    raise webapi.LoginError(str(exception)) from None
-                else:
-                    raise webapi.CaptchaError(exception.captcha_gid, str(exception)) from None
+            login_data = await login.do_login(auth_code, mail_code, captcha_gid, captcha_text, mobile_login)
 
             if not login_data['success']:
                 raise webapi.LoginError
@@ -564,14 +547,14 @@ class SetupDialog(Gtk.Dialog):
         self.status.show()
         self.status.set_size_request(0, 0)
 
-        authenticator_code = authenticator.get_code(int(auth_data['server_time']), auth_data['shared_secret'])
+        auth_code = authenticator.get_code(int(auth_data['server_time']), auth_data['shared_secret'])
         oauth_data = json.loads(login_data['oauth'])
 
         try:
             complete = await self.webapi_session.finalize_add_authenticator(
                 oauth_data['steamid'],
                 oauth_data['oauth_token'],
-                authenticator_code,
+                auth_code,
                 self.code_item.get_text(),
             )
         except webapi.SMSCodeError:
