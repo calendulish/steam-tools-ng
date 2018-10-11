@@ -67,6 +67,7 @@ class Main(Gtk.ApplicationWindow):
         self.add(main_grid)
 
         status_grid = Gtk.Grid()
+        status_grid.set_column_homogeneous(True)
         main_grid.attach(status_grid, 0, 0, 4, 1)
 
         self.steamtrades_status = utils.Status(5, "SteamTrades (bump)")
