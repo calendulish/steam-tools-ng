@@ -219,10 +219,10 @@ def login_cookies() -> Dict[str, str]:
     token = get("login", "token")
     token_secure = get("login", "token_secure")
 
-    if not steamid or not token or not token_secure:
+    if not steamid.value or not token.value or not token_secure.value:
         return {}
 
     return {
-        'steamLogin': f'{steamid}%7C%7C{token}',
-        'steamLoginSecure': f'{steamid}%7C%7C{token_secure}',
+        'steamLogin': f'{steamid.value}%7C%7C{token.value}',
+        'steamLoginSecure': f'{steamid.value}%7C%7C{token_secure.value}',
     }
