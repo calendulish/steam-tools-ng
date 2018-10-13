@@ -17,15 +17,13 @@
 #
 
 import asyncio
-import getpass
 import logging
 import random
 import sys
 import time
-from typing import Any, Dict, Optional, Union
 
 import aiohttp
-from stlib import authenticator, plugins, webapi
+from stlib import plugins, webapi
 
 from . import utils
 from .. import config, i18n
@@ -34,85 +32,14 @@ log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
 
-@config.Check("login")
-async def on_get_login_data(
-        session: aiohttp.ClientSession,
-        authenticator_code: str,
-        steamid: Optional[config.ConfigStr] = None,
-        token: Optional[config.ConfigStr] = None,
-        token_secure: Optional[config.ConfigStr] = None,
-) -> Dict[str, str]:
-    api_url = config.get('steam', 'api_url')
-    steamtrades = plugins.get_plugin('steamtrades', session, api_url=api_url.value)
-
-    while True:
-        if not steamid or not token or not token_secure:
-            log.critical(_("Unable to find a valid login data on config file or command line"))
-
-            username = config.ConfigStr(str(utils.safe_input(_("Please, write your username"))))
-            assert isinstance(username, str), "safe_input is returning an invalid username"
-            password = getpass.getpass(_("Please, write your password (it's hidden, and will be encrypted):"))
-            assert isinstance(password, str), "safe_input is returning and invalid password"
-            steam_key = await steamtrades.get_steam_key(username)
-            encrypted_password = webapi.encrypt_password(steam_key, password)
-            del password
-
-            log.debug(_("Trying to login on Steam..."))
-
-            steam_login_data = await steamtrades.do_login(
-                username,
-                encrypted_password,
-                steam_key.timestamp,
-                authenticator_code,
-            )
-
-            if not steam_login_data['success']:
-                log.critical("Unable to log-in on Steam")
-                try_again = utils.safe_input(_("Do you want to try again?"), True)
-
-                if not try_again:
-                    raise aiohttp.ClientConnectionError()
-                else:
-                    continue
-
-            log.info(_("Success!"))
-
-            steamid = config.ConfigStr(steam_login_data["transfer_parameters"]["steamid"])
-            token = config.ConfigStr(steam_login_data["transfer_parameters"]["token"])
-            token_secure = config.ConfigStr(steam_login_data["transfer_parameters"]["token_secure"])
-
-            save_config = utils.safe_input(_("Do you want to save this configuration?"), True)
-            if save_config:
-                config.new(
-                    config.ConfigType("login", "steamid", steamid),
-                    config.ConfigType("login", "token", token),
-                    config.ConfigType("login", "token_secure", token_secure),
-                )
-                log.info(_("Configuration has been saved!"))
-
-        cookies = config.login_cookies(steamid, token, token_secure)
-        assert isinstance(cookies, dict), "login_cookies return is not a dict"
-        return cookies
-
-
-@config.Check("login")
-async def on_get_code(webapi_session: webapi.SteamWebAPI, shared_secret: Optional[config.ConfigStr] = None) -> Any:
-    if not shared_secret:
-        log.critical(_("Authenticator module is not configured"))
-        log.critical(_("Please, run 'authenticator' module, set up it, and try again"))
-        sys.exit(1)
-
-    server_time = await webapi_session.get_server_time()
-    return authenticator.get_code(server_time, shared_secret)
-
-
-@config.Check("steamtrades")
-async def run(
-        session: aiohttp.ClientSession,
-        trade_ids: Optional[config.ConfigStr] = None,
-        wait_min: Union[config.ConfigInt, int] = 3700,
-        wait_max: Union[config.ConfigInt, int] = 4100,
-) -> None:
+async def run(session: aiohttp.ClientSession) -> None:
+    trade_ids = config.get("steamtrades", "trade_ids")
+    wait_min = config.getint("steamtrades", "wait_min")
+    wait_max = config.getint("steamtrades", "wait_max")
+    token = config.get("login", "token")
+    token_secure = config.get("login", "token_secure")
+    steamid = config.get("login", "steamid")
+    nickname = config.get("login", "nickname")
     api_url = config.get('steam', 'api_url')
 
     if plugins.has_plugin("steamtrades"):
@@ -121,16 +48,36 @@ async def run(
         log.critical("Unable to find steamtrades plugin")
         sys.exit(1)
 
-    if not trade_ids:
+    if not trade_ids.value:
         logging.critical("No trade ID found in config file")
         sys.exit(1)
 
     log.info(_("Loading, please wait..."))
     webapi_session = webapi.SteamWebAPI(session, api_url.value)
-    authenticator_code = await on_get_code(webapi_session)
+    mobile_login = True if config.get("login", "oauth_token").value else False
 
-    login_data = await on_get_login_data(session, authenticator_code)
-    session.cookie_jar.update_cookies(login_data)
+    if not token.value or not token_secure.value or not steamid.value:
+        login_result = await utils.check_login(session, webapi_session, mobile_login=mobile_login)
+
+        if not login_result:
+            sys.exit(1)
+    else:
+        if not nickname.value:
+            try:
+                new_nickname = await webapi_session.get_nickname(steamid.value)
+            except ValueError:
+                raise NotImplementedError
+            else:
+                nickname = nickname._replace(value=config.ConfigStr(new_nickname))
+                config.new(nickname)
+
+        if not await webapi_session.is_logged_in(nickname.value):
+            login_result = await utils.check_login(session, webapi_session, mobile_login=mobile_login, relogin=True)
+
+            if not login_result:
+                sys.exit(1)
+
+    session.cookie_jar.update_cookies(config.login_cookies())
 
     try:
         await steamtrades.do_login()
@@ -140,7 +87,7 @@ async def run(
 
     while True:
         current_datetime = time.strftime('%B, %d, %Y - %H:%M:%S')
-        trades = [trade.strip() for trade in trade_ids.split(',')]
+        trades = [trade.strip() for trade in trade_ids.value.split(',')]
 
         for trade_id in trades:
             try:
@@ -158,8 +105,8 @@ async def run(
                     trade_info.title,
                     exception.time_left,
                 )
-                wait_min = exception.time_left * 60
-                wait_max = wait_min + 400
+                wait_min = config.ConfigType('steamtrades', 'wait_min', config.ConfigInt(exception.time_left * 60))
+                wait_max = config.ConfigType('steamtrades', 'wait_max', config.ConfigInt(wait_min.value + 400))
             except plugins.steamtrades.TradeClosedError:
                 log.error("%s (%s) is closed. Ignoring...", trade_info.id, trade_info.title)
                 continue
@@ -169,7 +116,7 @@ async def run(
                 else:
                     log.error('Unable to bump %s (%s). Ignoring...', trade_info.id, trade_info.title)
 
-        wait_offset = random.randint(wait_min, wait_max)
+        wait_offset = random.randint(wait_min.value, wait_max.value)
         for past_time in range(wait_offset):
             print("Waiting: {:4d} seconds".format(wait_offset - past_time), end='\r')
             await asyncio.sleep(1)

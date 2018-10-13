@@ -107,8 +107,22 @@ async def check_login(
     shared_secret = config.get("login", "shared_secret")
 
     if not token.value or not token_secure.value or not steamid.value:
-        log.critical(_("STNG is not configured. Edit config files or setup it using GUI."))
-        return False
+        log.error(_("STNG is not configured."))
+        log.info("Welcome to STNG Setup")
+        log.info("How do you want to log-in?")
+        user_input = safe_input(_(
+            "[1] Use STNG as Steam Authenticator\n"
+            "[2] Use custom secrets (advanced users only!)\n"
+            ":"
+        ))
+
+        if user_input == 1:
+            mobile_login = True
+        elif user_input == 2:
+            mobile_login = False
+        else:
+            log.error("Wrong value.")
+            return False
 
     if not nickname.value:
         try:
@@ -207,8 +221,8 @@ async def check_login(
 
                 full_login_data = await add_authenticator(webapi_session, login_data)
 
-                log.info(_("WRITE DOWN THE RECOVERY CODE: %s"), full_login_data['revocation_code'])
-                log.info(_("YOU WILL NOT ABLE TO VIEW IT AGAIN!"))
+                print(_("WRITE DOWN THE RECOVERY CODE: %s"), full_login_data['revocation_code'])
+                print(_("YOU WILL NOT ABLE TO VIEW IT AGAIN!"))
 
                 break
             else:
