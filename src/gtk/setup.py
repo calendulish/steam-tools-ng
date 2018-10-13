@@ -117,6 +117,7 @@ class SetupDialog(Gtk.Dialog):
 
     def __fatal_error(self, exception: Type[BaseException]) -> None:
         self.status.error("{}\n\n{}".format(_("IT'S A FATAL ERROR!!! PLEASE, REPORT!!!"), repr(exception)))
+        self.status._label.set_selectable(True)
         self.status.show()
         self.user_details_section.hide()
         self.advanced_settings.hide()
