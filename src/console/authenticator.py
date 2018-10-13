@@ -19,7 +19,6 @@
 import base64
 import logging
 import time
-from typing import Any, Dict, Optional
 
 import aiohttp
 from stlib import authenticator, client
@@ -31,13 +30,14 @@ log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
 
-@config.Check('login')
-async def run(session: aiohttp.ClientSession, shared_secret: Optional[config.ConfigStr] = None) -> int:
-    if shared_secret:
+async def run(session: aiohttp.ClientSession) -> int:
+    shared_secret = config.get("login", "shared_secret")
+
+    if shared_secret.value:
         try:
-            base64.b64decode(shared_secret)
+            base64.b64decode(shared_secret.value)
         except ValueError:
-            log.critical(_('%s is not a valid parameter'), shared_secret)
+            log.critical(_('%s is not a valid parameter'), shared_secret.value)
             return 1
     else:
         log.critical(_("No shared_secret found on config file or command line"))
@@ -48,7 +48,7 @@ async def run(session: aiohttp.ClientSession, shared_secret: Optional[config.Con
             with client.SteamGameServer() as server:
                 server_time = server.get_server_time()
 
-            auth_code = authenticator.get_code(server_time, shared_secret)
+            auth_code = authenticator.get_code(server_time, shared_secret.value)
         except ProcessLookupError:
             logging.critical(_("Steam Client is not running."))
             try_again = utils.safe_input(_("Try again?"), True)
