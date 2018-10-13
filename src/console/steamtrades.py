@@ -36,11 +36,8 @@ async def run(session: aiohttp.ClientSession) -> None:
     trade_ids = config.get("steamtrades", "trade_ids")
     wait_min = config.getint("steamtrades", "wait_min")
     wait_max = config.getint("steamtrades", "wait_max")
-    token = config.get("login", "token")
-    token_secure = config.get("login", "token_secure")
-    steamid = config.get("login", "steamid")
-    nickname = config.get("login", "nickname")
     api_url = config.get('steam', 'api_url')
+    webapi_session = webapi.SteamWebAPI(session, api_url.value)
 
     if plugins.has_plugin("steamtrades"):
         steamtrades = plugins.get_plugin('steamtrades', session, api_url=api_url.value)
@@ -53,31 +50,10 @@ async def run(session: aiohttp.ClientSession) -> None:
         sys.exit(1)
 
     log.info(_("Loading, please wait..."))
-    webapi_session = webapi.SteamWebAPI(session, api_url.value)
-    mobile_login = True if config.get("login", "oauth_token").value else False
+    steam_login_status = await utils.check_login(session, webapi_session)
 
-    if not token.value or not token_secure.value or not steamid.value:
-        login_result = await utils.check_login(session, webapi_session, mobile_login=mobile_login)
-
-        if not login_result:
-            sys.exit(1)
-    else:
-        if not nickname.value:
-            try:
-                new_nickname = await webapi_session.get_nickname(steamid.value)
-            except ValueError:
-                raise NotImplementedError
-            else:
-                nickname = nickname._replace(value=config.ConfigStr(new_nickname))
-                config.new(nickname)
-
-        if not await webapi_session.is_logged_in(nickname.value):
-            login_result = await utils.check_login(session, webapi_session, mobile_login=mobile_login, relogin=True)
-
-            if not login_result:
-                sys.exit(1)
-
-    session.cookie_jar.update_cookies(config.login_cookies())
+    if not steam_login_status:
+        sys.exit(1)
 
     try:
         await steamtrades.do_login()

@@ -18,10 +18,11 @@
 
 import base64
 import logging
+import sys
 import time
 
 import aiohttp
-from stlib import authenticator, client
+from stlib import authenticator, client, webapi
 
 from . import utils
 from .. import config, i18n
@@ -31,6 +32,13 @@ _ = i18n.get_translation
 
 
 async def run(session: aiohttp.ClientSession) -> int:
+    api_url = config.get('steam', 'api_url')
+    webapi_session = webapi.SteamWebAPI(session, api_url.value)
+    steam_login_status = await utils.check_login(session, webapi_session)
+
+    if not steam_login_status:
+        sys.exit(1)
+
     shared_secret = config.get("login", "shared_secret")
 
     if shared_secret.value:

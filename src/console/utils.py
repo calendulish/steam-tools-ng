@@ -20,7 +20,7 @@ import getpass
 import json
 import logging
 import tempfile
-from typing import Optional, Union, Dict, Any
+from typing import Optional, Union, Dict, Any, List
 
 import aiohttp
 from stlib import webapi, authenticator
@@ -49,7 +49,7 @@ async def add_authenticator(
         raise NotImplementedError
 
     while True:
-        sms_code = safe_input(_("Write code received by SMS:"))
+        sms_code = safe_input(_("Write code received by SMS"))
         auth_code = authenticator.get_code(int(auth_data['server_time']), auth_data['shared_secret'])
 
         try:
@@ -92,7 +92,6 @@ async def add_authenticator(
 async def check_login(
         session: aiohttp.ClientSession,
         webapi_session: webapi.SteamWebAPI,
-        mobile_login: bool = False,
         captcha_gid: int = -1,
         captcha_text: str = '',
         auth_code: str = '',
@@ -105,26 +104,23 @@ async def check_login(
     nickname = config.get("login", "nickname")
     identity_secret = config.get("login", "identity_secret")
     shared_secret = config.get("login", "shared_secret")
+    mobile_login = True if config.get("login", "oauth_token").value else False
 
     if not token.value or not token_secure.value or not steamid.value:
         log.error(_("STNG is not configured."))
         log.info("Welcome to STNG Setup")
         log.info("How do you want to log-in?")
+
         user_input = safe_input(_(
             "[1] Use STNG as Steam Authenticator\n"
             "[2] Use custom secrets (advanced users only!)\n"
-            ":"
-        ))
+        ), custom_choices=["1", "2"])
 
-        if user_input == 1:
+        if user_input == '1':
             mobile_login = True
-        elif user_input == 2:
+        elif user_input == '2':
             mobile_login = False
-        else:
-            log.error("Wrong value.")
-            return False
-
-    if not nickname.value:
+    elif not nickname.value:
         try:
             new_nickname = await webapi_session.get_nickname(steamid.value)
         except ValueError:
@@ -150,7 +146,7 @@ async def check_login(
 
         login = webapi.Login(session, username.value, __password)
 
-        if shared_secret:
+        if shared_secret.value:
             server_time = await webapi_session.get_server_time()
             auth_code = authenticator.get_code(server_time, shared_secret.value)
         else:
@@ -167,7 +163,7 @@ async def check_login(
                 if not login_data['success']:
                     raise webapi.LoginError
             except webapi.MailCodeError:
-                mail_code = safe_input(_("Write code received by email:"))
+                mail_code = safe_input(_("Write code received by email"))
                 continue
             except webapi.TwoFactorCodeError:
                 if mobile_login and not relogin:
@@ -188,7 +184,7 @@ async def check_login(
                     temp_file.write(await login.get_captcha(captcha_gid))
 
                 captcha_text = safe_input(
-                    _("Open {} in an image view and write captcha code that it shows:").format(temp_file.name),
+                    _("Open {} in an image view and write captcha code that it shows").format(temp_file.name),
                 )
                 continue
             except webapi.LoginError:
@@ -244,17 +240,32 @@ async def check_login(
     return True
 
 
-def safe_input(msg: str, default_response: Optional[bool] = None) -> Union[bool, str]:
+def safe_input(
+        msg: str,
+        default_response: Optional[bool] = None,
+        custom_choices: List[str] = None,
+) -> Union[bool, str]:
     if default_response is True:
         options = _('[Y/n]')
     elif default_response is False:
         options = _('[y/N]')
+    elif custom_choices:
+        options = f"Your choice [{'/'.join(custom_choices)}]"
     else:
         options = ''
 
     while True:
         try:
             user_input = input(f'{msg} {options}: ')
+
+            if custom_choices:
+                if not user_input:
+                    raise ValueError(_('Invalid response from user'))
+
+                if user_input.lower() in custom_choices:
+                    return user_input.lower()
+                else:
+                    raise ValueError(_('{} is not an accepted value').format(user_input))
 
             if default_response is None:
                 if len(user_input) > 2:
