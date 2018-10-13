@@ -21,7 +21,7 @@ import functools
 import json
 import logging
 import os
-from typing import Any, Callable, Dict, Optional, Type
+from typing import Any, Dict, Optional, Type
 
 import aiohttp
 from gi.repository import Gtk, GdkPixbuf
@@ -41,11 +41,20 @@ class SetupDialog(Gtk.Dialog):
             parent_window: Gtk.Widget,
             session: aiohttp.ClientSession,
             webapi_session: webapi.SteamWebAPI,
+            mobile_login: bool = False,
+            relogin: bool = False,
+            advanced: bool = False,
+            add_auth_after_login: bool = False,
+            destroy_after_run: bool = False,
     ) -> None:
         super().__init__(use_header_bar=True)
         self.session = session
         self.webapi_session = webapi_session
-        self.login_data = None
+        self.mobile_login = mobile_login
+        self.relogin = relogin
+        self.advanced = advanced
+        self.add_auth_after_login = add_auth_after_login
+        self.destroy_after_run = destroy_after_run
 
         self.header_bar = self.get_header_bar()
         self.header_bar.set_show_close_button(True)
@@ -135,28 +144,47 @@ class SetupDialog(Gtk.Dialog):
             self.__fatal_error(lambda: AttributeError("No login data found."))
             return
 
-        new_configs = {
-            'steamid': login_data['transfer_parameters']['steamid'],
-            'token': login_data['transfer_parameters']['webcookie'],
-            'token_secure': login_data['transfer_parameters']['token_secure'],
-            'account_name': login_data['account_name'],
-            'shared_secret': self.shared_secret.get_text(),
-            'identity_secret': self.identity_secret.get_text(),
-        }
+        if 'oauth' in login_data:
+            oauth_data = json.loads(login_data['oauth'])
+            new_configs = {
+                'steamid': oauth_data['steamid'],
+                'token': oauth_data['wgtoken'],
+                'token_secure': oauth_data['wgtoken_secure'],
+                'oauth_token': oauth_data['oauth_token'],
+                'account_name': oauth_data['account_name'],
+                'shared_secret': login_data['shared_secret'],
+                'identity_secret': login_data['identity_secret'],
+            }
+        else:
+            new_configs = {
+                'steamid': login_data['transfer_parameters']['steamid'],
+                'token': login_data['transfer_parameters']['webcookie'],
+                'token_secure': login_data['transfer_parameters']['token_secure'],
+                'account_name': login_data['account_name'],
+            }
+
+            if self.advanced:
+                new_configs['shared_secret'] = self.shared_secret.get_text()
+                new_configs['identity_secret'] = self.identity_secret.get_text()
 
         config.new(*[
             config.ConfigType("login", key, value) for key, value in new_configs.items()
         ])
 
-        self.destroy()
+        if self.destroy_after_run:
+            self.destroy()
 
     def _login_mode_callback(self) -> None:
         if self.combo.get_active() == 0:
-            self.prepare_login(self.prepare_add_authenticator, mobile_login=True)
+            self.add_auth_after_login = True
+            self.mobile_login = True
+            self.prepare_login()
         else:
-            self.prepare_login(self._save_settings, advanced=True)
+            self.advanced = True
+            self.destroy_after_run = True
+            self.prepare_login()
 
-    def _prepare_login_callback(self, next_stage: Callable[..., Any], advanced: bool, mobile_login: bool) -> None:
+    def _prepare_login_callback(self) -> None:
         self.status.info(_("Waiting Steam Server..."))
         self.advanced_settings.hide()
         self.user_details_section.hide()
@@ -171,39 +199,43 @@ class SetupDialog(Gtk.Dialog):
         password = self.__password_item.get_text()
 
         args = [username, password, mail_code]
-        kwargs = {'captcha_text': captcha_text, 'mobile_login': mobile_login}
+        kwargs = {'captcha_text': captcha_text}
 
-        if advanced:
-            kwargs['advanced'] = True
+        if self.advanced:
             kwargs['shared_secret'] = self.shared_secret.get_text()
             kwargs['identity_secret'] = self.identity_secret.get_text()
+        elif self.relogin:
+            kwargs['shared_secret'] = config.get("login", "shared_secret").value
+            kwargs['identity_secret'] = config.get("login", "identity_secret").value
 
         task = asyncio.ensure_future(self.do_login(*args, **kwargs))
-        task.add_done_callback(functools.partial(self._do_login_callback, next_stage, advanced, mobile_login))
+        task.add_done_callback(functools.partial(self._do_login_callback))
 
     def _do_login_callback(
             self,
-            next_stage: Callable[..., Any],
-            advanced: bool,
-            mobile_login: bool,
             future: 'asyncio.Future[Any]',
     ) -> None:
+        if self.add_auth_after_login:
+            next_stage = self.prepare_add_authenticator
+        else:
+            next_stage = self._save_settings
+
         if future.exception():
             self.__fatal_error(future.exception())
             return
 
         if future.result():
             next_stage(future.result())
+
             self.__password_item.set_text("")
         else:
             self.next_button.set_label(_("Try Again?"))
-            self.next_button.connect("clicked", self._prepare_login_callback, next_stage, advanced, mobile_login)
+            self.next_button.connect("clicked", self._prepare_login_callback)
             self.next_button.show()
 
     def _add_authenticator_callback(
             self,
             login_data: Dict[str, Any],
-            deviceid: str,
             future: 'asyncio.Future[Any]',
     ) -> None:
         if future.exception():
@@ -227,7 +259,6 @@ class SetupDialog(Gtk.Dialog):
                 self.prepare_finalize_add_authenticator,
                 login_data,
                 future.result(),
-                deviceid,
             )
 
             self.next_button.show()
@@ -238,7 +269,6 @@ class SetupDialog(Gtk.Dialog):
             self,
             login_data: Dict[str, Any],
             auth_data: Dict[str, Any],
-            deviceid: str,
             future: 'asyncio.Future[Any]',
     ) -> None:
         if future.exception():
@@ -246,6 +276,7 @@ class SetupDialog(Gtk.Dialog):
             return
 
         if future.result():
+            self._save_settings(future.result())
             self.recovery_code(future.result()['revocation_code'])
         else:
             self.next_button.set_label(_("Try Again?"))
@@ -255,7 +286,6 @@ class SetupDialog(Gtk.Dialog):
                 self.prepare_finalize_add_authenticator,
                 login_data,
                 auth_data,
-                deviceid
             )
 
             self.next_button.show()
@@ -292,13 +322,7 @@ class SetupDialog(Gtk.Dialog):
         self.next_button.connect("clicked", self._login_mode_callback)
         self.next_button.show()
 
-    def prepare_login(
-            self,
-            next_stage: Callable[..., Any],
-            advanced: bool = False,
-            mobile_login: bool = False,
-    ) -> None:
-
+    def prepare_login(self) -> None:
         self.status.info(_("Waiting user input..."))
 
         self.combo.hide()
@@ -307,11 +331,11 @@ class SetupDialog(Gtk.Dialog):
         self.captcha_item.hide()
         self.captcha_text_item.hide()
 
-        if advanced:
+        if self.advanced:
             self.advanced_settings.show_all()
 
         self.next_button.set_label(_("Next"))
-        self.next_button.connect("clicked", self._prepare_login_callback, next_stage, advanced, mobile_login)
+        self.next_button.connect("clicked", self._prepare_login_callback)
         self.next_button.show()
 
         self.previous_button.set_label(_("Previous"))
@@ -326,13 +350,10 @@ class SetupDialog(Gtk.Dialog):
             auth_code: str = '',
             captcha_gid: int = -1,
             captcha_text: str = '',
-            mobile_login: bool = False,
-            relogin: bool = False,
-            advanced: bool = False,
             shared_secret: str = '',
             identity_secret: str = '',
     ) -> Optional[Dict[str, Any]]:
-        if advanced and (not shared_secret or not identity_secret):
+        if self.advanced and (not shared_secret or not identity_secret):
             self.status.error(_("Unable to log-in!\nShared secret or Identity secret is blank."))
             self.user_details_section.show()
             self.advanced_settings.show()
@@ -344,7 +365,7 @@ class SetupDialog(Gtk.Dialog):
             self.user_details_section.show()
             self.previous_button.show()
 
-            if advanced:
+            if self.advanced:
                 self.advanced_settings.show()
 
             return None
@@ -371,7 +392,7 @@ class SetupDialog(Gtk.Dialog):
             self.captcha_gid = -1
 
         try:
-            login_data = await login.do_login(auth_code, mail_code, captcha_gid, captcha_text, mobile_login)
+            login_data = await login.do_login(auth_code, mail_code, captcha_gid, captcha_text, self.mobile_login)
 
             if not login_data['success']:
                 raise webapi.LoginError
@@ -386,7 +407,7 @@ class SetupDialog(Gtk.Dialog):
             self.user_details_section.show()
             return
         except webapi.TwoFactorCodeError:
-            if mobile_login and not relogin:
+            if self.mobile_login and not self.relogin:
                 self.status.error(_(
                     "Unable to log-in!\n"
                     "You already have a Steam Authenticator active on current account.\n\n"
@@ -436,7 +457,7 @@ class SetupDialog(Gtk.Dialog):
                 "Please, check your username/password and try again.\n"
             ))
 
-            if advanced:
+            if self.advanced:
                 self.advanced_settings.show()
             else:
                 self.status.append_link(
@@ -456,7 +477,7 @@ class SetupDialog(Gtk.Dialog):
 
         has_phone: Optional[bool]
 
-        if mobile_login:
+        if self.mobile_login:
             sessionid = await self.webapi_session.get_session_id()
 
             if await login.has_phone(sessionid):
@@ -478,10 +499,12 @@ class SetupDialog(Gtk.Dialog):
             raise NotImplementedError
 
         oauth_data = json.loads(login_data['oauth'])
+
         deviceid = authenticator.generate_device_id(token=oauth_data['oauth_token'])
+        config.new(config.ConfigType("login", "deviceid", config.ConfigStr(deviceid)))
 
         task = asyncio.ensure_future(self.add_authenticator(oauth_data, deviceid))
-        task.add_done_callback(functools.partial(self._add_authenticator_callback, login_data, deviceid))
+        task.add_done_callback(functools.partial(self._add_authenticator_callback, login_data))
 
     async def add_authenticator(self, oauth_data: Dict[str, Any], deviceid: str) -> Dict[str, Any]:
         self.previous_button.hide()
@@ -506,10 +529,9 @@ class SetupDialog(Gtk.Dialog):
             self,
             login_data: Dict[str, Any],
             auth_data: Dict[str, Any],
-            deviceid: str,
     ) -> None:
-        task = asyncio.ensure_future(self.finalize_add_authenticator(login_data, auth_data, deviceid))
-        callback = functools.partial(self._finalize_add_authenticator_callback, login_data, auth_data, deviceid)
+        task = asyncio.ensure_future(self.finalize_add_authenticator(login_data, auth_data))
+        callback = functools.partial(self._finalize_add_authenticator_callback, login_data, auth_data)
         task.add_done_callback(callback)
 
     def recovery_code(self, code):
@@ -537,7 +559,6 @@ class SetupDialog(Gtk.Dialog):
             self,
             login_data: Dict[str, Any],
             auth_data: Dict[str, Any],
-            deviceid: str,
     ) -> Optional[Dict[str, Any]]:
         self.previous_button.hide()
         self.next_button.hide()
@@ -563,23 +584,6 @@ class SetupDialog(Gtk.Dialog):
             return
 
         if complete:
-            self.status.info(_("Success! Saving..."))
-
-            new_configs = {
-                'steamid': oauth_data['steamid'],
-                'deviceid': deviceid,
-                'token': oauth_data['wgtoken'],
-                'token_secure': oauth_data['wgtoken_secure'],
-                'oauth_token': oauth_data['oauth_token'],
-                'account_name': oauth_data['account_name'],
-                'shared_secret': auth_data['shared_secret'],
-                'identity_secret': auth_data['identity_secret'],
-            }
-
-            config.new(*[
-                config.ConfigType("login", key, value) for key, value in new_configs.items()
-            ])
-
             return {**login_data, **auth_data}
         else:
             self.status.error(_("Unable to add a new authenticator"))
