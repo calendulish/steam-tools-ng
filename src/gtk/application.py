@@ -87,6 +87,7 @@ class Application(Gtk.Application):
 
             if not token.value or not token_secure.value or not steamid.value:
                 if not setup_requested:
+                    log.debug(_("Unable to find a valid configuration. Calling Magic Box."))
                     setup_dialog = setup.SetupDialog(self.window, self.session, self.webapi_session)
                     setup_dialog.login_mode()
                     setup_dialog.show()
@@ -98,6 +99,7 @@ class Application(Gtk.Application):
             setup_requested = False
 
             if not nickname.value:
+                log.debug(_("Unable to find a valid nickname. Generating a new one."))
                 try:
                     new_nickname = await self.webapi_session.get_nickname(steamid.value)
                 except ValueError:
@@ -110,6 +112,7 @@ class Application(Gtk.Application):
 
             if not await self.webapi_session.is_logged_in(nickname.value):
                 if not login_requested:
+                    log.debug(_("User is not logged-in. Calling Magic Box."))
                     setup_dialog = setup.SetupDialog(
                         self.window,
                         self.session,
