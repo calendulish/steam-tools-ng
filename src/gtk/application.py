@@ -17,9 +17,10 @@
 #
 import asyncio
 import itertools
+import json
 import logging
 import random
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Dict
 
 import aiohttp
 import binascii
@@ -110,16 +111,30 @@ class Application(Gtk.Application):
 
             if not await self.webapi_session.is_logged_in(nickname.value):
                 if not login_requested:
-                    setup_dialog = setup.SetupDialog(
-                        self.window,
-                        self.session,
-                        self.webapi_session,
-                        mobile_login=mobile_login,
-                        relogin=True,
-                        destroy_after_run=True,
-                    )
+                    setup_dialog = setup.SetupDialog(self.window, self.session, self.webapi_session)
 
-                    setup_dialog.prepare_login()
+                    def __save_new_login_data(login_data: Dict[str, Any]):
+                        new_configs = {}
+
+                        if 'oauth' in login_data:
+                            oauth_data = json.loads(login_data['oauth'])
+                            new_configs.update({
+                                'steamid': oauth_data['steamid'],
+                                'token': oauth_data['wgtoken'],
+                                'token_secure': oauth_data['wgtoken_secure'],
+                                'oauth_token': oauth_data['oauth_token'],
+                                'account_name': oauth_data['account_name'],
+                            })
+                        else:
+                            raise NotImplementedError
+
+                        config.new(*[
+                            config.ConfigType("login", key, value) for key, value in new_configs.items()
+                        ])
+
+                        setup_dialog.destroy()
+
+                    setup_dialog.prepare_login(__save_new_login_data, mobile_login)
                     setup_dialog.previous_button.hide()
                     setup_dialog.status.info(_("Could not connect to the Steam Servers.\nPlease, relogin."))
                     setup_dialog.status.show()
