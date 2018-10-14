@@ -344,3 +344,10 @@ async def __async_wait(future: asyncio.Future, dialog_instance: Gtk.Dialog, asyn
     dialog_instance.destroy()
 
     await async_callback(dialog_instance, future.result())
+
+
+def fatal_error_dialog(error_message: str, transient_for: Optional[Gtk.Window] = None) -> None:
+    error_dialog = Gtk.MessageDialog(transient_for=transient_for)
+    error_dialog.set_markup(error_message)
+    error_dialog.set_position(Gtk.WindowPosition.CENTER)
+    error_dialog.run()

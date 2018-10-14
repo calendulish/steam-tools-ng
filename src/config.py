@@ -50,6 +50,8 @@ ConfigFloat = NewType('ConfigFloat', float)
 
 ConfigValue = Union[ConfigStr, ConfigInt, ConfigBool, ConfigFloat]
 
+log_levels = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
+
 
 class ConfigType(NamedTuple):
     section: str
@@ -141,6 +143,12 @@ def _get(section: str, option: str, type_: str) -> ConfigValue:
         return type_method(get_method(section, option))
     except(configparser.NoOptionError, configparser.NoSectionError):
         return Default.get(section, option)
+    except ValueError as exception:
+        raise configparser.Error(
+            _("Please, fix your config file:\n[{}] {} = {}").format(
+                section, option, str(exception),
+            )
+        )
 
 
 def get(section: str, option: str) -> ConfigType:
@@ -172,6 +180,20 @@ def init() -> None:
     log_directory = get("logger", "log_directory")
     log_level = get("logger", "log_level")
     log_console_level = get("logger", "log_console_level")
+
+    if log_level.value and not log_level.value.upper() in log_levels:
+        raise configparser.Error(
+            _("Please, fix your config file. Accepted values for log_level are:\n{}").format(
+                ', '.join(log_levels),
+            )
+        )
+
+    if log_console_level.value and not log_console_level.value.upper() in log_levels:
+        raise configparser.Error(
+            _("Please, fix your config file. Accepted values for log_console_level are:\n{}").format(
+                ', '.join(log_levels),
+            )
+        )
 
     os.makedirs(log_directory.value, exist_ok=True)
 

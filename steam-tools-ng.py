@@ -44,7 +44,6 @@ config = importlib.import_module('.config', module_folder)
 i18n = importlib.import_module('.i18n', module_folder)
 version = importlib.import_module('.version', module_folder)
 
-config.init()
 _ = i18n.get_translation
 
 log = logging.getLogger(__name__)
@@ -113,6 +112,17 @@ if __name__ == "__main__":
     if console_params.log_dir:
         os.system(f'{file_manager} {config.get("logger", "log_directory").value}')
         sys.exit(0)
+
+    try:
+        config.init()
+    except config.configparser.Error as exception:
+        if console_params.module:
+            raise exception from None
+        else:
+            from gtk import utils
+
+            utils.fatal_error_dialog(str(exception))
+            sys.exit(1)
 
     if console_params.reset:
         with contextlib.suppress(FileNotFoundError):

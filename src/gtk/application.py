@@ -19,6 +19,7 @@ import asyncio
 import itertools
 import logging
 import random
+import sys
 from typing import Any, List, Optional
 
 import aiohttp
@@ -68,11 +69,21 @@ class Application(Gtk.Application):
 
     def do_activate(self) -> None:
         if not self.window:
-            self.window = window.Main(application=self)
+            try:
+                self.window = window.Main(application=self)
+            except config.configparser.Error as exception:
+                utils.fatal_error_dialog(str(exception), self.window)
+                sys.exit(1)
 
         self.window.present()  # type: ignore
 
-        asyncio.ensure_future(self.async_activate())
+        task = asyncio.ensure_future(self.async_activate())
+        task.add_done_callback(self.async_activate_callback)
+
+    def async_activate_callback(self, future: 'asyncio.Future[Any]') -> None:
+        if future.exception():
+            utils.fatal_error_dialog(str(future.exception()), self.window)
+            sys.exit(1)
 
     async def async_activate(self) -> None:
         setup_requested = False
