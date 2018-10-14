@@ -165,7 +165,7 @@ class Application(Gtk.Application):
         assert isinstance(self.window, Gtk.Window), "No window"
 
         while self.window.get_realized():
-            if not self.window.plugin_switch("steamguard"):
+            if not config.get("plugins", "steamguard"):
                 await asyncio.sleep(5)
                 continue
 
@@ -290,7 +290,7 @@ class Application(Gtk.Application):
         assert isinstance(self.window, Gtk.Window), "No window"
 
         while self.window.get_realized():
-            if not self.window.plugin_switch("steamtrades"):
+            if not config.get("plugins", "steamtrades"):
                 await asyncio.sleep(5)
                 continue
 
@@ -405,7 +405,7 @@ class Application(Gtk.Application):
         assert isinstance(self.window, Gtk.Window), "No window"
 
         while self.window.get_realized():
-            if not self.window.plugin_switch("steamgifts"):
+            if not config.get("plugins", "steamgifts"):
                 await asyncio.sleep(5)
                 continue
 

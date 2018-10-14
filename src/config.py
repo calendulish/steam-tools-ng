@@ -102,6 +102,14 @@ class Default:
 
         return locals()[option]
 
+    @staticmethod
+    def _plugins(option: str) -> bool:
+        steamtrades = ConfigBool(True)
+        steamgifts = ConfigBool(True)
+        steamguard = ConfigBool(True)
+
+        return locals()[option]
+
     @classmethod
     def get(cls, section: str, option: str) -> Optional[ConfigValue]:
         try:

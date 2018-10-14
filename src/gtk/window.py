@@ -66,18 +66,18 @@ class Main(Gtk.ApplicationWindow):
         main_grid.set_row_spacing(10)
         self.add(main_grid)
 
-        status_grid = Gtk.Grid()
-        status_grid.set_column_homogeneous(True)
-        main_grid.attach(status_grid, 0, 0, 4, 1)
+        self.status_grid = Gtk.Grid()
+        self.status_grid.set_column_homogeneous(True)
+        main_grid.attach(self.status_grid, 0, 0, 4, 1)
 
         self.steamtrades_status = utils.Status(5, "SteamTrades (bump)")
-        status_grid.attach(self.steamtrades_status, 0, 0, 1, 1)
+        self.status_grid.attach(self.steamtrades_status, 0, 0, 1, 1)
 
         self.steamgifts_status = utils.Status(5, "SteamGifts (join)")
-        status_grid.attach(self.steamgifts_status, 1, 0, 1, 1)
+        self.status_grid.attach(self.steamgifts_status, 1, 0, 1, 1)
 
         self.steamguard_status = utils.Status(4, _('Steam Guard Code'))
-        status_grid.attach(self.steamguard_status, 0, 2, 2, 1)
+        self.status_grid.attach(self.steamguard_status, 0, 2, 2, 1)
 
         info_label = Gtk.Label()
         info_label.set_text(_("If you have confirmations, they will be shown here. (15 seconds delay)"))
@@ -136,26 +136,39 @@ class Main(Gtk.ApplicationWindow):
         main_grid.show_all()
         self.show_all()
 
-        self.plugin_switch("steamtrades")
-        self.plugin_switch("steamguard")
+        asyncio.ensure_future(self.plugin_switch())
 
-    def plugin_switch(self, name: str) -> bool:
-        plugin_config = config.getboolean("plugins", name)
-        frame = getattr(self, f'{name}_status')
-        result = False
+    async def plugin_switch(self) -> None:
+        while self.get_realized():
+            plugins_enabled = []
 
-        # steamguard always behave like a plugin, but it's not a plugin in really
-        if name != 'steamguard' and not plugins.has_plugin(name):
-            frame.hide()
-            return result
+            for plugin_name in ["steamgifts", "steamtrades", "steamguard"]:
+                plugin_config = config.getboolean("plugins", plugin_name)
 
-        if plugin_config.value is None or plugin_config.value is True:
-            frame.show()
-            result = True
-        else:
-            frame.hide()
+                if plugin_config.value:
+                    plugins_enabled.append(plugin_name)
 
-        return result
+            for widget in self.status_grid.get_children():
+                self.status_grid.remove(widget)
+
+            for index, plugin_name in enumerate(plugins_enabled):
+                plugin = getattr(self, f'{plugin_name}_status')
+
+                if index == 0:
+                    if len(plugins_enabled) >= 2:
+                        self.status_grid.attach(plugin, 0, 0, 1, 1)
+                    else:
+                        self.status_grid.attach(plugin, 0, 0, 2, 1)
+
+                if index == 1 and len(plugins_enabled) >= 2:
+                    self.status_grid.attach(plugin, 1, 0, 1, 1)
+
+                if index == 2 and len(plugins_enabled) == 3:
+                    self.status_grid.attach(plugin, 0, 2, 2, 1)
+
+                plugin.show()
+
+            await asyncio.sleep(1)
 
     async def update_login_icons(self) -> None:
         while self.get_realized():

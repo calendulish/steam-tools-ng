@@ -164,20 +164,13 @@ class SettingsDialog(Gtk.Dialog):
     def plugins_settings(self) -> utils.Section:
         plugins_section = utils.Section('plugins', _('Plugins Settings'))
 
-        info_label = Gtk.Label()
-        info_label.set_text(_("It take effect in 3 ~ 15 seconds"))
-        plugins_section.grid.attach(info_label, 0, 0, 4, 1)
-
         steamguard = plugins_section.new("steamguard", _("SteamGuard:"), Gtk.CheckButton, 0, 1)
-        steamguard.set_active(True)
         steamguard.connect('toggled', on_steamguard_plugin_toggled)
 
         steamtrades = plugins_section.new("steamtrades", _("Steamtrades:"), Gtk.CheckButton, 0, 2)
-        steamtrades.set_active(True)
         steamtrades.connect('toggled', on_steamtrades_plugin_toggled)
 
         steamgifts = plugins_section.new("steamgifts", _("Steamgifts:"), Gtk.CheckButton, 2, 1)
-        steamgifts.set_active(True)
         steamgifts.connect('toggled', on_steamgifts_plugin_toggled)
 
         load_settings(plugins_section, Gtk.CheckButton)
@@ -445,7 +438,11 @@ def load_settings(
                     utils.fatal_error_dialog(error_message)
                     sys.exit(1)
             elif isinstance(children, Gtk.CheckButton):
-                children.set_active(True if new_config.value == 'True' else False)
+                if isinstance(new_config.value, bool):
+                    children.set_active(new_config.value)
+                else:
+                    # FIXME: Type can be wrong
+                    children.set_active(True if new_config.value == 'True' else False)
             else:
                 children.set_text(str(new_config.value))
 
