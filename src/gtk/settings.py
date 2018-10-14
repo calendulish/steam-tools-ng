@@ -17,6 +17,7 @@
 #
 
 import logging
+import sys
 from collections import OrderedDict
 from typing import Any, Dict, Optional
 
@@ -434,7 +435,15 @@ def load_settings(
 
             if isinstance(children, Gtk.ComboBox):
                 assert isinstance(combo_items, dict), "No combo_items"
-                children.set_active(list(combo_items).index(new_config.value))
+                try:
+                    children.set_active(list(combo_items).index(new_config.value))
+                except ValueError:
+                    error_message = _("Please, fix your config file. Accepted values for {} are:\n{}").format(
+                        new_config.option,
+                        ', '.join(combo_items.keys()),
+                    )
+                    utils.fatal_error_dialog(error_message)
+                    sys.exit(1)
             elif isinstance(children, Gtk.CheckButton):
                 children.set_active(True if new_config.value == 'True' else False)
             else:

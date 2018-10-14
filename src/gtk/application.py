@@ -16,6 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
+import contextlib
 import itertools
 import logging
 import random
@@ -89,7 +90,7 @@ class Application(Gtk.Application):
         setup_requested = False
         login_requested = False
 
-        while True:
+        while self.window.get_realized():
             token = config.get("login", "token")
             token_secure = config.get("login", "token_secure")
             steamid = config.getint("login", "steamid")
@@ -155,8 +156,10 @@ class Application(Gtk.Application):
             self.run_steamgifts(),
         ]
 
-        for module in modules:
-            asyncio.ensure_future(module)
+        with contextlib.suppress(asyncio.CancelledError):
+            done, pending = await asyncio.wait(modules, return_when=asyncio.FIRST_EXCEPTION)
+            utils.fatal_error_dialog(str(done.pop().exception()), self.window)
+            sys.exit(1)
 
     async def run_steamguard(self) -> None:
         assert isinstance(self.window, Gtk.Window), "No window"
