@@ -153,9 +153,11 @@ class SetupDialog(Gtk.Dialog):
                 'token_secure': oauth_data['wgtoken_secure'],
                 'oauth_token': oauth_data['oauth_token'],
                 'account_name': oauth_data['account_name'],
-                'shared_secret': login_data['shared_secret'],
-                'identity_secret': login_data['identity_secret'],
             }
+
+            if not self.relogin:
+                new_configs['shared_secret'] = login_data['shared_secret']
+                new_configs['identity_secret'] = login_data['identity_secret']
         else:
             new_configs = {
                 'steamid': login_data['transfer_parameters']['steamid'],
