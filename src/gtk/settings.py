@@ -190,14 +190,14 @@ class SettingsDialog(Gtk.Dialog):
         return gtk_section
 
     def on_theme_changed(self, combo: Gtk.ComboBoxText) -> None:
-        theme = config.ConfigStr(list(gtk_themes)[combo.get_active()])
+        theme = list(gtk_themes)[combo.get_active()]
 
         if theme == 'dark':
             self.gtk_settings_class.props.gtk_application_prefer_dark_theme = True
         else:
             self.gtk_settings_class.props.gtk_application_prefer_dark_theme = False
 
-        config.new(config.ConfigType('gtk', 'theme', theme))
+        config.new('gtk', 'theme', theme)
 
     @staticmethod
     def steamtrades_settings() -> utils.Section:
@@ -272,86 +272,86 @@ class SettingsDialog(Gtk.Dialog):
         setup_dialog.show()
 
     def update_language(self, combo: Gtk.ComboBoxText) -> None:
-        language = config.ConfigStr(list(translations)[combo.get_active()])
-        config.new(config.ConfigType('locale', 'language', language))
+        language = list(translations)[combo.get_active()]
+        config.new('locale', 'language', language)
         Gtk.Container.foreach(self, refresh_widget_text)
         Gtk.Container.foreach(self.parent_window, refresh_widget_text)
 
 
 def on_steamguard_plugin_toggled(checkbutton: Gtk.CheckButton) -> None:
-    activate = config.ConfigBool(checkbutton.get_active())
-    config.new(config.ConfigType('plugins', 'steamguard', activate))
+    activate = checkbutton.get_active()
+    config.new('plugins', 'steamguard', activate)
 
 
 def on_steamid_changed(entry: Gtk.Entry) -> None:
     text = entry.get_text()
 
     if text.isdigit():
-        config.new(config.ConfigType('login', 'steamid', text))
+        config.new('login', 'steamid', text)
     else:
         entry.set_text(utils.remove_letters(text))
 
 
 def on_token_changed(entry: Gtk.Entry) -> None:
-    config.new(config.ConfigType('login', 'token', entry.get_text()))
+    config.new('login', 'token', entry.get_text())
 
 
 def on_token_secure_changed(entry: Gtk.Entry) -> None:
-    config.new(config.ConfigType('login', 'token_secure', entry.get_text()))
+    config.new('login', 'token_secure', entry.get_text())
 
 
 def on_shared_secret_changed(entry: Gtk.Entry) -> None:
-    config.new(config.ConfigType('login', 'shared_secret', entry.get_text()))
+    config.new('login', 'shared_secret', entry.get_text())
 
 
 def on_identity_secret_changed(entry: Gtk.Entry) -> None:
-    config.new(config.ConfigType('login', 'identity_secret', entry.get_text()))
+    config.new('login', 'identity_secret', entry.get_text())
 
 
 def on_account_name_changed(entry: Gtk.Entry) -> None:
-    config.new(config.ConfigType('login', 'account_name', entry.get_text()))
+    config.new('login', 'account_name', entry.get_text())
 
 
 def on_device_id_changed(entry: Gtk.Entry) -> None:
-    config.new(config.ConfigType('login', 'deviceid', entry.get_text()))
+    config.new('login', 'deviceid', entry.get_text())
 
 
 def on_log_level_changed(combo: Gtk.ComboBoxText) -> None:
-    log_level = config.ConfigStr(list(log_levels)[combo.get_active()])
-    config.new(config.ConfigType('logger', 'log_level', log_level))
+    log_level = list(log_levels)[combo.get_active()]
+    config.new('logger', 'log_level', log_level)
 
 
 def on_log_console_level_changed(combo: Gtk.ComboBoxText) -> None:
-    log_console_level = config.ConfigStr(list(log_levels)[combo.get_active()])
-    config.new(config.ConfigType('logger', 'log_console_level', log_console_level))
+    log_console_level = list(log_levels)[combo.get_active()]
+    config.new('logger', 'log_console_level', log_console_level)
 
 
 def on_steamtrades_plugin_toggled(checkbutton: Gtk.CheckButton) -> None:
-    activate = config.ConfigBool(checkbutton.get_active())
-    config.new(config.ConfigType('plugins', 'steamtrades', activate))
+    activate = checkbutton.get_active()
+    config.new('plugins', 'steamtrades', activate)
 
 
 def on_trade_ids_changed(entry: Gtk.Entry) -> None:
-    config.new(config.ConfigType('steamtrades', 'trade_ids', entry.get_text()))
+    config.new('steamtrades', 'trade_ids', entry.get_text())
 
 
 def save_digit_only(entry: Gtk.Entry, section: str, option: str) -> None:
     text = entry.get_text()
 
     if text.isdigit():
-        config.new(config.ConfigType(section, option, config.ConfigInt(int(text))))
+        config.new(section, option, int(text))
     else:
         entry.set_text(utils.remove_letters(text))
 
 
 def on_steamgifts_plugin_toggled(checkbutton: Gtk.CheckButton) -> None:
-    activate = config.ConfigBool(checkbutton.get_active())
-    config.new(config.ConfigType('plugins', 'steamgifts', activate))
+    activate = checkbutton.get_active()
+    config.new('plugins', 'steamgifts', activate)
 
 
 def on_giveaway_type_changed(combo: Gtk.ComboBoxText) -> None:
-    current_type = config.ConfigStr(list(giveaway_types)[combo.get_active()])
-    config.new(config.ConfigType('steamgifts', 'giveaway_type', current_type))
+    current_type = list(giveaway_types)[combo.get_active()]
+    config.new('steamgifts', 'giveaway_type', current_type)
 
 
 def refresh_widget_text(widget: Gtk.Widget) -> None:
@@ -412,7 +412,7 @@ def load_settings(
 
             if data:
                 try:
-                    new_config = config.ConfigType(config_section, config_option, config.ConfigStr(data[config_option]))
+                    config_value = data[config_option]
                 except KeyError:
                     log.debug(
                         _("Unable to find %s in prefilled data. Ignoring."),
@@ -421,30 +421,31 @@ def load_settings(
                     continue
             else:
                 # FIXME: Type can be wrong
-                new_config = config.get(config_section, config_option)
+                config_value = config.parser.get(config_section, config_option)
 
-                if not new_config.value:
+                if not config_value:
                     continue
 
             if isinstance(children, Gtk.ComboBox):
                 assert isinstance(combo_items, dict), "No combo_items"
+
                 try:
-                    children.set_active(list(combo_items).index(new_config.value))
+                    children.set_active(list(combo_items).index(config_value))
                 except ValueError:
                     error_message = _("Please, fix your config file. Accepted values for {} are:\n{}").format(
-                        new_config.option,
+                        config_option,
                         ', '.join(combo_items.keys()),
                     )
                     utils.fatal_error_dialog(error_message)
                     sys.exit(1)
             elif isinstance(children, Gtk.CheckButton):
-                if isinstance(new_config.value, bool):
-                    children.set_active(new_config.value)
+                if isinstance(config_value, bool):
+                    children.set_active(config_value)
                 else:
                     # FIXME: Type can be wrong
-                    children.set_active(True if new_config.value == 'True' else False)
+                    children.set_active(True if config_value == 'True' else False)
             else:
-                children.set_text(str(new_config.value))
+                children.set_text(str(config_value))
 
             if save:
-                config.new(new_config)
+                config.new(config_section, config_option, config_value)

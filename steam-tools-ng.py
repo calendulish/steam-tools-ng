@@ -18,6 +18,7 @@
 
 import argparse
 import asyncio
+import configparser
 import contextlib
 import importlib
 import logging
@@ -104,12 +105,12 @@ if __name__ == "__main__":
         sys.exit(0)
 
     if console_params.log_dir:
-        os.system(f'{file_manager} {config.get("logger", "log_directory").value}')
+        os.system(f'{file_manager} {config.parser.get("logger", "log_directory")}')
         sys.exit(0)
 
     try:
         config.init()
-    except config.configparser.Error as exception:
+    except configparser.Error as exception:
         if console_params.module:
             raise exception from None
         else:
@@ -124,9 +125,9 @@ if __name__ == "__main__":
 
         logging.root.removeHandler(logging.root.handlers[0])
 
-        log_directory = config.get("logger", "log_directory")
-        os.remove(os.path.join(log_directory.value, 'steam-tools-ng.log'))
-        os.remove(os.path.join(log_directory.value, 'steam-tools-ng.log.1'))
+        log_directory = config.parser.get("logger", "log_directory")
+        os.remove(os.path.join(log_directory, 'steam-tools-ng.log'))
+        os.remove(os.path.join(log_directory, 'steam-tools-ng.log.1'))
 
         log.info(_('Done!'))
         sys.exit(0)

@@ -89,10 +89,10 @@ class SetupDialog(Gtk.Dialog):
         self.content_area.add(self.user_details_section)
 
         self.username_item = self.user_details_section.new("username", _("Username:"), Gtk.Entry, 0, 0)
-        config_username = config.get("login", "account_name")
+        config_username = config.parser.get("login", "account_name")
 
-        if config_username.value:
-            self.username_item.set_text(config_username.value)
+        if config_username:
+            self.username_item.set_text(config_username)
 
         self.__password_item = self.user_details_section.new("password", _("Password:"), Gtk.Entry, 0, 1)
         self.__password_item.set_visibility(False)
@@ -133,7 +133,7 @@ class SetupDialog(Gtk.Dialog):
         with contextlib.suppress(FileNotFoundError):
             os.remove(config.config_file)
 
-        config.config_parser.clear()
+        config.parser.clear()
         config.init()
         self.status.info(_("Restarting Magic Box..."))
         # destroy that dialog after 5 seconds (time for main application loop)
@@ -170,9 +170,8 @@ class SetupDialog(Gtk.Dialog):
                 new_configs['shared_secret'] = self.shared_secret.get_text()
                 new_configs['identity_secret'] = self.identity_secret.get_text()
 
-        config.new(*[
-            config.ConfigType("login", key, value) for key, value in new_configs.items()
-        ])
+        for key, value in new_configs.items():
+            config.new("login", key, value)
 
         if self.destroy_after_run:
             self.destroy()
@@ -208,8 +207,8 @@ class SetupDialog(Gtk.Dialog):
             kwargs['shared_secret'] = self.shared_secret.get_text()
             kwargs['identity_secret'] = self.identity_secret.get_text()
         elif self.relogin:
-            kwargs['shared_secret'] = config.get("login", "shared_secret").value
-            kwargs['identity_secret'] = config.get("login", "identity_secret").value
+            kwargs['shared_secret'] = config.parser.get("login", "shared_secret")
+            kwargs['identity_secret'] = config.parser.get("login", "identity_secret")
 
         task = asyncio.ensure_future(self.do_login(*args, **kwargs))
         task.add_done_callback(functools.partial(self._do_login_callback))
@@ -504,7 +503,7 @@ class SetupDialog(Gtk.Dialog):
         oauth_data = json.loads(login_data['oauth'])
 
         deviceid = authenticator.generate_device_id(token=oauth_data['oauth_token'])
-        config.new(config.ConfigType("login", "deviceid", config.ConfigStr(deviceid)))
+        config.new("login", "deviceid", deviceid)
 
         task = asyncio.ensure_future(self.add_authenticator(oauth_data, deviceid))
         task.add_done_callback(functools.partial(self._add_authenticator_callback, login_data))

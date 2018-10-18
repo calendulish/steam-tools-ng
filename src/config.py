@@ -15,17 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import builtins
 import configparser
 import locale
 import logging
 import os
 import sys
-from typing import Dict, NamedTuple, NewType, Optional, Union
+from typing import Dict
 
 from . import i18n, logger_handlers
 
-config_parser = configparser.RawConfigParser()
+parser = configparser.RawConfigParser()
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
@@ -42,88 +41,10 @@ else:
 config_file_directory = os.path.join(data_dir, 'steam-tools-ng')
 config_file_name = 'steam-tools-ng.config'
 config_file = os.path.join(config_file_directory, config_file_name)
-
-ConfigStr = NewType('ConfigStr', str)
-ConfigInt = NewType('ConfigInt', int)
-ConfigBool = NewType('ConfigBool', bool)
-ConfigFloat = NewType('ConfigFloat', float)
-
-ConfigValue = Union[ConfigStr, ConfigInt, ConfigBool, ConfigFloat]
-
 log_levels = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
 
 
-class ConfigType(NamedTuple):
-    section: str
-    option: str
-    value: ConfigValue
-
-
-class Default:
-    @staticmethod
-    def _logger(option: str) -> Union[str, bool]:
-        log_directory = ConfigStr(os.path.join(data_dir, 'steam-tools-ng'))
-        log_level = ConfigStr('debug')
-        log_console_level = ConfigStr('info')
-        log_color = ConfigBool(True)
-
-        return locals()[option]
-
-    @staticmethod
-    def _locale(option: str) -> str:
-        language = ConfigStr(str(locale.getdefaultlocale()[0]))
-
-        return locals()[option]
-
-    @staticmethod
-    def _steam(option: str) -> str:
-        api_url = ConfigStr('https://api.lara.click')
-
-        return locals()[option]
-
-    @staticmethod
-    def _steamtrades(option: str) -> int:
-        wait_min = ConfigInt(3700)
-        wait_max = ConfigInt(4100)
-
-        return locals()[option]
-
-    @staticmethod
-    def _steamgifts(option: str) -> Union[int, str]:
-        wait_min = ConfigInt(3700)
-        wait_max = ConfigInt(4100)
-        giveaway_type = ConfigStr('main')
-
-        return locals()[option]
-
-    @staticmethod
-    def _gtk(option: str) -> str:
-        theme = ConfigStr("light")
-
-        return locals()[option]
-
-    @staticmethod
-    def _plugins(option: str) -> bool:
-        steamtrades = ConfigBool(True)
-        steamgifts = ConfigBool(True)
-        steamguard = ConfigBool(True)
-
-        return locals()[option]
-
-    @classmethod
-    def get(cls, section: str, option: str) -> Optional[ConfigValue]:
-        try:
-            default_value = getattr(cls(), f'_{section}')(option)
-            log.debug(_("Using fallback value for %s:%s (%s)"), section, option, default_value)
-        except (AttributeError, ValueError, KeyError):
-            default_value = None
-            log.debug(_("No value found for %s:%s. Using None"), section, option)
-
-        return default_value
-
-
-def update_log_level(type_: str, level_string: ConfigValue) -> None:
-    assert isinstance(level_string, str), "Invalid log_level"
+def update_log_level(type_: str, level_string: str) -> None:
     level = getattr(logging, level_string.upper())
     file_handler, console_handler = logging.root.handlers
 
@@ -133,88 +54,83 @@ def update_log_level(type_: str, level_string: ConfigValue) -> None:
         file_handler.setLevel(level)
 
 
-def _get(section: str, option: str, type_: str) -> ConfigValue:
-    log.debug(_("Loading config for %s:%s"), section, option)
-
-    if type_ == 'str':
-        get_method = config_parser.get
-        type_method = ConfigStr
-    elif type_ == 'bool':
-        get_method = config_parser.getboolean
-        type_method = ConfigBool
-    else:
-        get_method = getattr(config_parser, f'get{type_}')
-        type_method = getattr(sys.modules[__name__], f'Config{type_.capitalize()}')
-
-    try:
-        value = get_method(section, option)
-        assert type(value) != getattr(builtins, type_), f'Config value for {section}:{option} has wrong type'
-
-        return type_method(get_method(section, option))
-    except(configparser.NoOptionError, configparser.NoSectionError):
-        fallback = Default.get(section, option)
-        assert type(fallback) != getattr(builtins, type_), f'Fallback value for {section}:{option} has wrong type'
-
-        return fallback
-    except ValueError as exception:
-        raise configparser.Error(
-            _("Please, fix your config file:\n[{}] {} = {}").format(
-                section, option, str(exception),
-            )
-        )
-
-
-def get(section: str, option: str) -> ConfigType:
-    value = _get(section, option, 'str')
-    return ConfigType(section, option, value)
-
-
-def getint(section: str, option: str) -> ConfigType:
-    value = _get(section, option, 'int')
-    return ConfigType(section, option, value)
-
-
-def getfloat(section: str, option: str) -> ConfigType:
-    value = _get(section, option, 'float')
-    return ConfigType(section, option, value)
-
-
-def getboolean(section: str, option: str) -> ConfigType:
-    value = _get(section, option, 'bool')
-    return ConfigType(section, option, value)
-
-
 def init() -> None:
     os.makedirs(config_file_directory, exist_ok=True)
 
+    parser.read_dict(
+        {
+            'logger': {
+                'log_directory': os.path.join(data_dir, 'steam-tools-ng'),
+                'log_level': 'debug',
+                'log_console_level': 'info',
+                'log_color': True,
+            },
+            'locale': {
+                'language': str(locale.getdefaultlocale()[0])
+            },
+            'steam': {
+                'api_url': 'https://api.lara.click',
+            },
+            'steamtrades': {
+                'wait_min': 3700,
+                'wait_max': 4100,
+                'trade_ids': None,
+            },
+            'steamgifts': {
+                'wait_min': 3700,
+                'wait_max': 4100,
+                'giveaway_type': 'main',
+            },
+            'gtk': {
+                'theme': 'light',
+            },
+            'plugins': {
+                'steamtrades': True,
+                'steamgifts': True,
+                'steamguard': True,
+            },
+            'login': {
+                'steamid': 0,
+                'deviceid': None,
+                'token': None,
+                'token_secure': None,
+                'oauth_token': None,
+                'account_name': None,
+                'shared_secret': None,
+                'identity_secret': None,
+                'nickname': None,
+            },
+        }
+    )
+
     if os.path.isfile(config_file):
-        config_parser.read(config_file)
+        parser.read(config_file)
 
-    log_directory = get("logger", "log_directory")
-    log_level = get("logger", "log_level")
-    log_console_level = get("logger", "log_console_level")
+    log_directory = parser.get("logger", "log_directory")
+    log_level = parser.get("logger", "log_level")
+    log_console_level = parser.get("logger", "log_console_level")
 
-    if log_level.value and not log_level.value.upper() in log_levels:
+    if log_level and not log_level.upper() in log_levels:
         raise configparser.Error(
             _("Please, fix your config file. Accepted values for log_level are:\n{}").format(
                 ', '.join(log_levels),
             )
         )
 
-    if log_console_level.value and not log_console_level.value.upper() in log_levels:
+    if log_console_level and not log_console_level.upper() in log_levels:
         raise configparser.Error(
             _("Please, fix your config file. Accepted values for log_console_level are:\n{}").format(
                 ', '.join(log_levels),
             )
         )
 
-    os.makedirs(log_directory.value, exist_ok=True)
+    os.makedirs(log_directory, exist_ok=True)
 
-    log_file_handler = logger_handlers.RotatingFileHandler(os.path.join(log_directory.value, 'steam-tools-ng.log'),
+    log_file_handler = logger_handlers.RotatingFileHandler(os.path.join(log_directory, 'steam-tools-ng.log'),
                                                            backupCount=1,
                                                            encoding='utf-8')
     log_file_handler.setFormatter(logging.Formatter('%(module)s:%(levelname)s => %(message)s'))
-    log_file_handler.setLevel(getattr(logging, log_level.value.upper()))
+    log_file_handler.setLevel(getattr(logging, log_level.upper()))
 
     try:
         log_file_handler.doRollover()
@@ -224,40 +140,36 @@ def init() -> None:
         log_file_handler = logger_handlers.NullHandler()  # type: ignore
 
     log_console_handler = logger_handlers.ColoredStreamHandler()
-    log_console_handler.setLevel(getattr(logging, log_console_level.value.upper()))
+    log_console_handler.setLevel(getattr(logging, log_console_level.upper()))
 
     logging.basicConfig(level=logging.DEBUG, handlers=[log_file_handler, log_console_handler])
 
 
-def new(*new_configs: ConfigType) -> None:
-    for config in new_configs:
-        if config.option == "log_level":
-            update_log_level("file", config.value)
-        elif config.option == "log_console_level":
-            update_log_level("console", config.value)
+def new(section, option, value) -> None:
+    if option == "log_level":
+        update_log_level("file", value)
+    elif option == "log_console_level":
+        update_log_level("console", value)
 
-        if not config_parser.has_section(config.section):
-            config_parser.add_section(config.section)
+    if parser.get(section, option) != str(value):
+        log.debug(_('Saving %s:%s on config file'), section, option)
+        parser.set(section, option, str(value))
 
-        if get(config.section, config.option).value != str(config.value):
-            log.debug(_('Saving %s:%s on config file'), config.section, config.option)
-            config_parser.set(config.section, config.option, str(config.value))
-
-            with open(config_file, 'w') as config_file_object:
-                config_parser.write(config_file_object)
-        else:
-            log.debug(_('Not saving %s:%s because values are already updated'), config.section, config.option)
+        with open(config_file, 'w') as config_file_object:
+            parser.write(config_file_object)
+    else:
+        log.debug(_('Not saving %s:%s because values are already updated'), section, option)
 
 
 def login_cookies() -> Dict[str, str]:
-    steamid = getint("login", "steamid")
-    token = get("login", "token")
-    token_secure = get("login", "token_secure")
+    steamid = parser.getint("login", "steamid")
+    token = parser.get("login", "token")
+    token_secure = parser.get("login", "token_secure")
 
-    if not steamid.value or not token.value or not token_secure.value:
+    if not steamid or not token or not token_secure:
         return {}
 
     return {
-        'steamLogin': f'{steamid.value}%7C%7C{token.value}',
-        'steamLoginSecure': f'{steamid.value}%7C%7C{token_secure.value}',
+        'steamLogin': f'{steamid}%7C%7C{token}',
+        'steamLoginSecure': f'{steamid}%7C%7C{token_secure}',
     }

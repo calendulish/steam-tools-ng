@@ -79,9 +79,8 @@ async def add_authenticator(
             'identity_secret': auth_data['identity_secret'],
         }
 
-        config.new(*[
-            config.ConfigType("login", key, value) for key, value in new_configs.items()
-        ])
+        for key, value in new_configs.items():
+            config.new("login", key, value)
 
         return {**login_data, **auth_data}
     else:
@@ -98,15 +97,15 @@ async def check_login(
         mail_code='',
         relogin: bool = False,
 ) -> bool:
-    token = config.get("login", "token")
-    token_secure = config.get("login", "token_secure")
-    steamid = config.getint("login", "steamid")
-    nickname = config.get("login", "nickname")
-    identity_secret = config.get("login", "identity_secret")
-    shared_secret = config.get("login", "shared_secret")
-    mobile_login = True if config.get("login", "oauth_token").value else False
+    token = config.parser.get("login", "token")
+    token_secure = config..parser.get("login", "token_secure")
+    steamid = config.parser.getint("login", "steamid")
+    nickname = config.parser.get("login", "nickname")
+    identity_secret = config.parser.get("login", "identity_secret")
+    shared_secret = config.parser.get("login", "shared_secret")
+    mobile_login = True if config.parser.get("login", "oauth_token") else False
 
-    if not token.value or not token_secure.value or not steamid.value:
+    if not token or not token_secure or not steamid:
         log.error(_("STNG is not configured."))
         log.info("Welcome to STNG Setup")
         log.info("How do you want to log-in?")
@@ -120,35 +119,33 @@ async def check_login(
             mobile_login = True
         elif user_input == '2':
             mobile_login = False
-    elif not nickname.value:
+    elif not nickname:
         try:
-            new_nickname = await webapi_session.get_nickname(steamid.value)
+            nickname = await webapi_session.get_nickname(steamid)
         except ValueError:
             raise NotImplementedError
         else:
-            # noinspection PyProtectedMember
-            nickname = nickname._replace(value=config.ConfigStr(new_nickname))
-            config.new(nickname)
+            config.new("login", "nickname", nickname)
 
     session.cookie_jar.update_cookies(config.login_cookies())
 
-    if not await webapi_session.is_logged_in(nickname.value):
+    if not await webapi_session.is_logged_in(nickname):
         log.error(_("User is not logged in."))
 
-        username = config.get("login", "account_name")
+        username = config.parser.get("login", "account_name")
 
-        if not username.value:
+        if not username:
             user_input = safe_input(_("Please, write your username"))
             # noinspection PyProtectedMember
-            username = username._replace(value=config.ConfigStr(user_input))
+            username = user_input
 
         __password = getpass.getpass(_("Please, write your password (it's hidden, and will be not saved)"))
 
-        login = webapi.Login(session, username.value, __password)
+        login = webapi.Login(session, username, __password)
 
-        if shared_secret.value:
+        if shared_secret:
             server_time = await webapi_session.get_server_time()
-            auth_code = authenticator.get_code(server_time, shared_secret.value)
+            auth_code = authenticator.get_code(server_time, shared_secret)
         else:
             log.warning(_("No shared secret found. Trying to log-in without two-factor authentication."))
 
@@ -226,14 +223,13 @@ async def check_login(
                     'steamid': login_data['transfer_parameters']['steamid'],
                     'token': login_data['transfer_parameters']['webcookie'],
                     'token_secure': login_data['transfer_parameters']['token_secure'],
-                    'account_name': username.value,
-                    'shared_secret': shared_secret.value,
-                    'identity_secret': identity_secret.value,
+                    'account_name': username,
+                    'shared_secret': shared_secret,
+                    'identity_secret': identity_secret,
                 }
 
-                config.new(*[
-                    config.ConfigType("login", key, value) for key, value in new_configs.items()
-                ])
+                for key, value in new_configs.items():
+                    config.new("login", key, value)
 
                 break
 

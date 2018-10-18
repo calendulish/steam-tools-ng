@@ -16,6 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
+import configparser
 import contextlib
 import itertools
 import logging
@@ -42,8 +43,8 @@ class Application(Gtk.Application):
                          flags=Gio.ApplicationFlags.FLAGS_NONE)
 
         self.session = session
-        self.api_url = config.get('steam', 'api_url')
-        self.webapi_session = webapi.SteamWebAPI(session, self.api_url.value)
+        self.api_url = config.parser.get('steam', 'api_url')
+        self.webapi_session = webapi.SteamWebAPI(session, self.api_url)
         self.plugin_manager = plugin_manager
 
         self.window = None
@@ -62,9 +63,9 @@ class Application(Gtk.Application):
         about_action.connect("activate", self.on_about_activate)
         self.add_action(about_action)
 
-        theme = config.get("gtk", "theme")
+        theme = config.parser.get("gtk", "theme")
 
-        if theme.value == 'dark':
+        if theme == 'dark':
             self.gtk_settings.props.gtk_application_prefer_dark_theme = True
         else:
             self.gtk_settings.props.gtk_application_prefer_dark_theme = False
@@ -73,17 +74,17 @@ class Application(Gtk.Application):
         if not self.window:
             try:
                 self.window = window.Main(application=self)
-            except config.configparser.Error as exception:
+            except configparser.Error as exception:
                 utils.fatal_error_dialog(str(exception), self.window)
                 sys.exit(1)
 
         self.window.present()  # type: ignore
 
-        task = asyncio.ensure_future(self.async_activate())
+        task = asyncio.gather(self.async_activate())
         task.add_done_callback(self.async_activate_callback)
 
     def async_activate_callback(self, future: 'asyncio.Future[Any]') -> None:
-        if future.exception():
+        if future.exception() and not isinstance(future.exception(), asyncio.CancelledError):
             utils.fatal_error_dialog(str(future.exception()), self.window)
             sys.exit(1)
 
@@ -92,13 +93,13 @@ class Application(Gtk.Application):
         login_requested = False
 
         while self.window.get_realized():
-            token = config.get("login", "token")
-            token_secure = config.get("login", "token_secure")
-            steamid = config.getint("login", "steamid")
-            nickname = config.get("login", "nickname")
-            mobile_login = True if config.get("login", "oauth_token").value else False
+            token = config.parser.get("login", "token")
+            token_secure = config.parser.get("login", "token_secure")
+            steamid = config.parser.getint("login", "steamid")
+            nickname = config.parser.get("login", "nickname")
+            mobile_login = True if config.parser.get("login", "oauth_token") else False
 
-            if not token.value or not token_secure.value or not steamid.value:
+            if not token or not token_secure or not steamid:
                 if not setup_requested:
                     log.debug(_("Unable to find a valid configuration. Calling Magic Box."))
                     setup_dialog = setup.SetupDialog(self.window, self.session, self.webapi_session)
@@ -111,19 +112,18 @@ class Application(Gtk.Application):
 
             setup_requested = False
 
-            if not nickname.value:
+            if not nickname:
                 log.debug(_("Unable to find a valid nickname. Generating a new one."))
                 try:
-                    new_nickname = await self.webapi_session.get_nickname(steamid.value)
+                    nickname = await self.webapi_session.get_nickname(steamid)
                 except ValueError:
                     raise NotImplementedError
                 else:
-                    nickname = nickname._replace(value=config.ConfigStr(new_nickname))
-                    config.new(nickname)
+                    config.new('login', 'nickname', nickname)
 
             self.session.cookie_jar.update_cookies(config.login_cookies())
 
-            if not await self.webapi_session.is_logged_in(nickname.value):
+            if not await self.webapi_session.is_logged_in(nickname):
                 if not login_requested:
                     log.debug(_("User is not logged-in. Calling Magic Box."))
                     setup_dialog = setup.SetupDialog(
@@ -166,20 +166,20 @@ class Application(Gtk.Application):
         assert isinstance(self.window, Gtk.Window), "No window"
 
         while self.window.get_realized():
-            if not config.getboolean("plugins", "steamguard").value:
+            if not config.parser.getboolean("plugins", "steamguard"):
                 await asyncio.sleep(5)
                 continue
 
-            shared_secret = config.get("login", "shared_secret")
+            shared_secret = config.parser.get("login", "shared_secret")
 
             try:
-                if not shared_secret.value:
+                if not shared_secret:
                     raise ValueError
 
                 with client.SteamGameServer() as server:
                     server_time = server.get_server_time()
 
-                auth_code = authenticator.get_code(server_time, shared_secret.value)
+                auth_code = authenticator.get_code(server_time, shared_secret)
             except (ValueError, binascii.Error):
                 self.window.steamguard_status.set_error(_("The currently secret is invalid"))
                 await asyncio.sleep(10)
@@ -208,21 +208,20 @@ class Application(Gtk.Application):
         assert isinstance(self.window, Gtk.Window), "No window"
 
         while self.window.get_realized():
-            identity_secret = config.get("login", "identity_secret")
-            steamid = config.getint("login", "steamid")
-            deviceid = config.get("login", "deviceid")
+            identity_secret = config.parser.get("login", "identity_secret")
+            steamid = config.parser.getint("login", "steamid")
+            deviceid = config.parser.get("login", "deviceid")
             cookies = config.login_cookies()
 
-            if not identity_secret.value:
+            if not identity_secret:
                 warning(_("Unable to get confirmations without a valid identity secret"))
                 await asyncio.sleep(10)
                 continue
 
-            if not deviceid.value:
+            if not deviceid:
                 log.debug(_("Unable to find deviceid. Generating from identity."))
-                new_deviceid = authenticator.generate_device_id(identity_secret.value)
-                deviceid = deviceid._replace(value=config.ConfigStr(new_deviceid))
-                config.new(deviceid)
+                deviceid = authenticator.generate_device_id(identity_secret)
+                config.new("login", "deviceid", deviceid)
 
             if cookies:
                 self.session.cookie_jar.update_cookies(cookies)
@@ -233,9 +232,9 @@ class Application(Gtk.Application):
 
             try:
                 confirmations = await self.webapi_session.get_confirmations(
-                    identity_secret.value,
-                    steamid.value,
-                    deviceid.value,
+                    identity_secret,
+                    steamid,
+                    deviceid,
                 )
             except AttributeError as exception:
                 warning(_("Error when fetch confirmations"))
@@ -284,7 +283,7 @@ class Application(Gtk.Application):
 
         if self.plugin_manager.has_plugin("steamtrades"):
             steamtrades = self.plugin_manager.load_plugin("steamtrades")
-            steamtrades_session = steamtrades.Main(self.session, api_url=self.api_url.value)
+            steamtrades_session = steamtrades.Main(self.session, api_url=self.api_url)
         else:
             error(_("Unable to find Steamtrades plugin"))
             return
@@ -292,17 +291,17 @@ class Application(Gtk.Application):
         assert isinstance(self.window, Gtk.Window), "No window"
 
         while self.window.get_realized():
-            if not config.getboolean("plugins", "steamtrades").value:
+            if not config.parser.getboolean("plugins", "steamtrades"):
                 await asyncio.sleep(5)
                 continue
 
             info(_("Loading"))
-            trade_ids = config.get("steamtrades", "trade_ids")
-            wait_min = config.getint("steamtrades", "wait_min")
-            wait_max = config.getint("steamtrades", "wait_max")
+            trade_ids = config.parser.get("steamtrades", "trade_ids")
+            wait_min = config.parser.getint("steamtrades", "wait_min")
+            wait_max = config.parser.getint("steamtrades", "wait_max")
             cookies = config.login_cookies()
 
-            if not trade_ids.value:
+            if not trade_ids:
                 error(_("No trade ID found in config file"))
                 await asyncio.sleep(5)
                 continue
@@ -324,7 +323,7 @@ class Application(Gtk.Application):
                 await asyncio.sleep(5)
                 continue
 
-            trades = [trade.strip() for trade in trade_ids.value.split(',')]
+            trades = [trade.strip() for trade in trade_ids.split(',')]
             bumped = False
 
             for trade_id in trades:
@@ -355,8 +354,8 @@ class Application(Gtk.Application):
                     await asyncio.sleep(15)
                     continue
                 except steamtrades.NotReadyError as exception:
-                    wait_min = config.ConfigType('steamtrades', 'wait_min', config.ConfigInt(exception.time_left * 60))
-                    wait_max = config.ConfigType('steamtrades', 'wait_max', config.ConfigInt(wait_min.value + 400))
+                    wait_min = exception.time_left * 60
+                    wait_max = wait_min + 400
                     bumped = True
                 except steamtrades.ClosedError as exception:
                     self.error(str(exception))
@@ -367,7 +366,7 @@ class Application(Gtk.Application):
                 await asyncio.sleep(10)
                 continue
 
-            wait_offset = random.randint(wait_min.value, wait_max.value)
+            wait_offset = random.randint(wait_min, wait_max)
             log.debug(_("Setting wait_offset from steamtrades to %s"), wait_offset)
             for past_time in range(wait_offset):
                 info(_("Waiting more {} minutes").format(round(wait_offset / 60)))
@@ -386,7 +385,7 @@ class Application(Gtk.Application):
 
         if self.plugin_manager.has_plugin("steamgifts"):
             steamgifts = self.plugin_manager.load_plugin("steamgifts")
-            steamgifts_session = steamgifts.Main(self.session, api_url=self.api_url.value)
+            steamgifts_session = steamgifts.Main(self.session, api_url=self.api_url)
         else:
             error(_("Unable to find Steamgifts plugin"))
             return
@@ -408,14 +407,14 @@ class Application(Gtk.Application):
         assert isinstance(self.window, Gtk.Window), "No window"
 
         while self.window.get_realized():
-            if not config.getboolean("plugins", "steamgifts").value:
+            if not config.parser.getboolean("plugins", "steamgifts"):
                 await asyncio.sleep(5)
                 continue
 
             info(_("Loading"))
-            wait_min = config.getint("steamgifts", "wait_min")
-            wait_max = config.getint("steamgifts", "wait_max")
-            giveaway_type = config.get("steamgifts", "giveaway_type")
+            wait_min = config.parser.getint("steamgifts", "wait_min")
+            wait_max = config.parser.getint("steamgifts", "wait_max")
+            giveaway_type = config.parser.get("steamgifts", "giveaway_type")
             cookies = config.login_cookies()
 
             if cookies:
@@ -442,7 +441,7 @@ class Application(Gtk.Application):
                 await asyncio.sleep(20)
                 continue
 
-            giveaways = await steamgifts_session.get_giveaways(giveaway_type.value)
+            giveaways = await steamgifts_session.get_giveaways(giveaway_type)
             joined = False
 
             for giveaway in giveaways:
@@ -469,7 +468,7 @@ class Application(Gtk.Application):
                 await asyncio.sleep(10)
                 continue
 
-            wait_offset = random.randint(wait_min.value, wait_max.value)
+            wait_offset = random.randint(wait_min, wait_max)
             log.debug(_("Setting wait_offset from steamgifts to %s"), wait_offset)
             for past_time in range(wait_offset):
                 info(_("Waiting more {} minutes").format(round(wait_offset / 60)))

@@ -32,20 +32,20 @@ _ = i18n.get_translation
 
 
 async def run(session: aiohttp.ClientSession) -> int:
-    api_url = config.get('steam', 'api_url')
-    webapi_session = webapi.SteamWebAPI(session, api_url.value)
+    api_url = config.parser.get('steam', 'api_url')
+    webapi_session = webapi.SteamWebAPI(session, api_url)
     steam_login_status = await utils.check_login(session, webapi_session)
 
     if not steam_login_status:
         sys.exit(1)
 
-    shared_secret = config.get("login", "shared_secret")
+    shared_secret = config.parser.get("login", "shared_secret")
 
-    if shared_secret.value:
+    if shared_secret:
         try:
-            base64.b64decode(shared_secret.value)
+            base64.b64decode(shared_secret)
         except ValueError:
-            log.critical(_('%s is not a valid parameter'), shared_secret.value)
+            log.critical(_('%s is not a valid parameter'), shared_secret)
             return 1
     else:
         log.critical(_("No shared_secret found on config file or command line"))
@@ -56,7 +56,7 @@ async def run(session: aiohttp.ClientSession) -> int:
             with client.SteamGameServer() as server:
                 server_time = server.get_server_time()
 
-            auth_code = authenticator.get_code(server_time, shared_secret.value)
+            auth_code = authenticator.get_code(server_time, shared_secret)
         except ProcessLookupError:
             logging.critical(_("Steam Client is not running."))
             try_again = utils.safe_input(_("Try again?"), True)

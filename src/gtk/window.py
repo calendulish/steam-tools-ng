@@ -147,9 +147,9 @@ class Main(Gtk.ApplicationWindow):
             plugins_enabled = []
 
             for plugin_name in ["steamgifts", "steamtrades", "steamguard"]:
-                plugin_config = config.getboolean("plugins", plugin_name)
+                plugin_config = config.parser.getboolean("plugins", plugin_name)
 
-                if plugin_config.value:
+                if plugin_config:
                     plugins_enabled.append(plugin_name)
 
             for widget in self.status_grid.get_children():
@@ -176,14 +176,14 @@ class Main(Gtk.ApplicationWindow):
 
     async def update_login_icons(self) -> None:
         while self.get_realized():
-            steamid = config.getint('login', 'steamid')
-            nickname = config.get('login', 'nickname')
-            api_url = config.get('steam', 'api_url')
+            steamid = config.parser.getint('login', 'steamid')
+            nickname = config.parser.get('login', 'nickname')
+            api_url = config.parser.get('steam', 'api_url')
             cookies = config.login_cookies()
 
-            if not nickname.value:
+            if not nickname:
                 try:
-                    new_nickname = await self.webapi_session.get_nickname(steamid.value)
+                    nickname = await self.webapi_session.get_nickname(steamid)
                 except ValueError:
                     # invalid steamid or setup process is running
                     self.steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_yellow.png'))
@@ -191,13 +191,11 @@ class Main(Gtk.ApplicationWindow):
                     self.steamgifts_icon.set_from_file(os.path.join(config.icons_dir, 'steamgifts_yellow.png'))
                     return
                 else:
-                    nickname = nickname._replace(value=config.ConfigStr(new_nickname))
-
-                config.new(nickname)
+                    config.new("login", "nickname", nickname)
 
             self.steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_yellow.png'))
 
-            if await self.webapi_session.is_logged_in(nickname.value):
+            if await self.webapi_session.is_logged_in(nickname):
                 self.steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_green.png'))
             else:
                 self.steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_red.png'))
@@ -207,9 +205,9 @@ class Main(Gtk.ApplicationWindow):
 
                 self.steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_yellow.png'))
 
-                if self.plugin_manager.has_plugin('steamtrades') and config.getboolean("plugins", "steamtrades").value:
+                if self.plugin_manager.has_plugin('steamtrades') and config.parser.getboolean("plugins", "steamtrades"):
                     steamtrades = self.plugin_manager.load_plugin("steamtrades")
-                    steamtrades_session = steamtrades.Main(self.session, api_url=api_url.value)
+                    steamtrades_session = steamtrades.Main(self.session, api_url=api_url)
 
                     try:
                         await steamtrades_session.do_login()
@@ -219,9 +217,9 @@ class Main(Gtk.ApplicationWindow):
 
                 self.steamgifts_icon.set_from_file(os.path.join(config.icons_dir, 'steamgifts_yellow.png'))
 
-                if self.plugin_manager.has_plugin('steamgifts') and config.getboolean("plugins", "steamgifts").value:
+                if self.plugin_manager.has_plugin('steamgifts') and config.parser.getboolean("plugins", "steamgifts"):
                     steamgifts = self.plugin_manager.load_plugin("steamgifts")
-                    steamgifts_session = steamgifts.Main(self.session, api_url=api_url.value)
+                    steamgifts_session = steamgifts.Main(self.session, api_url=api_url)
 
                     try:
                         await steamgifts_session.do_login()

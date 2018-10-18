@@ -159,9 +159,9 @@ class FinalizeDialog(Gtk.Dialog):
             self.destroy()
 
     async def finalize(self, keep_iter: bool = False) -> Dict[str, Any]:
-        identity_secret = config.get("login", "identity_secret")
-        steamid = config.getint("login", "steamid")
-        deviceid = config.get("login", "deviceid")
+        identity_secret = config.parser.get("login", "identity_secret")
+        steamid = config.parser.getint("login", "steamid")
+        deviceid = config.parser.get("login", "deviceid")
 
         self.status.info(_("Waiting Steam Server (OP: {})").format(self.model[self.iter][1]))
 
@@ -169,9 +169,9 @@ class FinalizeDialog(Gtk.Dialog):
 
         result = await self.webapi_session.finalize_confirmation(
             server_time,
-            identity_secret.value,
-            steamid.value,
-            deviceid.value,
+            identity_secret,
+            steamid,
+            deviceid,
             self.model[self.iter][1],
             self.model[self.iter][2],
             self.raw_action,

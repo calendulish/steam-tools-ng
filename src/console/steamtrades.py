@@ -33,20 +33,20 @@ _ = i18n.get_translation
 
 
 async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -> None:
-    trade_ids = config.get("steamtrades", "trade_ids")
-    wait_min = config.getint("steamtrades", "wait_min")
-    wait_max = config.getint("steamtrades", "wait_max")
-    api_url = config.get('steam', 'api_url')
-    webapi_session = webapi.SteamWebAPI(session, api_url.value)
+    trade_ids = config.parser.get("steamtrades", "trade_ids")
+    wait_min = config.parser.getint("steamtrades", "wait_min")
+    wait_max = config.parser.getint("steamtrades", "wait_max")
+    api_url = config.parser.get('steam', 'api_url')
+    webapi_session = webapi.SteamWebAPI(session, api_url)
 
     if plugin_manager.has_plugin("steamtrades"):
         steamtrades = plugin_manager.load_plugin('steamtrades')
-        steamtrades_session = steamtrades.Main(session, api_url=api_url.value)
+        steamtrades_session = steamtrades.Main(session, api_url=api_url)
     else:
         log.critical("Unable to find steamtrades plugin")
         sys.exit(1)
 
-    if not trade_ids.value:
+    if not trade_ids:
         logging.critical("No trade ID found in config file")
         sys.exit(1)
 
@@ -64,7 +64,7 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
 
     while True:
         current_datetime = time.strftime('%B, %d, %Y - %H:%M:%S')
-        trades = [trade.strip() for trade in trade_ids.value.split(',')]
+        trades = [trade.strip() for trade in trade_ids.split(',')]
 
         for trade_id in trades:
             try:
@@ -82,8 +82,8 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
                     trade_info.title,
                     exception.time_left,
                 )
-                wait_min = config.ConfigType('steamtrades', 'wait_min', config.ConfigInt(exception.time_left * 60))
-                wait_max = config.ConfigType('steamtrades', 'wait_max', config.ConfigInt(wait_min.value + 400))
+                wait_min = exception.time_left * 60
+                wait_max = wait_min + 400
             except steamtrades.TradeClosedError:
                 log.error("%s (%s) is closed. Ignoring...", trade_info.id, trade_info.title)
                 continue
@@ -93,7 +93,7 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
                 else:
                     log.error('Unable to bump %s (%s). Ignoring...', trade_info.id, trade_info.title)
 
-        wait_offset = random.randint(wait_min.value, wait_max.value)
+        wait_offset = random.randint(wait_min, wait_max)
         for past_time in range(wait_offset):
             print("Waiting: {:4d} seconds".format(wait_offset - past_time), end='\r')
             await asyncio.sleep(1)
