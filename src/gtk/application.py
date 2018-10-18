@@ -37,13 +37,14 @@ log = logging.getLogger(__name__)
 
 # noinspection PyUnusedLocal
 class Application(Gtk.Application):
-    def __init__(self, session: aiohttp.ClientSession) -> None:
+    def __init__(self, session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -> None:
         super().__init__(application_id="click.lara.SteamToolsNG",
                          flags=Gio.ApplicationFlags.FLAGS_NONE)
 
         self.session = session
         self.api_url = config.get('steam', 'api_url')
         self.webapi_session = webapi.SteamWebAPI(session, self.api_url.value)
+        self.plugin_manager = plugin_manager
 
         self.window = None
         self.gtk_settings = Gtk.Settings.get_default()
@@ -281,8 +282,9 @@ class Application(Gtk.Application):
             self.window.steamtrades_status.set_current(tradeid)
             self.window.steamtrades_status.set_info(message)
 
-        if plugins.has_plugin("steamtrades"):
-            steamtrades = plugins.get_plugin("steamtrades", self.session, api_url=self.api_url.value)
+        if self.plugin_manager.has_plugin("steamtrades"):
+            steamtrades = self.plugin_manager.load_plugin("steamtrades")
+            steamtrades_session = steamtrades.Main(self.session, api_url=self.api_url.value)
         else:
             error(_("Unable to find Steamtrades plugin"))
             return
@@ -308,7 +310,7 @@ class Application(Gtk.Application):
             if cookies:
                 self.session.cookie_jar.update_cookies(cookies)
                 try:
-                    await steamtrades.do_login()
+                    await steamtrades_session.do_login()
                 except aiohttp.ClientConnectionError:
                     error(_("No connection"))
                     await asyncio.sleep(15)
@@ -327,7 +329,7 @@ class Application(Gtk.Application):
 
             for trade_id in trades:
                 try:
-                    trade_info = await steamtrades.get_trade_info(trade_id)
+                    trade_info = await steamtrades_session.get_trade_info(trade_id)
                 except (IndexError, aiohttp.ClientResponseError):
                     error(_("Unable to find TradeID {}").format(trade_id))
                     bumped = False
@@ -341,22 +343,22 @@ class Application(Gtk.Application):
                     info(_("Waiting anti-ban timer"))
                     await asyncio.sleep(random.randint(3, 8))
 
-                    if await steamtrades.bump(trade_info):
+                    if await steamtrades_session.bump(trade_info):
                         info(_("Bumped!"), trade_info.id)
                         bumped = True
                     else:
                         error(_("Unable to bump {}").format(trade_info.id))
                         await asyncio.sleep(5)
                         continue
-                except plugins.steamtrades.NoTradesError as exception:
+                except steamtrades.NoTradesError as exception:
                     log.error(str(exception))
                     await asyncio.sleep(15)
                     continue
-                except plugins.steamtrades.NotReadyError as exception:
+                except steamtrades.NotReadyError as exception:
                     wait_min = config.ConfigType('steamtrades', 'wait_min', config.ConfigInt(exception.time_left * 60))
                     wait_max = config.ConfigType('steamtrades', 'wait_max', config.ConfigInt(wait_min.value + 400))
                     bumped = True
-                except plugins.steamtrades.ClosedError as exception:
+                except steamtrades.ClosedError as exception:
                     self.error(str(exception))
                     await asyncio.sleep(5)
                     continue
@@ -382,7 +384,14 @@ class Application(Gtk.Application):
             self.window.steamgifts_status.set_current('_ _ _ _ _')
             self.window.steamgifts_status.set_error(message)
 
-        def info(message: str, giveaway: Optional[plugins.steamgifts.GiveawayInfo] = None) -> None:
+        if self.plugin_manager.has_plugin("steamgifts"):
+            steamgifts = self.plugin_manager.load_plugin("steamgifts")
+            steamgifts_session = steamgifts.Main(self.session, api_url=self.api_url.value)
+        else:
+            error(_("Unable to find Steamgifts plugin"))
+            return
+
+        def info(message: str, giveaway: Optional[steamgifts.GiveawayInfo] = None) -> None:
             if giveaway:
                 self.window.steamgifts_status.set_current(giveaway.id)
                 self.window.steamgifts_status.set_info('{} {} ({}:{}:{})'.format(
@@ -395,12 +404,6 @@ class Application(Gtk.Application):
             else:
                 self.window.steamgifts_status.set_current('_ _ _ _ _')
                 self.window.steamgifts_status.set_info(message)
-
-        if plugins.has_plugin("steamgifts"):
-            steamgifts = plugins.get_plugin("steamgifts", self.session, api_url='https://lara.click/api')
-        else:
-            error(_("Unable to find Steamgifts plugin"))
-            return
 
         assert isinstance(self.window, Gtk.Window), "No window"
 
@@ -418,7 +421,7 @@ class Application(Gtk.Application):
             if cookies:
                 self.session.cookie_jar.update_cookies(cookies)
                 try:
-                    await steamgifts.do_login()
+                    await steamgifts_session.do_login()
                 except aiohttp.ClientConnectionError:
                     error(_("No Connection"))
                     await asyncio.sleep(15)
@@ -433,18 +436,18 @@ class Application(Gtk.Application):
                 continue
 
             try:
-                await steamgifts.configure()
-            except plugins.steamgifts.ConfigureError:
+                await steamgifts_session.configure()
+            except steamgifts.ConfigureError:
                 error(_("Unable to configure steamgifts"))
                 await asyncio.sleep(20)
                 continue
 
-            giveaways = await steamgifts.get_giveaways(giveaway_type.value)
+            giveaways = await steamgifts_session.get_giveaways(giveaway_type.value)
             joined = False
 
             for giveaway in giveaways:
                 try:
-                    user = await steamgifts.get_user_info()
+                    user = await steamgifts_session.get_user_info()
                 except aiohttp.ClientConnectionError:
                     error(_("No connection"))
                     joined = False
@@ -458,7 +461,7 @@ class Application(Gtk.Application):
                 info(_("Waiting anti-ban timer"), giveaway)
                 await asyncio.sleep(random.randint(3, 8))
                 # FIXME: stlib should return join status
-                await steamgifts.join(giveaway)
+                await steamgifts_session.join(giveaway)
                 info(_("Joined!"), giveaway)
                 joined = True
 

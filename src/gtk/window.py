@@ -21,7 +21,7 @@ import os
 
 import aiohttp
 from gi.repository import GdkPixbuf, Gio, Gtk
-from stlib import plugins, webapi
+from stlib import webapi
 
 from . import confirmation, utils
 from .. import config, i18n
@@ -37,6 +37,7 @@ class Main(Gtk.ApplicationWindow):
         self.application = application
         self.session = application.session
         self.webapi_session = application.webapi_session
+        self.plugin_manager = application.plugin_manager
 
         header_bar = Gtk.HeaderBar()
         header_bar.set_show_close_button(True)
@@ -177,9 +178,6 @@ class Main(Gtk.ApplicationWindow):
             api_url = config.get('steam', 'api_url')
             cookies = config.login_cookies()
 
-            if plugins.has_plugin('steamtrades'):
-                steamtrades = plugins.get_plugin("steamtrades", self.session, api_url=api_url.value)
-
             if not nickname.value:
                 try:
                     new_nickname = await self.webapi_session.get_nickname(steamid.value)
@@ -201,11 +199,15 @@ class Main(Gtk.ApplicationWindow):
             if cookies:
                 self.session.cookie_jar.update_cookies(cookies)
 
-                try:
-                    await steamtrades.do_login()
-                    self.steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_green.png'))
-                except (aiohttp.ClientConnectionError, webapi.LoginError, NameError):
-                    self.steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_red.png'))
+                if self.plugin_manager.has_plugin('steamtrades'):
+                    steamtrades = self.plugin_manager.load_plugin("steamtrades")
+                    steamtrades_session = steamtrades.Main(self.session, api_url=api_url.value)
+
+                    try:
+                        await steamtrades_session.do_login()
+                        self.steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_green.png'))
+                    except (aiohttp.ClientConnectionError, webapi.LoginError, NameError):
+                        self.steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_red.png'))
 
             await asyncio.sleep(10)
 

@@ -27,15 +27,9 @@ import sys
 import textwrap
 
 import aiohttp
+from stlib import plugins
 
 if hasattr(sys, 'frozen') or os.path.isdir('src'):
-    # noinspection PyUnresolvedReferences
-    import stlib_plugins
-    # noinspection PyUnresolvedReferences
-    import stlib_plugins.steamtrades
-    # noinspection PyUnresolvedReferences
-    import stlib_plugins.steamgifts
-
     module_folder = 'src'
 else:
     module_folder = 'steam_tools_ng'
@@ -148,13 +142,14 @@ if __name__ == "__main__":
 
     tcp_connector = aiohttp.TCPConnector(ssl=ssl_context)
     http_session = aiohttp.ClientSession(raise_for_status=True, connector=tcp_connector)
+    plugin_manager = plugins.Manager()
 
     if console_params.module:
         module_name = console_params.module[0]
         module_options = console_params.options
         module = importlib.import_module(f'.{module_name}', f'{module_folder}.console')
 
-        task = asyncio.ensure_future(module.run(http_session, *module_options))  # type: ignore
+        task = asyncio.ensure_future(module.run(http_session, plugin_manager, *module_options))  # type: ignore
         task.add_done_callback(lambda future: event_loop.stop())
     else:
         from gi.repository import Gtk
@@ -173,7 +168,7 @@ if __name__ == "__main__":
             log.critical('Use -c / --cli <module> for the command line interface.')
             sys.exit(1)
 
-        app = application.Application(http_session)
+        app = application.Application(http_session, plugin_manager)
         app.register()
         app.activate()
 

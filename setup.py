@@ -179,7 +179,7 @@ def freeze_options() -> Mapping[str, Any]:
         )
     ]
 
-    packages = ['stlib_plugins', 'asyncio', 'src', 'gi', 'idna', 'six', 'pkg_resources']  # idna for cx_freeze <= 5.1.1
+    packages = ['asyncio', 'src', 'gi', 'idna', 'six', 'pkg_resources']  # idna for cx_freeze <= 5.1.1
 
     paths = ['.']
     paths.extend(sys.path)
