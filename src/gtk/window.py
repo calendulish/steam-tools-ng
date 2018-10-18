@@ -133,6 +133,9 @@ class Main(Gtk.ApplicationWindow):
         self.steamtrades_icon = Gtk.Image.new_from_file(os.path.join(config.icons_dir, 'steamtrades_yellow.png'))
         icon_bar.attach_next_to(self.steamtrades_icon, self.steam_icon, Gtk.PositionType.RIGHT, 1, 1)
 
+        self.steamgifts_icon = Gtk.Image.new_from_file(os.path.join(config.icons_dir, 'steamgifts_yellow.png'))
+        icon_bar.attach_next_to(self.steamgifts_icon, self.steamtrades_icon, Gtk.PositionType.RIGHT, 1, 1)
+
         icon_bar.show_all()
         main_grid.show_all()
         self.show_all()
@@ -185,11 +188,14 @@ class Main(Gtk.ApplicationWindow):
                     # invalid steamid or setup process is running
                     self.steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_yellow.png'))
                     self.steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_yellow.png'))
+                    self.steamgifts_icon.set_from_file(os.path.join(config.icons_dir, 'steamgifts_yellow.png'))
                     return
                 else:
                     nickname = nickname._replace(value=config.ConfigStr(new_nickname))
 
                 config.new(nickname)
+
+            self.steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_yellow.png'))
 
             if await self.webapi_session.is_logged_in(nickname.value):
                 self.steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_green.png'))
@@ -199,7 +205,9 @@ class Main(Gtk.ApplicationWindow):
             if cookies:
                 self.session.cookie_jar.update_cookies(cookies)
 
-                if self.plugin_manager.has_plugin('steamtrades'):
+                self.steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_yellow.png'))
+
+                if self.plugin_manager.has_plugin('steamtrades') and config.getboolean("plugins", "steamtrades").value:
                     steamtrades = self.plugin_manager.load_plugin("steamtrades")
                     steamtrades_session = steamtrades.Main(self.session, api_url=api_url.value)
 
@@ -208,6 +216,21 @@ class Main(Gtk.ApplicationWindow):
                         self.steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_green.png'))
                     except (aiohttp.ClientConnectionError, webapi.LoginError, NameError):
                         self.steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_red.png'))
+
+                self.steamgifts_icon.set_from_file(os.path.join(config.icons_dir, 'steamgifts_yellow.png'))
+
+                if self.plugin_manager.has_plugin('steamgifts') and config.getboolean("plugins", "steamgifts").value:
+                    steamgifts = self.plugin_manager.load_plugin("steamgifts")
+                    steamgifts_session = steamgifts.Main(self.session, api_url=api_url.value)
+
+                    try:
+                        await steamgifts_session.do_login()
+                        self.steamgifts_icon.set_from_file(os.path.join(config.icons_dir, 'steamgifts_green.png'))
+                    except (aiohttp.ClientConnectionError, webapi.LoginError, NameError):
+                        self.steamgifts_icon.set_from_file(os.path.join(config.icons_dir, 'steamgifts_red.png'))
+            else:
+                self.steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_yellow.png'))
+                self.steamgifts_icon.set_from_file(os.path.join(config.icons_dir, 'steamgifts_yellow.png'))
 
             await asyncio.sleep(10)
 
