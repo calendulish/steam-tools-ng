@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-
+import builtins
 import configparser
 import locale
 import logging
@@ -139,18 +139,23 @@ def _get(section: str, option: str, type_: str) -> ConfigValue:
     if type_ == 'str':
         get_method = config_parser.get
         type_method = ConfigStr
+    elif type_ == 'bool':
+        get_method = config_parser.getboolean
+        type_method = ConfigBool
     else:
         get_method = getattr(config_parser, f'get{type_}')
-
-        if type_ == 'boolean':
-            type_method = ConfigBool
-        else:
-            type_method = getattr(sys.modules[__name__], f'Config{type_.capitalize()}')
+        type_method = getattr(sys.modules[__name__], f'Config{type_.capitalize()}')
 
     try:
+        value = get_method(section, option)
+        assert type(value) != getattr(builtins, type_), f'Config value for {section}:{option} has wrong type'
+
         return type_method(get_method(section, option))
     except(configparser.NoOptionError, configparser.NoSectionError):
-        return Default.get(section, option)
+        fallback = Default.get(section, option)
+        assert type(fallback) != getattr(builtins, type_), f'Fallback value for {section}:{option} has wrong type'
+
+        return fallback
     except ValueError as exception:
         raise configparser.Error(
             _("Please, fix your config file:\n[{}] {} = {}").format(
@@ -160,22 +165,22 @@ def _get(section: str, option: str, type_: str) -> ConfigValue:
 
 
 def get(section: str, option: str) -> ConfigType:
-    value = ConfigStr(_get(section, option, 'str'))
+    value = _get(section, option, 'str')
     return ConfigType(section, option, value)
 
 
 def getint(section: str, option: str) -> ConfigType:
-    value = ConfigInt(_get(section, option, 'int'))
+    value = _get(section, option, 'int')
     return ConfigType(section, option, value)
 
 
 def getfloat(section: str, option: str) -> ConfigType:
-    value = ConfigInt(_get(section, option, 'float'))
+    value = _get(section, option, 'float')
     return ConfigType(section, option, value)
 
 
 def getboolean(section: str, option: str) -> ConfigType:
-    value = ConfigInt(_get(section, option, 'boolean'))
+    value = _get(section, option, 'bool')
     return ConfigType(section, option, value)
 
 
