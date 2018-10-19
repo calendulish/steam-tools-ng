@@ -22,7 +22,7 @@ import sys
 import time
 
 import aiohttp
-from stlib import authenticator, client, webapi
+from stlib import authenticator, client, webapi, plugins
 
 from . import utils
 from .. import config, i18n
@@ -31,7 +31,7 @@ log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
 
-async def run(session: aiohttp.ClientSession) -> int:
+async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -> int:
     api_url = config.parser.get('steam', 'api_url')
     webapi_session = webapi.SteamWebAPI(session, api_url)
     steam_login_status = await utils.check_login(session, webapi_session)
