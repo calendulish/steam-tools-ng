@@ -409,6 +409,60 @@ def refresh_widget_text(widget: Gtk.Widget) -> None:
         refresh_widget_text(children)
 
 
+def load_setting(
+        widget: Gtk.Widget,
+        config_section: str,
+        combo_items: Optional[Dict[str, str]] = None,
+        data: Optional[Dict[str, Any]] = None,
+        save: bool = False,
+) -> None:
+    config_option = widget.get_name()
+
+    if combo_items:
+        for value in combo_items.values():
+            widget.append_text(value)
+
+    if data:
+        try:
+            config_value = data[config_option]
+        except KeyError:
+            log.debug(
+                _("Unable to find %s in prefilled data. Ignoring."),
+                config_option,
+            )
+            return None
+    else:
+        # FIXME: Type can be wrong
+        config_value = config.parser.get(config_section, config_option)
+
+        if not config_value:
+            return None
+
+    if isinstance(widget, Gtk.ComboBox):
+        assert isinstance(combo_items, dict), "No combo_items"
+
+        try:
+            widget.set_active(list(combo_items).index(config_value))
+        except ValueError:
+            error_message = _("Please, fix your config file. Accepted values for {} are:\n{}").format(
+                config_option,
+                ', '.join(combo_items.keys()),
+            )
+            utils.fatal_error_dialog(error_message)
+            sys.exit(1)
+    elif isinstance(widget, Gtk.CheckButton):
+        if isinstance(config_value, bool):
+            widget.set_active(config_value)
+        else:
+            # FIXME: Type can be wrong
+            widget.set_active(True if config_value == 'True' else False)
+    else:
+        widget.set_text(str(config_value))
+
+    if save:
+        config.new(config_section, config_option, config_value)
+
+
 def load_settings(
         section: utils.Section,
         children_type: Gtk.Widget,
@@ -421,48 +475,4 @@ def load_settings(
 
     for children in childrens:
         if isinstance(children, children_type):
-            config_option = children.get_name()
-
-            if combo_items:
-                for value in combo_items.values():
-                    children.append_text(value)
-
-            if data:
-                try:
-                    config_value = data[config_option]
-                except KeyError:
-                    log.debug(
-                        _("Unable to find %s in prefilled data. Ignoring."),
-                        config_option,
-                    )
-                    continue
-            else:
-                # FIXME: Type can be wrong
-                config_value = config.parser.get(config_section, config_option)
-
-                if not config_value:
-                    continue
-
-            if isinstance(children, Gtk.ComboBox):
-                assert isinstance(combo_items, dict), "No combo_items"
-
-                try:
-                    children.set_active(list(combo_items).index(config_value))
-                except ValueError:
-                    error_message = _("Please, fix your config file. Accepted values for {} are:\n{}").format(
-                        config_option,
-                        ', '.join(combo_items.keys()),
-                    )
-                    utils.fatal_error_dialog(error_message)
-                    sys.exit(1)
-            elif isinstance(children, Gtk.CheckButton):
-                if isinstance(config_value, bool):
-                    children.set_active(config_value)
-                else:
-                    # FIXME: Type can be wrong
-                    children.set_active(True if config_value == 'True' else False)
-            else:
-                children.set_text(str(config_value))
-
-            if save:
-                config.new(config_section, config_option, config_value)
+            load_setting(children, config_section, combo_items, data, save)
