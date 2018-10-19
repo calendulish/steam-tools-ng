@@ -461,7 +461,7 @@ class Application(Gtk.Application):
                 await asyncio.sleep(20)
                 continue
 
-            giveaways = await steamgifts_session.get_giveaways(giveaway_type)
+            giveaways = await steamgifts_session.get_giveaways(giveaway_type, pinned_giveaways=pinned_giveaways)
             joined = False
 
             if giveaways:
@@ -482,7 +482,7 @@ class Application(Gtk.Application):
                 await asyncio.sleep(random.randint(5, 15))
 
                 try:
-                    if await steamgifts_session.join(giveaway, pinned_giveaways=pinned_giveaways):
+                    if await steamgifts_session.join(giveaway):
                         info(_("Joined!"), giveaway)
                         joined = True
                     else:
