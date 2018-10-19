@@ -366,6 +366,11 @@ class Application(Gtk.Application):
                     self.error(str(exception))
                     await asyncio.sleep(5)
                     continue
+                except webapi.LoginError as exception:
+                    self.error(str(exception))
+                    await asyncio.sleep(5)
+                    bumped = False
+                    break
 
             if not bumped:
                 await asyncio.sleep(10)
