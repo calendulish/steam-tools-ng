@@ -240,20 +240,28 @@ class SettingsDialog(Gtk.Dialog):
 
         load_setting(sort_giveaways, "steamgifts", combo_items=giveaway_sort_types)
 
+        reverse_sorting = steamgifts_section.new(
+            "reverse_sorting",
+            _("Reverse Sorting:"),
+            Gtk.CheckButton,
+            0, 2
+        )
+        reverse_sorting.connect("toggled", on_reverse_sorting_toggled)
+
         developer_giveaways = steamgifts_section.new(
             "developer_giveaways",
             _("Developer Giveaways"),
             Gtk.CheckButton,
-            0, 2,
+            0, 3,
         )
         developer_giveaways.connect("toggled", on_developer_giveaways_toggled)
 
-        load_setting(developer_giveaways, "steamgifts")
+        load_settings(steamgifts_section, Gtk.CheckButton)
 
-        wait_min = steamgifts_section.new("wait_min", _("Wait MIN:"), Gtk.Entry, 0, 3)
+        wait_min = steamgifts_section.new("wait_min", _("Wait MIN:"), Gtk.Entry, 0, 4)
         wait_min.connect("changed", save_digit_only, "steamgifts", "wait_min")
 
-        wait_max = steamgifts_section.new("wait_max", _("Wait MAX:"), Gtk.Entry, 0, 4)
+        wait_max = steamgifts_section.new("wait_max", _("Wait MAX:"), Gtk.Entry, 0, 5)
         wait_max.connect("changed", save_digit_only, "steamgifts", "wait_max")
 
         load_settings(steamgifts_section, Gtk.Entry)
@@ -305,6 +313,11 @@ class SettingsDialog(Gtk.Dialog):
 def on_developer_giveaways_toggled(checkbutton: Gtk.CheckButton) -> None:
     activate = checkbutton.get_active()
     config.new("steamgifts", "developer_giveaways", activate)
+
+
+def on_reverse_sorting_toggled(checkbutton: Gtk.CheckButton) -> None:
+    activate = checkbutton.get_active()
+    config.new("steamgifts", "reverse_sorting", activate)
 
 
 def on_steamguard_plugin_toggled(checkbutton: Gtk.CheckButton) -> None:

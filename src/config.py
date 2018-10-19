@@ -82,6 +82,7 @@ def init() -> None:
                 'giveaway_type': 'main',
                 'developer_giveaways': 'True',
                 'sort': 'name',
+                'reverse_sorting': False,
             },
             'gtk': {
                 'theme': 'light',
