@@ -52,7 +52,9 @@ translations = OrderedDict([
 giveaway_types = OrderedDict([
     ('main', _("Main Giveaways")),
     ('new', _("New Giveaways")),
+    ('recommended', _("Recommended")),
     ('wishlist', _("Wishlist Only")),
+    ('group', _('Group Only')),
 ])
 
 

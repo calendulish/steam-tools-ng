@@ -458,25 +458,53 @@ class Application(Gtk.Application):
             giveaways = await steamgifts_session.get_giveaways(giveaway_type)
             joined = False
 
-            for giveaway in giveaways:
-                try:
-                    user = await steamgifts_session.get_user_info()
-                except aiohttp.ClientConnectionError:
-                    error(_("No connection"))
-                    joined = False
-                    break
+            if not giveaways:
+                info(_("No giveaways to join."))
+                joined = True
+                wait_min = wait_min / 2
+                wait_max = wait_max / 2
 
-                if user.level < giveaway.level or user.points < giveaway.points:
-                    info(_("User don't meet all the requirements to join"), giveaway)
+            for giveaway in giveaways:
+                info(_("Waiting anti-ban timer"), giveaway)
+                await asyncio.sleep(random.randint(5, 15))
+
+                try:
+                    if await steamgifts_session.join(giveaway):
+                        info(_("Joined!"), giveaway)
+                        joined = True
+                    else:
+                        error(_("Unable to join {}").format(giveaway.id))
+                        await asyncio.sleep(5)
+                        continue
+                except steamgifts.NoGiveawaysError as exception:
+                    log.error(str(exception))
+                    await asyncio.sleep(15)
+                    continue
+                except steamgifts.GiveawayEndedError as exception:
+                    log.error(str(exception))
+                    error(_("Giveaway is already ended."))
                     await asyncio.sleep(5)
                     continue
+                except webapi.LoginError as exception:
+                    log.error(str(exception))
+                    error(_("Login is lost. Trying to relogin."))
+                    await asyncio.sleep(5)
+                    joined = False
+                    break
+                except steamgifts.NoLevelError as exception:
+                    log.error(str(exception))
+                    error(_("User don't have required level to join"))
+                    await asyncio.sleep(5)
+                    continue
+                except steamgifts.NoPointsError as exception:
+                    log.error(str(exception))
+                    error(_("User don't have required points to join"))
+                    await asyncio.sleep(5)
 
-                info(_("Waiting anti-ban timer"), giveaway)
-                await asyncio.sleep(random.randint(3, 8))
-                # FIXME: stlib should return join status
-                await steamgifts_session.join(giveaway)
-                info(_("Joined!"), giveaway)
-                joined = True
+                    if steamgifts.user_info.points <= 2:
+                        break
+                    else:
+                        continue
 
             if not joined:
                 await asyncio.sleep(10)
@@ -485,7 +513,7 @@ class Application(Gtk.Application):
             wait_offset = random.randint(wait_min, wait_max)
             log.debug(_("Setting wait_offset from steamgifts to %s"), wait_offset)
             for past_time in range(wait_offset):
-                info(_("Waiting more {} minutes").format(round(wait_offset / 60)))
+                info(_("Waiting more {} minutes").format(round((wait_offset - past_time) / 60)))
 
                 try:
                     self.window.steamgifts_status.set_level(past_time, wait_offset)
