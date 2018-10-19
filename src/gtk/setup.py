@@ -21,7 +21,7 @@ import functools
 import json
 import logging
 import os
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional
 
 import aiohttp
 from gi.repository import Gtk, GdkPixbuf
@@ -115,7 +115,7 @@ class SetupDialog(Gtk.Dialog):
 
         self.connect('response', lambda dialog, response_id: self.destroy())
 
-    def __fatal_error(self, exception: Type[BaseException]) -> None:
+    def __fatal_error(self, exception: BaseException) -> None:
         self.status.error("{}\n\n{}".format(_("IT'S A FATAL ERROR!!! PLEASE, REPORT!!!"), repr(exception)))
         self.status._label.set_selectable(True)
         self.status.show()
@@ -142,8 +142,8 @@ class SetupDialog(Gtk.Dialog):
 
     def _save_settings(self, login_data: Dict[str, Any]) -> None:
         if not login_data:
-            self.__fatal_error(lambda: AttributeError("No login data found."))
-            return
+            self.__fatal_error(AttributeError("No login data found."))
+            return None
 
         if 'oauth' in login_data:
             oauth_data = json.loads(login_data['oauth'])
@@ -224,7 +224,7 @@ class SetupDialog(Gtk.Dialog):
 
         if future.exception():
             self.__fatal_error(future.exception())
-            return
+            return None
 
         if future.result():
             next_stage(future.result())
@@ -242,7 +242,7 @@ class SetupDialog(Gtk.Dialog):
     ) -> None:
         if future.exception():
             self.__fatal_error(future.exception())
-            return
+            return None
 
         if future.result():
             self.status.info(_("Write code received by SMS\nand click on 'Add Authenticator' button"))
@@ -275,7 +275,7 @@ class SetupDialog(Gtk.Dialog):
     ) -> None:
         if future.exception():
             self.__fatal_error(future.exception())
-            return
+            return None
 
         if future.result():
             self._save_settings(future.result())
@@ -411,7 +411,7 @@ class SetupDialog(Gtk.Dialog):
             self.username_item.hide()
             self.__password_item.hide()
             self.user_details_section.show()
-            return
+            return None
         except webapi.TwoFactorCodeError:
             if self.mobile_login and not self.relogin:
                 self.status.error(_(
@@ -424,7 +424,7 @@ class SetupDialog(Gtk.Dialog):
                 self.status.error(_("Unable to log-in!\nThe secret keys are invalid!\n"))
 
             self.previous_button.show()
-            return
+            return None
         except webapi.LoginBlockedError:
             self.status.error(_(
                 "Your network is blocked!\n"
@@ -433,7 +433,7 @@ class SetupDialog(Gtk.Dialog):
             self.username_item.hide()
             self.__password_item.hide()
             self.previous_button.hide()
-            return
+            return None
         except webapi.CaptchaError as exception:
             self.status.info(_("Write captcha code as shown bellow\nand click on 'Try Again?' button"))
             self.captcha_gid = exception.captcha_gid
@@ -449,7 +449,7 @@ class SetupDialog(Gtk.Dialog):
             self.username_item.hide()
             self.__password_item.hide()
             self.user_details_section.show()
-            return
+            return None
         except webapi.LoginError as exception:
             log.debug("Login error: %s", exception)
             self.captcha_item.hide()
@@ -475,12 +475,12 @@ class SetupDialog(Gtk.Dialog):
 
             self.user_details_section.show()
             self.previous_button.show()
-            return
+            return None
         except aiohttp.ClientConnectionError:
             self.status.error(_("No Connection"))
             self.user_details_section.show()
             self.previous_button.show()
-            return
+            return None
 
         has_phone: Optional[bool]
 
@@ -526,6 +526,8 @@ class SetupDialog(Gtk.Dialog):
             oauth_data['oauth_token'],
         )
 
+        assert isinstance(auth_data, dict)
+
         if auth_data['status'] != 1:
             log.debug(auth_data['status'])
             raise NotImplementedError
@@ -541,7 +543,7 @@ class SetupDialog(Gtk.Dialog):
         callback = functools.partial(self._finalize_add_authenticator_callback, login_data, auth_data)
         task.add_done_callback(callback)
 
-    def recovery_code(self, code):
+    def recovery_code(self, code: str) -> None:
         self.user_details_section.hide()
         self.previous_button.hide()
         self.status.info(_(
@@ -588,10 +590,10 @@ class SetupDialog(Gtk.Dialog):
             self.status.info(_("Invalid SMS Code. Please,\ncheck the code and try again."))
             self.code_item.set_text("")
             self.code_item.show()
-            return
+            return None
 
         if complete:
             return {**login_data, **auth_data}
         else:
             self.status.error(_("Unable to add a new authenticator"))
-            return
+            return None

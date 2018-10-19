@@ -20,7 +20,7 @@ import locale
 import logging
 import os
 import sys
-from typing import Dict
+from typing import Dict, Any
 
 from . import i18n, logger_handlers
 
@@ -145,7 +145,7 @@ def init() -> None:
     logging.basicConfig(level=logging.DEBUG, handlers=[log_file_handler, log_console_handler])
 
 
-def new(section, option, value) -> None:
+def new(section: str, option: str, value: Any) -> None:
     if option == "log_level":
         update_log_level("file", value)
     elif option == "log_console_level":

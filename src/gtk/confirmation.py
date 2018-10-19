@@ -140,6 +140,8 @@ class FinalizeDialog(Gtk.Dialog):
         self.set_size_request(0, 0)
         self.header_bar.set_show_close_button(False)
 
+        task: asyncio.Future[Union[Dict[str, Any], List[Tuple[Any, Dict[str, Any]]]]]
+
         if self.iter:
             task = asyncio.ensure_future(self.finalize())
         else:

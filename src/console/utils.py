@@ -85,7 +85,7 @@ async def add_authenticator(
         return {**login_data, **auth_data}
     else:
         log.error(_("Unable to add a new authenticator"))
-        return
+        return None
 
 
 async def check_login(
@@ -94,7 +94,7 @@ async def check_login(
         captcha_gid: int = -1,
         captcha_text: str = '',
         auth_code: str = '',
-        mail_code='',
+        mail_code: str = '',
         relogin: bool = False,
 ) -> bool:
     token = config.parser.get("login", "token")
@@ -127,7 +127,7 @@ async def check_login(
         else:
             config.new("login", "nickname", nickname)
 
-    session.cookie_jar.update_cookies(config.login_cookies())
+    session.cookie_jar.update_cookies(config.login_cookies())  # type: ignore
 
     if not await webapi_session.is_logged_in(nickname):
         log.error(_("User is not logged in."))
@@ -136,7 +136,7 @@ async def check_login(
 
         if not username:
             user_input = safe_input(_("Please, write your username"))
-            # noinspection PyProtectedMember
+            assert isinstance(user_input, str), "Safe input is returning bool when it should return str"
             username = user_input
 
         __password = getpass.getpass(_("Please, write your password (it's hidden, and will be not saved)"))
@@ -160,7 +160,9 @@ async def check_login(
                 if not login_data['success']:
                     raise webapi.LoginError
             except webapi.MailCodeError:
-                mail_code = safe_input(_("Write code received by email"))
+                user_input = safe_input(_("Write code received by email"))
+                assert isinstance(user_input, str), "safe_input is returning bool when it should return str"
+                mail_code = user_input
                 continue
             except webapi.TwoFactorCodeError:
                 if mobile_login and not relogin:
@@ -180,9 +182,11 @@ async def check_login(
                 with tempfile.TemporaryFile('w', prefix='stng_', suffix='.captcha') as temp_file:
                     temp_file.write(await login.get_captcha(captcha_gid))
 
-                captcha_text = safe_input(
+                user_input = safe_input(
                     _("Open {} in an image view and write captcha code that it shows").format(temp_file.name),
                 )
+                assert isinstance(user_input, str), "Safe input is returning bool when it should return str"
+                captcha_text = user_input
                 continue
             except webapi.LoginError:
                 log.error(_("Unable to log-in! Please, check your username/password and try again."))
@@ -214,6 +218,8 @@ async def check_login(
 
                 full_login_data = await add_authenticator(webapi_session, login_data)
 
+                assert isinstance(full_login_data, dict)
+
                 print(_("WRITE DOWN THE RECOVERY CODE: %s"), full_login_data['revocation_code'])
                 print(_("YOU WILL NOT ABLE TO VIEW IT AGAIN!"))
 
@@ -239,8 +245,11 @@ async def check_login(
 def safe_input(
         msg: str,
         default_response: Optional[bool] = None,
-        custom_choices: List[str] = None,
+        custom_choices: Optional[List[str]] = None,
 ) -> Union[bool, str]:
+    if default_response and custom_choices:
+        raise AttributeError("You can not use both default_response and custom_choices")
+
     if default_response is True:
         options = _('[Y/n]')
     elif default_response is False:

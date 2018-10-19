@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import asyncio
 import logging
 from typing import Any, Callable, List, Tuple, Optional
 
@@ -30,12 +29,12 @@ _ = i18n.get_translation
 
 
 class VariableButton(Gtk.Button):
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         super().connect('clicked', lambda button: self.__callback())
-        self._user_callback = None
-        self._user_args = None
-        self._user_kwargs = None
+        self._user_callback: Optional[Callable[..., Any]] = None
+        self._user_args: Any = None
+        self._user_kwargs: Any = None
 
     def __callback(self) -> None:
         if not self._user_callback:
@@ -82,11 +81,11 @@ class SimpleTextTree(Gtk.ScrolledWindow):
             self._view.append_column(column)
 
     @property
-    def store(self):
+    def store(self) -> Gtk.TreeModel:
         return self._store
 
     @property
-    def view(self):
+    def view(self) -> Gtk.TreeView:
         return self._view
 
 
@@ -116,7 +115,7 @@ class SimpleStatus(Gtk.Frame):
         self._link_event.connect("button-press-event", lambda event, button: self.__callback())
         self._link_event.connect("enter-notify-event", lambda event, button: self.get_window().set_cursor(hand_cursor))
         self._link_event.connect("leave-notify-event", lambda event, button: self.get_window().set_cursor(None))
-        self._user_callback = None
+        self._user_callback: Optional[Callable[..., Any]] = None
 
         self._link_label = Gtk.Label()
         self._link_event.add(self._link_label)
@@ -237,7 +236,10 @@ class Section(Gtk.Frame):
         self.add(self.grid)
 
     def __item_factory(self, children: Callable[..., Gtk.Widget]) -> Any:
-        class Item(children):
+        # FIXME: https://github.com/python/mypy/issues/2477
+        children_ = children  # type: Any
+
+        class Item(children_):
             def __init__(self, name: str, label: str) -> None:
                 super().__init__()
 
@@ -321,29 +323,6 @@ def remove_letters(text: str) -> str:
             new_text.append(char)
 
     return ''.join(new_text)
-
-
-def async_wait_dialog(dialog: Callable[..., Any], async_callback: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
-    future = asyncio.Future()
-    dialog_instance = dialog(future, *args, **kwargs)
-    dialog_instance.show()
-
-    asyncio.ensure_future(__async_wait(future, dialog_instance, async_callback))
-
-    return dialog_instance
-
-
-async def __async_wait(future: asyncio.Future, dialog_instance: Gtk.Dialog, async_callback: Callable[..., Any]) -> None:
-    while not future.done():
-        if dialog_instance.get_realized():
-            await asyncio.sleep(1)
-        else:
-            await async_callback(dialog_instance, None)
-            return
-
-    dialog_instance.destroy()
-
-    await async_callback(dialog_instance, future.result())
 
 
 def fatal_error_dialog(error_message: str, transient_for: Optional[Gtk.Window] = None) -> None:

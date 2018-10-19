@@ -47,7 +47,7 @@ class Application(Gtk.Application):
         self.webapi_session = webapi.SteamWebAPI(session, self.api_url)
         self.plugin_manager = plugin_manager
 
-        self.window = None
+        self.window: Optional[Gtk.Window] = None
         self.gtk_settings = Gtk.Settings.get_default()
 
         self.api_login: Optional[webapi.Login] = None
@@ -92,6 +92,8 @@ class Application(Gtk.Application):
         setup_requested = False
         login_requested = False
 
+        assert isinstance(self.window, Gtk.Window), "No window is found"
+
         while self.window.get_realized():
             token = config.parser.get("login", "token")
             token_secure = config.parser.get("login", "token_secure")
@@ -121,7 +123,7 @@ class Application(Gtk.Application):
                 else:
                     config.new('login', 'nickname', nickname)
 
-            self.session.cookie_jar.update_cookies(config.login_cookies())
+            self.session.cookie_jar.update_cookies(config.login_cookies())  # type: ignore
 
             if not await self.webapi_session.is_logged_in(nickname):
                 if not login_requested:
@@ -202,6 +204,7 @@ class Application(Gtk.Application):
         old_confirmations: List[webapi.Confirmation] = []
 
         def warning(message: str) -> None:
+            assert isinstance(self.window, Gtk.Window), "No window"
             self.window.warning_label.set_markup(utils.markup(message, color='white', background='red'))
             self.window.warning_label.show()
 
@@ -224,7 +227,7 @@ class Application(Gtk.Application):
                 config.new("login", "deviceid", deviceid)
 
             if cookies:
-                self.session.cookie_jar.update_cookies(cookies)
+                self.session.cookie_jar.update_cookies(cookies)  # type: ignore
             else:
                 warning(_("Unable to find a valid login data"))
                 await asyncio.sleep(5)
@@ -274,10 +277,12 @@ class Application(Gtk.Application):
 
     async def run_steamtrades(self) -> None:
         def error(message: str) -> None:
+            assert isinstance(self.window, Gtk.Window), "No window"
             self.window.steamtrades_status.set_current('_ _ _ _ _')
             self.window.steamtrades_status.set_error(message)
 
         def info(message: str, tradeid: str = '_ _ _ _ _') -> None:
+            assert isinstance(self.window, Gtk.Window), "No window"
             self.window.steamtrades_status.set_current(tradeid)
             self.window.steamtrades_status.set_info(message)
 
@@ -307,7 +312,7 @@ class Application(Gtk.Application):
                 continue
 
             if cookies:
-                self.session.cookie_jar.update_cookies(cookies)
+                self.session.cookie_jar.update_cookies(cookies)  # type: ignore
                 try:
                     await steamtrades_session.do_login()
                 except aiohttp.ClientConnectionError:
@@ -380,6 +385,7 @@ class Application(Gtk.Application):
 
     async def run_steamgifts(self) -> None:
         def error(message: str) -> None:
+            assert isinstance(self.window, Gtk.Window), "No window"
             self.window.steamgifts_status.set_current('_ _ _ _ _')
             self.window.steamgifts_status.set_error(message)
 
@@ -390,15 +396,17 @@ class Application(Gtk.Application):
             error(_("Unable to find Steamgifts plugin"))
             return
 
-        def info(message: str, giveaway: Optional[steamgifts.GiveawayInfo] = None) -> None:
-            if giveaway:
-                self.window.steamgifts_status.set_current(giveaway.id)
+        def info(message: str, giveaway_: Optional[Any] = None) -> None:
+            assert isinstance(self.window, Gtk.Window), "No window"
+            assert isinstance(giveaway_, steamgifts.GiveawayInfo)
+            if giveaway_:
+                self.window.steamgifts_status.set_current(giveaway_.id)
                 self.window.steamgifts_status.set_info('{} {} ({}:{}:{})'.format(
                     message,
-                    giveaway.name,
-                    giveaway.copies,
-                    giveaway.points,
-                    giveaway.level,
+                    giveaway_.name,
+                    giveaway_.copies,
+                    giveaway_.points,
+                    giveaway_.level,
                 ))
             else:
                 self.window.steamgifts_status.set_current('_ _ _ _ _')
@@ -418,7 +426,7 @@ class Application(Gtk.Application):
             cookies = config.login_cookies()
 
             if cookies:
-                self.session.cookie_jar.update_cookies(cookies)
+                self.session.cookie_jar.update_cookies(cookies)  # type: ignore
                 try:
                     await steamgifts_session.do_login()
                 except aiohttp.ClientConnectionError:
