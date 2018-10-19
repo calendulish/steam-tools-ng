@@ -98,7 +98,7 @@ async def check_login(
         relogin: bool = False,
 ) -> bool:
     token = config.parser.get("login", "token")
-    token_secure = config..parser.get("login", "token_secure")
+    token_secure = config.parser.get("login", "token_secure")
     steamid = config.parser.getint("login", "steamid")
     nickname = config.parser.get("login", "nickname")
     identity_secret = config.parser.get("login", "identity_secret")
