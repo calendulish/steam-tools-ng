@@ -343,10 +343,10 @@ class Application(Gtk.Application):
                     bumped = False
                     break
 
-                try:
-                    info(_("Waiting anti-ban timer"))
-                    await asyncio.sleep(random.randint(3, 8))
+                info(_("Waiting anti-ban timer"))
+                await asyncio.sleep(random.randint(3, 8))
 
+                try:
                     if await steamtrades_session.bump(trade_info):
                         info(_("Bumped!"), trade_info.id)
                         bumped = True
