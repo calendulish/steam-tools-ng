@@ -398,8 +398,9 @@ class Application(Gtk.Application):
 
         def info(message: str, giveaway_: Optional[Any] = None) -> None:
             assert isinstance(self.window, Gtk.Window), "No window"
-            assert isinstance(giveaway_, steamgifts.GiveawayInfo)
+
             if giveaway_:
+                assert isinstance(giveaway_, steamgifts.GiveawayInfo), "Steamgifts giveaway has wrong type"
                 self.window.steamgifts_status.set_current(giveaway_.id)
                 self.window.steamgifts_status.set_info('{} {} ({}:{}:{})'.format(
                     message,
