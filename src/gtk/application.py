@@ -469,7 +469,8 @@ class Application(Gtk.Application):
                 wait_min = wait_min / 2
                 wait_max = wait_max / 2
 
-            for giveaway in giveaways:
+            for index, giveaway in enumerate(giveaways):
+                self.window.steamgifts_status.set_level(index, len(giveaway))
                 info(_("Waiting anti-ban timer"), giveaway)
                 await asyncio.sleep(random.randint(5, 15))
 
@@ -506,7 +507,7 @@ class Application(Gtk.Application):
                     error(_("User don't have required points to join"))
                     await asyncio.sleep(5)
 
-                    if steamgifts.user_info.points <= 2:
+                    if steamgifts_session.user_info.points <= 2:
                         break
                     else:
                         continue
