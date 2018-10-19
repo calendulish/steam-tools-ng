@@ -335,6 +335,8 @@ class SetupDialog(Gtk.Dialog):
 
         if self.advanced:
             self.advanced_settings.show_all()
+        else:
+            self.advanced_settings.hide()
 
         self.next_button.set_label(_("Next"))
         self.next_button.connect("clicked", self._prepare_login_callback)
@@ -369,6 +371,8 @@ class SetupDialog(Gtk.Dialog):
 
             if self.advanced:
                 self.advanced_settings.show()
+            else:
+                self.advanced_settings.hide()
 
             return None
 
@@ -462,6 +466,7 @@ class SetupDialog(Gtk.Dialog):
             if self.advanced:
                 self.advanced_settings.show()
             else:
+                self.advanced_settings.hide()
                 self.status.append_link(
                     _("click here"),
                     self.__reset_and_restart,
