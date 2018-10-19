@@ -362,7 +362,7 @@ class Application(Gtk.Application):
                     wait_min = exception.time_left * 60
                     wait_max = wait_min + 400
                     bumped = True
-                except steamtrades.ClosedError as exception:
+                except steamtrades.TradeClosedError as exception:
                     self.error(str(exception))
                     await asyncio.sleep(5)
                     continue
