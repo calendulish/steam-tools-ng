@@ -84,7 +84,10 @@ class Application(Gtk.Application):
         task.add_done_callback(self.async_activate_callback)
 
     def async_activate_callback(self, future: 'asyncio.Future[Any]') -> None:
-        if future.exception() and not isinstance(future.exception(), asyncio.CancelledError):
+        exception = future.exception()
+
+        if exception and not isinstance(exception, asyncio.CancelledError):
+            log.critical(repr(exception))
             utils.fatal_error_dialog(str(future.exception()), self.window)
             sys.exit(1)
 
@@ -161,7 +164,9 @@ class Application(Gtk.Application):
 
         with contextlib.suppress(asyncio.CancelledError):
             done, pending = await asyncio.wait(modules, return_when=asyncio.FIRST_EXCEPTION)
-            utils.fatal_error_dialog(str(done.pop().exception()), self.window)
+            exception = done.pop().exception()
+            log.critical(repr(exception))
+            utils.fatal_error_dialog(str(exception), self.window)
             sys.exit(1)
 
     async def run_steamguard(self) -> None:
