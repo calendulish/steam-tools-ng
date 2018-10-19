@@ -228,6 +228,16 @@ class SettingsDialog(Gtk.Dialog):
 
         load_settings(steamgifts_section, Gtk.ComboBoxText, combo_items=giveaway_types)
 
+        developer_giveaways = steamgifts_section.new(
+            "developer_giveaways",
+            _("Developer Giveaways"),
+            Gtk.CheckButton,
+            0, 1,
+        )
+        developer_giveaways.connect("toggled", on_developer_giveaways_toggled)
+
+        load_settings(steamgifts_section, Gtk.CheckButton)
+
         wait_min = steamgifts_section.new("wait_min", _("Wait MIN:"), Gtk.Entry, 0, 2)
         wait_min.connect("changed", save_digit_only, "steamgifts", "wait_min")
 
@@ -278,6 +288,11 @@ class SettingsDialog(Gtk.Dialog):
         config.new('locale', 'language', language)
         Gtk.Container.foreach(self, refresh_widget_text)
         Gtk.Container.foreach(self.parent_window, refresh_widget_text)
+
+
+def on_developer_giveaways_toggled(checkbutton: Gtk.CheckButton) -> None:
+    activate = checkbutton.get_active()
+    config.new("steamgifts", "developer_giveaways", activate)
 
 
 def on_steamguard_plugin_toggled(checkbutton: Gtk.CheckButton) -> None:

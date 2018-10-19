@@ -80,6 +80,7 @@ def init() -> None:
                 'wait_min': 3700,
                 'wait_max': 4100,
                 'giveaway_type': 'main',
+                'developer_giveaways': 'True',
             },
             'gtk': {
                 'theme': 'light',

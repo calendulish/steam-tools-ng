@@ -434,6 +434,7 @@ class Application(Gtk.Application):
             wait_min = config.parser.getint("steamgifts", "wait_min")
             wait_max = config.parser.getint("steamgifts", "wait_max")
             giveaway_type = config.parser.get("steamgifts", "giveaway_type")
+            pinned_giveaways = config.parser.get("steamgifts", "developer_giveaways")
             cookies = config.login_cookies()
 
             if cookies:
@@ -475,7 +476,7 @@ class Application(Gtk.Application):
                 await asyncio.sleep(random.randint(5, 15))
 
                 try:
-                    if await steamgifts_session.join(giveaway):
+                    if await steamgifts_session.join(giveaway, pinned_giveaways=pinned_giveaways):
                         info(_("Joined!"), giveaway)
                         joined = True
                     else:
