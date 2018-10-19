@@ -57,6 +57,13 @@ giveaway_types = OrderedDict([
     ('group', _('Group Only')),
 ])
 
+giveaway_sort_types = OrderedDict([
+    ('name', _("Name")),
+    ('copies', _("Copies")),
+    ('points', _("Points")),
+    ('level', _("Level")),
+])
+
 
 # noinspection PyUnusedLocal
 class SettingsDialog(Gtk.Dialog):
@@ -226,22 +233,27 @@ class SettingsDialog(Gtk.Dialog):
         giveaway_type = steamgifts_section.new("giveaway_type", _("Giveaway Type:"), Gtk.ComboBoxText, 0, 0)
         giveaway_type.connect("changed", on_giveaway_type_changed)
 
-        load_settings(steamgifts_section, Gtk.ComboBoxText, combo_items=giveaway_types)
+        load_setting(giveaway_type, "steamgifts", combo_items=giveaway_types)
+
+        sort_giveaways = steamgifts_section.new("sort", _("Sort Giveaways:"), Gtk.ComboBoxText, 0, 1)
+        sort_giveaways.connect("changed", on_sort_giveaways_changed)
+
+        load_setting(sort_giveaways, "steamgifts", combo_items=giveaway_sort_types)
 
         developer_giveaways = steamgifts_section.new(
             "developer_giveaways",
             _("Developer Giveaways"),
             Gtk.CheckButton,
-            0, 1,
+            0, 2,
         )
         developer_giveaways.connect("toggled", on_developer_giveaways_toggled)
 
-        load_settings(steamgifts_section, Gtk.CheckButton)
+        load_setting(developer_giveaways, "steamgifts")
 
-        wait_min = steamgifts_section.new("wait_min", _("Wait MIN:"), Gtk.Entry, 0, 2)
+        wait_min = steamgifts_section.new("wait_min", _("Wait MIN:"), Gtk.Entry, 0, 3)
         wait_min.connect("changed", save_digit_only, "steamgifts", "wait_min")
 
-        wait_max = steamgifts_section.new("wait_max", _("Wait MAX:"), Gtk.Entry, 0, 3)
+        wait_max = steamgifts_section.new("wait_max", _("Wait MAX:"), Gtk.Entry, 0, 4)
         wait_max.connect("changed", save_digit_only, "steamgifts", "wait_max")
 
         load_settings(steamgifts_section, Gtk.Entry)
@@ -331,6 +343,11 @@ def on_account_name_changed(entry: Gtk.Entry) -> None:
 
 def on_device_id_changed(entry: Gtk.Entry) -> None:
     config.new('login', 'deviceid', entry.get_text())
+
+
+def on_sort_giveaways_changed(combo: Gtk.ComboBoxText) -> None:
+    sort_giveaways = list(giveaway_sort_types)[combo.get_active()]
+    config.new('steamgifts', 'sort', sort_giveaways)
 
 
 def on_log_level_changed(combo: Gtk.ComboBoxText) -> None:

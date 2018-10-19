@@ -464,7 +464,13 @@ class Application(Gtk.Application):
             giveaways = await steamgifts_session.get_giveaways(giveaway_type)
             joined = False
 
-            if not giveaways:
+            if giveaways:
+                sort_giveaways = config.parser.get("steamgifts", "sort")
+
+                if sort_giveaways:
+                    # FIXME: check if config is valid
+                    giveaways = sorted(giveaways, key=lambda giveaway: getattr(giveaway, sort_giveaways))
+            else:
                 info(_("No giveaways to join."))
                 joined = True
                 wait_min = wait_min / 2
