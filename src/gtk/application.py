@@ -372,16 +372,18 @@ class Application(Gtk.Application):
                     log.error(str(exception))
                     await asyncio.sleep(15)
                     continue
-                except steamtrades.NotReadyError as exception:
+                except steamtrades.TradeNotReadyError as exception:
                     wait_min = exception.time_left * 60
                     wait_max = wait_min + 400
                     bumped = True
                 except steamtrades.TradeClosedError as exception:
-                    self.error(str(exception))
+                    error(str(exception))
                     await asyncio.sleep(5)
                     continue
                 except webapi.LoginError as exception:
-                    self.error(str(exception))
+                    log.error(str(exception))
+                    self.window.set_login_icon("steamtrades", "red")
+                    error(_("Login is lost. Trying to relogin."))
                     await asyncio.sleep(5)
                     bumped = False
                     break
