@@ -19,9 +19,7 @@ import asyncio
 import logging
 import os
 
-import aiohttp
 from gi.repository import GdkPixbuf, Gio, Gtk
-from stlib import webapi
 
 from . import confirmation, utils
 from .. import config, i18n
@@ -125,15 +123,15 @@ class Main(Gtk.ApplicationWindow):
         icon_bar.set_column_spacing(5)
         main_grid.attach(icon_bar, 0, 6, 4, 1)
 
-        self.steam_icon = Gtk.Image.new_from_file(os.path.join(config.icons_dir, 'steam_yellow.png'))
+        self.steam_icon = Gtk.Image.new_from_file(os.path.join(config.icons_dir, 'steam_red.png'))
         self.steam_icon.set_hexpand(True)
         self.steam_icon.set_halign(Gtk.Align.END)
         icon_bar.add(self.steam_icon)
 
-        self.steamtrades_icon = Gtk.Image.new_from_file(os.path.join(config.icons_dir, 'steamtrades_yellow.png'))
+        self.steamtrades_icon = Gtk.Image.new_from_file(os.path.join(config.icons_dir, 'steamtrades_red.png'))
         icon_bar.attach_next_to(self.steamtrades_icon, self.steam_icon, Gtk.PositionType.RIGHT, 1, 1)
 
-        self.steamgifts_icon = Gtk.Image.new_from_file(os.path.join(config.icons_dir, 'steamgifts_yellow.png'))
+        self.steamgifts_icon = Gtk.Image.new_from_file(os.path.join(config.icons_dir, 'steamgifts_red.png'))
         icon_bar.attach_next_to(self.steamgifts_icon, self.steamtrades_icon, Gtk.PositionType.RIGHT, 1, 1)
 
         icon_bar.show_all()
@@ -174,63 +172,12 @@ class Main(Gtk.ApplicationWindow):
 
             await asyncio.sleep(1)
 
-    async def update_login_icons(self) -> None:
-        while self.get_realized():
-            steamid = config.parser.getint('login', 'steamid')
-            nickname = config.parser.get('login', 'nickname')
-            api_url = config.parser.get('steam', 'api_url')
-            cookies = config.login_cookies()
+    def set_login_icon(self, plugin_name: str, color: str) -> None:
+        plugin_icon = getattr(self, f'{plugin_name}_icon')
 
-            if not nickname:
-                try:
-                    nickname = await self.webapi_session.get_nickname(steamid)
-                except ValueError:
-                    # invalid steamid or setup process is running
-                    self.steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_yellow.png'))
-                    self.steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_yellow.png'))
-                    self.steamgifts_icon.set_from_file(os.path.join(config.icons_dir, 'steamgifts_yellow.png'))
-                    return
-                else:
-                    config.new("login", "nickname", nickname)
-
-            self.steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_yellow.png'))
-
-            if await self.webapi_session.is_logged_in(nickname):
-                self.steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_green.png'))
-            else:
-                self.steam_icon.set_from_file(os.path.join(config.icons_dir, 'steam_red.png'))
-
-            if cookies:
-                self.session.cookie_jar.update_cookies(cookies)
-
-                self.steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_yellow.png'))
-
-                if self.plugin_manager.has_plugin('steamtrades') and config.parser.getboolean("plugins", "steamtrades"):
-                    steamtrades = self.plugin_manager.load_plugin("steamtrades")
-                    steamtrades_session = steamtrades.Main(self.session, api_url=api_url)
-
-                    try:
-                        await steamtrades_session.do_login()
-                        self.steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_green.png'))
-                    except (aiohttp.ClientConnectionError, webapi.LoginError, NameError):
-                        self.steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_red.png'))
-
-                self.steamgifts_icon.set_from_file(os.path.join(config.icons_dir, 'steamgifts_yellow.png'))
-
-                if self.plugin_manager.has_plugin('steamgifts') and config.parser.getboolean("plugins", "steamgifts"):
-                    steamgifts = self.plugin_manager.load_plugin("steamgifts")
-                    steamgifts_session = steamgifts.Main(self.session, api_url=api_url)
-
-                    try:
-                        await steamgifts_session.do_login()
-                        self.steamgifts_icon.set_from_file(os.path.join(config.icons_dir, 'steamgifts_green.png'))
-                    except (aiohttp.ClientConnectionError, webapi.LoginError, NameError):
-                        self.steamgifts_icon.set_from_file(os.path.join(config.icons_dir, 'steamgifts_red.png'))
-            else:
-                self.steamtrades_icon.set_from_file(os.path.join(config.icons_dir, 'steamtrades_yellow.png'))
-                self.steamgifts_icon.set_from_file(os.path.join(config.icons_dir, 'steamgifts_yellow.png'))
-
-            await asyncio.sleep(10)
+        plugin_icon.set_from_file(
+            os.path.join(config.icons_dir, f'{plugin_name}_{color}.png'),
+        )
 
     @staticmethod
     def on_query_confirmations_tooltip(

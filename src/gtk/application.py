@@ -98,6 +98,7 @@ class Application(Gtk.Application):
         assert isinstance(self.window, Gtk.Window), "No window is found"
 
         while self.window.get_realized():
+            self.window.set_login_icon('steam', 'red')
             token = config.parser.get("login", "token")
             token_secure = config.parser.get("login", "token_secure")
             steamid = config.parser.getint("login", "steamid")
@@ -126,9 +127,12 @@ class Application(Gtk.Application):
                 else:
                     config.new('login', 'nickname', nickname)
 
+            self.window.set_login_icon('steam', 'yellow')
             self.session.cookie_jar.update_cookies(config.login_cookies())  # type: ignore
 
-            if not await self.webapi_session.is_logged_in(nickname):
+            if await self.webapi_session.is_logged_in(nickname):
+                self.window.set_login_icon('steam', 'green')
+            else:
                 if not login_requested:
                     log.debug(_("User is not logged-in. Calling Magic Box."))
                     setup_dialog = setup.SetupDialog(
@@ -155,7 +159,6 @@ class Application(Gtk.Application):
             break
 
         modules = [
-            self.window.update_login_icons(),
             self.run_confirmations(),
             self.run_steamguard(),
             self.run_steamtrades(),
@@ -302,6 +305,7 @@ class Application(Gtk.Application):
 
         while self.window.get_realized():
             if not config.parser.getboolean("plugins", "steamtrades"):
+                self.window.set_login_icon('steamtrades', 'red')
                 await asyncio.sleep(5)
                 continue
 
@@ -316,22 +320,26 @@ class Application(Gtk.Application):
                 await asyncio.sleep(5)
                 continue
 
-            if cookies:
-                self.session.cookie_jar.update_cookies(cookies)  # type: ignore
-                try:
-                    await steamtrades_session.do_login()
-                except aiohttp.ClientConnectionError:
-                    error(_("No connection"))
-                    await asyncio.sleep(15)
-                    continue
-                except webapi.LoginError:
-                    error(_("User is not logged in"))
-                    await asyncio.sleep(15)
-                    continue
-            else:
-                error(_("Unable to find a valid login data"))
-                await asyncio.sleep(5)
+            self.window.set_login_icon('steamtrades', 'yellow')
+            self.session.cookie_jar.update_cookies(cookies)  # type: ignore
+
+            try:
+                if not cookies:
+                    raise webapi.LoginError
+
+                await steamtrades_session.do_login()
+            except aiohttp.ClientConnectionError:
+                self.window.set_login_icon('steamtrades', 'red')
+                error(_("No connection"))
+                await asyncio.sleep(15)
                 continue
+            except webapi.LoginError:
+                self.window.set_login_icon('steamtrades', 'red')
+                error(_("User is not logged in"))
+                await asyncio.sleep(15)
+                continue
+
+            self.window.set_login_icon('steamtrades', 'green')
 
             trades = [trade.strip() for trade in trade_ids.split(',')]
             bumped = False
@@ -344,6 +352,7 @@ class Application(Gtk.Application):
                     bumped = False
                     break
                 except aiohttp.ClientConnectionError:
+                    self.window.set_login_icon('steamtrades', 'red')
                     error(_("No connection"))
                     bumped = False
                     break
@@ -427,6 +436,7 @@ class Application(Gtk.Application):
 
         while self.window.get_realized():
             if not config.parser.getboolean("plugins", "steamgifts"):
+                self.window.set_login_icon('steamgifts', 'red')
                 await asyncio.sleep(5)
                 continue
 
@@ -437,22 +447,26 @@ class Application(Gtk.Application):
             pinned_giveaways = config.parser.get("steamgifts", "developer_giveaways")
             cookies = config.login_cookies()
 
-            if cookies:
-                self.session.cookie_jar.update_cookies(cookies)  # type: ignore
-                try:
-                    await steamgifts_session.do_login()
-                except aiohttp.ClientConnectionError:
-                    error(_("No Connection"))
-                    await asyncio.sleep(15)
-                    continue
-                except webapi.LoginError:
-                    error(_("User is not logged in"))
-                    await asyncio.sleep(15)
-                    continue
-            else:
-                error(_("Unable to find a valid login data"))
-                await asyncio.sleep(5)
+            self.window.set_login_icon('steamgifts', 'yellow')
+            self.session.cookie_jar.update_cookies(cookies)  # type: ignore
+
+            try:
+                if not cookies:
+                    raise webapi.LoginError
+
+                await steamgifts_session.do_login()
+            except aiohttp.ClientConnectionError:
+                self.window.set_login_icon('steamgifts', 'red')
+                error(_("No Connection"))
+                await asyncio.sleep(15)
                 continue
+            except webapi.LoginError:
+                self.window.set_login_icon('steamgifts', 'red')
+                error(_("User is not logged in"))
+                await asyncio.sleep(15)
+                continue
+
+            self.window.set_login_icon('steamgifts', 'green')
 
             try:
                 await steamgifts_session.configure()
@@ -500,6 +514,7 @@ class Application(Gtk.Application):
                     continue
                 except webapi.LoginError as exception:
                     log.error(str(exception))
+                    self.window.set_login_icon('steamgifts', 'red')
                     error(_("Login is lost. Trying to relogin."))
                     await asyncio.sleep(5)
                     joined = False

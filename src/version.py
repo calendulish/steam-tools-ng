@@ -23,7 +23,7 @@ class _Version(NamedTuple):
     major: int = 0
     minor: int = 6
     revision: int = 0
-    extra: str = 'dev1'
+    extra: str = 'dev2'
 
 
 __version_info__ = _Version()
