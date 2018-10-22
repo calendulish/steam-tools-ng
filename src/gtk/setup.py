@@ -24,7 +24,7 @@ import os
 from typing import Any, Dict, Optional
 
 import aiohttp
-from gi.repository import Gtk, GdkPixbuf
+from gi.repository import Gtk, GdkPixbuf, Gdk
 from stlib import authenticator, webapi
 
 from . import utils
@@ -114,6 +114,27 @@ class SetupDialog(Gtk.Dialog):
         self.shared_secret = self.advanced_settings.new('shared_secret', _("Shared Secret:"), Gtk.Entry, 0, 1)
 
         self.connect('response', lambda dialog, response_id: self.destroy())
+        self.connect('key-release-event', self.__on_key_release)
+        self.egg_index = 0
+
+    def __on_key_release(self, dialog: Gtk.Dialog, event: Gdk.Event) -> None:
+        if event.keyval == Gdk.KEY_Return:
+            self.next_button.clicked()
+
+        egg = ['F', 'O', 'R', 'E', 'V', 'E', 'R']
+
+        if self.egg_index == 6 and event.keyval == Gdk.KEY_R:
+            self.status.info("""   ## ##
+  #  #  #     Amo como ama o amor.
+   #   #    Não conheço nenhuma outra razão para amar senão amar.
+    # #   Que queres que te diga, além de que te amo,
+     #  se o que quero dizer-te é que te amo?
+        """)
+            self.egg_index = 0
+        elif event.keyval == getattr(Gdk, f'KEY_{egg[self.egg_index]}'):
+            self.egg_index += 1
+        else:
+            self.egg_index = 0
 
     def __fatal_error(self, exception: BaseException) -> None:
         self.status.error("{}\n\n{}".format(_("IT'S A FATAL ERROR!!! PLEASE, REPORT!!!"), repr(exception)))
