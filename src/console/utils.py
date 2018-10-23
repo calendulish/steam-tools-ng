@@ -19,6 +19,7 @@
 import getpass
 import json
 import logging
+import sys
 import tempfile
 from typing import Optional, Union, Dict, Any, List
 
@@ -129,7 +130,13 @@ async def check_login(
 
     session.cookie_jar.update_cookies(config.login_cookies())  # type: ignore
 
-    if not await webapi_session.is_logged_in(nickname):
+    try:
+        is_logged_in = await webapi_session.is_logged_in(nickname)
+    except aiohttp.ClientError:
+        log.critical(_("No Connection. Please, check your connection and try again."))
+        sys.exit(1)
+
+    if not is_logged_in:
         log.error(_("User is not logged in."))
 
         username = config.parser.get("login", "account_name")

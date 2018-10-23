@@ -129,7 +129,16 @@ class Application(Gtk.Application):
             self.window.set_login_icon('steam', 'yellow')
             self.session.cookie_jar.update_cookies(config.login_cookies())  # type: ignore
 
-            if await self.webapi_session.is_logged_in(nickname):
+            try:
+                is_logged_in = await self.webapi_session.is_logged_in(nickname)
+            except aiohttp.ClientError:
+                utils.fatal_error_dialog(
+                    _("No Connection. Please, check your connection and try again."),
+                    self.window,
+                )
+                sys.exit(1)
+
+            if is_logged_in:
                 self.window.set_login_icon('steam', 'green')
             else:
                 if not login_requested:
@@ -247,12 +256,12 @@ class Application(Gtk.Application):
                 )
             except AttributeError as exception:
                 warning(_("Error when fetch confirmations"))
-            except aiohttp.ClientConnectorError:
-                warning(_("No connection"))
             except ProcessLookupError:
                 warning(_("Steam is not running"))
             except webapi.LoginError:
                 warning(_("User is not logged in"))
+            except aiohttp.ClientError:
+                warning(_("No connection"))
             else:
                 self.window.warning_label.hide()
                 if old_confirmations != confirmations:
@@ -326,14 +335,14 @@ class Application(Gtk.Application):
                     raise webapi.LoginError
 
                 await steamtrades_session.do_login()
-            except aiohttp.ClientConnectionError:
-                self.window.set_login_icon('steamtrades', 'red')
-                error(_("No connection"))
-                await asyncio.sleep(15)
-                continue
             except webapi.LoginError:
                 self.window.set_login_icon('steamtrades', 'red')
                 error(_("User is not logged in"))
+                await asyncio.sleep(15)
+                continue
+            except aiohttp.ClientError:
+                self.window.set_login_icon('steamtrades', 'red')
+                error(_("No connection"))
                 await asyncio.sleep(15)
                 continue
 
@@ -349,7 +358,7 @@ class Application(Gtk.Application):
                     error(_("Unable to find TradeID {}").format(trade_id))
                     bumped = False
                     break
-                except aiohttp.ClientConnectionError:
+                except aiohttp.ClientError:
                     self.window.set_login_icon('steamtrades', 'red')
                     error(_("No connection"))
                     bumped = False
