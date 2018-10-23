@@ -59,11 +59,12 @@ if __name__ == "__main__":
                 Available modules for console mode:
                     - authenticator
                     - steamtrades
+                    - steamgifts
                        '''))
 
     command_parser.add_argument(
         '-c', '--cli',
-        choices=['authenticator', 'steamtrades'],
+        choices=['authenticator', 'steamtrades', 'steamgifts'],
         metavar='module [options]',
         action='store',
         nargs=1,
