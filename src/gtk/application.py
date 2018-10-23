@@ -17,7 +17,6 @@
 #
 import asyncio
 import configparser
-import contextlib
 import itertools
 import logging
 import random
@@ -165,12 +164,11 @@ class Application(Gtk.Application):
             self.run_steamgifts(),
         ]
 
-        with contextlib.suppress(asyncio.CancelledError):
-            done, pending = await asyncio.wait(modules, return_when=asyncio.FIRST_EXCEPTION)
-            exception = done.pop().exception()
-            log.critical(repr(exception))
-            utils.fatal_error_dialog(str(exception), self.window)
-            sys.exit(1)
+        done, pending = await asyncio.wait(modules, return_when=asyncio.FIRST_EXCEPTION)
+        exception = done.pop().exception()
+        log.critical(repr(exception))
+        utils.fatal_error_dialog(str(exception), self.window)
+        sys.exit(1)
 
     async def run_steamguard(self) -> None:
         assert isinstance(self.window, Gtk.Window), "No window"
