@@ -56,7 +56,7 @@ class Main(Gtk.ApplicationWindow):
         menu_button.set_menu_model(menu)
         header_bar.pack_end(menu_button)
 
-        self.set_default_size(600, 450)
+        self.set_default_size(650, 450)
         self.set_resizable(False)
         self.set_deletable(False)
         self.set_position(Gtk.WindowPosition.CENTER)
