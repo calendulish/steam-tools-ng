@@ -48,14 +48,17 @@ class Main(Gtk.ApplicationWindow):
         menu = Gio.Menu()
         menu.append(_("Settings"), "app.settings")
         menu.append(_("About"), "app.about")
+        menu.append(_("Exit"), "app.exit")
 
         menu_button = Gtk.MenuButton("☰")
+        menu_button.set_relief(Gtk.ReliefStyle.NONE)
         menu_button.set_use_popover(True)
         menu_button.set_menu_model(menu)
         header_bar.pack_end(menu_button)
 
         self.set_default_size(600, 450)
         self.set_resizable(False)
+        self.set_deletable(False)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_titlebar(header_bar)
         self.set_title('Steam Tools NG')

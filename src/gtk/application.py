@@ -62,6 +62,10 @@ class Application(Gtk.Application):
         about_action.connect("activate", self.on_about_activate)
         self.add_action(about_action)
 
+        exit_action = Gio.SimpleAction.new("exit")
+        exit_action.connect("activate", lambda action, data: self.window.destroy())
+        self.add_action(exit_action)
+
         theme = config.parser.get("gtk", "theme")
 
         if theme == 'dark':
