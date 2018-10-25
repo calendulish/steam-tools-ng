@@ -26,7 +26,7 @@ from typing import Any, List, Optional
 import aiohttp
 import binascii
 from gi.repository import Gio, Gtk
-from stlib import authenticator, client, plugins, webapi
+from stlib import authenticator, client, plugins, webapi, steam_api
 
 from . import about, settings, setup, window, utils
 from .. import config, i18n
@@ -169,6 +169,7 @@ class Application(Gtk.Application):
         modules = [
             self.run_confirmations(),
             self.run_steamguard(),
+            self.run_cardfarming(),
             self.run_steamtrades(),
             self.run_steamgifts(),
         ]
@@ -214,6 +215,78 @@ class Application(Gtk.Application):
                     self.window.steamguard_status.set_level(past_time, seconds * 8)
 
                     await asyncio.sleep(0.125)
+
+    async def run_cardfarming(self) -> None:
+        def info(message: str, badge_: Optional[Any] = None) -> None:
+            assert isinstance(self.window, Gtk.Window), "No Window"
+
+            if badge_:
+                assert isinstance(badge_, webapi.Badge), "Game has wrong type"
+                self.window.cardfarming_status.set_current(badge_.game_id)
+                self.window.cardfarming_status.set_info(f'{message} ({badge_.game_name})')
+            else:
+                self.window.cardfarming_status.set_current('_ _ _ _ _ _')
+                self.window.cardfarming_status.set_info(message)
+
+        def error(message: str) -> None:
+            assert isinstance(self.window, Gtk.Window), "No Window"
+            self.window.cardfarming_status.set_current('_ _ _ _ _ _')
+            self.window.cardfarming_status.set_error(message)
+
+        assert isinstance(self.window, Gtk.Window), "No Window"
+
+        while self.window.get_realized():
+            if not config.parser.getboolean("plugins", "cardfarming"):
+                await asyncio.sleep(5)
+                continue
+
+            steamid = config.parser.get("login", "steamid")
+            nickname = config.parser.get("login", "nickname")
+            reverse_sorting = config.parser.getboolean("cardfarming", "reverse_sorting")
+            wait_min = config.parser.getint("cardfarming", "wait_min")
+            wait_max = config.parser.getint("cardfarming", "wait_max")
+            cookies = config.login_cookies()
+
+            if not steamid or not nickname:
+                raise NotImplementedError
+
+            if cookies:
+                self.session.cookie_jar.update_cookies(cookies)  # type: ignore
+            else:
+                error(_("Unable to find a valid login data"))
+                await asyncio.sleep(5)
+                continue
+
+            badges = sorted(
+                await self.webapi_session.get_badges(nickname),
+                key=lambda badge_: badge_.cards,
+                reverse=reverse_sorting
+            )
+
+            for badge in badges:
+                with client.SteamApiExecutor(badge.game_id) as executor:
+                    if not executor.call(steam_api.init):
+                        raise NotImplementedError
+
+                    info("Running", badge)
+
+                    wait_offset = random.randint(wait_min, wait_max)
+
+                    while badge.cards != 0:
+                        for past_time in range(wait_offset):
+                            info(_("Waiting drops for {} minutes").format(round((wait_offset - past_time) / 60)), badge)
+
+                            try:
+                                self.window.cardfarming_status.set_level(past_time, wait_offset)
+                            except KeyError:
+                                self.window.cardfarming_status.set_level(0, 0)
+
+                            await asyncio.sleep(1)
+
+                        info("Updating drops", badge)
+                        badge = await self.webapi_session.update_badge_drops(badge, nickname)
+
+                info("Closing", badge)
 
     async def run_confirmations(self) -> None:
         old_confirmations: List[webapi.Confirmation] = []

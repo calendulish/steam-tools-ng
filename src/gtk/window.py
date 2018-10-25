@@ -76,7 +76,10 @@ class Main(Gtk.ApplicationWindow):
         self.status_grid.attach(self.steamgifts_status, 1, 0, 1, 1)
 
         self.steamguard_status = utils.Status(4, _('Steam Guard Code'))
-        self.status_grid.attach(self.steamguard_status, 0, 2, 2, 1)
+        self.status_grid.attach(self.steamguard_status, 0, 1, 1, 1)
+
+        self.cardfarming_status = utils.Status(6, _("Card Farming"))
+        self.status_grid.attach(self.cardfarming_status, 1, 1, 1, 1)
 
         info_label = Gtk.Label()
         info_label.set_text(_("If you have confirmations, they will be shown here. (15 seconds delay)"))
@@ -144,7 +147,7 @@ class Main(Gtk.ApplicationWindow):
         while self.get_realized():
             plugins_enabled = []
 
-            for plugin_name in ["steamgifts", "steamtrades", "steamguard"]:
+            for plugin_name in ["steamgifts", "steamtrades", "steamguard", "cardfarming"]:
                 plugin_config = config.parser.getboolean("plugins", plugin_name)
 
                 if plugin_config:
@@ -165,8 +168,14 @@ class Main(Gtk.ApplicationWindow):
                 if index == 1 and len(plugins_enabled) >= 2:
                     self.status_grid.attach(plugin, 1, 0, 1, 1)
 
-                if index == 2 and len(plugins_enabled) == 3:
-                    self.status_grid.attach(plugin, 0, 2, 2, 1)
+                if index == 2:
+                    if len(plugins_enabled) == 3:
+                        self.status_grid.attach(plugin, 0, 1, 2, 1)
+                    else:
+                        self.status_grid.attach(plugin, 0, 1, 1, 1)
+
+                if index == 3 and len(plugins_enabled) == 4:
+                    self.status_grid.attach(plugin, 1, 1, 1, 1)
 
                 plugin.show()
 

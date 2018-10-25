@@ -84,12 +84,18 @@ def init() -> None:
                 'sort': 'name',
                 'reverse_sorting': False,
             },
+            'cardfarming': {
+                'reverse_sorting': False,
+                'wait_min': 480,
+                'wait_max': 600,
+            },
             'gtk': {
                 'theme': 'light',
             },
             'plugins': {
                 'steamtrades': True,
                 'steamgifts': True,
+                'cardfarming': True,
                 'steamguard': True,
             },
             'login': {
