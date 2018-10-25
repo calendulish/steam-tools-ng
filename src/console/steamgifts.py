@@ -38,6 +38,7 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
     giveaway_type = config.parser.get("steamgifts", "giveaway_type")
     pinned_giveaways = config.parser.get("steamgifts", "developer_giveaways")
     sort_giveaways = config.parser.get("steamgifts", "sort")
+    reverse_sorting = config.parser.get("steamgifts", "reverse_sorting")
     api_url = config.parser.get('steam', 'api_url')
     webapi_session = webapi.SteamWebAPI(session, api_url)
 
@@ -72,7 +73,11 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
 
         if giveaways and sort_giveaways:
             # FIXME: check if config is valid
-            giveaways = sorted(giveaways, key=lambda giveaway_: getattr(giveaway_, sort_giveaways))
+            giveaways = sorted(
+                giveaways,
+                key=lambda giveaway_: getattr(giveaway_, sort_giveaways),
+                reverse=reverse_sorting,
+            )
         else:
             log.info(_("No giveaways to join."))
             wait_min = wait_min / 2

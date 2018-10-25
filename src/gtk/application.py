@@ -562,10 +562,15 @@ class Application(Gtk.Application):
 
             if giveaways:
                 sort_giveaways = config.parser.get("steamgifts", "sort")
+                reverse_sorting = config.parser.get("steamgifts", "reverse_sorting")
 
                 if sort_giveaways:
                     # FIXME: check if config is valid
-                    giveaways = sorted(giveaways, key=lambda giveaway: getattr(giveaway, sort_giveaways))
+                    giveaways = sorted(
+                        giveaways,
+                        key=lambda giveaway_: getattr(giveaway_, sort_giveaways),
+                        reverse=reverse_sorting,
+                    )
             else:
                 info(_("No giveaways to join."))
                 joined = True
