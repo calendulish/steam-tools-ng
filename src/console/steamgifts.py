@@ -80,8 +80,8 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
             )
         else:
             log.info(_("No giveaways to join."))
-            wait_min = wait_min / 2
-            wait_max = wait_max / 2
+            wait_min /= 2
+            wait_max /= 2
 
         for giveaway in giveaways:
             antiban_max = random.randint(5, 15)

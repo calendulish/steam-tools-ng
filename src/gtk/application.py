@@ -574,8 +574,8 @@ class Application(Gtk.Application):
             else:
                 info(_("No giveaways to join."))
                 joined = True
-                wait_min = wait_min / 2
-                wait_max = wait_max / 2
+                wait_min /= 2
+                wait_max /= 2
 
             for index, giveaway in enumerate(giveaways):
                 self.window.steamgifts_status.set_level(index, len(giveaway))
