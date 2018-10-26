@@ -311,7 +311,7 @@ class Section(Gtk.Frame):
 
         if isinstance(item, Gtk.Entry):
             value = config.parser.get(section, option)
-            item.set_text(value)
+            item.set_text(str(value))
 
         return item
 
