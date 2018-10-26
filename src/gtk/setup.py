@@ -88,26 +88,22 @@ class SetupDialog(Gtk.Dialog):
         self.user_details_section = utils.Section("login", _("User Details"))
         self.content_area.add(self.user_details_section)
 
-        self.username_item = self.user_details_section.new("username", _("Username:"), Gtk.Entry, 0, 0)
-        config_username = config.parser.get("login", "account_name")
+        self.username_item = self.user_details_section.new("account_name", _("Username:"), Gtk.Entry, 0, 0)
 
-        if config_username:
-            self.username_item.set_text(config_username)
-
-        self.__password_item = self.user_details_section.new("password", _("Password:"), Gtk.Entry, 0, 1)
+        self.__password_item = self.user_details_section.new("_password", _("Password:"), Gtk.Entry, 0, 1)
         self.__password_item.set_visibility(False)
         self.__password_item.set_invisible_char('*')
         self.__password_item.set_placeholder_text(_("It will not be saved"))
 
-        self.code_item = self.user_details_section.new("code", _("Code:"), Gtk.Entry, 0, 2)
+        self.code_item = self.user_details_section.new("_code", _("Code:"), Gtk.Entry, 0, 2)
 
         self.captcha_gid = -1
-        self.captcha_item = self.user_details_section.new("captcha", _("Code:"), Gtk.Image, 0, 3)
+        self.captcha_item = self.user_details_section.new("_captcha", _("Code:"), Gtk.Image, 0, 3)
         self.captcha_text_item = self.user_details_section.new(
-            "captcha_text", _("Captcha Text:"), Gtk.Entry, 0, 4,
+            "_captcha_text", _("Captcha Text:"), Gtk.Entry, 0, 4,
         )
 
-        self.advanced_settings = utils.Section('advanced_settings', _("Advanced Settings"))
+        self.advanced_settings = utils.Section("login", _("Advanced Settings"))
         self.content_area.add(self.advanced_settings)
 
         self.identity_secret = self.advanced_settings.new('identity_secret', _("Identity Secret:"), Gtk.Entry, 0, 0)
@@ -224,12 +220,9 @@ class SetupDialog(Gtk.Dialog):
         args = [username, password, mail_code]
         kwargs = {'captcha_text': captcha_text}
 
-        if self.advanced:
+        if self.advanced or self.relogin:
             kwargs['shared_secret'] = self.shared_secret.get_text()
             kwargs['identity_secret'] = self.identity_secret.get_text()
-        elif self.relogin:
-            kwargs['shared_secret'] = config.parser.get("login", "shared_secret")
-            kwargs['identity_secret'] = config.parser.get("login", "identity_secret")
 
         task = asyncio.ensure_future(self.do_login(*args, **kwargs))
         task.add_done_callback(functools.partial(self._do_login_callback))

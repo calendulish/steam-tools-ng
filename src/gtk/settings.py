@@ -17,9 +17,7 @@
 #
 
 import logging
-import sys
 from collections import OrderedDict
-from typing import Any, Dict, Optional
 
 import aiohttp
 from gi.repository import Gtk, Pango
@@ -95,47 +93,31 @@ class SettingsDialog(Gtk.Dialog):
         content_grid.set_column_spacing(10)
         content_area.add(content_grid)
 
-        content_grid.attach(self.login_settings(), 0, 0, 1, 2)
-        content_grid.attach(self.logger_settings(), 1, 0, 1, 1)
-        content_grid.attach(self.locale_settings(), 1, 1, 1, 1)
-
-        content_grid.attach(self.steamtrades_settings(), 0, 2, 1, 1)
-        content_grid.attach(self.steamgifts_settings(), 1, 2, 1, 1)
-
-        content_grid.attach(self.gtk_settings(), 0, 3, 1, 1)
-        content_grid.attach(self.plugins_settings(), 1, 3, 1, 1)
-
-        content_grid.show()
-
-        self.connect('response', lambda dialog, response_id: self.destroy())
-        self.show()
-
-    def login_settings(self) -> utils.Section:
         login_section = utils.Section("login", _("Login Settings"))
 
         account_name = login_section.new('account_name', _("Username:"), Gtk.Entry, 0, 0)
-        account_name.connect('changed', on_account_name_changed)
+        account_name.connect('changed', on_setting_changed)
 
         login_section.show_all()
 
         shared_secret = login_section.new('shared_secret', _("Shared Secret:"), Gtk.Entry, 0, 1)
-        shared_secret.connect('changed', on_shared_secret_changed)
+        shared_secret.connect('changed', on_setting_changed)
 
         token_item = login_section.new("token", _("Token:"), Gtk.Entry, 0, 2)
-        token_item.connect("changed", on_token_changed)
+        token_item.connect("changed", on_setting_changed)
 
         token_secure_item = login_section.new("token_secure", _("Token Secure:"), Gtk.Entry, 0, 3)
-        token_secure_item.connect("changed", on_token_secure_changed)
+        token_secure_item.connect("changed", on_setting_changed)
 
         identity_secret = login_section.new('identity_secret', _("Identity Secret:"), Gtk.Entry, 2, 0)
-        identity_secret.connect('changed', on_identity_secret_changed)
+        identity_secret.connect('changed', on_setting_changed)
 
         deviceid = login_section.new('deviceid', _("Device ID:"), Gtk.Entry, 2, 1)
-        deviceid.connect('changed', on_device_id_changed)
+        deviceid.connect('changed', on_setting_changed)
 
         steamid_item = login_section.new("steamid", _("Steam ID:"), Gtk.Entry, 2, 2)
         steamid_item.set_input_purpose(Gtk.InputPurpose.DIGITS)
-        steamid_item.connect("changed", on_steamid_changed)
+        steamid_item.connect("changed", on_digit_only_setting_changed)
 
         advanced = Gtk.CheckButton(_("Advanced"))
         advanced.set_name("advanced_button")
@@ -143,15 +125,126 @@ class SettingsDialog(Gtk.Dialog):
         login_section.grid.attach(advanced, 0, 7, 1, 1)
         advanced.show()
 
-        load_settings(login_section, Gtk.Entry)
-
         setup_button = Gtk.Button(_("Magic Box"))
         setup_button.set_name("setup_button")
         setup_button.connect('clicked', self.on_setup_clicked)
         login_section.grid.attach(setup_button, 0, 8, 4, 1)
         setup_button.show()
 
-        return login_section
+        content_grid.attach(login_section, 0, 0, 1, 2)
+
+        plugins_section = utils.Section('plugins', _('Plugins Settings'))
+
+        steamguard = plugins_section.new("steamguard", _("SteamGuard:"), Gtk.CheckButton, 0, 1)
+        steamguard.connect('toggled', on_setting_toggled)
+
+        steamtrades = plugins_section.new("steamtrades", _("Steamtrades:"), Gtk.CheckButton, 0, 2)
+        steamtrades.connect('toggled', on_setting_toggled)
+
+        steamgifts = plugins_section.new("steamgifts", _("Steamgifts:"), Gtk.CheckButton, 2, 1)
+        steamgifts.connect('toggled', on_setting_toggled)
+
+        plugins_section.show_all()
+
+        content_grid.attach(plugins_section, 1, 3, 1, 1)
+
+        gtk_section = utils.Section('gtk', _('Gtk Settings'))
+
+        theme = gtk_section.new("theme", _("Theme:"), Gtk.ComboBoxText, 0, 0, items=gtk_themes)
+        theme.connect('changed', self.on_theme_changed)
+
+        gtk_section.show_all()
+
+        content_grid.attach(gtk_section, 0, 3, 1, 1)
+
+        steamtrades_section = utils.Section('steamtrades', _('Steamtrades Settings'))
+
+        trade_ids = steamtrades_section.new("trade_ids", _("Trade IDs:"), Gtk.Entry, 0, 0)
+        trade_ids.set_placeholder_text('12345, asdfg, ...')
+        trade_ids.connect("changed", on_setting_changed)
+
+        wait_min = steamtrades_section.new("wait_min", _("Wait MIN:"), Gtk.Entry, 0, 1)
+        wait_min.connect("changed", on_digit_only_setting_changed)
+
+        wait_max = steamtrades_section.new("wait_max", _("Wait MAX:"), Gtk.Entry, 0, 2)
+        wait_max.connect("changed", on_digit_only_setting_changed)
+
+        steamtrades_section.show_all()
+
+        content_grid.attach(steamtrades_section, 0, 2, 1, 1)
+
+        steamgifts_section = utils.Section("steamgifts", _("Steamgifts Settings"))
+
+        giveaway_type = steamgifts_section.new(
+            "giveaway_type",
+            _("Giveaway Type:"),
+            Gtk.ComboBoxText,
+            0, 0,
+            items=giveaway_types,
+        )
+        giveaway_type.connect("changed", on_combo_setting_changed, giveaway_types)
+
+        sort_giveaways = steamgifts_section.new(
+            "sort",
+            _("Sort Giveaways:"),
+            Gtk.ComboBoxText,
+            0, 1,
+            items=giveaway_sort_types,
+        )
+        sort_giveaways.connect("changed", on_combo_setting_changed, giveaway_sort_types)
+
+        reverse_sorting = steamgifts_section.new("reverse_sorting", _("Reverse Sorting:"), Gtk.CheckButton, 0, 2)
+        reverse_sorting.connect("toggled", on_setting_toggled)
+
+        developer_giveaways = steamgifts_section.new(
+            "developer_giveaways",
+            _("Developer Giveaways"),
+            Gtk.CheckButton,
+            0, 3,
+        )
+        developer_giveaways.connect("toggled", on_setting_toggled)
+
+        wait_min = steamgifts_section.new("wait_min", _("Wait MIN:"), Gtk.Entry, 0, 4)
+        wait_min.connect("changed", on_digit_only_setting_changed)
+
+        wait_max = steamgifts_section.new("wait_max", _("Wait MAX:"), Gtk.Entry, 0, 5)
+        wait_max.connect("changed", on_digit_only_setting_changed)
+
+        steamgifts_section.show_all()
+
+        content_grid.attach(steamgifts_section, 1, 2, 1, 1)
+
+        locale_section = utils.Section("locale", _('Locale settings'))
+        language_item = locale_section.new("language", _("Language"), Gtk.ComboBoxText, 0, 0, items=translations)
+        language_item.connect("changed", self.update_language)
+
+        locale_section.show_all()
+
+        content_grid.attach(locale_section, 1, 1, 1, 1)
+
+        logger_section = utils.Section("logger", _('Logger settings'))
+
+        log_level_item = logger_section.new("log_level", _("Level:"), Gtk.ComboBoxText, 0, 0, items=log_levels)
+
+        log_console_level_item = logger_section.new(
+            "log_console_level",
+            _("Console level:"),
+            Gtk.ComboBoxText,
+            0, 1,
+            items=log_levels,
+        )
+
+        log_level_item.connect("changed", on_combo_setting_changed, log_levels)
+        log_console_level_item.connect("changed", on_combo_setting_changed, log_levels)
+
+        logger_section.show_all()
+
+        content_grid.attach(logger_section, 1, 0, 1, 1)
+
+        self.connect('response', lambda dialog, response_id: self.destroy())
+
+        content_grid.show()
+        self.show()
 
     def on_advanced_button_toggled(self, button: Gtk.Button, login_section: utils.Section) -> None:
         if button.get_active():
@@ -170,34 +263,6 @@ class SettingsDialog(Gtk.Dialog):
             self.set_size_request(300, 150)
             login_section.set_label_align(0.03, 0.5)
 
-    def plugins_settings(self) -> utils.Section:
-        plugins_section = utils.Section('plugins', _('Plugins Settings'))
-
-        steamguard = plugins_section.new("steamguard", _("SteamGuard:"), Gtk.CheckButton, 0, 1)
-        steamguard.connect('toggled', on_steamguard_plugin_toggled)
-
-        steamtrades = plugins_section.new("steamtrades", _("Steamtrades:"), Gtk.CheckButton, 0, 2)
-        steamtrades.connect('toggled', on_steamtrades_plugin_toggled)
-
-        steamgifts = plugins_section.new("steamgifts", _("Steamgifts:"), Gtk.CheckButton, 2, 1)
-        steamgifts.connect('toggled', on_steamgifts_plugin_toggled)
-
-        load_settings(plugins_section, Gtk.CheckButton)
-
-        plugins_section.show_all()
-        return plugins_section
-
-    def gtk_settings(self) -> utils.Section:
-        gtk_section = utils.Section('gtk', _('Gtk Settings'))
-
-        theme = gtk_section.new("theme", _("Theme:"), Gtk.ComboBoxText, 0, 0)
-        theme.connect('changed', self.on_theme_changed)
-
-        load_settings(gtk_section, Gtk.ComboBoxText, combo_items=gtk_themes)
-
-        gtk_section.show_all()
-        return gtk_section
-
     def on_theme_changed(self, combo: Gtk.ComboBoxText) -> None:
         theme = list(gtk_themes)[combo.get_active()]
 
@@ -207,96 +272,6 @@ class SettingsDialog(Gtk.Dialog):
             self.gtk_settings_class.props.gtk_application_prefer_dark_theme = False
 
         config.new('gtk', 'theme', theme)
-
-    @staticmethod
-    def steamtrades_settings() -> utils.Section:
-        steamtrades_section = utils.Section('steamtrades', _('Steamtrades Settings'))
-
-        trade_ids = steamtrades_section.new("trade_ids", _("Trade IDs:"), Gtk.Entry, 0, 0)
-        trade_ids.set_placeholder_text('12345, asdfg, ...')
-        trade_ids.connect("changed", on_trade_ids_changed)
-
-        wait_min = steamtrades_section.new("wait_min", _("Wait MIN:"), Gtk.Entry, 0, 1)
-        wait_min.connect("changed", save_digit_only, "steamtrades", "wait_min")
-
-        wait_max = steamtrades_section.new("wait_max", _("Wait MAX:"), Gtk.Entry, 0, 2)
-        wait_max.connect("changed", save_digit_only, "steamtrades", "wait_max")
-
-        load_settings(steamtrades_section, Gtk.Entry)
-
-        steamtrades_section.show_all()
-        return steamtrades_section
-
-    def steamgifts_settings(self) -> utils.Section:
-        steamgifts_section = utils.Section("steamgifts", _("Steamgifts Settings"))
-
-        giveaway_type = steamgifts_section.new("giveaway_type", _("Giveaway Type:"), Gtk.ComboBoxText, 0, 0)
-        giveaway_type.connect("changed", on_giveaway_type_changed)
-
-        load_setting(giveaway_type, "steamgifts", combo_items=giveaway_types)
-
-        sort_giveaways = steamgifts_section.new("sort", _("Sort Giveaways:"), Gtk.ComboBoxText, 0, 1)
-        sort_giveaways.connect("changed", on_sort_giveaways_changed)
-
-        load_setting(sort_giveaways, "steamgifts", combo_items=giveaway_sort_types)
-
-        reverse_sorting = steamgifts_section.new(
-            "reverse_sorting",
-            _("Reverse Sorting:"),
-            Gtk.CheckButton,
-            0, 2
-        )
-        reverse_sorting.connect("toggled", on_reverse_sorting_toggled)
-
-        developer_giveaways = steamgifts_section.new(
-            "developer_giveaways",
-            _("Developer Giveaways"),
-            Gtk.CheckButton,
-            0, 3,
-        )
-        developer_giveaways.connect("toggled", on_developer_giveaways_toggled)
-
-        load_settings(steamgifts_section, Gtk.CheckButton)
-
-        wait_min = steamgifts_section.new("wait_min", _("Wait MIN:"), Gtk.Entry, 0, 4)
-        wait_min.connect("changed", save_digit_only, "steamgifts", "wait_min")
-
-        wait_max = steamgifts_section.new("wait_max", _("Wait MAX:"), Gtk.Entry, 0, 5)
-        wait_max.connect("changed", save_digit_only, "steamgifts", "wait_max")
-
-        load_settings(steamgifts_section, Gtk.Entry)
-
-        steamgifts_section.show_all()
-        return steamgifts_section
-
-    def locale_settings(self) -> utils.Section:
-        locale_section = utils.Section("locale", _('Locale settings'))
-        language_item = locale_section.new("language", _("Language"), Gtk.ComboBoxText, 0, 0)
-
-        load_settings(locale_section, Gtk.ComboBoxText, combo_items=translations)
-        language_item.connect("changed", self.update_language)
-
-        locale_section.show_all()
-        return locale_section
-
-    def logger_settings(self) -> utils.Section:
-        logger_section = utils.Section("logger", _('Logger settings'))
-        log_level_item = logger_section.new("log_level", _("Level:"), Gtk.ComboBoxText, 0, 0)
-
-        log_console_level_item = logger_section.new(
-            "log_console_level",
-            _("Console level:"),
-            Gtk.ComboBoxText,
-            0, 1,
-        )
-
-        load_settings(logger_section, Gtk.ComboBoxText, combo_items=log_levels)
-
-        log_level_item.connect("changed", on_log_level_changed)
-        log_console_level_item.connect("changed", on_log_console_level_changed)
-
-        logger_section.show_all()
-        return logger_section
 
     def on_setup_clicked(self, button: Gtk.Button) -> None:
         setup_dialog = setup.SetupDialog(self, self.session, self.webapi_session)
@@ -310,95 +285,39 @@ class SettingsDialog(Gtk.Dialog):
         Gtk.Container.foreach(self.parent_window, refresh_widget_text)
 
 
-def on_developer_giveaways_toggled(checkbutton: Gtk.CheckButton) -> None:
-    activate = checkbutton.get_active()
-    config.new("steamgifts", "developer_giveaways", activate)
+def on_setting_toggled(checkbutton: Gtk.CheckButton):
+    current_value = checkbutton.get_active()
+    section = checkbutton.get_section_name()
+    option = checkbutton.get_name()
+
+    config.new(section, option, current_value)
 
 
-def on_reverse_sorting_toggled(checkbutton: Gtk.CheckButton) -> None:
-    activate = checkbutton.get_active()
-    config.new("steamgifts", "reverse_sorting", activate)
+def on_setting_changed(entry: Gtk.Entry) -> None:
+    current_value = entry.get_text()
+    section = entry.get_section_name()
+    option = entry.get_name()
+
+    config.new(section, option, current_value)
 
 
-def on_steamguard_plugin_toggled(checkbutton: Gtk.CheckButton) -> None:
-    activate = checkbutton.get_active()
-    config.new('plugins', 'steamguard', activate)
+def on_digit_only_setting_changed(entry: Gtk.Entry) -> None:
+    current_value = entry.get_text()
+    section = entry.get_section_name()
+    option = entry.get_name()
 
-
-def on_steamid_changed(entry: Gtk.Entry) -> None:
-    text = entry.get_text()
-
-    if text.isdigit():
-        config.new('login', 'steamid', text)
+    if current_value.isdigit():
+        config.new(section, option, int(current_value))
     else:
-        entry.set_text(utils.remove_letters(text))
+        entry.set_text(utils.remove_letters(current_value))
 
 
-def on_token_changed(entry: Gtk.Entry) -> None:
-    config.new('login', 'token', entry.get_text())
+def on_combo_setting_changed(combo: Gtk.ComboBoxText, items: 'OrderedDict[str, str]') -> None:
+    current_value = list(items)[combo.get_active()]
+    section = combo.get_section_name()
+    option = combo.get_name()
 
-
-def on_token_secure_changed(entry: Gtk.Entry) -> None:
-    config.new('login', 'token_secure', entry.get_text())
-
-
-def on_shared_secret_changed(entry: Gtk.Entry) -> None:
-    config.new('login', 'shared_secret', entry.get_text())
-
-
-def on_identity_secret_changed(entry: Gtk.Entry) -> None:
-    config.new('login', 'identity_secret', entry.get_text())
-
-
-def on_account_name_changed(entry: Gtk.Entry) -> None:
-    config.new('login', 'account_name', entry.get_text())
-
-
-def on_device_id_changed(entry: Gtk.Entry) -> None:
-    config.new('login', 'deviceid', entry.get_text())
-
-
-def on_sort_giveaways_changed(combo: Gtk.ComboBoxText) -> None:
-    sort_giveaways = list(giveaway_sort_types)[combo.get_active()]
-    config.new('steamgifts', 'sort', sort_giveaways)
-
-
-def on_log_level_changed(combo: Gtk.ComboBoxText) -> None:
-    log_level = list(log_levels)[combo.get_active()]
-    config.new('logger', 'log_level', log_level)
-
-
-def on_log_console_level_changed(combo: Gtk.ComboBoxText) -> None:
-    log_console_level = list(log_levels)[combo.get_active()]
-    config.new('logger', 'log_console_level', log_console_level)
-
-
-def on_steamtrades_plugin_toggled(checkbutton: Gtk.CheckButton) -> None:
-    activate = checkbutton.get_active()
-    config.new('plugins', 'steamtrades', activate)
-
-
-def on_trade_ids_changed(entry: Gtk.Entry) -> None:
-    config.new('steamtrades', 'trade_ids', entry.get_text())
-
-
-def save_digit_only(entry: Gtk.Entry, section: str, option: str) -> None:
-    text = entry.get_text()
-
-    if text.isdigit():
-        config.new(section, option, int(text))
-    else:
-        entry.set_text(utils.remove_letters(text))
-
-
-def on_steamgifts_plugin_toggled(checkbutton: Gtk.CheckButton) -> None:
-    activate = checkbutton.get_active()
-    config.new('plugins', 'steamgifts', activate)
-
-
-def on_giveaway_type_changed(combo: Gtk.ComboBoxText) -> None:
-    current_type = list(giveaway_types)[combo.get_active()]
-    config.new('steamgifts', 'giveaway_type', current_type)
+    config.new(section, option, current_value)
 
 
 def refresh_widget_text(widget: Gtk.Widget) -> None:
@@ -437,72 +356,3 @@ def refresh_widget_text(widget: Gtk.Widget) -> None:
 
     for children in childrens:
         refresh_widget_text(children)
-
-
-def load_setting(
-        widget: Gtk.Widget,
-        config_section: str,
-        combo_items: Optional[Dict[str, str]] = None,
-        data: Optional[Dict[str, Any]] = None,
-        save: bool = False,
-) -> None:
-    config_option = widget.get_name()
-
-    if combo_items:
-        for value in combo_items.values():
-            widget.append_text(value)
-
-    if data:
-        try:
-            config_value = data[config_option]
-        except KeyError:
-            log.debug(
-                _("Unable to find %s in prefilled data. Ignoring."),
-                config_option,
-            )
-            return None
-    else:
-        # FIXME: Type can be wrong
-        config_value = config.parser.get(config_section, config_option)
-
-        if not config_value:
-            return None
-
-    if isinstance(widget, Gtk.ComboBox):
-        assert isinstance(combo_items, dict), "No combo_items"
-
-        try:
-            widget.set_active(list(combo_items).index(config_value))
-        except ValueError:
-            error_message = _("Please, fix your config file. Accepted values for {} are:\n{}").format(
-                config_option,
-                ', '.join(combo_items.keys()),
-            )
-            utils.fatal_error_dialog(error_message)
-            sys.exit(1)
-    elif isinstance(widget, Gtk.CheckButton):
-        if isinstance(config_value, bool):
-            widget.set_active(config_value)
-        else:
-            # FIXME: Type can be wrong
-            widget.set_active(True if config_value == 'True' else False)
-    else:
-        widget.set_text(str(config_value))
-
-    if save:
-        config.new(config_section, config_option, config_value)
-
-
-def load_settings(
-        section: utils.Section,
-        children_type: Gtk.Widget,
-        combo_items: Optional[Dict[str, str]] = None,
-        data: Optional[Dict[str, Any]] = None,
-        save: bool = False,
-) -> None:
-    childrens = Gtk.Container.get_children(section.grid)
-    config_section = section.get_name()
-
-    for children in childrens:
-        if isinstance(children, children_type):
-            load_setting(children, config_section, combo_items, data, save)

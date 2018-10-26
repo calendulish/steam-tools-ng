@@ -16,13 +16,15 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import logging
+import sys
+from collections import OrderedDict
 from typing import Any, Callable, List, Tuple, Optional
 
 import cairo
 from gi.repository import Gtk, Gdk
 from stlib import webapi
 
-from .. import i18n
+from .. import i18n, config
 
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
@@ -249,6 +251,7 @@ class Section(Gtk.Frame):
 
                 self.set_hexpand(True)
                 self.set_name(name)
+                self._section_name = None
 
             def show_all(self) -> None:
                 self.label.show()
@@ -258,13 +261,57 @@ class Section(Gtk.Frame):
                 self.label.hide()
                 super().hide()
 
+            def get_section_name(self) -> str:
+                assert isinstance(self._section_name, str)
+                return self._section_name
+
         return Item
 
-    def new(self, name: str, label: str, children: Callable[..., Gtk.Widget], *grid_position: int) -> Gtk.Widget:
+    def new(
+            self,
+            name: str,
+            label: str,
+            children: Callable[..., Gtk.Widget],
+            *grid_position: int,
+            items: 'OrderedDict[str, str]' = None,
+    ) -> Gtk.Widget:
         item = self.__item_factory(children)(name, label)
+        item._section_name = self.get_name()
 
         self.grid.attach(item.label, *grid_position, 1, 1)
         self.grid.attach_next_to(item, item.label, Gtk.PositionType.RIGHT, 1, 1)
+
+        section = self.get_name()
+        option = item.get_name()
+
+        if option.startswith('_'):
+            return item
+
+        if isinstance(item, Gtk.ComboBoxText):
+            value = config.parser.get(section, option)
+
+            for value_ in items.values():
+                item.append_text(value_)
+
+            try:
+                current_option = list(items).index(value)
+            except ValueError:
+                error_message = _("Please, fix your config file. Accepted values for {} are:\n{}").format(
+                    option,
+                    ', '.join(items.keys()),
+                )
+                fatal_error_dialog(error_message)
+                sys.exit(1)
+
+            item.set_active(current_option)
+
+        if isinstance(item, Gtk.CheckButton):
+            value = config.parser.getboolean(section, option)
+            item.set_active(value)
+
+        if isinstance(item, Gtk.Entry):
+            value = config.parser.get(section, option)
+            item.set_text(value)
 
         return item
 
