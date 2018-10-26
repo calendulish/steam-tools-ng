@@ -60,11 +60,12 @@ if __name__ == "__main__":
                     - authenticator
                     - steamtrades
                     - steamgifts
+                    - cardfarming
                        '''))
 
     command_parser.add_argument(
         '-c', '--cli',
-        choices=['authenticator', 'steamtrades', 'steamgifts'],
+        choices=['authenticator', 'steamtrades', 'steamgifts', 'cardfarming'],
         metavar='module [options]',
         action='store',
         nargs=1,

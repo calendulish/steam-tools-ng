@@ -131,8 +131,6 @@ class SettingsDialog(Gtk.Dialog):
         login_section.grid.attach(setup_button, 0, 8, 4, 1)
         setup_button.show()
 
-        content_grid.attach(login_section, 0, 0, 1, 2)
-
         plugins_section = utils.Section('plugins', _('Plugins Settings'))
 
         steamguard = plugins_section.new("steamguard", _("SteamGuard:"), Gtk.CheckButton, 0, 1)
@@ -144,9 +142,10 @@ class SettingsDialog(Gtk.Dialog):
         steamgifts = plugins_section.new("steamgifts", _("Steamgifts:"), Gtk.CheckButton, 2, 1)
         steamgifts.connect('toggled', on_setting_toggled)
 
-        plugins_section.show_all()
+        cardfarming = plugins_section.new("cardfarming", _("Cardfarming:"), Gtk.CheckButton, 2, 2)
+        cardfarming.connect("toggled", on_setting_toggled)
 
-        content_grid.attach(plugins_section, 1, 3, 1, 1)
+        plugins_section.show_all()
 
         gtk_section = utils.Section('gtk', _('Gtk Settings'))
 
@@ -154,8 +153,6 @@ class SettingsDialog(Gtk.Dialog):
         theme.connect('changed', self.on_theme_changed)
 
         gtk_section.show_all()
-
-        content_grid.attach(gtk_section, 0, 3, 1, 1)
 
         steamtrades_section = utils.Section('steamtrades', _('Steamtrades Settings'))
 
@@ -170,8 +167,6 @@ class SettingsDialog(Gtk.Dialog):
         wait_max.connect("changed", on_digit_only_setting_changed)
 
         steamtrades_section.show_all()
-
-        content_grid.attach(steamtrades_section, 0, 2, 1, 1)
 
         steamgifts_section = utils.Section("steamgifts", _("Steamgifts Settings"))
 
@@ -212,15 +207,23 @@ class SettingsDialog(Gtk.Dialog):
 
         steamgifts_section.show_all()
 
-        content_grid.attach(steamgifts_section, 1, 2, 1, 1)
+        cardfarming_section = utils.Section("cardfarming", _("Cardfarming settings"))
+
+        wait_min = cardfarming_section.new("wait_min", _("Wait MIN:"), Gtk.Entry, 0, 0)
+        wait_min.connect("changed", on_digit_only_setting_changed)
+
+        wait_max = cardfarming_section.new("wait_max", _("Wait MAX:"), Gtk.Entry, 0, 1)
+        wait_max.connect("changed", on_digit_only_setting_changed)
+
+        reverse_sorting = cardfarming_section.new("reverse_sorting", _("More cards First:"), Gtk.CheckButton, 0, 2)
+
+        cardfarming_section.show_all()
 
         locale_section = utils.Section("locale", _('Locale settings'))
         language_item = locale_section.new("language", _("Language"), Gtk.ComboBoxText, 0, 0, items=translations)
         language_item.connect("changed", self.update_language)
 
         locale_section.show_all()
-
-        content_grid.attach(locale_section, 1, 1, 1, 1)
 
         logger_section = utils.Section("logger", _('Logger settings'))
 
@@ -239,9 +242,18 @@ class SettingsDialog(Gtk.Dialog):
 
         logger_section.show_all()
 
-        content_grid.attach(logger_section, 1, 0, 1, 1)
-
         self.connect('response', lambda dialog, response_id: self.destroy())
+
+        content_grid.attach(login_section, 0, 0, 1, 2)
+        content_grid.attach(logger_section, 1, 0, 1, 1)
+        content_grid.attach(locale_section, 1, 1, 1, 1)
+
+        content_grid.attach(steamtrades_section, 0, 2, 1, 1)
+        content_grid.attach(cardfarming_section, 0, 3, 1, 1)
+        content_grid.attach(steamgifts_section, 1, 2, 1, 2)
+
+        content_grid.attach(gtk_section, 0, 4, 1, 1)
+        content_grid.attach(plugins_section, 1, 4, 1, 1)
 
         content_grid.show()
         self.show()
