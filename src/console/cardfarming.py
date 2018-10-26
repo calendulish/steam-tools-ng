@@ -51,6 +51,9 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
             reverse=reverse_sorting
         )
 
+        if not badges:
+            break
+
         for badge in badges:
             print(_("Running"), f"{badge.game_name} ({badge.game_id})")
 
@@ -73,3 +76,5 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
             print(_("Closing"), f"{badge.game_name} ({badge.game_id})", end='\r')
 
         log.info(_("No more cards to drop. Searching new..."))
+
+    return 0

@@ -267,6 +267,10 @@ class Application(Gtk.Application):
                 reverse=reverse_sorting
             )
 
+            if not badges:
+                info(_("No more cards to drop."))
+                break
+
             for badge in badges:
                 with client.SteamApiExecutor(badge.game_id) as executor:
                     if not executor.call(steam_api.init):
