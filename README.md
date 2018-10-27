@@ -1,6 +1,6 @@
-Steam Tools NG (formerly as Steam Tools)
+Steam Tools NG (formerly Steam Tools)
 ========================================
-[![STNG](https://lara.click/temp/stng.png)](https://github.com/ShyPixie/steam-tools-ng)  
+[![STNG](https://lara.click/temp/stng_last.png)](https://github.com/ShyPixie/steam-tools-ng)  
   
 [![transifex](https://img.shields.io/badge/transifex-contribute%20now-blue.svg)](https://www.transifex.com/steam-tools-ng)
 [![Linux Build Status](https://img.shields.io/travis/ShyPixie/steam-tools-ng/master.svg?label=Linux%20build)](https://travis-ci.org/ShyPixie/steam-tools-ng)
