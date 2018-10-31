@@ -127,6 +127,12 @@ class Application(Gtk.Application):
                     nickname = await self.webapi_session.get_nickname(steamid)
                 except ValueError:
                     raise NotImplementedError
+                except aiohttp.ClientError:
+                    utils.fatal_error_dialog(
+                        _("No Connection. Please, check your connection and try again."),
+                        self.window,
+                    )
+                    sys.exit(1)
                 else:
                     config.new('login', 'nickname', nickname)
 
@@ -204,7 +210,13 @@ class Application(Gtk.Application):
                 except ProcessLookupError:
                     log.debug(_("Steam is not running."))
                     log.debug(_("Fallbacking server_time to WebAPI"))
-                    server_time = await self.webapi_session.get_server_time()
+
+                    try:
+                        server_time = await self.webapi_session.get_server_time()
+                    except aiohttp.ClientError:
+                        self.window.steamguard_status.set_error(_("Steam is not running"))
+                        await asyncio.sleep(10)
+                        continue
 
                 auth_code = authenticator.get_code(server_time, shared_secret)
             except (ValueError, binascii.Error):
@@ -266,11 +278,16 @@ class Application(Gtk.Application):
                 await asyncio.sleep(5)
                 continue
 
-            badges = sorted(
-                await self.webapi_session.get_badges(nickname),
-                key=lambda badge_: badge_.cards,
-                reverse=reverse_sorting
-            )
+            try:
+                badges = sorted(
+                    await self.webapi_session.get_badges(nickname),
+                    key=lambda badge_: badge_.cards,
+                    reverse=reverse_sorting
+                )
+            except aiohttp.ClientError:
+                error(_("No Connection"))
+                await asyncio.sleep(10)
+                continue
 
             if not badges:
                 info(_("No more cards to drop."))
@@ -308,7 +325,13 @@ class Application(Gtk.Application):
                         await asyncio.sleep(1)
 
                     info("Updating drops", badge)
-                    badge = await self.webapi_session.update_badge_drops(badge, nickname)
+                    while self.window.get_realized():
+                        try:
+                            badge = await self.webapi_session.update_badge_drops(badge, nickname)
+                            break
+                        except aiohttp.ClientError:
+                            error(_("No connection"))
+                            await asyncio.sleep(10)
 
                 info("Closing", badge)
                 await executor.shutdown()

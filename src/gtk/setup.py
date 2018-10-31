@@ -397,7 +397,13 @@ class SetupDialog(Gtk.Dialog):
         login = webapi.Login(self.session, username, password)
 
         if shared_secret:
-            server_time = await self.webapi_session.get_server_time()
+            try:
+                server_time = await self.webapi_session.get_server_time()
+            except aiohttp.ClientError:
+                self.status.error(_("No Connection"))
+                self.previous_button.show()
+                return None
+
             auth_code = authenticator.get_code(server_time, shared_secret)
         else:
             log.warning("No shared secret found. Trying to log-in without two-factor authentication.")
@@ -490,7 +496,7 @@ class SetupDialog(Gtk.Dialog):
             self.user_details_section.show()
             self.previous_button.show()
             return None
-        except aiohttp.ClientConnectionError:
+        except aiohttp.ClientError:
             self.status.error(_("No Connection"))
             self.user_details_section.show()
             self.previous_button.show()
@@ -499,7 +505,13 @@ class SetupDialog(Gtk.Dialog):
         has_phone: Optional[bool]
 
         if self.mobile_login:
-            sessionid = await self.webapi_session.get_session_id()
+            try:
+                sessionid = await self.webapi_session.get_session_id()
+            except aiohttp.ClientError:
+                self.status.error(_("No Connection"))
+                self.user_details_section.show()
+                self.previous_button.show()
+                return None
 
             if await login.has_phone(sessionid):
                 has_phone = True
@@ -602,6 +614,11 @@ class SetupDialog(Gtk.Dialog):
             )
         except webapi.SMSCodeError:
             self.status.info(_("Invalid SMS Code. Please,\ncheck the code and try again."))
+            self.code_item.set_text("")
+            self.code_item.show()
+            return None
+        except aiohttp.ClientError:
+            self.status.error(_("No Connection"))
             self.code_item.set_text("")
             self.code_item.show()
             return None

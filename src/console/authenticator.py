@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-
+import asyncio
 import base64
 import logging
 import sys
@@ -58,7 +58,13 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
         except ProcessLookupError:
             log.warning(_("Steam is not running."))
             log.debug(_("Fallbacking server_time to WebAPI"))
-            server_time = await webapi_session.get_server_time()
+
+            try:
+                server_time = await webapi_session.get_server_time()
+            except aiohttp.ClientError:
+                log.error(_("Steam is not running"))
+                await asyncio.sleep(10)
+                continue
 
         auth_code = authenticator.get_code(server_time, shared_secret)
         seconds = 30 - (server_time % 30)

@@ -39,11 +39,15 @@ async def add_authenticator(
     oauth_data = json.loads(login_data['oauth'])
     deviceid = authenticator.generate_device_id(token=oauth_data['oauth_token'])
 
-    auth_data = await webapi_session.add_authenticator(
-        oauth_data['steamid'],
-        deviceid,
-        oauth_data['oauth_token'],
-    )
+    try:
+        auth_data = await webapi_session.add_authenticator(
+            oauth_data['steamid'],
+            deviceid,
+            oauth_data['oauth_token'],
+        )
+    except aiohttp.ClientError:
+        log.critical(_("No Connection. Please, check your connection and try again."))
+        sys.exit(1)
 
     if auth_data['status'] != 1:
         log.debug(auth_data['status'])
@@ -63,6 +67,9 @@ async def add_authenticator(
         except webapi.SMSCodeError:
             log.error(_("Invalid SMS Code. Please, check the code and try again."))
             continue
+        except aiohttp.ClientError:
+            log.critical(_("No Connection. Please, check your connection and try again."))
+            sys.exit(1)
         else:
             break
 
@@ -125,6 +132,9 @@ async def check_login(
             nickname = await webapi_session.get_nickname(steamid)
         except ValueError:
             raise NotImplementedError
+        except aiohttp.ClientError:
+            log.critical(_("No Connection. Please, check your connection and try again."))
+            sys.exit(1)
         else:
             config.new("login", "nickname", nickname)
 
@@ -151,7 +161,12 @@ async def check_login(
         login = webapi.Login(session, username, __password)
 
         if shared_secret:
-            server_time = await webapi_session.get_server_time()
+            try:
+                server_time = await webapi_session.get_server_time()
+            except aiohttp.ClientError:
+                log.critical(_("No Connection. Please, check your connection and try again."))
+                sys.exit(1)
+
             auth_code = authenticator.get_code(server_time, shared_secret)
         else:
             log.warning(_("No shared secret found. Trying to log-in without two-factor authentication."))
@@ -209,7 +224,11 @@ async def check_login(
             has_phone: Optional[bool]
 
             if mobile_login:
-                sessionid = await webapi_session.get_session_id()
+                try:
+                    sessionid = await webapi_session.get_session_id()
+                except aiohttp.ClientError:
+                    log.critical(_("No Connection. Please, check your connection and try again."))
+                    sys.exit(1)
 
                 if await login.has_phone(sessionid):
                     has_phone = True

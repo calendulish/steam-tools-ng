@@ -45,11 +45,17 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
         wait_max = config.parser.getint("cardfarming", "wait_max")
 
         log.info(_("Waiting Steam Server"))
-        badges = sorted(
-            await webapi_session.get_badges(nickname),
-            key=lambda badge_: badge_.cards,
-            reverse=reverse_sorting
-        )
+
+        try:
+            badges = sorted(
+                await webapi_session.get_badges(nickname),
+                key=lambda badge_: badge_.cards,
+                reverse=reverse_sorting
+            )
+        except aiohttp.ClientError:
+            log.error(_("No Connection"))
+            await asyncio.sleep(10)
+            continue
 
         if not badges:
             break
@@ -81,7 +87,13 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
                     await asyncio.sleep(1)
 
                 print("Updating drops for {} ({})".format(badge.game_name, badge.game_id), end='\r')
-                badge = await webapi_session.update_badge_drops(badge, nickname)
+                while True:
+                    try:
+                        badge = await webapi_session.update_badge_drops(badge, nickname)
+                        break
+                    except aiohttp.ClientError:
+                        log.error(_("No connection"))
+                        await asyncio.sleep(10)
 
             print(_("Closing"), f"{badge.game_name} ({badge.game_id})", end='\r')
             await executor.shutdown()
