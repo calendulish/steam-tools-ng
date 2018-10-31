@@ -26,7 +26,7 @@ from typing import Any, List, Optional
 import aiohttp
 import binascii
 from gi.repository import Gio, Gtk
-from stlib import authenticator, client, plugins, webapi, steam_api
+from stlib import authenticator, client, plugins, webapi
 
 from . import about, settings, setup, window, utils
 from .. import config, i18n
@@ -272,29 +272,34 @@ class Application(Gtk.Application):
                 break
 
             for badge in badges:
-                with client.SteamApiExecutor(badge.game_id) as executor:
-                    if not executor.call(steam_api.init):
-                        raise NotImplementedError
+                executor = client.SteamApiExecutor(badge.game_id)
 
-                    info("Running", badge)
+                try:
+                    await executor.init()
+                except client.SteamAPIError:
+                    log.error(_("Invalid game_id %s. Ignoring."), badge.game_id)
+                    continue
 
-                    wait_offset = random.randint(wait_min, wait_max)
+                info("Running", badge)
 
-                    while badge.cards != 0:
-                        for past_time in range(wait_offset):
-                            info(_("Waiting drops for {} minutes").format(round((wait_offset - past_time) / 60)), badge)
+                wait_offset = random.randint(wait_min, wait_max)
 
-                            try:
-                                self.window.cardfarming_status.set_level(past_time, wait_offset)
-                            except KeyError:
-                                self.window.cardfarming_status.set_level(0, 0)
+                while badge.cards != 0:
+                    for past_time in range(wait_offset):
+                        info(_("Waiting drops for {} minutes").format(round((wait_offset - past_time) / 60)), badge)
 
-                            await asyncio.sleep(1)
+                        try:
+                            self.window.cardfarming_status.set_level(past_time, wait_offset)
+                        except KeyError:
+                            self.window.cardfarming_status.set_level(0, 0)
 
-                        info("Updating drops", badge)
-                        badge = await self.webapi_session.update_badge_drops(badge, nickname)
+                        await asyncio.sleep(1)
+
+                    info("Updating drops", badge)
+                    badge = await self.webapi_session.update_badge_drops(badge, nickname)
 
                 info("Closing", badge)
+                await executor.shutdown()
 
     async def run_confirmations(self) -> None:
         old_confirmations: List[webapi.Confirmation] = []

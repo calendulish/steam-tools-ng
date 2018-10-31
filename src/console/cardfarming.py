@@ -20,7 +20,7 @@ import logging
 import random
 
 import aiohttp
-from stlib import client, webapi, plugins, steam_api
+from stlib import client, webapi, plugins
 
 from . import utils
 from .. import config, i18n
@@ -56,24 +56,28 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
 
         for badge in badges:
             print(_("Running"), f"{badge.game_name} ({badge.game_id})")
+            executor = client.SteamApiExecutor(badge.game_id)
 
-            with client.SteamApiExecutor(badge.game_id) as executor:
-                if not executor.call(steam_api.init):
-                    raise NotImplementedError
+            try:
+                await executor.init()
+            except client.SteamAPIError:
+                log.error(_("Invalid game_id %s. Ignoring."), badge.game_id)
+                continue
 
-                wait_offset = random.randint(wait_min, wait_max)
+            wait_offset = random.randint(wait_min, wait_max)
 
-                while badge.cards != 0:
-                    for past_time in range(wait_offset):
-                        print(_("Waiting drops for {:4d} minutes").format(round((wait_offset - past_time) / 60)),
-                              end='\r')
+            while badge.cards != 0:
+                for past_time in range(wait_offset):
+                    print(_("Waiting drops for {:4d} minutes").format(round((wait_offset - past_time) / 60)),
+                          end='\r')
 
-                        await asyncio.sleep(1)
+                    await asyncio.sleep(1)
 
-                    print("Updating drops for {} ({})".format(badge.game_name, badge.game_id), end='\r')
-                    badge = await webapi_session.update_badge_drops(badge, nickname)
+                print("Updating drops for {} ({})".format(badge.game_name, badge.game_id), end='\r')
+                badge = await webapi_session.update_badge_drops(badge, nickname)
 
             print(_("Closing"), f"{badge.game_name} ({badge.game_id})", end='\r')
+            await executor.shutdown()
 
         log.info(_("No more cards to drop. Searching new..."))
 
