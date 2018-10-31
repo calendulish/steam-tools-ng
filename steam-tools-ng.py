@@ -26,6 +26,7 @@ import os
 import ssl
 import sys
 import textwrap
+from multiprocessing import freeze_support
 
 import aiohttp
 from stlib import plugins
@@ -53,6 +54,8 @@ else:
 asyncio.set_event_loop(event_loop)
 
 if __name__ == "__main__":
+    freeze_support()
+
     command_parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=textwrap.dedent('''
