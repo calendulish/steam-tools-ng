@@ -55,16 +55,12 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
         try:
             with client.SteamGameServer() as server:
                 server_time = server.get_server_time()
-
-            auth_code = authenticator.get_code(server_time, shared_secret)
         except ProcessLookupError:
-            logging.critical(_("Steam Client is not running."))
-            try_again = utils.safe_input(_("Try again?"), True)
-            if try_again:
-                continue
-            else:
-                return 1
+            log.warning(_("Steam is not running."))
+            log.debug(_("Fallbacking server_time to WebAPI"))
+            server_time = await webapi_session.get_server_time()
 
+        auth_code = authenticator.get_code(server_time, shared_secret)
         seconds = 30 - (server_time % 30)
 
         for past_time in range(seconds):

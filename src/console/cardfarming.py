@@ -58,11 +58,18 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
             print(_("Running"), f"{badge.game_name} ({badge.game_id})")
             executor = client.SteamApiExecutor(badge.game_id)
 
-            try:
-                await executor.init()
-            except client.SteamAPIError:
-                log.error(_("Invalid game_id %s. Ignoring."), badge.game_id)
-                continue
+            while True:
+                try:
+                    await executor.init()
+                    break
+                except client.SteamAPIError:
+                    log.error(_("Invalid game_id %s. Ignoring."), badge.game_id)
+                    # noinspection PyProtectedMember
+                    badge = badge._replace(cards=0)
+                    break
+                except ProcessLookupError:
+                    log.error(_("Steam Client is not running."))
+                    await asyncio.sleep(5)
 
             wait_offset = random.randint(wait_min, wait_max)
 

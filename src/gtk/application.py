@@ -198,8 +198,13 @@ class Application(Gtk.Application):
                 if not shared_secret:
                     raise ValueError
 
-                with client.SteamGameServer() as server:
-                    server_time = server.get_server_time()
+                try:
+                    with client.SteamGameServer() as server:
+                        server_time = server.get_server_time()
+                except ProcessLookupError:
+                    log.debug(_("Steam is not running."))
+                    log.debug(_("Fallbacking server_time to WebAPI"))
+                    server_time = await self.webapi_session.get_server_time()
 
                 auth_code = authenticator.get_code(server_time, shared_secret)
             except (ValueError, binascii.Error):
@@ -274,11 +279,18 @@ class Application(Gtk.Application):
             for badge in badges:
                 executor = client.SteamApiExecutor(badge.game_id)
 
-                try:
-                    await executor.init()
-                except client.SteamAPIError:
-                    log.error(_("Invalid game_id %s. Ignoring."), badge.game_id)
-                    continue
+                while self.window.get_realized():
+                    try:
+                        await executor.init()
+                        break
+                    except client.SteamAPIError:
+                        log.error(_("Invalid game_id %s. Ignoring."), badge.game_id)
+                        # noinspection PyProtectedMember
+                        badge = badge._replace(cards=0)
+                        break
+                    except ProcessLookupError:
+                        error(_("Steam Client is not running."))
+                        await asyncio.sleep(5)
 
                 info("Running", badge)
 
