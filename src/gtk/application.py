@@ -570,7 +570,7 @@ class Application(Gtk.Application):
 
             if giveaways:
                 sort_giveaways = config.parser.get("steamgifts", "sort")
-                reverse_sorting = config.parser.get("steamgifts", "reverse_sorting")
+                reverse_sorting = config.parser.getboolean("steamgifts", "reverse_sorting")
 
                 if sort_giveaways:
                     # FIXME: check if config is valid

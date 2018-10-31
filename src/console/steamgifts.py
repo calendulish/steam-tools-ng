@@ -38,7 +38,7 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
     giveaway_type = config.parser.get("steamgifts", "giveaway_type")
     pinned_giveaways = config.parser.get("steamgifts", "developer_giveaways")
     sort_giveaways = config.parser.get("steamgifts", "sort")
-    reverse_sorting = config.parser.get("steamgifts", "reverse_sorting")
+    reverse_sorting = config.parser.getboolean("steamgifts", "reverse_sorting")
     api_url = config.parser.get('steam', 'api_url')
     webapi_session = webapi.SteamWebAPI(session, api_url)
 
