@@ -197,10 +197,14 @@ class SetupDialog(Gtk.Dialog):
         if self.combo.get_active() == 0:
             self.add_auth_after_login = True
             self.mobile_login = True
+            self.advanced = False
+            self.destroy_after_run = False
             self.prepare_login()
         else:
             self.advanced = True
             self.destroy_after_run = True
+            self.add_auth_after_login = False
+            self.mobile_login = False
             self.prepare_login()
 
     def _prepare_login_callback(self) -> None:
