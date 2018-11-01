@@ -19,7 +19,6 @@ import asyncio
 import base64
 import logging
 import sys
-import time
 
 import aiohttp
 from stlib import authenticator, client, webapi, plugins
@@ -72,4 +71,4 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
         for past_time in range(seconds):
             progress = '█' * int(past_time / seconds * 10)
             print(_("SteamGuard Code:"), "{} ┌{:10}┐".format(auth_code, progress), end='\r')
-            time.sleep(1)
+            await asyncio.sleep(1)
