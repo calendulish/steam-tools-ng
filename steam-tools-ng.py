@@ -27,6 +27,7 @@ import ssl
 import sys
 import textwrap
 from multiprocessing import freeze_support
+from typing import Any
 
 import aiohttp
 from stlib import plugins
@@ -156,8 +157,16 @@ if __name__ == "__main__":
         module_options = console_params.options
         module = importlib.import_module(f'.{module_name}', f'{module_folder}.console')
 
+
+        def console_safe_exit(future: 'asyncio.Future[Any]') -> None:
+            if not future.cancelled() and future.exception():
+                log.critical(repr(future.exception()))
+
+            event_loop.stop()
+
+
         task = asyncio.ensure_future(module.run(http_session, plugin_manager, *module_options))  # type: ignore
-        task.add_done_callback(lambda future: event_loop.stop())
+        task.add_done_callback(console_safe_exit)
     else:
         from gi.repository import Gtk
 
