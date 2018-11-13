@@ -27,7 +27,7 @@ import ssl
 import sys
 import textwrap
 from multiprocessing import freeze_support
-from typing import Any
+from typing import Any, Callable
 
 import aiohttp
 from stlib import plugins
@@ -204,20 +204,27 @@ if __name__ == "__main__":
 
         asyncio.ensure_future(async_gtk_iterator())
 
-    try:
-        event_loop.run_forever()
-    except KeyboardInterrupt:
-        event_loop.stop()
-    else:
-        log.info(_("Exiting..."))
-        unfinished_tasks = asyncio.all_tasks(event_loop)
 
-        for task in unfinished_tasks:
-            task.cancel()
+    def never_fall_down(method: Callable[..., None], *args, **kwargs) -> None:
+        try:
+            method(*args, **kwargs)
+        except KeyboardInterrupt:
+            # delayed stop
+            asyncio.ensure_future(asyncio.coroutine(event_loop.stop)())
+            event_loop.run_forever()
 
-            with contextlib.suppress(asyncio.CancelledError):
-                event_loop.run_until_complete(task)
 
-        event_loop.run_until_complete(http_session.close())
-        # FIXME https://github.com/aio-libs/aiohttp/issues/1925
-        event_loop.run_until_complete(asyncio.sleep(1))
+    never_fall_down(event_loop.run_forever)
+
+    log.info(_("Exiting..."))
+    unfinished_tasks = asyncio.all_tasks(event_loop)
+
+    for task in unfinished_tasks:
+        task.cancel()
+
+        with contextlib.suppress(asyncio.CancelledError):
+            never_fall_down(event_loop.run_until_complete, task)
+
+    never_fall_down(event_loop.run_until_complete, http_session.close())
+    # FIXME https://github.com/aio-libs/aiohttp/issues/1925
+    never_fall_down(event_loop.run_until_complete, asyncio.sleep(1))
