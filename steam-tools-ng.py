@@ -55,6 +55,7 @@ asyncio.set_event_loop(event_loop)
 
 if __name__ == "__main__":
     freeze_support()
+    config.init()
 
     command_parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -114,7 +115,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     try:
-        config.init()
+        config.init_logger()
     except configparser.Error as exception:
         if console_params.module:
             raise exception from None

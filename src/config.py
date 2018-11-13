@@ -135,6 +135,12 @@ def init() -> None:
 
     os.makedirs(log_directory, exist_ok=True)
 
+
+def init_logger() -> None:
+    log_directory = parser.get("logger", "log_directory")
+    log_level = parser.get("logger", "log_level")
+    log_console_level = parser.get("logger", "log_console_level")
+
     log_file_handler = logger_handlers.RotatingFileHandler(os.path.join(log_directory, 'steam-tools-ng.log'),
                                                            backupCount=1,
                                                            encoding='utf-8')
