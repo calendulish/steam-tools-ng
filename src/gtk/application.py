@@ -92,7 +92,7 @@ class Application(Gtk.Application):
         if exception and not isinstance(exception, asyncio.CancelledError):
             log.critical(repr(exception))
             utils.fatal_error_dialog(str(future.exception()), self.window)
-            sys.exit(1)
+            self.window.destroy()
 
     async def async_activate(self) -> None:
         setup_requested = False
@@ -132,7 +132,8 @@ class Application(Gtk.Application):
                         _("No Connection. Please, check your connection and try again."),
                         self.window,
                     )
-                    sys.exit(1)
+                    self.window.destroy()
+                    return None
                 else:
                     config.new('login', 'nickname', nickname)
 
@@ -146,7 +147,8 @@ class Application(Gtk.Application):
                     _("No Connection. Please, check your connection and try again."),
                     self.window,
                 )
-                sys.exit(1)
+                self.window.destroy()
+                return None
 
             if is_logged_in:
                 self.window.set_login_icon('steam', 'green')
@@ -188,7 +190,7 @@ class Application(Gtk.Application):
         exception = done.pop().exception()
         log.critical(repr(exception))
         utils.fatal_error_dialog(str(exception), self.window)
-        sys.exit(1)
+        self.window.destroy()
 
     async def run_steamguard(self) -> None:
         assert isinstance(self.window, Gtk.Window), "No window"

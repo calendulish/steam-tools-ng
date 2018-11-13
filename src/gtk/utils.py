@@ -16,7 +16,6 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import logging
-import sys
 from collections import OrderedDict
 from typing import Any, Callable, List, Tuple, Optional
 
@@ -301,7 +300,8 @@ class Section(Gtk.Frame):
                     ', '.join(items.keys()),
                 )
                 fatal_error_dialog(error_message)
-                sys.exit(1)
+                # unset active item
+                current_option = -1
 
             item.set_active(current_option)
 
