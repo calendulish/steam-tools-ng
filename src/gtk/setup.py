@@ -509,6 +509,16 @@ class SetupDialog(Gtk.Dialog):
         has_phone: Optional[bool]
 
         if self.mobile_login:
+            oauth_data = json.loads(login_data['oauth'])
+
+            self.session.cookie_jar.update_cookies(
+                {
+                    'steamLogin': f'{oauth_data["steamid"]}%7C%7C{oauth_data["wgtoken"]}',
+                    'steamLoginSecure': f'{oauth_data["steamid"]}%7C%7C{oauth_data["wgtoken_secure"]}',
+                }
+
+            )
+
             try:
                 sessionid = await self.webapi_session.get_session_id()
             except aiohttp.ClientError:
@@ -517,10 +527,13 @@ class SetupDialog(Gtk.Dialog):
                 self.previous_button.show()
                 return None
 
-            if await login.has_phone(sessionid):
-                has_phone = True
-            else:
-                has_phone = False
+            try:
+                has_phone = await login.has_phone(sessionid)
+            except webapi.LoginError as error:
+                self.status.error(str(error))
+                self.user_details_section.show()
+                self.previous_button.show()
+                return None
         else:
             has_phone = None
 
