@@ -170,7 +170,6 @@ class FinalizeDialog(Gtk.Dialog):
         server_time = await self.webapi_session.get_server_time()
 
         result = await self.webapi_session.finalize_confirmation(
-            server_time,
             identity_secret,
             steamid,
             deviceid,
