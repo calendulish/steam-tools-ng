@@ -153,10 +153,14 @@ class FinalizeDialog(Gtk.Dialog):
     # noinspection PyUnresolvedReferences
     def on_task_finish(self, future: 'asyncio.Future[Any]') -> None:
         if future.exception():
-            self.status.error(_("An error occurred:\n\n{}").format(repr(future.exception())))
+            log.error(repr(future.exception()))
+
+            self.status.error(
+                _("Steam Server is slow. Please, try again.")
+            )
+
             self.header_bar.set_show_close_button(True)
-            self.yes_button.set_label(_("Try again?"))
-            self.yes_button.show()
+            self.yes_button.hide()
         else:
             self.destroy()
 
