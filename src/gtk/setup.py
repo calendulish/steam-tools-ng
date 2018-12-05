@@ -16,6 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
+import codecs
 import contextlib
 import functools
 import json
@@ -93,7 +94,6 @@ class SetupDialog(Gtk.Dialog):
         self.__password_item = self.user_details_section.new("_password", _("Password:"), Gtk.Entry, 0, 1)
         self.__password_item.set_visibility(False)
         self.__password_item.set_invisible_char('*')
-        self.__password_item.set_placeholder_text(_("It will not be saved"))
 
         self.code_item = self.user_details_section.new("_code", _("Code:"), Gtk.Entry, 0, 2)
 
@@ -102,6 +102,9 @@ class SetupDialog(Gtk.Dialog):
         self.captcha_text_item = self.user_details_section.new(
             "_captcha_text", _("Captcha Text:"), Gtk.Entry, 0, 4,
         )
+
+        self.save_password_item = self.user_details_section.new("_savepwd", _("Save Password:"), Gtk.CheckButton, 0, 5)
+        self.save_password_item.set_active(True)
 
         self.advanced_settings = utils.Section("login", _("Advanced Settings"))
         self.content_area.add(self.advanced_settings)
@@ -187,6 +190,12 @@ class SetupDialog(Gtk.Dialog):
                 new_configs['shared_secret'] = self.shared_secret.get_text()
                 new_configs['identity_secret'] = self.identity_secret.get_text()
 
+        if self.save_password_item.get_active():
+            # Just for curious people. It's not even safe.
+            key = codecs.encode(self.__password_item.get_text().encode(), 'base64')
+            out = codecs.encode(key.decode(), 'rot13')
+            new_configs['password'] = out
+
         for key, value in new_configs.items():
             config.new("login", key, value)
 
@@ -246,8 +255,6 @@ class SetupDialog(Gtk.Dialog):
 
         if future.result():
             next_stage(future.result())
-
-            self.__password_item.set_text("")
         else:
             self.next_button.set_label(_("Try Again?"))
             self.next_button.connect("clicked", self._prepare_login_callback)
@@ -270,6 +277,7 @@ class SetupDialog(Gtk.Dialog):
             self.code_item.show()
             self.username_item.hide()
             self.__password_item.hide()
+            self.save_password_item.hide()
             self.user_details_section.show()
 
             self.next_button.set_label(_("Add Authenticator"))
@@ -434,6 +442,7 @@ class SetupDialog(Gtk.Dialog):
             self.code_item.show()
             self.username_item.hide()
             self.__password_item.hide()
+            self.save_password_item.hide()
             self.user_details_section.show()
             return None
         except webapi.TwoFactorCodeError:
@@ -456,6 +465,7 @@ class SetupDialog(Gtk.Dialog):
             ))
             self.username_item.hide()
             self.__password_item.hide()
+            self.save_password_item.hide()
             self.previous_button.hide()
             return None
         except webapi.CaptchaError as exception:
@@ -472,6 +482,7 @@ class SetupDialog(Gtk.Dialog):
             self.captcha_text_item.show()
             self.username_item.hide()
             self.__password_item.hide()
+            self.save_password_item.hide()
             self.user_details_section.show()
             return None
         except webapi.LoginError as exception:
@@ -481,6 +492,7 @@ class SetupDialog(Gtk.Dialog):
             self.username_item.show()
             self.__password_item.set_text('')
             self.__password_item.show()
+            self.save_password_item.show()
 
             self.status.error(_(
                 "Unable to log-in!\n"

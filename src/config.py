@@ -108,6 +108,7 @@ def init() -> None:
                 'shared_secret': None,
                 'identity_secret': None,
                 'nickname': None,
+                'password': None,
             },
         }
     )
