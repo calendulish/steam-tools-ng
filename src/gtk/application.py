@@ -16,6 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
+import binascii
 import configparser
 import itertools
 import logging
@@ -24,7 +25,6 @@ import sys
 from typing import Any, List, Optional
 
 import aiohttp
-import binascii
 from gi.repository import Gio, Gtk
 from stlib import authenticator, client, plugins, webapi
 
@@ -86,6 +86,34 @@ class Application(Gtk.Application):
         task = asyncio.gather(self.async_activate())
         task.add_done_callback(self.async_activate_callback)
 
+    def do_login(self, block: bool = False) -> None:
+        password = config.parser.get("login", "password")
+        mobile_login = True if config.parser.get("login", "oauth_token") else False
+
+        setup_dialog = setup.SetupDialog(
+            self.window,
+            self.session,
+            self.webapi_session,
+            mobile_login=mobile_login,
+            relogin=True,
+            destroy_after_run=True,
+        )
+
+        if password:
+            log.info(_("User is not logged-in. STNG is automagically fixing that..."))
+            setup_dialog.prepare_login(password)
+        else:
+            log.info(_("User is not logged-in. Calling Magic Box."))
+            setup_dialog.prepare_login()
+            setup_dialog.previous_button.hide()
+            setup_dialog.status.info(_("Could not connect to the Steam Servers.\nPlease, relogin."))
+            setup_dialog.status.show()
+
+        if block:
+            setup_dialog.run()
+        else:
+            setup_dialog.show()
+
     def async_activate_callback(self, future: 'asyncio.Future[Any]') -> None:
         exception = future.exception()
 
@@ -106,7 +134,6 @@ class Application(Gtk.Application):
             token_secure = config.parser.get("login", "token_secure")
             steamid = config.parser.getint("login", "steamid")
             nickname = config.parser.get("login", "nickname")
-            mobile_login = True if config.parser.get("login", "oauth_token") else False
 
             if not token or not token_secure or not steamid:
                 if not setup_requested:
@@ -154,21 +181,7 @@ class Application(Gtk.Application):
                 self.window.set_login_icon('steam', 'green')
             else:
                 if not login_requested:
-                    log.debug(_("User is not logged-in. Calling Magic Box."))
-                    setup_dialog = setup.SetupDialog(
-                        self.window,
-                        self.session,
-                        self.webapi_session,
-                        mobile_login=mobile_login,
-                        relogin=True,
-                        destroy_after_run=True,
-                    )
-
-                    setup_dialog.prepare_login()
-                    setup_dialog.previous_button.hide()
-                    setup_dialog.status.info(_("Could not connect to the Steam Servers.\nPlease, relogin."))
-                    setup_dialog.status.show()
-                    setup_dialog.show()
+                    self.do_login()
                     login_requested = True
 
                 await asyncio.sleep(5)
@@ -383,6 +396,7 @@ class Application(Gtk.Application):
                 warning(_("Steam is not running"))
             except webapi.LoginError:
                 warning(_("User is not logged in"))
+                self.do_login(True)
             except aiohttp.ClientError:
                 warning(_("No connection"))
             else:
@@ -461,6 +475,7 @@ class Application(Gtk.Application):
             except webapi.LoginError:
                 self.window.set_login_icon('steamtrades', 'red')
                 error(_("User is not logged in"))
+                self.do_login(True)
                 await asyncio.sleep(15)
                 continue
             except aiohttp.ClientError:
@@ -595,6 +610,7 @@ class Application(Gtk.Application):
             except webapi.LoginError:
                 self.window.set_login_icon('steamgifts', 'red')
                 error(_("User is not logged in"))
+                self.do_login(True)
                 await asyncio.sleep(15)
                 continue
 

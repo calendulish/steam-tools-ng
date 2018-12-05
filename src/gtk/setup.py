@@ -350,7 +350,15 @@ class SetupDialog(Gtk.Dialog):
         self.next_button.connect("clicked", self._login_mode_callback)
         self.next_button.show()
 
-    def prepare_login(self) -> None:
+    def prepare_login(self, password: Optional[str] = None) -> None:
+        if password:
+            # Just for curious people. It's not even safe.
+            key = codecs.decode(password, 'rot13')
+            raw = codecs.decode(key.encode(), 'base64')
+            self.__password_item.set_text(raw.decode())
+            self._prepare_login_callback()
+            return None
+
         self.status.info(_("Waiting user input..."))
 
         self.combo.hide()
