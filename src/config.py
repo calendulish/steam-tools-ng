@@ -15,12 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import codecs
 import configparser
+import json
 import locale
 import logging
 import os
 import sys
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from . import i18n, logger_handlers
 
@@ -189,3 +191,39 @@ def login_cookies() -> Dict[str, str]:
         'steamLogin': f'{steamid}%7C%7C{token}',
         'steamLoginSecure': f'{steamid}%7C%7C{token_secure}',
     }
+
+
+def save_login_data(
+        login_data: Dict[str, Any],
+        relogin: bool = False,
+        raw_password: Optional[bytes] = None,
+) -> None:
+    if 'oauth' in login_data:
+        oauth_data = json.loads(login_data['oauth'])
+        new_configs = {
+            'steamid': oauth_data['steamid'],
+            'token': oauth_data['wgtoken'],
+            'token_secure': oauth_data['wgtoken_secure'],
+            'oauth_token': oauth_data['oauth_token'],
+            'account_name': oauth_data['account_name'],
+        }
+
+        if not relogin:
+            new_configs['shared_secret'] = login_data['shared_secret']
+            new_configs['identity_secret'] = login_data['identity_secret']
+    else:
+        new_configs = {
+            'steamid': login_data['transfer_parameters']['steamid'],
+            'token': login_data['transfer_parameters']['webcookie'],
+            'token_secure': login_data['transfer_parameters']['token_secure'],
+            'account_name': login_data['account_name'],
+        }
+
+    if raw_password:
+        # Just for curious people. It's not even safe.
+        key = codecs.encode(raw_password, 'base64')
+        out = codecs.encode(key.decode(), 'rot13')
+        new_configs['password'] = out
+
+    for key, value in new_configs.items():
+        new("login", key, value)
