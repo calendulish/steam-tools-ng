@@ -77,7 +77,7 @@ def init() -> None:
             'steamtrades': {
                 'wait_min': 3700,
                 'wait_max': 4100,
-                'trade_ids': None,
+                'trade_ids': '',
             },
             'steamgifts': {
                 'wait_min': 3700,
@@ -103,15 +103,15 @@ def init() -> None:
             },
             'login': {
                 'steamid': 0,
-                'deviceid': None,
-                'token': None,
-                'token_secure': None,
-                'oauth_token': None,
-                'account_name': None,
-                'shared_secret': None,
-                'identity_secret': None,
-                'nickname': None,
-                'password': None,
+                'deviceid': '',
+                'token': '',
+                'token_secure': '',
+                'oauth_token': '',
+                'account_name': '',
+                'shared_secret': '',
+                'identity_secret': '',
+                'nickname': '',
+                'password': '',
             },
         }
     )
