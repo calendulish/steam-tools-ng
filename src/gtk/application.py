@@ -503,7 +503,14 @@ class Application(Gtk.Application):
                     break
 
                 info(_("Waiting anti-ban timer"))
-                await asyncio.sleep(random.randint(3, 8))
+                max_ban_wait = random.randint(5, 15)
+                for past_time in range(max_ban_wait):
+                    try:
+                        self.window.steamtrades_status.set_level(past_time, max_ban_wait)
+                    except KeyError:
+                        self.window.steamtrades_status.set_level(0, 0)
+
+                    await asyncio.sleep(1)
 
                 try:
                     if await steamtrades_session.bump(trade_info):
@@ -646,7 +653,14 @@ class Application(Gtk.Application):
             for index, giveaway in enumerate(giveaways):
                 self.window.steamgifts_status.set_level(index, len(giveaway))
                 info(_("Waiting anti-ban timer"), giveaway)
-                await asyncio.sleep(random.randint(5, 15))
+                max_ban_wait = random.randint(5, 15)
+                for past_time in range(max_ban_wait):
+                    try:
+                        self.window.steamgifts_status.set_level(past_time, max_ban_wait)
+                    except KeyError:
+                        self.window.steamgifts_status.set_level(0, 0)
+
+                    await asyncio.sleep(1)
 
                 try:
                     if await steamgifts_session.join(giveaway):
