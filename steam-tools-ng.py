@@ -100,6 +100,13 @@ if __name__ == "__main__":
     )
 
     command_parser.add_argument(
+        '--reset-password',
+        action='store_true',
+        help='Clean up saved password',
+        dest='reset_password',
+    )
+
+    command_parser.add_argument(
         'options',
         nargs='*',
         help=argparse.SUPPRESS
@@ -136,6 +143,11 @@ if __name__ == "__main__":
         os.remove(os.path.join(log_directory, 'steam-tools-ng.log'))
         os.remove(os.path.join(log_directory, 'steam-tools-ng.log.1'))
 
+        log.info(_('Done!'))
+        sys.exit(0)
+
+    if console_params.reset_password:
+        config.new("login", "password", "")
         log.info(_('Done!'))
         sys.exit(0)
 
