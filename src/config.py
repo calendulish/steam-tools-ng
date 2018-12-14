@@ -17,12 +17,13 @@
 #
 import codecs
 import configparser
-import json
 import locale
 import logging
 import os
 import sys
 from typing import Dict, Any, Optional
+
+from stlib import webapi
 
 from . import i18n, logger_handlers
 
@@ -194,29 +195,28 @@ def login_cookies() -> Dict[str, str]:
 
 
 def save_login_data(
-        login_data: Dict[str, Any],
+        login_data: webapi.LoginData,
         relogin: bool = False,
         raw_password: Optional[bytes] = None,
 ) -> None:
-    if 'oauth' in login_data:
-        oauth_data = json.loads(login_data['oauth'])
+    if login_data.oauth:
         new_configs = {
-            'steamid': oauth_data['steamid'],
-            'token': oauth_data['wgtoken'],
-            'token_secure': oauth_data['wgtoken_secure'],
-            'oauth_token': oauth_data['oauth_token'],
-            'account_name': oauth_data['account_name'],
+            'steamid': login_data.oauth['steamid'],
+            'token': login_data.oauth['wgtoken'],
+            'token_secure': login_data.oauth['wgtoken_secure'],
+            'oauth_token': login_data.oauth['oauth_token'],
+            'account_name': login_data.username,
         }
 
         if not relogin:
-            new_configs['shared_secret'] = login_data['shared_secret']
-            new_configs['identity_secret'] = login_data['identity_secret']
+            new_configs['shared_secret'] = login_data.auth['shared_secret']
+            new_configs['identity_secret'] = login_data.auth['identity_secret']
     else:
         new_configs = {
-            'steamid': login_data['transfer_parameters']['steamid'],
-            'token': login_data['transfer_parameters']['webcookie'],
-            'token_secure': login_data['transfer_parameters']['token_secure'],
-            'account_name': login_data['account_name'],
+            'steamid': login_data.auth['transfer_parameters']['steamid'],
+            'token': login_data.auth['transfer_parameters']['webcookie'],
+            'token_secure': login_data.auth['transfer_parameters']['token_secure'],
+            'account_name': login_data.username,
         }
 
     if raw_password:

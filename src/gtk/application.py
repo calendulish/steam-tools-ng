@@ -87,7 +87,7 @@ class Application(Gtk.Application):
         task.add_done_callback(self.async_activate_callback)
 
     def do_login(self, block: bool = False) -> None:
-        password = config.parser.get("login", "password")
+        encrypted_password = config.parser.get("login", "password")
         mobile_login = True if config.parser.get("login", "oauth_token") else False
 
         setup_dialog = setup.SetupDialog(
@@ -99,9 +99,9 @@ class Application(Gtk.Application):
             destroy_after_run=True,
         )
 
-        if password:
+        if encrypted_password:
             log.info(_("User is not logged-in. STNG is automagically fixing that..."))
-            setup_dialog.prepare_login(password)
+            setup_dialog.prepare_login(encrypted_password)
         else:
             log.info(_("User is not logged-in. Calling Magic Box."))
             setup_dialog.prepare_login()

@@ -19,14 +19,13 @@ import asyncio
 import codecs
 import contextlib
 import functools
-import json
 import logging
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import aiohttp
-from gi.repository import Gtk, GdkPixbuf, Gdk
-from stlib import authenticator, webapi
+from gi.repository import Gtk, Gdk, GdkPixbuf
+from stlib import webapi, universe
 
 from . import utils
 from .. import config, i18n
@@ -51,6 +50,7 @@ class SetupDialog(Gtk.Dialog):
         super().__init__(use_header_bar=True)
         self.session = session
         self.webapi_session = webapi_session
+        self.login_session = None
         self.mobile_login = mobile_login
         self.relogin = relogin
         self.advanced = advanced
@@ -160,48 +160,6 @@ class SetupDialog(Gtk.Dialog):
         # setup dialog will be automatically reopened with new parameters
         asyncio.get_event_loop().call_later(5, self.destroy)
 
-    def _save_settings(self, login_data: Dict[str, Any]) -> None:
-        if not login_data:
-            self.__fatal_error(AttributeError("No login data found."))
-            return None
-
-        if 'oauth' in login_data:
-            oauth_data = json.loads(login_data['oauth'])
-            new_configs = {
-                'steamid': oauth_data['steamid'],
-                'token': oauth_data['wgtoken'],
-                'token_secure': oauth_data['wgtoken_secure'],
-                'oauth_token': oauth_data['oauth_token'],
-                'account_name': oauth_data['account_name'],
-            }
-
-            if not self.relogin:
-                new_configs['shared_secret'] = login_data['shared_secret']
-                new_configs['identity_secret'] = login_data['identity_secret']
-        else:
-            new_configs = {
-                'steamid': login_data['transfer_parameters']['steamid'],
-                'token': login_data['transfer_parameters']['webcookie'],
-                'token_secure': login_data['transfer_parameters']['token_secure'],
-                'account_name': login_data['account_name'],
-            }
-
-            if self.advanced:
-                new_configs['shared_secret'] = self.shared_secret.get_text()
-                new_configs['identity_secret'] = self.identity_secret.get_text()
-
-        if self.save_password_item.get_active():
-            # Just for curious people. It's not even safe.
-            key = codecs.encode(self.__password_item.get_text().encode(), 'base64')
-            out = codecs.encode(key.decode(), 'rot13')
-            new_configs['password'] = out
-
-        for key, value in new_configs.items():
-            config.new("login", key, value)
-
-        if self.destroy_after_run:
-            self.destroy()
-
     def _login_mode_callback(self) -> None:
         if self.combo.get_active() == 0:
             self.add_auth_after_login = True
@@ -221,52 +179,191 @@ class SetupDialog(Gtk.Dialog):
         self.advanced_settings.hide()
         self.user_details_section.hide()
         self.previous_button.hide()
+        self.next_button.set_label(_("Try Again?"))
+        self.next_button.connect("clicked", self._prepare_login_callback)
         self.next_button.hide()
         self.status.show()
         self.set_size_request(0, 0)
 
         mail_code = self.code_item.get_text()
-        captcha_text = self.captcha_text_item.get_text()
         username = self.username_item.get_text()
-        password = self.__password_item.get_text()
+        __password = self.__password_item.get_text()
 
-        args = [username, password, mail_code]
-        kwargs = {'captcha_text': captcha_text}
+        self.login_session = webapi.Login(self.session, self.webapi_session, username, __password)
+        kwargs = {'emailauth': mail_code, 'mobile_login': self.mobile_login}
+
+        # no reason to send captcha_text if no gid is found
+        if self.captcha_gid != -1:
+            kwargs['captcha_text'] = self.captcha_text_item.get_text()
+            kwargs['captcha_gid'] = self.captcha_gid
+            # if login fails for some reason, gid must be unset
+            # CaptchaError exception will reset it if needed
+            self.captcha_gid = -1
+
+        if not username or not __password:
+            self.status.error(_("Unable to log-in!\nUsername or password is blank."))
+            self.user_details_section.show()
+            self.previous_button.show()
+            self.next_button.show()
+
+            if self.advanced:
+                self.advanced_settings.show()
+            else:
+                self.advanced_settings.hide()
+
+            return None
+
+        shared_secret = self.shared_secret.get_text()
+        # it's required for openid login
+        identity_secret = self.identity_secret.get_text()
 
         if self.advanced or self.relogin:
-            kwargs['shared_secret'] = self.shared_secret.get_text()
-            kwargs['identity_secret'] = self.identity_secret.get_text()
-
-        task = asyncio.ensure_future(self.do_login(*args, **kwargs))
-        task.add_done_callback(functools.partial(self._do_login_callback))
-
-    def _do_login_callback(
-            self,
-            future: 'asyncio.Future[Any]',
-    ) -> None:
-        if self.add_auth_after_login:
-            next_stage = self.prepare_add_authenticator
+            if not shared_secret or not identity_secret:
+                self.status.error(_("Unable to log-in!\nShared secret or Identity secret is blank."))
+                self.user_details_section.show()
+                self.advanced_settings.show()
+                self.previous_button.show()
+                self.next_button.show()
+                return None
         else:
-            next_stage = self._save_settings
+            if not shared_secret or not identity_secret:
+                log.warning(_("No shared secret found. Trying to log-in without two-factor authentication."))
+
+        kwargs['shared_secret'] = shared_secret
+
+        self.status.info(_("Waiting Steam Server..."))
+        self.status.show()
+        self.set_size_request(0, 0)
+
+        # log.trace(f'login: {kwargs}')
+        task = asyncio.ensure_future(self.login_session.do_login(**kwargs))
+        task.add_done_callback(self._do_login_callback)
+
+    def _do_login_callback(self, future: 'asyncio.Future[Any]') -> None:
+        self.next_button.set_label(_("Try Again?"))
+        self.next_button.connect("clicked", self._prepare_login_callback)
 
         if future.exception():
-            self.__fatal_error(future.exception())
+            self.next_button.show()
+
+            # noinspection PyBroadException
+            try:
+                raise future.exception()
+            except webapi.MailCodeError:
+                self.status.info(_("Write code received by email\nand click on 'Try Again?' button"))
+                self.captcha_item.hide()
+                self.captcha_text_item.hide()
+                self.code_item.set_text("")
+                self.code_item.show()
+                self.username_item.hide()
+                self.__password_item.hide()
+                self.save_password_item.hide()
+                self.user_details_section.show()
+            except webapi.TwoFactorCodeError:
+                if self.mobile_login and not self.relogin:
+                    self.status.error(_(
+                        "Unable to log-in!\n"
+                        "You already have a Steam Authenticator active on current account.\n\n"
+                        "To log-in, remove authenticator from your account and use the 'Try Again?' button.\n"
+                        "(STNG will add itself as Steam Authenticator in your account)\n"
+                    ))
+                else:
+                    self.status.error(_("Unable to log-in!\nThe secret keys are invalid!\n"))
+
+                self.previous_button.show()
+            except webapi.LoginBlockedError:
+                self.status.error(_(
+                    "Your network is blocked!\n"
+                    "It'll take some time until unblocked. Please, try again later\n"
+                ))
+                self.username_item.hide()
+                self.__password_item.hide()
+                self.save_password_item.hide()
+                self.previous_button.hide()
+            except webapi.CaptchaError as exception:
+                self.status.info(_("Write captcha code as shown bellow\nand click on 'Try Again?' button"))
+                self.captcha_gid = exception.captcha_gid
+
+                pixbuf_loader = GdkPixbuf.PixbufLoader()
+                pixbuf_loader.write(exception.captcha)
+                pixbuf_loader.close()
+                self.captcha_item.set_from_pixbuf(pixbuf_loader.get_pixbuf())
+
+                self.captcha_item.show()
+                self.captcha_text_item.set_text("")
+                self.captcha_text_item.show()
+                self.username_item.hide()
+                self.__password_item.hide()
+                self.save_password_item.hide()
+                self.user_details_section.show()
+            except webapi.LoginError as exception:
+                log.debug("Login error: %s", exception)
+                self.captcha_item.hide()
+                self.captcha_text_item.hide()
+                self.username_item.show()
+                self.__password_item.set_text('')
+                self.__password_item.show()
+                self.save_password_item.show()
+
+                self.status.error(_(
+                    "Unable to log-in!\n"
+                    "Please, check your username/password and try again.\n"
+                ))
+
+                if self.advanced:
+                    self.advanced_settings.show()
+                else:
+                    self.advanced_settings.hide()
+                    self.status.append_link(
+                        _("click here"),
+                        self.__reset_and_restart,
+                        _("You removed the authenticator? If yes, "),
+                    )
+
+                self.user_details_section.show()
+                self.previous_button.show()
+            except aiohttp.ClientError:
+                self.status.error(_("No Connection"))
+                self.user_details_section.show()
+                self.previous_button.show()
+            except Exception:
+                self.__fatal_error(future.exception())
+
             return None
 
         if future.result():
-            next_stage(future.result())
+            login_data = future.result()
+
+            if self.add_auth_after_login:
+                self.prepare_add_authenticator(login_data)
+            else:
+                args = [login_data, self.relogin]
+
+                if self.save_password_item.get_active():
+                    args.append(self.__password_item.get_text().encode())
+
+                config.save_login_data(*args)
+
+                if self.advanced:
+                    config.new("login", "identity_secret", self.identity_secret.get_text())
+                    config.new("login", "shared_secret", self.shared_secret.get_text())
+
+            if self.destroy_after_run:
+                self.destroy()
         else:
-            self.next_button.set_label(_("Try Again?"))
-            self.next_button.connect("clicked", self._prepare_login_callback)
             self.next_button.show()
 
-    def _add_authenticator_callback(
-            self,
-            login_data: Dict[str, Any],
-            future: 'asyncio.Future[Any]',
-    ) -> None:
+    def _add_authenticator_callback(self, future: 'asyncio.Future[Any]') -> None:
         if future.exception():
-            self.__fatal_error(future.exception())
+            # noinspection PyBroadException
+            try:
+                raise future.exception()
+            except aiohttp.ClientError:
+                self.status.error(_("No Connection"))
+                self.previous_button.show()
+            except Exception:
+                self.__fatal_error(future.exception())
+
             return None
 
         if future.result():
@@ -285,37 +382,58 @@ class SetupDialog(Gtk.Dialog):
             self.next_button.connect(
                 "clicked",
                 self.prepare_finalize_add_authenticator,
-                login_data,
                 future.result(),
             )
 
             self.next_button.show()
         else:
+            # FIXME
             raise AssertionError("No return from `add_authenticator'")
 
     def _finalize_add_authenticator_callback(
             self,
-            login_data: Dict[str, Any],
-            auth_data: Dict[str, Any],
+            login_data: webapi.LoginData,
             future: 'asyncio.Future[Any]',
     ) -> None:
+        self.next_button.set_label(_("Try Again?"))
+
+        self.next_button.connect(
+            "clicked",
+            self.prepare_finalize_add_authenticator,
+            login_data,
+        )
+
         if future.exception():
-            self.__fatal_error(future.exception())
+            # noinspection PyBroadException
+            try:
+                raise future.exception()
+            except webapi.SMSCodeError:
+                self.status.info(_("Invalid SMS Code. Please,\ncheck the code and try again."))
+                self.code_item.set_text("")
+                self.code_item.show()
+                self.next_button.show()
+                self.user_details_section.show()
+            except aiohttp.ClientError:
+                self.status.error(_("No Connection"))
+                self.code_item.set_text("")
+                self.code_item.show()
+                self.next_button.show()
+                self.user_details_section.show()
+            except Exception:
+                self.__fatal_error(future.exception())
+
             return None
 
         if future.result():
-            self._save_settings(future.result())
-            self.recovery_code(future.result()['revocation_code'])
+            args = [login_data, False]
+
+            if self.save_password_item.get_active():
+                args.append(self.__password_item.get_text().encode())
+
+            config.save_login_data(*args)
+            self.recovery_code(login_data.auth['revocation_code'])
         else:
-            self.next_button.set_label(_("Try Again?"))
-
-            self.next_button.connect(
-                "clicked",
-                self.prepare_finalize_add_authenticator,
-                login_data,
-                auth_data,
-            )
-
+            self.status.error(_("Unable to add a new authenticator"))
             self.next_button.show()
             self.user_details_section.show()
 
@@ -350,10 +468,10 @@ class SetupDialog(Gtk.Dialog):
         self.next_button.connect("clicked", self._login_mode_callback)
         self.next_button.show()
 
-    def prepare_login(self, password: Optional[str] = None) -> None:
-        if password:
+    def prepare_login(self, encrypted_password: Optional[str] = None) -> None:
+        if encrypted_password:
             # Just for curious people. It's not even safe.
-            key = codecs.decode(password, 'rot13')
+            key = codecs.decode(encrypted_password, 'rot13')
             raw = codecs.decode(key.encode(), 'base64')
             self.__password_item.set_text(raw.decode())
             self._prepare_login_callback()
@@ -380,230 +498,46 @@ class SetupDialog(Gtk.Dialog):
         self.previous_button.connect("clicked", self.login_mode)
         self.previous_button.show()
 
-    async def do_login(
-            self,
-            username: str,
-            password: str,
-            mail_code: str = '',
-            auth_code: str = '',
-            captcha_gid: int = -1,
-            captcha_text: str = '',
-            shared_secret: str = '',
-            identity_secret: str = '',
-    ) -> Optional[Dict[str, Any]]:
-        if self.advanced and (not shared_secret or not identity_secret):
-            self.status.error(_("Unable to log-in!\nShared secret or Identity secret is blank."))
-            self.user_details_section.show()
-            self.advanced_settings.show()
-            self.previous_button.show()
-            return None
-
-        if not username or not password:
-            self.status.error(_("Unable to log-in!\nUsername or password is blank."))
-            self.user_details_section.show()
-            self.previous_button.show()
-
-            if self.advanced:
-                self.advanced_settings.show()
-            else:
-                self.advanced_settings.hide()
-
-            return None
-
-        self.status.info(_("Waiting Steam Server..."))
-        self.status.show()
-        self.set_size_request(0, 0)
-
-        login = webapi.Login(self.session, username, password)
-
-        if shared_secret:
-            try:
-                server_time = await self.webapi_session.get_server_time()
-            except aiohttp.ClientError:
-                self.status.error(_("No Connection"))
-                self.previous_button.show()
-                return None
-
-            auth_code = authenticator.get_code(server_time, shared_secret)
-        else:
-            log.warning("No shared secret found. Trying to log-in without two-factor authentication.")
-
-        if self.captcha_gid == -1:
-            # no reason to send captcha_text if no gid is found
-            captcha_text = ''
-        else:
-            captcha_gid = self.captcha_gid
-            # if login fails for some reason, gid must be unset
-            # CaptchaError exception will reset it if needed
-            self.captcha_gid = -1
-
-        try:
-            login_data = await login.do_login(auth_code, mail_code, captcha_gid, captcha_text, self.mobile_login)
-
-            if not login_data['success']:
-                raise webapi.LoginError
-        except webapi.MailCodeError:
-            self.status.info(_("Write code received by email\nand click on 'Try Again?' button"))
-            self.captcha_item.hide()
-            self.captcha_text_item.hide()
-            self.code_item.set_text("")
-            self.code_item.show()
-            self.username_item.hide()
-            self.__password_item.hide()
-            self.save_password_item.hide()
-            self.user_details_section.show()
-            return None
-        except webapi.TwoFactorCodeError:
-            if self.mobile_login and not self.relogin:
-                self.status.error(_(
-                    "Unable to log-in!\n"
-                    "You already have a Steam Authenticator active on current account.\n\n"
-                    "To log-in, remove authenticator from your account and use the 'Try Again?' button.\n"
-                    "(STNG will add itself as Steam Authenticator in your account)\n"
-                ))
-            else:
-                self.status.error(_("Unable to log-in!\nThe secret keys are invalid!\n"))
-
-            self.previous_button.show()
-            return None
-        except webapi.LoginBlockedError:
-            self.status.error(_(
-                "Your network is blocked!\n"
-                "It'll take some time until unblocked. Please, try again later\n"
-            ))
-            self.username_item.hide()
-            self.__password_item.hide()
-            self.save_password_item.hide()
-            self.previous_button.hide()
-            return None
-        except webapi.CaptchaError as exception:
-            self.status.info(_("Write captcha code as shown bellow\nand click on 'Try Again?' button"))
-            self.captcha_gid = exception.captcha_gid
-
-            pixbuf_loader = GdkPixbuf.PixbufLoader()
-            pixbuf_loader.write(await login.get_captcha(self.captcha_gid))
-            pixbuf_loader.close()
-            self.captcha_item.set_from_pixbuf(pixbuf_loader.get_pixbuf())
-
-            self.captcha_item.show()
-            self.captcha_text_item.set_text("")
-            self.captcha_text_item.show()
-            self.username_item.hide()
-            self.__password_item.hide()
-            self.save_password_item.hide()
-            self.user_details_section.show()
-            return None
-        except webapi.LoginError as exception:
-            log.debug("Login error: %s", exception)
-            self.captcha_item.hide()
-            self.captcha_text_item.hide()
-            self.username_item.show()
-            self.__password_item.set_text('')
-            self.__password_item.show()
-            self.save_password_item.show()
-
-            self.status.error(_(
-                "Unable to log-in!\n"
-                "Please, check your username/password and try again.\n"
-            ))
-
-            if self.advanced:
-                self.advanced_settings.show()
-            else:
-                self.advanced_settings.hide()
-                self.status.append_link(
-                    _("click here"),
-                    self.__reset_and_restart,
-                    _("You removed the authenticator? If yes, "),
-                )
-
-            self.user_details_section.show()
-            self.previous_button.show()
-            return None
-        except aiohttp.ClientError:
-            self.status.error(_("No Connection"))
-            self.user_details_section.show()
-            self.previous_button.show()
-            return None
-
-        has_phone: Optional[bool]
-
-        if self.mobile_login:
-            oauth_data = json.loads(login_data['oauth'])
-
-            self.session.cookie_jar.update_cookies(
-                {
-                    'steamLogin': f'{oauth_data["steamid"]}%7C%7C{oauth_data["wgtoken"]}',
-                    'steamLoginSecure': f'{oauth_data["steamid"]}%7C%7C{oauth_data["wgtoken_secure"]}',
-                }
-
-            )
-
-            try:
-                sessionid = await self.webapi_session.get_session_id()
-            except aiohttp.ClientError:
-                self.status.error(_("No Connection"))
-                self.user_details_section.show()
-                self.previous_button.show()
-                return None
-
-            try:
-                has_phone = await login.has_phone(sessionid)
-            except webapi.LoginError as error:
-                self.status.error(str(error))
-                self.user_details_section.show()
-                self.previous_button.show()
-                return None
-        else:
-            has_phone = None
-
-        return {
-            **login_data,
-            'account_name': username,
-            'has_phone': has_phone,
-        }
-
-    def prepare_add_authenticator(self, login_data: Dict[str, Any]) -> None:
-        if not login_data['has_phone']:
-            # Impossible to add an authenticator without a phone
+    def prepare_add_authenticator(self, login_data: webapi.LoginData) -> None:
+        if not login_data.has_phone:
+            # FIXME: Impossible to add an authenticator without a phone
             raise NotImplementedError
 
-        oauth_data = json.loads(login_data['oauth'])
-
-        deviceid = authenticator.generate_device_id(token=oauth_data['oauth_token'])
+        deviceid = universe.generate_device_id(token=login_data.oauth['oauth_token'])
         config.new("login", "deviceid", deviceid)
 
-        task = asyncio.ensure_future(self.add_authenticator(oauth_data, deviceid))
-        task.add_done_callback(functools.partial(self._add_authenticator_callback, login_data))
-
-    async def add_authenticator(self, oauth_data: Dict[str, Any], deviceid: str) -> Dict[str, Any]:
         self.previous_button.hide()
         self.next_button.hide()
         self.status.info(_("Waiting Steam Server..."))
         self.status.show()
         self.set_size_request(0, 0)
 
-        auth_data = await self.webapi_session.add_authenticator(
-            oauth_data['steamid'],
-            deviceid,
-            oauth_data['oauth_token'],
-        )
-
-        assert isinstance(auth_data, dict)
-
-        if auth_data['status'] != 1:
-            log.debug(auth_data['status'])
-            raise NotImplementedError
-
-        return auth_data
+        task = asyncio.ensure_future(self.webapi_session.add_authenticator(login_data, deviceid))
+        task.add_done_callback(self._add_authenticator_callback)
 
     def prepare_finalize_add_authenticator(
             self,
-            login_data: Dict[str, Any],
-            auth_data: Dict[str, Any],
+            login_data: webapi.LoginData,
     ) -> None:
-        task = asyncio.ensure_future(self.finalize_add_authenticator(login_data, auth_data))
-        callback = functools.partial(self._finalize_add_authenticator_callback, login_data, auth_data)
+        auth_code = universe.generate_steam_code(
+            int(login_data.auth['server_time']),
+            login_data.auth['shared_secret'],
+        )
+
+        self.previous_button.hide()
+        self.next_button.hide()
+        self.user_details_section.hide()
+        self.status.info(_("Waiting Steam Server..."))
+        self.status.show()
+        self.status.set_size_request(0, 0)
+
+        task = asyncio.ensure_future(
+            self.webapi_session.finalize_add_authenticator(
+                login_data,
+                self.code_item.get_text(),
+            )
+        )
+        callback = functools.partial(self._finalize_add_authenticator_callback, login_data)
         task.add_done_callback(callback)
 
     def recovery_code(self, code: str) -> None:
@@ -626,42 +560,3 @@ class SetupDialog(Gtk.Dialog):
         self.header_bar.set_show_close_button(False)
 
         asyncio.ensure_future(self._recovery_code_timer(revocation_code))
-
-    async def finalize_add_authenticator(
-            self,
-            login_data: Dict[str, Any],
-            auth_data: Dict[str, Any],
-    ) -> Optional[Dict[str, Any]]:
-        self.previous_button.hide()
-        self.next_button.hide()
-        self.user_details_section.hide()
-        self.status.info(_("Waiting Steam Server..."))
-        self.status.show()
-        self.status.set_size_request(0, 0)
-
-        auth_code = authenticator.get_code(int(auth_data['server_time']), auth_data['shared_secret'])
-        oauth_data = json.loads(login_data['oauth'])
-
-        try:
-            complete = await self.webapi_session.finalize_add_authenticator(
-                oauth_data['steamid'],
-                oauth_data['oauth_token'],
-                auth_code,
-                self.code_item.get_text(),
-            )
-        except webapi.SMSCodeError:
-            self.status.info(_("Invalid SMS Code. Please,\ncheck the code and try again."))
-            self.code_item.set_text("")
-            self.code_item.show()
-            return None
-        except aiohttp.ClientError:
-            self.status.error(_("No Connection"))
-            self.code_item.set_text("")
-            self.code_item.show()
-            return None
-
-        if complete:
-            return {**login_data, **auth_data}
-        else:
-            self.status.error(_("Unable to add a new authenticator"))
-            return None
