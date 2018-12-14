@@ -106,24 +106,28 @@ async def check_login(
             add_auth_after_login = False
             advanced = True
 
-    if not nickname:
+    if not token or not token_secure or not steamid:
+        is_logged_in = False
+    else:
+        if not nickname:
+            try:
+                nickname = await webapi_session.get_nickname(steamid)
+            except ValueError as e:
+                print(e)
+                raise NotImplementedError
+            except aiohttp.ClientError:
+                log.critical(_("No Connection. Please, check your connection and try again."))
+                sys.exit(1)
+            else:
+                config.new("login", "nickname", nickname)
+
+        session.cookie_jar.update_cookies(config.login_cookies())  # type: ignore
+
         try:
-            nickname = await webapi_session.get_nickname(steamid)
-        except ValueError:
-            raise NotImplementedError
+            is_logged_in = await webapi_session.is_logged_in(nickname)
         except aiohttp.ClientError:
             log.critical(_("No Connection. Please, check your connection and try again."))
             sys.exit(1)
-        else:
-            config.new("login", "nickname", nickname)
-
-    session.cookie_jar.update_cookies(config.login_cookies())  # type: ignore
-
-    try:
-        is_logged_in = await webapi_session.is_logged_in(nickname)
-    except aiohttp.ClientError:
-        log.critical(_("No Connection. Please, check your connection and try again."))
-        sys.exit(1)
 
     if not is_logged_in:
         log.error(_("User is not logged in."))
@@ -160,13 +164,16 @@ async def check_login(
 
         # identity_secret is required for openid login
         if advanced:
-            shared_secret = safe_input(_("Write your Shared Secret:"))
+            shared_secret = safe_input(_("Write your shared secret"))
             # it's required for openid login
-            identity_secret = safe_input(_("Write your Identity Secret:"))
+            identity_secret = safe_input(_("Write your identity secret"))
 
             if not shared_secret or not identity_secret:
                 log.critical(_("Unable to log-in!\nshared secret or identity secret is blank."))
                 sys.exit(1)
+
+            config.new("login", "shared_secret", shared_secret)
+            config.new("login", "identity_secret", identity_secret)
         else:
             shared_secret = config.parser.get("login", "shared_secret")
             # it's required for openid login
