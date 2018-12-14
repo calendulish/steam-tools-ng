@@ -15,8 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-
+import asyncio
+import contextlib
 import logging
+import os
 from collections import OrderedDict
 
 import aiohttp
@@ -130,6 +132,18 @@ class SettingsDialog(Gtk.Dialog):
         setup_button.connect('clicked', self.on_setup_clicked)
         login_section.grid.attach(setup_button, 0, 8, 4, 1)
         setup_button.show()
+
+        reset_button = Gtk.Button(_("Reset"))
+        reset_button.set_name("reset_button")
+        reset_button.connect("clicked", self.on_reset_clicked)
+        login_section.grid.attach(reset_button, 0, 9, 4, 1)
+        reset_button.show()
+
+        reset_password_button = Gtk.Button(_("Reset Password"))
+        reset_password_button.set_name("reset_password_button")
+        reset_password_button.connect("clicked", self.on_reset_password_clicked)
+        login_section.grid.attach(reset_password_button, 0, 10, 4, 1)
+        reset_password_button.show()
 
         plugins_section = utils.Section('plugins', _('Plugins Settings'))
 
@@ -290,11 +304,42 @@ class SettingsDialog(Gtk.Dialog):
         setup_dialog.login_mode()
         setup_dialog.show()
 
+    def on_reset_clicked(self, button: Gtk.Button) -> None:
+        setup_dialog = setup.SetupDialog(self, self.session, self.webapi_session)
+        setup_dialog.show()
+        setup_dialog.status.info(_("Reseting... Please wait!"))
+        setup_dialog.status.show()
+
+        task = asyncio.ensure_future(_fast_reset())
+        task.add_done_callback(lambda future: self.parent_window.destroy())
+
+    def on_reset_password_clicked(self, button: Gtk.Button) -> None:
+        setup_dialog = setup.SetupDialog(self, self.session, self.webapi_session)
+        setup_dialog.show()
+        setup_dialog.status.info(_("Reseting Password..."))
+        setup_dialog.status.show()
+        setup_dialog.header_bar.set_show_close_button(False)
+
+        config.new("login", "password", "")
+
+        setup_dialog.status.info(_("Done!"))
+        asyncio.get_event_loop().call_later(2, setup_dialog.destroy)
+
     def update_language(self, combo: Gtk.ComboBoxText) -> None:
         language = list(translations)[combo.get_active()]
         config.new('locale', 'language', language)
         Gtk.Container.foreach(self, refresh_widget_text)
         Gtk.Container.foreach(self.parent_window, refresh_widget_text)
+
+
+async def _fast_reset() -> None:
+    await asyncio.sleep(5)
+
+    with contextlib.suppress(FileNotFoundError):
+        os.remove(config.config_file)
+
+    config.parser.clear()
+    config.init()
 
 
 def on_setting_toggled(checkbutton: Gtk.CheckButton):
