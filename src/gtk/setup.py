@@ -469,14 +469,6 @@ class SetupDialog(Gtk.Dialog):
         self.next_button.show()
 
     def prepare_login(self, encrypted_password: Optional[str] = None) -> None:
-        if encrypted_password:
-            # Just for curious people. It's not even safe.
-            key = codecs.decode(encrypted_password, 'rot13')
-            raw = codecs.decode(key.encode(), 'base64')
-            self.__password_item.set_text(raw.decode())
-            self._prepare_login_callback()
-            return None
-
         self.status.info(_("Waiting user input..."))
 
         self.combo.hide()
@@ -497,6 +489,14 @@ class SetupDialog(Gtk.Dialog):
         self.previous_button.set_label(_("Previous"))
         self.previous_button.connect("clicked", self.login_mode)
         self.previous_button.show()
+
+        if encrypted_password:
+            # Just for curious people. It's not even safe.
+            key = codecs.decode(encrypted_password, 'rot13')
+            raw = codecs.decode(key.encode(), 'base64')
+            self.__password_item.set_text(raw.decode())
+            self._prepare_login_callback()
+            return None
 
     def prepare_add_authenticator(self, login_data: webapi.LoginData) -> None:
         if not login_data.has_phone:
