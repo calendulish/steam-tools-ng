@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import asyncio
 import logging
 from collections import OrderedDict
 from typing import Any, Callable, List, Tuple, Optional
@@ -187,9 +188,26 @@ class Status(Gtk.Frame):
         self._current.set_markup(
             markup(' '.join(['_' for n in range(1, current_text_size)]), font_size='large', font_weight='bold'),
         )
-        self._current.set_selectable(True)
         self._current.set_hexpand(True)
-        self._grid.attach(self._current, 0, 0, 1, 1)
+
+        _hand_cursor = Gdk.Cursor.new(Gdk.CursorType.HAND2)
+
+        self._current_event = Gtk.EventBox()
+        self._current_event.connect("button-press-event", self.__on_current_event_changed)
+
+        self._current_event.connect(
+            "enter-notify-event",
+            lambda event, button: self.get_window().set_cursor(_hand_cursor),
+        )
+
+        self._current_event.connect(
+            "leave-notify-event",
+            lambda event, button: self.get_window().set_cursor(None),
+        )
+
+        self._current_event.set_has_tooltip(True)
+        self._current_event.add(self._current)
+        self._grid.attach(self._current_event, 0, 0, 1, 1)
 
         self._status = Gtk.Label()
         self._status.set_markup(markup(_("Loading..."), color='green', font_size='small'))
@@ -197,6 +215,26 @@ class Status(Gtk.Frame):
 
         self._level_bar = Gtk.LevelBar()
         self._grid.attach(self._level_bar, 0, 2, 1, 1)
+
+        self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+
+    @staticmethod
+    def __disable_tooltip(event_box: Gtk.EventBox) -> None:
+        event_box.set_has_tooltip(False)
+
+    def __on_current_event_changed(self, event_box: Gtk.EventBox, event_button: Gdk.EventButton) -> None:
+        if event_button.type == Gdk.EventType.BUTTON_PRESS:
+            message = _("Text Copied to Clipboard")
+
+            if self._gtk_settings.props.gtk_application_prefer_dark_theme:
+                color = 'lightblue'
+            else:
+                color = 'blue'
+
+            event_box.set_tooltip_text(message)
+            self._status.set_markup(markup(message, font_size='small', color=color))
+            self.clipboard.set_text(self._current.get_text(), -1)
+            asyncio.get_event_loop().call_later(5, self.__disable_tooltip, event_box)
 
     def set_current(self, text: str) -> None:
         self._current.set_markup(markup(text, font_size='large', font_weight='bold'))
