@@ -241,12 +241,13 @@ class Application(Gtk.Application):
                 self.window.steamguard_status.set_error(_("Steam Client is not running"))
                 await asyncio.sleep(10)
             else:
-                self.window.steamguard_status.set_info(_("Running"))
+                self.window.steamguard_status.set_error(_("Loading..."))
 
                 seconds = 30 - (server_time % 30)
 
                 for past_time in range(seconds * 9):
                     self.window.steamguard_status.set_current(auth_code)
+                    self.window.steamguard_status.set_info(_("Running"))
                     self.window.steamguard_status.set_level(past_time, seconds * 8)
 
                     await asyncio.sleep(0.125)
