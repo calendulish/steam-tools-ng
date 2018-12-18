@@ -218,9 +218,11 @@ class Status(Gtk.Frame):
 
         self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
 
-    @staticmethod
-    def __disable_tooltip(event_box: Gtk.EventBox) -> None:
+    def __disable_tooltip(self, event_box: Gtk.EventBox, event_status: Gtk.Label) -> None:
         event_box.set_has_tooltip(False)
+        self._grid.remove(event_status)
+        self._grid.attach(self._status, 0, 1, 1, 1)
+        self._status.show()
 
     def __on_current_event_changed(self, event_box: Gtk.EventBox, event_button: Gdk.EventButton) -> None:
         if event_button.type == Gdk.EventType.BUTTON_PRESS:
@@ -232,9 +234,15 @@ class Status(Gtk.Frame):
                 color = 'blue'
 
             event_box.set_tooltip_text(message)
-            self._status.set_markup(markup(message, font_size='small', color=color))
+
+            event_status = Gtk.Label()
+            self._grid.remove(self._status)
+            self._grid.attach(event_status, 0, 1, 1, 1)
+            event_status.show()
+
+            event_status.set_markup(markup(message, font_size='small', color=color))
             self.clipboard.set_text(self._current.get_text(), -1)
-            asyncio.get_event_loop().call_later(5, self.__disable_tooltip, event_box)
+            asyncio.get_event_loop().call_later(5, self.__disable_tooltip, event_box, event_status)
 
     def set_current(self, text: str) -> None:
         self._current.set_markup(markup(text, font_size='large', font_weight='bold'))
