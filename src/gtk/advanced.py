@@ -20,6 +20,7 @@ import contextlib
 import logging
 import os
 from collections import OrderedDict
+from typing import Any
 
 import aiohttp
 from gi.repository import Gtk
@@ -133,14 +134,19 @@ class AdvancedSettingsDialog(Gtk.Dialog):
         self.show()
 
     @staticmethod
-    async def __fast_reset() -> None:
+    async def __fast_reset(setup_dialog: Gtk.Dialog) -> bool:
         await asyncio.sleep(5)
+
+        if not setup_dialog.get_realized():
+            return False
 
         with contextlib.suppress(FileNotFoundError):
             os.remove(config.config_file)
 
         config.parser.clear()
         config.init()
+
+        return True
 
     def _exit(self) -> None:
         self.toggle_button.set_active(False)
@@ -153,5 +159,11 @@ class AdvancedSettingsDialog(Gtk.Dialog):
         setup_dialog.status.show()
 
         main_window = self.parent_window.parent_window
-        task = asyncio.ensure_future(self.__fast_reset())
-        task.add_done_callback(lambda future: main_window.destroy())
+        task = asyncio.ensure_future(self.__fast_reset(setup_dialog))
+        task.add_done_callback(self.on_reset_done)
+
+    def on_reset_done(self, future: 'asyncio.Future[Any]') -> None:
+        main_window = self.parent_window.parent_window
+
+        if future.result():
+            main_window.destroy()
