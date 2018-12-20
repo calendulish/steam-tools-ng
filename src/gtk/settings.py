@@ -16,16 +16,14 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
-import contextlib
 import logging
-import os
 from collections import OrderedDict
 
 import aiohttp
 from gi.repository import Gtk, Pango
 from stlib import webapi
 
-from . import utils, setup
+from . import utils, setup, advanced
 from .. import config, i18n
 
 log = logging.getLogger(__name__)
@@ -100,50 +98,22 @@ class SettingsDialog(Gtk.Dialog):
         account_name = login_section.new('account_name', _("Username:"), Gtk.Entry, 0, 0)
         account_name.connect('changed', on_setting_changed)
 
-        login_section.show_all()
-
-        shared_secret = login_section.new('shared_secret', _("Shared Secret:"), Gtk.Entry, 0, 1)
-        shared_secret.connect('changed', on_setting_changed)
-
-        token_item = login_section.new("token", _("Token:"), Gtk.Entry, 0, 2)
-        token_item.connect("changed", on_setting_changed)
-
-        token_secure_item = login_section.new("token_secure", _("Token Secure:"), Gtk.Entry, 0, 3)
-        token_secure_item.connect("changed", on_setting_changed)
-
-        identity_secret = login_section.new('identity_secret', _("Identity Secret:"), Gtk.Entry, 2, 0)
-        identity_secret.connect('changed', on_setting_changed)
-
-        deviceid = login_section.new('deviceid', _("Device ID:"), Gtk.Entry, 2, 1)
-        deviceid.connect('changed', on_setting_changed)
-
-        steamid_item = login_section.new("steamid", _("Steam ID:"), Gtk.Entry, 2, 2)
-        steamid_item.set_input_purpose(Gtk.InputPurpose.DIGITS)
-        steamid_item.connect("changed", on_digit_only_setting_changed)
-
-        advanced = Gtk.CheckButton(_("Advanced"))
-        advanced.set_name("advanced_button")
-        advanced.connect("toggled", self.on_advanced_button_toggled, login_section)
-        login_section.grid.attach(advanced, 0, 7, 1, 1)
-        advanced.show()
+        advanced_button = Gtk.ToggleButton(_("Advanced"))
+        advanced_button.set_name("advanced_button")
+        advanced_button.connect("toggled", self.on_advanced_button_toggled)
+        login_section.grid.attach(advanced_button, 0, 7, 4, 1)
 
         setup_button = Gtk.Button(_("Magic Box"))
         setup_button.set_name("setup_button")
         setup_button.connect('clicked', self.on_setup_clicked)
         login_section.grid.attach(setup_button, 0, 8, 4, 1)
-        setup_button.show()
-
-        reset_button = Gtk.Button(_("Reset"))
-        reset_button.set_name("reset_button")
-        reset_button.connect("clicked", self.on_reset_clicked)
-        login_section.grid.attach(reset_button, 0, 9, 4, 1)
-        reset_button.show()
 
         reset_password_button = Gtk.Button(_("Reset Password"))
         reset_password_button.set_name("reset_password_button")
         reset_password_button.connect("clicked", self.on_reset_password_clicked)
         login_section.grid.attach(reset_password_button, 0, 10, 4, 1)
-        reset_password_button.show()
+
+        login_section.show_all()
 
         plugins_section = utils.Section('plugins', _('Plugins Settings'))
 
@@ -272,22 +242,10 @@ class SettingsDialog(Gtk.Dialog):
         content_grid.show()
         self.show()
 
-    def on_advanced_button_toggled(self, button: Gtk.Button, login_section: utils.Section) -> None:
+    def on_advanced_button_toggled(self, button: Gtk.Button) -> None:
         if button.get_active():
-            login_section.grid.show_all()
-            login_section.set_label_align(0.017, 0.5)
-        else:
-            childrens = Gtk.Container.get_children(login_section.grid)
-            keep_list = ['account_name', 'advanced_button', 'setup_button']
-
-            for children in childrens:
-                if children.get_name() in keep_list:
-                    children.show()
-                else:
-                    children.hide()
-
-            self.set_size_request(300, 150)
-            login_section.set_label_align(0.03, 0.5)
+            advanced_settings = advanced.AdvancedSettingsDialog(button, self, self.session, self.webapi_session)
+            advanced_settings.show_all()
 
     def on_theme_changed(self, combo: Gtk.ComboBoxText) -> None:
         theme = list(gtk_themes)[combo.get_active()]
@@ -303,15 +261,6 @@ class SettingsDialog(Gtk.Dialog):
         setup_dialog = setup.SetupDialog(self, self.session, self.webapi_session)
         setup_dialog.login_mode()
         setup_dialog.show()
-
-    def on_reset_clicked(self, button: Gtk.Button) -> None:
-        setup_dialog = setup.SetupDialog(self, self.session, self.webapi_session)
-        setup_dialog.show()
-        setup_dialog.status.info(_("Reseting... Please wait!"))
-        setup_dialog.status.show()
-
-        task = asyncio.ensure_future(_fast_reset())
-        task.add_done_callback(lambda future: self.parent_window.destroy())
 
     def on_reset_password_clicked(self, button: Gtk.Button) -> None:
         setup_dialog = setup.SetupDialog(self, self.session, self.webapi_session)
@@ -330,16 +279,6 @@ class SettingsDialog(Gtk.Dialog):
         config.new('locale', 'language', language)
         Gtk.Container.foreach(self, refresh_widget_text)
         Gtk.Container.foreach(self.parent_window, refresh_widget_text)
-
-
-async def _fast_reset() -> None:
-    await asyncio.sleep(5)
-
-    with contextlib.suppress(FileNotFoundError):
-        os.remove(config.config_file)
-
-    config.parser.clear()
-    config.init()
 
 
 def on_setting_toggled(checkbutton: Gtk.CheckButton):
