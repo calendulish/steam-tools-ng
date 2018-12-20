@@ -345,6 +345,7 @@ class Section(Gtk.Frame):
                     option,
                     ', '.join(items.keys()),
                 )
+                log.exception(error_message)
                 fatal_error_dialog(error_message)
                 # unset active item
                 current_option = -1
@@ -421,6 +422,7 @@ def remove_letters(text: str) -> str:
 
 
 def fatal_error_dialog(error_message: str, transient_for: Optional[Gtk.Window] = None) -> None:
+    log.critical(error_message)
     error_dialog = Gtk.MessageDialog(transient_for=transient_for)
     error_dialog.set_title(_("Fatal Error"))
     error_dialog.set_markup(error_message)

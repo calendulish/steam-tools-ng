@@ -78,6 +78,7 @@ class Application(Gtk.Application):
             try:
                 self.window = window.Main(application=self)
             except configparser.Error as exception:
+                log.exception(str(exception))
                 utils.fatal_error_dialog(str(exception), self.window)
                 sys.exit(1)
 
@@ -154,7 +155,8 @@ class Application(Gtk.Application):
                     nickname = await self.webapi_session.get_nickname(steamid)
                 except ValueError:
                     raise NotImplementedError
-                except aiohttp.ClientError:
+                except aiohttp.ClientError as exception:
+                    log.exception(str(exception))
                     utils.fatal_error_dialog(
                         _("No Connection. Please, check your connection and try again."),
                         self.window,
@@ -169,7 +171,8 @@ class Application(Gtk.Application):
 
             try:
                 is_logged_in = await self.webapi_session.is_logged_in(nickname)
-            except aiohttp.ClientError:
+            except aiohttp.ClientError as exception:
+                log.exception(str(exception))
                 utils.fatal_error_dialog(
                     _("No Connection. Please, check your connection and try again."),
                     self.window,
@@ -391,13 +394,16 @@ class Application(Gtk.Application):
                     deviceid,
                 )
             except AttributeError as exception:
+                log.warning(repr(exception))
                 warning(_("Error when fetch confirmations"))
             except ProcessLookupError:
                 warning(_("Steam is not running"))
-            except webapi.LoginError:
+            except webapi.LoginError as exception:
+                log.warning(repr(exception))
                 warning(_("User is not logged in"))
                 self.do_login(True)
-            except aiohttp.ClientError:
+            except aiohttp.ClientError as exception:
+                log.warning(repr(exception))
                 warning(_("No connection"))
             else:
                 self.window.warning_label.hide()
@@ -529,6 +535,7 @@ class Application(Gtk.Application):
                     wait_max = wait_min + 400
                     bumped = True
                 except steamtrades.TradeClosedError as exception:
+                    log.error(str(exception))
                     error(str(exception))
                     await asyncio.sleep(5)
                     continue
@@ -680,7 +687,7 @@ class Application(Gtk.Application):
                     await asyncio.sleep(5)
                     continue
                 except webapi.LoginError as exception:
-                    log.error(str(exception))
+                    log.error(repr(exception))
                     self.window.set_login_icon('steamgifts', 'red')
                     error(_("Login is lost. Trying to relogin."))
                     await asyncio.sleep(5)

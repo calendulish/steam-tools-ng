@@ -136,7 +136,9 @@ class SetupDialog(Gtk.Dialog):
             self.egg_index = 0
 
     def __fatal_error(self, exception: BaseException) -> None:
-        self.status.error("{}\n\n{}".format(_("IT'S A FATAL ERROR!!! PLEASE, REPORT!!!"), repr(exception)))
+        message = "{}\n\n{}".format(_("IT'S A FATAL ERROR!!! PLEASE, REPORT!!!"), repr(exception))
+        log.critical(message)
+        self.status.error(message)
         self.status._label.set_selectable(True)
         self.status.show()
         self.user_details_section.hide()
@@ -326,8 +328,9 @@ class SetupDialog(Gtk.Dialog):
                 self.status.error(_("No Connection"))
                 self.user_details_section.show()
                 self.previous_button.show()
-            except Exception:
-                self.__fatal_error(future.exception())
+            except Exception as exception:
+                log.exception(str(exception))
+                self.__fatal_error(exception)
 
             return None
 
@@ -361,8 +364,9 @@ class SetupDialog(Gtk.Dialog):
             except aiohttp.ClientError:
                 self.status.error(_("No Connection"))
                 self.previous_button.show()
-            except Exception:
-                self.__fatal_error(future.exception())
+            except Exception as exception:
+                log.exception(str(exception))
+                self.__fatal_error(exception)
 
             return None
 
@@ -419,8 +423,9 @@ class SetupDialog(Gtk.Dialog):
                 self.code_item.show()
                 self.next_button.show()
                 self.user_details_section.show()
-            except Exception:
-                self.__fatal_error(future.exception())
+            except Exception as exception:
+                log.exception(str(exception))
+                self.__fatal_error(exception)
 
             return None
 
