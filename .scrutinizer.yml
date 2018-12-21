@@ -31,9 +31,11 @@ build:
             - command: python setup.py build
             - command: sudo -E `which python` setup.py install
             - command: cd ..
+            - command: sudo -E rm -rf stlib
         override:
             - command: python setup.py build
             - command: sudo -E `which python` setup.py install
+            - command: sudo -E rm -rf build
 
     tests:
         override:
