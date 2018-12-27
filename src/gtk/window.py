@@ -212,8 +212,8 @@ class Main(Gtk.ApplicationWindow):
             ))
 
             return True
-        else:
-            return False
+
+        return False
 
     def on_validate_confirmations(
             self,
