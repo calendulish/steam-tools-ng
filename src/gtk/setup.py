@@ -219,17 +219,16 @@ class SetupDialog(Gtk.Dialog):
         # it's required for openid login
         identity_secret = self.identity_secret.get_text()
 
-        if self.advanced or self.relogin:
-            if not shared_secret or not identity_secret:
+        if not shared_secret or not identity_secret:
+            if self.advanced or self.relogin:
                 self.status.error(_("Unable to log-in!\nShared secret or Identity secret is blank."))
                 self.user_details_section.show()
                 self.advanced_settings.show()
                 self.previous_button.show()
                 self.next_button.show()
                 return None
-        else:
-            if not shared_secret or not identity_secret:
-                log.warning(_("No shared secret found. Trying to log-in without two-factor authentication."))
+
+            log.warning(_("No shared secret found. Trying to log-in without two-factor authentication."))
 
         kwargs['shared_secret'] = shared_secret
 
