@@ -172,8 +172,9 @@ class SimpleStatus(Gtk.Frame):
 
 
 class Status(Gtk.Frame):
-    def __init__(self, current_text_size: int, label_text: str) -> None:
+    def __init__(self, display_size: int, label_text: str) -> None:
         super().__init__()
+        self._default_display_text = ' '.join(['_' for n in range(1, display_size)])
         self._gtk_settings = Gtk.Settings.get_default()
 
         self.set_label(label_text)
@@ -184,30 +185,28 @@ class Status(Gtk.Frame):
         self._grid.set_row_spacing(5)
         self.add(self._grid)
 
-        self._current = Gtk.Label()
-        self._current.set_markup(
-            markup(' '.join(['_' for n in range(1, current_text_size)]), font_size='large', font_weight='bold'),
-        )
-        self._current.set_hexpand(True)
+        self._display = Gtk.Label()
+        self._display.set_markup(markup(self._default_display_text, font_size='large', font_weight='bold'))
+        self._display.set_hexpand(True)
 
         _hand_cursor = Gdk.Cursor.new(Gdk.CursorType.HAND2)
 
-        self._current_event = Gtk.EventBox()
-        self._current_event.connect("button-press-event", self.__on_current_event_changed)
+        self._display_event = Gtk.EventBox()
+        self._display_event.connect("button-press-event", self.__on_display_event_changed)
 
-        self._current_event.connect(
+        self._display_event.connect(
             "enter-notify-event",
             lambda event, button: self.get_window().set_cursor(_hand_cursor),
         )
 
-        self._current_event.connect(
+        self._display_event.connect(
             "leave-notify-event",
             lambda event, button: self.get_window().set_cursor(None),
         )
 
-        self._current_event.set_has_tooltip(True)
-        self._current_event.add(self._current)
-        self._grid.attach(self._current_event, 0, 0, 1, 1)
+        self._display_event.set_has_tooltip(True)
+        self._display_event.add(self._display)
+        self._grid.attach(self._display_event, 0, 0, 1, 1)
 
         self._status = Gtk.Label()
         self._status.set_markup(markup(_("Loading..."), color='green', font_size='small'))
@@ -224,7 +223,7 @@ class Status(Gtk.Frame):
         self._grid.attach(self._status, 0, 1, 1, 1)
         self._status.show()
 
-    def __on_current_event_changed(self, event_box: Gtk.EventBox, event_button: Gdk.EventButton) -> None:
+    def __on_display_event_changed(self, event_box: Gtk.EventBox, event_button: Gdk.EventButton) -> None:
         if event_button.type == Gdk.EventType.BUTTON_PRESS:
             message = _("Text Copied to Clipboard")
 
@@ -241,11 +240,11 @@ class Status(Gtk.Frame):
             event_status.show()
 
             event_status.set_markup(markup(message, font_size='small', color=color))
-            self.clipboard.set_text(self._current.get_text(), -1)
+            self.clipboard.set_text(self._display.get_text(), -1)
             asyncio.get_event_loop().call_later(5, self.__disable_tooltip, event_box, event_status)
 
-    def set_current(self, text: str) -> None:
-        self._current.set_markup(markup(text, font_size='large', font_weight='bold'))
+    def set_display(self, text: str) -> None:
+        self._display.set_markup(markup(text, font_size='large', font_weight='bold'))
 
     def set_info(self, text: str) -> None:
         if self._gtk_settings.props.gtk_application_prefer_dark_theme:
@@ -266,6 +265,13 @@ class Status(Gtk.Frame):
     def set_level(self, value: int, max_value: int) -> None:
         self._level_bar.set_value(value)
         self._level_bar.set_max_value(max_value)
+
+    def unset_display(self) -> None:
+        self._display.set_markup(markup(self._default_display_text, font_size='large', font_weight='bold'))
+
+    def unset_level(self) -> None:
+        self._level_bar.set_value(0)
+        self._level_bar.set_max_value(0)
 
 
 class Section(Gtk.Frame):
