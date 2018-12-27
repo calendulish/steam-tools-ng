@@ -410,7 +410,7 @@ class Application(Gtk.Application):
                 if old_confirmations != confirmations:
                     self.window.text_tree.store.clear()
 
-                    for confirmation_index, confirmation_ in enumerate(confirmations):
+                    for confirmation_ in confirmations:
                         safe_give, give = utils.safe_confirmation_get(confirmation_, 'give')
                         safe_receive, receive = utils.safe_confirmation_get(confirmation_, 'receive')
 
@@ -424,7 +424,7 @@ class Application(Gtk.Application):
                         ])
 
                         if len(give) > 1 or len(receive) > 1:
-                            for item_index, item in enumerate(itertools.zip_longest(give, receive)):
+                            for item in itertools.zip_longest(give, receive):
                                 self.window.text_tree.store.append(iter_, ['', '', '', item[0], '', item[1]])
                 else:
                     log.debug(_("Skipping confirmations update because data doesn't seem to have changed"))
