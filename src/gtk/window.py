@@ -96,7 +96,7 @@ class Main(Gtk.ApplicationWindow):
         main_grid.attach(self.text_tree, 0, 4, 4, 1)
 
         for index, column in enumerate(self.text_tree.view.get_columns()):
-            if index == 0 or index == 1 or index == 2:
+            if index in (0, 1, 2):
                 column.set_visible(False)
 
             if index == 4:
