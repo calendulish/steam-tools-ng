@@ -59,15 +59,15 @@ async def add_authenticator(
         except aiohttp.ClientError:
             log.critical(_("No Connection. Please, check your connection and try again."))
             continue
-        else:
-            break
+
+        break
 
     if complete:
         log.info(_("Success!"))
         return login_data
-    else:
-        log.error(_("Unable to add a new authenticator"))
-        return None
+
+    log.error(_("Unable to add a new authenticator"))
+    return None
 
 
 async def check_login(
@@ -101,7 +101,7 @@ async def check_login(
             mobile_login = True
             add_auth_after_login = True
             advanced = False
-        elif user_input == '2':
+        else:
             mobile_login = False
             add_auth_after_login = False
             advanced = True
@@ -113,13 +113,13 @@ async def check_login(
             try:
                 nickname = await webapi_session.get_nickname(steamid)
             except ValueError as e:
-                print(e)
+                log.exception(str(e))
                 raise NotImplementedError
             except aiohttp.ClientError:
                 log.critical(_("No Connection. Please, check your connection and try again."))
                 sys.exit(1)
-            else:
-                config.new("login", "nickname", nickname)
+
+            config.new("login", "nickname", nickname)
 
         session.cookie_jar.update_cookies(config.login_cookies())  # type: ignore
 
@@ -282,15 +282,16 @@ def safe_input(
 
                 if user_input.lower() in custom_choices:
                     return user_input.lower()
-                else:
-                    raise ValueError(_('{} is not an accepted value').format(user_input))
+
+                raise ValueError(_('{} is not an accepted value').format(user_input))
 
             if default_response is None:
                 if len(user_input) > 2:
                     return user_input
-                else:
-                    raise ValueError(_('Invalid response from user'))
-            elif not user_input:
+
+                raise ValueError(_('Invalid response from user'))
+
+            if not user_input:
                 return default_response
 
             if user_input.lower() == _('y'):
