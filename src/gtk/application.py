@@ -89,7 +89,7 @@ class Application(Gtk.Application):
 
     def do_login(self, block: bool = False) -> None:
         encrypted_password = config.parser.get("login", "password")
-        mobile_login = True if config.parser.get("login", "oauth_token") else False
+        mobile_login = bool(config.parser.get("login", "oauth_token"))
 
         setup_dialog = setup.SetupDialog(
             self.window,
