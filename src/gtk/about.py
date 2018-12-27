@@ -20,7 +20,9 @@ import os
 
 from gi.repository import GdkPixbuf, Gtk
 
-from .. import config, version
+from .. import config, version, i18n
+
+_ = i18n.get_translation
 
 
 # noinspection PyUnusedLocal
@@ -38,10 +40,10 @@ class AboutDialog(Gtk.AboutDialog):
         )
 
         self.set_website("http://github.com/ShyPixie/steam-tools-ng")
-        self.set_website_label("Git Repository")
+        self.set_website_label(_("Git Repository"))
         self.set_version(version.__version__)
         self.set_copyright("Lara Maia (C) 2015 ~ 2018 - dev@lara.click")
-        self.set_comments("Made with Love <3")
+        self.set_comments(_("Made with Love <3"))
         self.set_license_type(Gtk.License.GPL_3_0)
 
         logo = GdkPixbuf.Pixbuf.new_from_file(os.path.join(config.icons_dir, 'steam-tools-ng.png'))

@@ -46,7 +46,7 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
         steamgifts = plugin_manager.load_plugin('steamgifts')
         steamgifts_session = steamgifts.Main(session, api_url=api_url)
     else:
-        log.critical("Unable to find steamgifts plugin")
+        log.critical(_("Unable to find steamgifts plugin"))
         sys.exit(1)
 
     log.info(_("Loading, please wait..."))
@@ -130,6 +130,6 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
 
         wait_offset = random.randint(wait_min, wait_max)
         for past_time in range(wait_offset):
-            print("Waiting: {:4d} seconds".format(wait_offset - past_time), end='\r')
+            print(_("Waiting: {:4d} seconds").format(wait_offset - past_time), end='\r')
             await asyncio.sleep(1)
         print()  # keep history

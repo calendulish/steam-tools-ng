@@ -86,7 +86,7 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
 
                     await asyncio.sleep(1)
 
-                print("Updating drops for {} ({})".format(badge.game_name, badge.game_id), end='\r')
+                print(_("Updating drops for {} ({})").format(badge.game_name, badge.game_id), end='\r')
                 while True:
                     try:
                         badge = await webapi_session.update_badge_drops(badge, nickname)

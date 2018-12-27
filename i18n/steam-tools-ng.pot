@@ -4,7 +4,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.8.0.b1\n"
-"POT-Creation-Date: 2018-12-20 16:50-0200\n"
+"POT-Creation-Date: 2018-12-27 17:39-0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -46,16 +46,16 @@ msgstr ""
 msgid "No shared_secret found on config file or command line"
 msgstr ""
 
-#: src\console\authenticator.py:58 src\gtk\application.py:229
+#: src\console\authenticator.py:58 src\gtk\application.py:232
 msgid "Steam is not running."
 msgstr ""
 
-#: src\console\authenticator.py:59 src\gtk\application.py:230
+#: src\console\authenticator.py:59 src\gtk\application.py:233
 msgid "Fallbacking server_time to WebAPI"
 msgstr ""
 
-#: src\console\authenticator.py:64 src\gtk\application.py:235
-#: src\gtk\application.py:400
+#: src\console\authenticator.py:64 src\gtk\application.py:238
+#: src\gtk\application.py:403
 msgid "Steam is not running"
 msgstr ""
 
@@ -63,8 +63,8 @@ msgstr ""
 msgid "SteamGuard Code:"
 msgstr ""
 
-#: src\console\cardfarming.py:41 src\gtk\application.py:462
-#: src\gtk\application.py:604
+#: src\console\cardfarming.py:41 src\gtk\application.py:464
+#: src\gtk\application.py:606
 msgid "Loading"
 msgstr ""
 
@@ -72,21 +72,21 @@ msgstr ""
 msgid "Waiting Steam Server"
 msgstr ""
 
-#: src\console\cardfarming.py:56 src\console\utils.py:234
-#: src\gtk\application.py:306 src\gtk\application.py:621 src\gtk\setup.py:328
-#: src\gtk\setup.py:365 src\gtk\setup.py:421
+#: src\console\cardfarming.py:56 src\console\utils.py:236
+#: src\gtk\application.py:309 src\gtk\application.py:623 src\gtk\setup.py:329
+#: src\gtk\setup.py:368 src\gtk\setup.py:426
 msgid "No Connection"
 msgstr ""
 
-#: src\console\cardfarming.py:64 src\gtk\application.py:253
+#: src\console\cardfarming.py:64 src\gtk\application.py:256
 msgid "Running"
 msgstr ""
 
-#: src\console\cardfarming.py:72 src\gtk\application.py:322
+#: src\console\cardfarming.py:72 src\gtk\application.py:325
 msgid "Invalid game_id %s. Ignoring."
 msgstr ""
 
-#: src\console\cardfarming.py:77 src\gtk\application.py:327
+#: src\console\cardfarming.py:77 src\gtk\application.py:330
 msgid "Steam Client is not running."
 msgstr ""
 
@@ -94,10 +94,14 @@ msgstr ""
 msgid "Waiting drops for {:4d} minutes"
 msgstr ""
 
+#: src\console\cardfarming.py:89
+msgid "Updating drops for {} ({})"
+msgstr ""
+
 #: src\console\cardfarming.py:95 src\console\steamgifts.py:61
-#: src\console\steamtrades.py:62 src\gtk\application.py:351
-#: src\gtk\application.py:407 src\gtk\application.py:489
-#: src\gtk\application.py:507
+#: src\console\steamtrades.py:62 src\gtk\application.py:354
+#: src\gtk\application.py:410 src\gtk\application.py:491
+#: src\gtk\application.py:509
 msgid "No connection"
 msgstr ""
 
@@ -109,42 +113,78 @@ msgstr ""
 msgid "No more cards to drop. Searching new..."
 msgstr ""
 
+#: src\console\steamgifts.py:49
+msgid "Unable to find steamgifts plugin"
+msgstr ""
+
 #: src\console\steamgifts.py:52 src\console\steamtrades.py:53
 msgid "Loading, please wait..."
 msgstr ""
 
-#: src\console\steamgifts.py:67 src\gtk\application.py:636
+#: src\console\steamgifts.py:67 src\gtk\application.py:638
 msgid "Unable to configure steamgifts"
 msgstr ""
 
-#: src\console\steamgifts.py:82 src\gtk\application.py:655
+#: src\console\steamgifts.py:82 src\gtk\application.py:657
 msgid "No giveaways to join."
 msgstr ""
 
-#: src\console\steamgifts.py:89 src\gtk\application.py:511
-#: src\gtk\application.py:662
+#: src\console\steamgifts.py:89 src\gtk\application.py:513
+#: src\gtk\application.py:664
 msgid "Waiting anti-ban timer"
 msgstr ""
 
 #: src\console\steamgifts.py:95
-msgid "Joined! %s (%s:%s:%s)"
+msgid "Joined! %s (%s:%s:%s) [%s]"
 msgstr ""
 
-#: src\console\steamgifts.py:102
+#: src\console\steamgifts.py:103
 msgid "Unable to join %s"
 msgstr ""
 
-#: src\console\steamgifts.py:114 src\gtk\application.py:545
-#: src\gtk\application.py:692
+#: src\console\steamgifts.py:115 src\gtk\application.py:547
+#: src\gtk\application.py:694
 msgid "Login is lost. Trying to relogin."
 msgstr ""
 
-#: src\console\steamgifts.py:118 src\gtk\application.py:698
+#: src\console\steamgifts.py:119 src\gtk\application.py:700
 msgid "User don't have required level to join"
 msgstr ""
 
-#: src\console\steamgifts.py:122 src\gtk\application.py:703
+#: src\console\steamgifts.py:123 src\gtk\application.py:705
 msgid "User don't have required points to join"
+msgstr ""
+
+#: src\console\steamgifts.py:133 src\console\steamtrades.py:98
+msgid "Waiting: {:4d} seconds"
+msgstr ""
+
+#: src\console\steamtrades.py:46
+msgid "Unable to find steamtrades plugin"
+msgstr ""
+
+#: src\console\steamtrades.py:50 src\gtk\application.py:471
+msgid "No trade ID found in config file"
+msgstr ""
+
+#: src\console\steamtrades.py:73
+msgid "Unable to find id: %s. Ignoring..."
+msgstr ""
+
+#: src\console\steamtrades.py:80
+msgid "%s (%s) Already bumped. Waiting more %d minutes"
+msgstr ""
+
+#: src\console\steamtrades.py:88
+msgid "%s (%s) is closed. Ignoring..."
+msgstr ""
+
+#: src\console\steamtrades.py:92
+msgid "%s (%s) Bumped! [%s]"
+msgstr ""
+
+#: src\console\steamtrades.py:94
+msgid "Unable to bump %s (%s). Ignoring..."
 msgstr ""
 
 #: src\console\utils.py:48 src\console\utils.py:60 src\console\utils.py:119
@@ -165,7 +205,7 @@ msgstr ""
 msgid "Success!"
 msgstr ""
 
-#: src\console\utils.py:69 src\gtk\setup.py:441
+#: src\console\utils.py:69 src\gtk\setup.py:446
 msgid "Unable to add a new authenticator"
 msgstr ""
 
@@ -179,133 +219,141 @@ msgid ""
 "[2] Use custom secrets (advanced users only!)\n"
 msgstr ""
 
-#: src\console\utils.py:133
+#: src\console\utils.py:135
 msgid "User is not logged in."
 msgstr ""
 
-#: src\console\utils.py:146
+#: src\console\utils.py:148
 msgid "Please, write your username"
 msgstr ""
 
-#: src\console\utils.py:151
+#: src\console\utils.py:153
 msgid "Please, write your password (it's hidden, and will be not saved)"
 msgstr ""
 
-#: src\console\utils.py:154 src\gtk\setup.py:206
+#: src\console\utils.py:156 src\gtk\setup.py:206
 msgid ""
 "Unable to log-in!\n"
 "Username or password is blank."
 msgstr ""
 
-#: src\console\utils.py:167
+#: src\console\utils.py:169
 msgid "Write your shared secret"
 msgstr ""
 
-#: src\console\utils.py:169
+#: src\console\utils.py:171
 msgid "Write your identity secret"
 msgstr ""
 
-#: src\console\utils.py:172
+#: src\console\utils.py:174
 msgid ""
 "Unable to log-in!\n"
 "shared secret or identity secret is blank."
 msgstr ""
 
-#: src\console\utils.py:184
+#: src\console\utils.py:186
 msgid "Unable to relogin without a valid shared secret and identity secret"
 msgstr ""
 
-#: src\console\utils.py:187 src\gtk\setup.py:232
+#: src\console\utils.py:189 src\gtk\setup.py:231
 msgid "No shared secret found. Trying to log-in without two-factor authentication."
 msgstr ""
 
-#: src\console\utils.py:190 src\gtk\setup.py:180 src\gtk\setup.py:236
-#: src\gtk\setup.py:516 src\gtk\setup.py:535
+#: src\console\utils.py:192 src\gtk\setup.py:180 src\gtk\setup.py:235
+#: src\gtk\setup.py:524 src\gtk\setup.py:538
 msgid "Waiting Steam Server..."
 msgstr ""
 
-#: src\console\utils.py:196
+#: src\console\utils.py:198
 msgid "Write code received by email"
 msgstr ""
 
-#: src\console\utils.py:202
+#: src\console\utils.py:204
 msgid "Unable to log-in! You already have a Steam Authenticator active on current account."
 msgstr ""
 
-#: src\console\utils.py:203
+#: src\console\utils.py:205
 msgid "¬ To log-in, remove authenticator from your account and try again."
 msgstr ""
 
-#: src\console\utils.py:204
+#: src\console\utils.py:206
 msgid "¬ (STNG will add itself as Steam Authenticator in your account)"
 msgstr ""
 
-#: src\console\utils.py:206
+#: src\console\utils.py:208
 msgid "Unable to log-in! The secret keys are invalid!"
 msgstr ""
 
-#: src\console\utils.py:210
+#: src\console\utils.py:212
 msgid "Your network is blocked! It'll take some time until unblocked. Please, try again later."
 msgstr ""
 
-#: src\console\utils.py:213
+#: src\console\utils.py:215
 msgid "Steam server is requesting a captcha code."
 msgstr ""
 
-#: src\console\utils.py:219
+#: src\console\utils.py:221
 msgid "Open {} in an image view and write captcha code that it shows"
 msgstr ""
 
-#: src\console\utils.py:226
+#: src\console\utils.py:228
 msgid "Unable to log-in! Please, check your username/password and try again."
 msgstr ""
 
-#: src\console\utils.py:227
+#: src\console\utils.py:229
 msgid "(If you change your password, run steam-tools-ng --reset-password and try again.)"
 msgstr ""
 
-#: src\console\utils.py:229
+#: src\console\utils.py:231
 msgid "(If you removed the authenticator from your account, run steam-tools-ng --reset and try again.)"
 msgstr ""
 
-#: src\console\utils.py:240
+#: src\console\utils.py:242
 msgid "WRITE DOWN THE RECOVERY CODE: %s"
 msgstr ""
 
-#: src\console\utils.py:241
+#: src\console\utils.py:243
 msgid "YOU WILL NOT ABLE TO VIEW IT AGAIN!"
 msgstr ""
 
-#: src\console\utils.py:246
+#: src\console\utils.py:248
 msgid "Do you want to save the password?"
 msgstr ""
 
-#: src\console\utils.py:267
+#: src\console\utils.py:269
 msgid "[Y/n]"
 msgstr ""
 
-#: src\console\utils.py:269
+#: src\console\utils.py:271
 msgid "[y/N]"
 msgstr ""
 
-#: src\console\utils.py:281 src\console\utils.py:292
+#: src\console\utils.py:283 src\console\utils.py:294
 msgid "Invalid response from user"
 msgstr ""
 
-#: src\console\utils.py:286 src\console\utils.py:301
+#: src\console\utils.py:288 src\console\utils.py:304
 msgid "{} is not an accepted value"
 msgstr ""
 
-#: src\console\utils.py:296
+#: src\console\utils.py:299
 msgid "y"
 msgstr ""
 
-#: src\console\utils.py:298
+#: src\console\utils.py:301
 msgid "n"
 msgstr ""
 
-#: src\console\utils.py:304
+#: src\console\utils.py:307
 msgid "Please, try again."
+msgstr ""
+
+#: src\gtk\about.py:43
+msgid "Git Repository"
+msgstr ""
+
+#: src\gtk\about.py:46
+msgid "Made with Love <3"
 msgstr ""
 
 #: src\gtk\advanced.py:36 src\gtk\settings.py:33
@@ -442,96 +490,92 @@ msgstr ""
 msgid "Unable to find a valid nickname. Generating a new one."
 msgstr ""
 
-#: src\gtk\application.py:241
+#: src\gtk\application.py:244
 msgid "The currently secret is invalid"
 msgstr ""
 
-#: src\gtk\application.py:244
+#: src\gtk\application.py:247
 msgid "Steam Client is not running"
 msgstr ""
 
-#: src\gtk\application.py:247 src\gtk\utils.py:213
+#: src\gtk\application.py:250 src\gtk\utils.py:213
 msgid "Loading..."
 msgstr ""
 
-#: src\gtk\application.py:295 src\gtk\application.py:386
+#: src\gtk\application.py:298 src\gtk\application.py:387
 msgid "Unable to find a valid login data"
 msgstr ""
 
-#: src\gtk\application.py:311
+#: src\gtk\application.py:314
 msgid "No more cards to drop."
 msgstr ""
 
-#: src\gtk\application.py:336
+#: src\gtk\application.py:339
 msgid "Waiting drops for {} minutes"
 msgstr ""
 
-#: src\gtk\application.py:374
+#: src\gtk\application.py:377
 msgid "Unable to get confirmations without a valid identity secret"
 msgstr ""
 
-#: src\gtk\application.py:379
+#: src\gtk\application.py:382
 msgid "Unable to find deviceid. Generating from identity."
 msgstr ""
 
-#: src\gtk\application.py:398
+#: src\gtk\application.py:401
 msgid "Error when fetch confirmations"
 msgstr ""
 
-#: src\gtk\application.py:403 src\gtk\application.py:483
-#: src\gtk\application.py:626
+#: src\gtk\application.py:406 src\gtk\application.py:485
+#: src\gtk\application.py:628
 msgid "User is not logged in"
 msgstr ""
 
-#: src\gtk\application.py:430
+#: src\gtk\application.py:432
 msgid "Skipping confirmations update because data doesn't seem to have changed"
 msgstr ""
 
-#: src\gtk\application.py:451
+#: src\gtk\application.py:453
 msgid "Unable to find Steamtrades plugin"
 msgstr ""
 
-#: src\gtk\application.py:469
-msgid "No trade ID found in config file"
-msgstr ""
-
-#: src\gtk\application.py:502
+#: src\gtk\application.py:504
 msgid "Unable to find TradeID {}"
 msgstr ""
 
-#: src\gtk\application.py:523
+#: src\gtk\application.py:525
 msgid "Bumped!"
 msgstr ""
 
-#: src\gtk\application.py:526
+#: src\gtk\application.py:528
 msgid "Unable to bump {}"
 msgstr ""
 
-#: src\gtk\application.py:555
+#: src\gtk\application.py:557
 msgid "Setting wait_offset from steamtrades to %s"
 msgstr ""
 
-#: src\gtk\application.py:557 src\gtk\application.py:718
+#: src\gtk\application.py:559 src\gtk\application.py:720
 msgid "Waiting more {} minutes"
 msgstr ""
 
-#: src\gtk\application.py:576
+#: src\gtk\application.py:578
 msgid "Unable to find Steamgifts plugin"
 msgstr ""
 
-#: src\gtk\application.py:674
+#: src\gtk\application.py:676
 msgid "Joined!"
 msgstr ""
 
-#: src\gtk\application.py:677
+#: src\gtk\application.py:679
 msgid "Unable to join {}"
 msgstr ""
 
-#: src\gtk\application.py:686
+#: src\gtk\application.py:688
 msgid "Giveaway is already ended."
 msgstr ""
 
-#: src\gtk\application.py:716
+#: src\gtk\application.py:718
 msgid "Setting wait_offset from steamgifts to %s"
 msgstr ""
 
@@ -591,19 +635,19 @@ msgstr ""
 msgid "Waiting Steam Server (OP: {})"
 msgstr ""
 
-#: src\gtk\confirmation.py:193
+#: src\gtk\confirmation.py:191
 msgid "Unable to remove tree path %s (already removed?). Ignoring."
 msgstr ""
 
-#: src\gtk\confirmation.py:202
+#: src\gtk\confirmation.py:200
 msgid "Waiting Steam Server response"
 msgstr ""
 
-#: src\gtk\confirmation.py:223
+#: src\gtk\confirmation.py:221
 msgid "Updating tree"
 msgstr ""
 
-#: src\gtk\settings.py:80 src\gtk\window.py:49
+#: src\gtk\settings.py:80 src\gtk\window.py:50
 msgid "Settings"
 msgstr ""
 
@@ -755,7 +799,7 @@ msgstr ""
 msgid "Restarting Magic Box..."
 msgstr ""
 
-#: src\gtk\setup.py:184 src\gtk\setup.py:245 src\gtk\setup.py:402
+#: src\gtk\setup.py:184 src\gtk\setup.py:246 src\gtk\setup.py:407
 msgid "Try Again?"
 msgstr ""
 
@@ -765,13 +809,13 @@ msgid ""
 "Shared secret or Identity secret is blank."
 msgstr ""
 
-#: src\gtk\setup.py:255
+#: src\gtk\setup.py:256
 msgid ""
 "Write code received by email\n"
 "and click on 'Try Again?' button"
 msgstr ""
 
-#: src\gtk\setup.py:266
+#: src\gtk\setup.py:267
 msgid ""
 "Unable to log-in!\n"
 "You already have a Steam Authenticator active on current account.\n"
@@ -780,82 +824,82 @@ msgid ""
 "(STNG will add itself as Steam Authenticator in your account)\n"
 msgstr ""
 
-#: src\gtk\setup.py:273
+#: src\gtk\setup.py:274
 msgid ""
 "Unable to log-in!\n"
 "The secret keys are invalid!\n"
 msgstr ""
 
-#: src\gtk\setup.py:277
+#: src\gtk\setup.py:278
 msgid ""
 "Your network is blocked!\n"
 "It'll take some time until unblocked. Please, try again later\n"
 msgstr ""
 
-#: src\gtk\setup.py:286
+#: src\gtk\setup.py:287
 msgid ""
 "Write captcha code as shown bellow\n"
 "and click on 'Try Again?' button"
 msgstr ""
 
-#: src\gtk\setup.py:310
+#: src\gtk\setup.py:311
 msgid ""
 "Unable to log-in!\n"
 "Please, check your username/password and try again.\n"
 msgstr ""
 
-#: src\gtk\setup.py:320
+#: src\gtk\setup.py:321
 msgid "click here"
 msgstr ""
 
-#: src\gtk\setup.py:322
+#: src\gtk\setup.py:323
 msgid "You removed the authenticator? If yes, "
 msgstr ""
 
-#: src\gtk\setup.py:374
+#: src\gtk\setup.py:377
 msgid ""
 "Write code received by SMS\n"
 "and click on 'Add Authenticator' button"
 msgstr ""
 
-#: src\gtk\setup.py:384
+#: src\gtk\setup.py:387
 msgid "Add Authenticator"
 msgstr ""
 
-#: src\gtk\setup.py:415
+#: src\gtk\setup.py:420
 msgid ""
 "Invalid SMS Code. Please,\n"
 "check the code and try again."
 msgstr ""
 
-#: src\gtk\setup.py:459
+#: src\gtk\setup.py:466
 msgid ""
 "Welcome to STNG Setup\n"
 "\n"
 "How do you want to log-in?"
 msgstr ""
 
-#: src\gtk\setup.py:467
+#: src\gtk\setup.py:474
 msgid "Use STNG as Steam Authenticator"
 msgstr ""
 
-#: src\gtk\setup.py:468
+#: src\gtk\setup.py:475
 msgid "Use custom secrets (advanced users only!)"
 msgstr ""
 
-#: src\gtk\setup.py:472 src\gtk\setup.py:490
+#: src\gtk\setup.py:479 src\gtk\setup.py:497
 msgid "Next"
 msgstr ""
 
-#: src\gtk\setup.py:477
+#: src\gtk\setup.py:484
 msgid "Waiting user input..."
 msgstr ""
 
-#: src\gtk\setup.py:494
+#: src\gtk\setup.py:501
 msgid "Previous"
 msgstr ""
 
-#: src\gtk\setup.py:551
+#: src\gtk\setup.py:554
 msgid ""
 "RECOVERY CODE\n"
 "\n"
@@ -865,7 +909,7 @@ msgid ""
 "YOU WILL NOT ABLE TO VIEW IT AGAIN!\n"
 msgstr ""
 
-#: src\gtk\setup.py:559
+#: src\gtk\setup.py:562
 msgid "Recovery Code"
 msgstr ""
 
@@ -877,85 +921,85 @@ msgstr ""
 msgid "Text Copied to Clipboard"
 msgstr ""
 
-#: src\gtk\utils.py:344
+#: src\gtk\utils.py:345
 msgid ""
 "Please, fix your config file. Accepted values for {} are:\n"
 "{}"
 msgstr ""
 
-#: src\gtk\utils.py:391
+#: src\gtk\utils.py:392
 msgid "Ignoring value from %s on column %s item %s because value is empty"
 msgstr ""
 
-#: src\gtk\utils.py:405
+#: src\gtk\utils.py:406
 msgid "Nothing"
 msgstr ""
 
-#: src\gtk\utils.py:409
+#: src\gtk\utils.py:410
 msgid "Various"
 msgstr ""
 
-#: src\gtk\utils.py:427
+#: src\gtk\utils.py:428
 msgid "Fatal Error"
 msgstr ""
 
-#: src\gtk\window.py:50
+#: src\gtk\window.py:51
 msgid "About"
 msgstr ""
 
-#: src\gtk\window.py:51
+#: src\gtk\window.py:52
 msgid "Exit"
 msgstr ""
 
-#: src\gtk\window.py:81
+#: src\gtk\window.py:82
 msgid "Steam Guard Code"
 msgstr ""
 
-#: src\gtk\window.py:84
+#: src\gtk\window.py:85
 msgid "Card Farming"
 msgstr ""
 
-#: src\gtk\window.py:88
+#: src\gtk\window.py:89
 msgid "If you have confirmations, they will be shown here. (15 seconds delay)"
 msgstr ""
 
-#: src\gtk\window.py:94
+#: src\gtk\window.py:95
 msgid "give"
 msgstr ""
 
-#: src\gtk\window.py:94
+#: src\gtk\window.py:95
 msgid "id"
 msgstr ""
 
-#: src\gtk\window.py:94
+#: src\gtk\window.py:95
 msgid "key"
 msgstr ""
 
-#: src\gtk\window.py:94
+#: src\gtk\window.py:95
 msgid "mode"
 msgstr ""
 
-#: src\gtk\window.py:94
+#: src\gtk\window.py:95
 msgid "receive"
 msgstr ""
 
-#: src\gtk\window.py:94
+#: src\gtk\window.py:95
 msgid "to"
 msgstr ""
 
-#: src\gtk\window.py:112
+#: src\gtk\window.py:113
 msgid "Accept selected"
 msgstr ""
 
-#: src\gtk\window.py:116
+#: src\gtk\window.py:117
 msgid "Cancel selected"
 msgstr ""
 
-#: src\gtk\window.py:120
+#: src\gtk\window.py:121
 msgid "Accept all"
 msgstr ""
 
-#: src\gtk\window.py:124
+#: src\gtk\window.py:125
 msgid "Cancel all"
 msgstr ""
 

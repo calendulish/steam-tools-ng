@@ -43,11 +43,11 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
         steamtrades = plugin_manager.load_plugin('steamtrades')
         steamtrades_session = steamtrades.Main(session, api_url=api_url)
     else:
-        log.critical("Unable to find steamtrades plugin")
+        log.critical(_("Unable to find steamtrades plugin"))
         sys.exit(1)
 
     if not trade_ids:
-        logging.critical("No trade ID found in config file")
+        logging.critical(_("No trade ID found in config file"))
         sys.exit(1)
 
     log.info(_("Loading, please wait..."))
@@ -70,14 +70,14 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
             try:
                 trade_info = await steamtrades_session.get_trade_info(trade_id)
             except (IndexError, aiohttp.ClientResponseError):
-                log.error('Unable to find id: %s. Ignoring...', trade_id)
+                log.error(_('Unable to find id: %s. Ignoring...'), trade_id)
                 continue
 
             try:
                 bump_result = await steamtrades_session.bump(trade_info)
             except steamtrades.TradeNotReadyError as exception:
                 log.warning(
-                    "%s (%s) Already bumped. Waiting more %d minutes",
+                    _("%s (%s) Already bumped. Waiting more %d minutes"),
                     trade_info.id,
                     trade_info.title,
                     exception.time_left,
@@ -85,16 +85,16 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
                 wait_min = exception.time_left * 60
                 wait_max = wait_min + 400
             except steamtrades.TradeClosedError:
-                log.error("%s (%s) is closed. Ignoring...", trade_info.id, trade_info.title)
+                log.error(_("%s (%s) is closed. Ignoring..."), trade_info.id, trade_info.title)
                 continue
             else:
                 if bump_result:
-                    log.info("%s (%s) Bumped! [%s]", trade_info.id, trade_info.title, current_datetime)
+                    log.info(_("%s (%s) Bumped! [%s]"), trade_info.id, trade_info.title, current_datetime)
                 else:
-                    log.error('Unable to bump %s (%s). Ignoring...', trade_info.id, trade_info.title)
+                    log.error(_('Unable to bump %s (%s). Ignoring...'), trade_info.id, trade_info.title)
 
         wait_offset = random.randint(wait_min, wait_max)
         for past_time in range(wait_offset):
-            print("Waiting: {:4d} seconds".format(wait_offset - past_time), end='\r')
+            print(_("Waiting: {:4d} seconds").format(wait_offset - past_time), end='\r')
             await asyncio.sleep(1)
         print()  # keep history
