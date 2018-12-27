@@ -20,7 +20,7 @@ import getpass
 import logging
 import sys
 import tempfile
-from typing import Optional, Union, List
+from typing import Optional, Union, List, AnyStr
 
 import aiohttp
 from stlib import webapi, universe

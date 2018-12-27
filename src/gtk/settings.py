@@ -281,7 +281,7 @@ class SettingsDialog(Gtk.Dialog):
         Gtk.Container.foreach(self.parent_window, refresh_widget_text)
 
 
-def on_setting_toggled(checkbutton: Gtk.CheckButton):
+def on_setting_toggled(checkbutton: Gtk.CheckButton) -> None:
     current_value = checkbutton.get_active()
     section = checkbutton.get_section_name()
     option = checkbutton.get_name()

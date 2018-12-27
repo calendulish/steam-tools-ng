@@ -63,7 +63,7 @@ class Application(Gtk.Application):
         self.add_action(about_action)
 
         exit_action = Gio.SimpleAction.new("exit")
-        exit_action.connect("activate", lambda action, data: self.window.destroy())
+        exit_action.connect("activate", lambda action, data: self.window.destroy())  # type: ignore
         self.add_action(exit_action)
 
         theme = config.parser.get("gtk", "theme")
@@ -121,7 +121,7 @@ class Application(Gtk.Application):
         if exception and not isinstance(exception, asyncio.CancelledError):
             log.critical(repr(exception))
             utils.fatal_error_dialog(str(future.exception()), self.window)
-            self.window.destroy()
+            self.window.destroy()  # type: ignore
 
     async def async_activate(self) -> None:
         setup_requested = False
@@ -203,10 +203,13 @@ class Application(Gtk.Application):
         ]
 
         done, pending = await asyncio.wait(modules, return_when=asyncio.FIRST_EXCEPTION)
-        exception = done.pop().exception()
-        log.critical(repr(exception))
-        utils.fatal_error_dialog(str(exception), self.window)
-        self.window.destroy()
+
+        try:
+            raise done.pop().exception()
+        except Exception as exception:
+            log.exception(str(exception))
+            utils.fatal_error_dialog(str(exception), self.window)
+            self.window.destroy()
 
     async def run_steamguard(self) -> None:
         assert isinstance(self.window, Gtk.Window), "No window"
@@ -653,8 +656,8 @@ class Application(Gtk.Application):
             else:
                 info(_("No giveaways to join."))
                 joined = True
-                wait_min /= 2
-                wait_max /= 2
+                wait_min //= 2
+                wait_max //= 2
 
             for index, giveaway in enumerate(giveaways):
                 self.window.steamgifts_status.set_level(index, len(giveaway))

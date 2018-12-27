@@ -18,7 +18,7 @@
 import asyncio
 import logging
 from collections import OrderedDict
-from typing import Any, Callable, List, Tuple, Optional
+from typing import Any, Callable, List, Tuple, Optional, Union
 
 import cairo
 from gi.repository import Gtk, Gdk
@@ -327,6 +327,8 @@ class Section(Gtk.Frame):
 
         section = self.get_name()
         option = item.get_name()
+        # noinspection PyUnusedLocal
+        value: Union[str, bool, int]
 
         if option.startswith('_'):
             return item

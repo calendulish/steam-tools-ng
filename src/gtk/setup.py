@@ -50,7 +50,7 @@ class SetupDialog(Gtk.Dialog):
         super().__init__(use_header_bar=True)
         self.session = session
         self.webapi_session = webapi_session
-        self.login_session = None
+        self.login_session: Optional[webapi.Login] = None
         self.mobile_login = mobile_login
         self.relogin = relogin
         self.advanced = advanced
