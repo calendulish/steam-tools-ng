@@ -21,7 +21,7 @@ import logging
 import sys
 
 import aiohttp
-from stlib import authenticator, client, webapi, plugins
+from stlib import client, webapi, plugins, universe
 
 from . import utils
 from .. import config, i18n
@@ -65,7 +65,7 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
                 await asyncio.sleep(10)
                 continue
 
-        auth_code = authenticator.get_code(server_time, shared_secret)
+        auth_code = universe.generate_steam_code(server_time, shared_secret)
         seconds = 30 - (server_time % 30)
 
         for past_time in range(seconds):
