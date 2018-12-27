@@ -81,7 +81,7 @@ async def check_login(
     token_secure = config.parser.get("login", "token_secure")
     steamid = config.parser.getint("login", "steamid")
     nickname = config.parser.get("login", "nickname")
-    mobile_login = True if config.parser.get("login", "oauth_token") else False
+    mobile_login = bool(config.parser.get("login", "oauth_token"))
     add_auth_after_login = False
     advanced = False
     relogin = True
