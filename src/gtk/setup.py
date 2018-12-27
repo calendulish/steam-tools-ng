@@ -240,6 +240,8 @@ class SetupDialog(Gtk.Dialog):
         task = asyncio.ensure_future(self.login_session.do_login(**kwargs))
         task.add_done_callback(self._do_login_callback)
 
+        return None
+
     def _do_login_callback(self, future: 'asyncio.Future[Any]') -> None:
         self.next_button.set_label(_("Try Again?"))
         self.next_button.connect("clicked", self._prepare_login_callback)
@@ -355,6 +357,8 @@ class SetupDialog(Gtk.Dialog):
         else:
             self.next_button.show()
 
+        return None
+
     def _add_authenticator_callback(self, future: 'asyncio.Future[Any]') -> None:
         if future.exception():
             # noinspection PyBroadException
@@ -392,6 +396,8 @@ class SetupDialog(Gtk.Dialog):
         else:
             # FIXME
             raise AssertionError("No return from `add_authenticator'")
+
+        return None
 
     def _finalize_add_authenticator_callback(
             self,
@@ -440,6 +446,8 @@ class SetupDialog(Gtk.Dialog):
             self.status.error(_("Unable to add a new authenticator"))
             self.next_button.show()
             self.user_details_section.show()
+
+        return None
 
     async def _recovery_code_timer(self, revocation_code: utils.Status) -> None:
         max_value = 30 * 3
@@ -500,7 +508,8 @@ class SetupDialog(Gtk.Dialog):
             raw = codecs.decode(key.encode(), 'base64')
             self.__password_item.set_text(raw.decode())
             self._prepare_login_callback()
-            return None
+
+        return None
 
     def prepare_add_authenticator(self, login_data: webapi.LoginData) -> None:
         if not login_data.has_phone:
