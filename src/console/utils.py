@@ -129,128 +129,130 @@ async def check_login(
             log.critical(_("No Connection. Please, check your connection and try again."))
             sys.exit(1)
 
-    if not is_logged_in:
-        log.error(_("User is not logged in."))
+    if is_logged_in:
+        return True
 
-        username = config.parser.get("login", "account_name")
-        encrypted_password = config.parser.get("login", "password")
-        __password = None
+    log.error(_("User is not logged in."))
 
-        if encrypted_password:
-            # Just for curious people. It's not even safe.
-            key = codecs.decode(encrypted_password, 'rot13')
-            raw = codecs.decode(key.encode(), 'base64')
-            __password = raw.decode()
+    username = config.parser.get("login", "account_name")
+    encrypted_password = config.parser.get("login", "password")
+    __password = None
 
-        if not username:
-            user_input = safe_input(_("Please, write your username"))
-            assert isinstance(user_input, str), "Safe input is returning bool when it should return str"
-            username = user_input
+    if encrypted_password:
+        # Just for curious people. It's not even safe.
+        key = codecs.decode(encrypted_password, 'rot13')
+        raw = codecs.decode(key.encode(), 'base64')
+        __password = raw.decode()
 
-        if not __password:
-            __password = getpass.getpass(_("Please, write your password (it's hidden, and will be not saved)"))
+    if not username:
+        user_input = safe_input(_("Please, write your username"))
+        assert isinstance(user_input, str), "Safe input is returning bool when it should return str"
+        username = user_input
 
-        if not username or not __password:
-            log.error(_("Unable to log-in!\nUsername or password is blank."))
+    if not __password:
+        __password = getpass.getpass(_("Please, write your password (it's hidden, and will be not saved)"))
+
+    if not username or not __password:
+        log.error(_("Unable to log-in!\nUsername or password is blank."))
+        sys.exit(1)
+
+    login_session = webapi.Login(session, webapi_session, username, __password)
+    kwargs = {'emailauth': mail_code, 'mobile_login': mobile_login}
+
+    # no reason to send captcha_text if no gid is found
+    if captcha_gid != -1:
+        kwargs['captcha_text'] = captcha_text
+        kwargs['captcha_gid'] = captcha_gid
+
+    # identity_secret is required for openid login
+    if advanced:
+        shared_secret = safe_input(_("Write your shared secret"))
+        # it's required for openid login
+        identity_secret = safe_input(_("Write your identity secret"))
+
+        if not shared_secret or not identity_secret:
+            log.critical(_("Unable to log-in!\nshared secret or identity secret is blank."))
             sys.exit(1)
 
-        login_session = webapi.Login(session, webapi_session, username, __password)
-        kwargs = {'emailauth': mail_code, 'mobile_login': mobile_login}
+        config.new("login", "shared_secret", shared_secret)
+        config.new("login", "identity_secret", identity_secret)
+    else:
+        shared_secret = config.parser.get("login", "shared_secret")
+        # it's required for openid login
+        identity_secret = config.parser.get("login", "identity_secret")
 
-        # no reason to send captcha_text if no gid is found
-        if captcha_gid != -1:
-            kwargs['captcha_text'] = captcha_text
-            kwargs['captcha_gid'] = captcha_gid
-
-        # identity_secret is required for openid login
-        if advanced:
-            shared_secret = safe_input(_("Write your shared secret"))
-            # it's required for openid login
-            identity_secret = safe_input(_("Write your identity secret"))
-
-            if not shared_secret or not identity_secret:
-                log.critical(_("Unable to log-in!\nshared secret or identity secret is blank."))
+        if not shared_secret or not identity_secret:
+            if relogin:
+                log.critical(_("Unable to relogin without a valid shared secret and identity secret"))
                 sys.exit(1)
+            else:
+                log.warning(_("No shared secret found. Trying to log-in without two-factor authentication."))
 
-            config.new("login", "shared_secret", shared_secret)
-            config.new("login", "identity_secret", identity_secret)
-        else:
-            shared_secret = config.parser.get("login", "shared_secret")
-            # it's required for openid login
-            identity_secret = config.parser.get("login", "identity_secret")
+    kwargs['shared_secret'] = shared_secret
+    log.info(_("Waiting Steam Server..."))
 
-            if not shared_secret or not identity_secret:
-                if relogin:
-                    log.critical(_("Unable to relogin without a valid shared secret and identity secret"))
-                    sys.exit(1)
-                else:
-                    log.warning(_("No shared secret found. Trying to log-in without two-factor authentication."))
+    while True:
+        try:
+            login_data = await login_session.do_login(**kwargs)
+        except webapi.MailCodeError:
+            user_input = safe_input(_("Write code received by email"))
+            assert isinstance(user_input, str), "safe_input is returning bool when it should return str"
+            mail_code = user_input
+            continue
+        except webapi.TwoFactorCodeError:
+            if mobile_login and not relogin:
+                log.error(_("Unable to log-in! You already have a Steam Authenticator active on current account."))
+                log.error(_("¬ To log-in, remove authenticator from your account and try again."))
+                log.error(_("¬ (STNG will add itself as Steam Authenticator in your account)"))
+            else:
+                log.error(_("Unable to log-in! The secret keys are invalid!"))
 
-        kwargs['shared_secret'] = shared_secret
-        log.info(_("Waiting Steam Server..."))
+            return False
+        except webapi.LoginBlockedError:
+            log.error(_("Your network is blocked! It'll take some time until unblocked. Please, try again later."))
+            return False
+        except webapi.CaptchaError as exception:
+            log.info(_("Steam server is requesting a captcha code."))
 
-        while True:
-            try:
-                login_data = await login_session.do_login(**kwargs)
-            except webapi.MailCodeError:
-                user_input = safe_input(_("Write code received by email"))
-                assert isinstance(user_input, str), "safe_input is returning bool when it should return str"
-                mail_code = user_input
-                continue
-            except webapi.TwoFactorCodeError:
-                if mobile_login and not relogin:
-                    log.error(_("Unable to log-in! You already have a Steam Authenticator active on current account."))
-                    log.error(_("¬ To log-in, remove authenticator from your account and try again."))
-                    log.error(_("¬ (STNG will add itself as Steam Authenticator in your account)"))
-                else:
-                    log.error(_("Unable to log-in! The secret keys are invalid!"))
+            with tempfile.TemporaryFile('w', prefix='stng_', suffix='.captcha') as temp_file:
+                temp_file.write(exception.captcha)
 
-                return False
-            except webapi.LoginBlockedError:
-                log.error(_("Your network is blocked! It'll take some time until unblocked. Please, try again later."))
-                return False
-            except webapi.CaptchaError as exception:
-                log.info(_("Steam server is requesting a captcha code."))
+            user_input = safe_input(
+                _("Open {} in an image view and write captcha code that it shows").format(temp_file.name),
+            )
 
-                with tempfile.TemporaryFile('w', prefix='stng_', suffix='.captcha') as temp_file:
-                    temp_file.write(exception.captcha)
+            kwargs['captcha_text'] = user_input
+            kwargs['captcha_gid'] = exception.captcha_gid
+            continue
+        except webapi.LoginError:
+            log.error(_("Unable to log-in! Please, check your username/password and try again."))
+            log.error(_("(If you change your password, run steam-tools-ng --reset-password and try again.)"))
+            log.error(
+                _("(If you removed the authenticator from your account, run steam-tools-ng --reset and try again.)")
+            )
 
-                user_input = safe_input(
-                    _("Open {} in an image view and write captcha code that it shows").format(temp_file.name),
-                )
+            return False
+        except aiohttp.ClientError:
+            log.error(_("No Connection"))
+            return False
 
-                kwargs['captcha_text'] = user_input
-                kwargs['captcha_gid'] = exception.captcha_gid
-                continue
-            except webapi.LoginError:
-                log.error(_("Unable to log-in! Please, check your username/password and try again."))
-                log.error(_("(If you change your password, run steam-tools-ng --reset-password and try again.)"))
-                log.error(
-                    _("(If you removed the authenticator from your account, run steam-tools-ng --reset and try again.)")
-                )
+        if add_auth_after_login:
+            login_data = await add_authenticator(webapi_session, login_data)
 
-                return False
-            except aiohttp.ClientError:
-                log.error(_("No Connection"))
-                return False
+            print(_("WRITE DOWN THE RECOVERY CODE: %s"), login_data.auth['revocation_code'])
+            print(_("YOU WILL NOT ABLE TO VIEW IT AGAIN!"))
 
-            if add_auth_after_login:
-                login_data = await add_authenticator(webapi_session, login_data)
+        args = [login_data, relogin]
 
-                print(_("WRITE DOWN THE RECOVERY CODE: %s"), login_data.auth['revocation_code'])
-                print(_("YOU WILL NOT ABLE TO VIEW IT AGAIN!"))
+        if not encrypted_password:
+            save_password = safe_input(_("Do you want to save the password?"), True)
 
-            args = [login_data, relogin]
+            if save_password:
+                args.append(__password.encode())
 
-            if not encrypted_password:
-                save_password = safe_input(_("Do you want to save the password?"), True)
+        config.save_login_data(*args)
 
-                if save_password:
-                    args.append(__password.encode())
-
-            config.save_login_data(*args)
-
-            break
+        break
 
     return True
 
