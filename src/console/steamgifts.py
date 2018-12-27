@@ -92,11 +92,12 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
             try:
                 if await steamgifts_session.join(giveaway):
                     log.info(
-                        _("Joined! %s (%s:%s:%s)"),
+                        _("Joined! %s (%s:%s:%s) [%s]"),
                         giveaway.name,
                         giveaway.copies,
                         giveaway.points,
                         giveaway.level,
+                        current_datetime,
                     )
                 else:
                     log.error(_("Unable to join %s"), giveaway.id)
