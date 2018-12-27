@@ -128,7 +128,7 @@ class FinalizeDialog(Gtk.Dialog):
         self.connect('response', lambda dialog, response_id: self.destroy())
 
     def on_yes_button_clicked(self, button: Gtk.Button) -> None:
-        self.yes_button.hide()
+        button.hide()
         self.no_button.hide()
 
         with contextlib.suppress(AttributeError):
