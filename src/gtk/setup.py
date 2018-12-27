@@ -523,11 +523,6 @@ class SetupDialog(Gtk.Dialog):
             self,
             login_data: webapi.LoginData,
     ) -> None:
-        auth_code = universe.generate_steam_code(
-            int(login_data.auth['server_time']),
-            login_data.auth['shared_secret'],
-        )
-
         self.previous_button.hide()
         self.next_button.hide()
         self.user_details_section.hide()
