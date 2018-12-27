@@ -17,7 +17,6 @@
 #
 
 import os
-from typing import Any
 
 from gi.repository import GdkPixbuf, Gtk
 
@@ -48,9 +47,6 @@ class AboutDialog(Gtk.AboutDialog):
         logo = GdkPixbuf.Pixbuf.new_from_file(os.path.join(config.icons_dir, 'steam-tools-ng.png'))
         self.set_logo(logo)
 
-        self.connect("response", self.on_response)
+        self.connect("response", lambda dialog, response_id: self.destroy())
 
         self.present()
-
-    def on_response(self, action: Any, data: Any) -> None:
-        self.destroy()
