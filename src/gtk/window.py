@@ -18,7 +18,7 @@
 import asyncio
 import logging
 import os
-from typing import Union
+from typing import Union, Optional, Tuple
 
 from gi.repository import GdkPixbuf, Gio, Gtk
 
@@ -233,3 +233,39 @@ class Main(Gtk.ApplicationWindow):
 
             if parent:
                 selection.select_iter(parent)
+
+    def set_status(
+            self,
+            module: str,
+            display: Optional[str] = None,
+            info: Optional[str] = None,
+            error: Optional[str] = None,
+            level: Optional[Tuple[int, int]] = None,
+    ) -> None:
+        status = getattr(self, f'{module}_status')
+
+        if display:
+            status.set_display(display)
+        else:
+            status.unset_display()
+
+        if info:
+            status.set_info(info)
+
+        if error:
+            status.set_error(error)
+
+        if level:
+            try:
+                status.set_level(*level)
+            except KeyError:
+                status.unset_level()
+        else:
+            status.unset_level()
+
+    def set_warning(self, message: str) -> None:
+        self.warning_label.set_markup(utils.markup(message, color='white', background='red'))
+        self.warning_label.show()
+
+    def unset_warning(self) -> None:
+        self.warning_label.hide()

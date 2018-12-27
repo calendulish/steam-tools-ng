@@ -235,46 +235,28 @@ class Application(Gtk.Application):
                     try:
                         server_time = await self.webapi_session.get_server_time()
                     except aiohttp.ClientError:
-                        self.window.steamguard_status.set_error(_("Steam is not running"))
+                        self.window.set_status("steamguard", error=_("Steam is not running"))
                         await asyncio.sleep(10)
                         continue
 
                 auth_code = universe.generate_steam_code(server_time, shared_secret)
             except (ValueError, binascii.Error):
-                self.window.steamguard_status.set_error(_("The currently secret is invalid"))
+                self.window.set_status("steamguard", error=_("The currently secret is invalid"))
                 await asyncio.sleep(10)
             except ProcessLookupError:
-                self.window.steamguard_status.set_error(_("Steam Client is not running"))
+                self.window.set_status("steamguard", error=_("Steam Client is not running"))
                 await asyncio.sleep(10)
             else:
-                self.window.steamguard_status.set_error(_("Loading..."))
+                self.window.set_status("steamguard", info=_("Loading..."))
 
                 seconds = 30 - (server_time % 30)
 
                 for past_time in range(seconds * 9):
-                    self.window.steamguard_status.set_current(auth_code)
-                    self.window.steamguard_status.set_info(_("Running"))
-                    self.window.steamguard_status.set_level(past_time, seconds * 8)
+                    self.window.set_status("steamguard", auth_code, info=_("Running"), level=(past_time, seconds * 8))
 
                     await asyncio.sleep(0.125)
 
     async def run_cardfarming(self) -> None:
-        def info(message: str, badge_: Optional[Any] = None) -> None:
-            assert isinstance(self.window, Gtk.Window), "No Window"
-
-            if badge_:
-                assert isinstance(badge_, webapi.Badge), "Game has wrong type"
-                self.window.cardfarming_status.set_current(badge_.game_id)
-                self.window.cardfarming_status.set_info(f'{message} ({badge_.game_name})')
-            else:
-                self.window.cardfarming_status.set_current('_ _ _ _ _ _')
-                self.window.cardfarming_status.set_info(message)
-
-        def error(message: str) -> None:
-            assert isinstance(self.window, Gtk.Window), "No Window"
-            self.window.cardfarming_status.set_current('_ _ _ _ _ _')
-            self.window.cardfarming_status.set_error(message)
-
         assert isinstance(self.window, Gtk.Window), "No Window"
 
         while self.window.get_realized():
@@ -295,7 +277,7 @@ class Application(Gtk.Application):
             if cookies:
                 self.session.cookie_jar.update_cookies(cookies)  # type: ignore
             else:
-                error(_("Unable to find a valid login data"))
+                self.window.set_status("cardfarming", error=_("Unable to find a valid login data"))
                 await asyncio.sleep(5)
                 continue
 
@@ -306,12 +288,12 @@ class Application(Gtk.Application):
                     reverse=reverse_sorting
                 )
             except aiohttp.ClientError:
-                error(_("No Connection"))
+                self.window.set_status("cardfarming", error=_("No Connection"))
                 await asyncio.sleep(10)
                 continue
 
             if not badges:
-                info(_("No more cards to drop."))
+                self.window.set_status("cardfarming", info=_("No more cards to drop."))
                 break
 
             for badge in badges:
@@ -327,43 +309,52 @@ class Application(Gtk.Application):
                         badge = badge._replace(cards=0)
                         break
                     except ProcessLookupError:
-                        error(_("Steam Client is not running."))
+                        self.window.set_status("cardfarming", error=_("Steam Client is not running."))
                         await asyncio.sleep(5)
 
-                info("Running", badge)
+                self.window.set_status(
+                    "cardfarming",
+                    badge.game_id,
+                    info=_("{} ({})").format(_("Running"), badge.game_name),
+                )
 
                 wait_offset = random.randint(wait_min, wait_max)
 
                 while badge.cards != 0:
                     for past_time in range(wait_offset):
-                        info(_("Waiting drops for {} minutes").format(round((wait_offset - past_time) / 60)), badge)
-
-                        try:
-                            self.window.cardfarming_status.set_level(past_time, wait_offset)
-                        except KeyError:
-                            self.window.cardfarming_status.set_level(0, 0)
+                        self.window.set_status(
+                            "cardfarming",
+                            badge.game_id,
+                            info=_("Waiting drops for {} minutes").format(round((wait_offset - past_time) / 60)),
+                            level=(past_time, wait_offset),
+                        )
 
                         await asyncio.sleep(1)
 
-                    info("Updating drops", badge)
+                    self.window.set_status(
+                        "cardfarming",
+                        badge.game_id,
+                        info=_("{} ({})").format(_("Updating drops"), badge.game_name),
+                    )
+
                     while self.window.get_realized():
                         try:
                             badge = await self.webapi_session.update_badge_drops(badge, nickname)
                             break
                         except aiohttp.ClientError:
-                            error(_("No connection"))
+                            self.window.set_status("cardfarming", error=_("No connection"))
                             await asyncio.sleep(10)
 
-                info("Closing", badge)
+                self.window.set_status(
+                    "cardfarming",
+                    badge.game_id,
+                    info=_("{} ({})").format(_("Closing"), badge.game_name),
+                )
+
                 await executor.shutdown()
 
     async def run_confirmations(self) -> None:
         old_confirmations: List[webapi.Confirmation] = []
-
-        def warning(message: str) -> None:
-            assert isinstance(self.window, Gtk.Window), "No window"
-            self.window.warning_label.set_markup(utils.markup(message, color='white', background='red'))
-            self.window.warning_label.show()
 
         assert isinstance(self.window, Gtk.Window), "No window"
 
@@ -374,7 +365,7 @@ class Application(Gtk.Application):
             cookies = config.login_cookies()
 
             if not identity_secret:
-                warning(_("Unable to get confirmations without a valid identity secret"))
+                self.window.set_warning(_("Unable to get confirmations without a valid identity secret"))
                 await asyncio.sleep(10)
                 continue
 
@@ -384,7 +375,7 @@ class Application(Gtk.Application):
                 config.new("login", "deviceid", deviceid)
 
             if not cookies:
-                warning(_("Unable to find a valid login data"))
+                self.window.set_warning(_("Unable to find a valid login data"))
                 await asyncio.sleep(5)
                 continue
 
@@ -398,18 +389,18 @@ class Application(Gtk.Application):
                 )
             except AttributeError as exception:
                 log.warning(repr(exception))
-                warning(_("Error when fetch confirmations"))
+                self.window.set_warning(_("Error when fetch confirmations"))
             except ProcessLookupError:
-                warning(_("Steam is not running"))
+                self.window.set_warning(_("Steam is not running"))
             except webapi.LoginError as exception:
                 log.warning(repr(exception))
-                warning(_("User is not logged in"))
+                self.window.set_warning(_("User is not logged in"))
                 self.do_login(True)
             except aiohttp.ClientError as exception:
                 log.warning(repr(exception))
-                warning(_("No connection"))
+                self.window.set_warning(_("No connection"))
             else:
-                self.window.warning_label.hide()
+                self.window.unset_warning()
                 if old_confirmations != confirmations:
                     self.window.text_tree.store.clear()
 
@@ -436,21 +427,11 @@ class Application(Gtk.Application):
             await asyncio.sleep(15)
 
     async def run_steamtrades(self) -> None:
-        def error(message: str) -> None:
-            assert isinstance(self.window, Gtk.Window), "No window"
-            self.window.steamtrades_status.set_current('_ _ _ _ _')
-            self.window.steamtrades_status.set_error(message)
-
-        def info(message: str, tradeid: str = '_ _ _ _ _') -> None:
-            assert isinstance(self.window, Gtk.Window), "No window"
-            self.window.steamtrades_status.set_current(tradeid)
-            self.window.steamtrades_status.set_info(message)
-
         if self.plugin_manager.has_plugin("steamtrades"):
             steamtrades = self.plugin_manager.load_plugin("steamtrades")
             steamtrades_session = steamtrades.Main(self.session, api_url=self.api_url)
         else:
-            error(_("Unable to find Steamtrades plugin"))
+            self.window.set_status("steamtrades", error=_("Unable to find Steamtrades plugin"))
             return
 
         assert isinstance(self.window, Gtk.Window), "No window"
@@ -461,14 +442,14 @@ class Application(Gtk.Application):
                 await asyncio.sleep(5)
                 continue
 
-            info(_("Loading"))
+            self.window.set_status("steamtrades", info=_("Loading"))
             trade_ids = config.parser.get("steamtrades", "trade_ids")
             wait_min = config.parser.getint("steamtrades", "wait_min")
             wait_max = config.parser.getint("steamtrades", "wait_max")
             cookies = config.login_cookies()
 
             if not trade_ids:
-                error(_("No trade ID found in config file"))
+                self.window.set_status("steamtrades", error=_("No trade ID found in config file"))
                 await asyncio.sleep(5)
                 continue
 
@@ -482,13 +463,13 @@ class Application(Gtk.Application):
                 await steamtrades_session.do_login()
             except webapi.LoginError:
                 self.window.set_login_icon('steamtrades', 'red')
-                error(_("User is not logged in"))
+                self.window.set_status("steamtrades", error=_("User is not logged in"))
                 self.do_login(True)
                 await asyncio.sleep(15)
                 continue
             except aiohttp.ClientError:
                 self.window.set_login_icon('steamtrades', 'red')
-                error(_("No connection"))
+                self.window.set_status("steamtrades", error=_("No connection"))
                 await asyncio.sleep(15)
                 continue
 
@@ -501,16 +482,16 @@ class Application(Gtk.Application):
                 try:
                     trade_info = await steamtrades_session.get_trade_info(trade_id)
                 except (IndexError, aiohttp.ClientResponseError):
-                    error(_("Unable to find TradeID {}").format(trade_id))
+                    self.window.set_status("steamtrades", error=_("Unable to find trade id"))
                     bumped = False
                     break
                 except aiohttp.ClientError:
                     self.window.set_login_icon('steamtrades', 'red')
-                    error(_("No connection"))
+                    self.window.set_status("steamtrades", error=_("No connection"))
                     bumped = False
                     break
 
-                info(_("Waiting anti-ban timer"))
+                self.window.set_status("steamtrades", trade_id, info=_("Waiting anti-ban timer"))
                 max_ban_wait = random.randint(5, 15)
                 for past_time in range(max_ban_wait):
                     try:
@@ -522,10 +503,10 @@ class Application(Gtk.Application):
 
                 try:
                     if await steamtrades_session.bump(trade_info):
-                        info(_("Bumped!"), trade_info.id)
+                        self.window.set_status("steamtrades", trade_id, info=_("Bumped!"))
                         bumped = True
                     else:
-                        error(_("Unable to bump {}").format(trade_info.id))
+                        self.window.set_status("steamtrades", trade_id, error=_("Unable to bump"))
                         await asyncio.sleep(5)
                         continue
                 except steamtrades.NoTradesError as exception:
@@ -538,13 +519,13 @@ class Application(Gtk.Application):
                     bumped = True
                 except steamtrades.TradeClosedError as exception:
                     log.error(str(exception))
-                    error(str(exception))
+                    self.window.set_status("steamtrades", error=str(exception))
                     await asyncio.sleep(5)
                     continue
                 except webapi.LoginError as exception:
                     log.error(str(exception))
                     self.window.set_login_icon("steamtrades", "red")
-                    error(_("Login is lost. Trying to relogin."))
+                    self.window.set_status("steamtrades", error=_("Login is lost. Trying to relogin."))
                     await asyncio.sleep(5)
                     bumped = False
                     break
@@ -556,44 +537,21 @@ class Application(Gtk.Application):
             wait_offset = random.randint(wait_min, wait_max)
             log.debug(_("Setting wait_offset from steamtrades to %s"), wait_offset)
             for past_time in range(wait_offset):
-                info(_("Waiting more {} minutes").format(round(wait_offset / 60)))
-
-                try:
-                    self.window.steamtrades_status.set_level(past_time, wait_offset)
-                except KeyError:
-                    self.window.steamtrades_status.set_level(0, 0)
+                self.window.set_status(
+                    "steamtrades",
+                    info=_("Waiting more {} minutes").format(round(wait_offset / 60)),
+                    level=(past_time, wait_offset),
+                )
 
                 await asyncio.sleep(1)
 
     async def run_steamgifts(self) -> None:
-        def error(message: str) -> None:
-            assert isinstance(self.window, Gtk.Window), "No window"
-            self.window.steamgifts_status.set_current('_ _ _ _ _')
-            self.window.steamgifts_status.set_error(message)
-
         if self.plugin_manager.has_plugin("steamgifts"):
             steamgifts = self.plugin_manager.load_plugin("steamgifts")
             steamgifts_session = steamgifts.Main(self.session, api_url=self.api_url)
         else:
-            error(_("Unable to find Steamgifts plugin"))
+            self.window.set_status("steamgifts", error=_("Unable to find Steamgifts plugin"))
             return
-
-        def info(message: str, giveaway_: Optional[Any] = None) -> None:
-            assert isinstance(self.window, Gtk.Window), "No window"
-
-            if giveaway_:
-                assert isinstance(giveaway_, steamgifts.GiveawayInfo), "Steamgifts giveaway has wrong type"
-                self.window.steamgifts_status.set_current(giveaway_.id)
-                self.window.steamgifts_status.set_info('{} {} ({}:{}:{})'.format(
-                    message,
-                    giveaway_.name,
-                    giveaway_.copies,
-                    giveaway_.points,
-                    giveaway_.level,
-                ))
-            else:
-                self.window.steamgifts_status.set_current('_ _ _ _ _')
-                self.window.steamgifts_status.set_info(message)
 
         assert isinstance(self.window, Gtk.Window), "No window"
 
@@ -603,7 +561,7 @@ class Application(Gtk.Application):
                 await asyncio.sleep(5)
                 continue
 
-            info(_("Loading"))
+            self.window.set_status("steamgifts", info=_("Loading"))
             wait_min = config.parser.getint("steamgifts", "wait_min")
             wait_max = config.parser.getint("steamgifts", "wait_max")
             giveaway_type = config.parser.get("steamgifts", "giveaway_type")
@@ -620,12 +578,12 @@ class Application(Gtk.Application):
                 await steamgifts_session.do_login()
             except aiohttp.ClientConnectionError:
                 self.window.set_login_icon('steamgifts', 'red')
-                error(_("No Connection"))
+                self.window.set_status("steamgifts", error=_("No Connection"))
                 await asyncio.sleep(15)
                 continue
             except webapi.LoginError:
                 self.window.set_login_icon('steamgifts', 'red')
-                error(_("User is not logged in"))
+                self.window.set_status("steamgifts", error=_("User is not logged in"))
                 self.do_login(True)
                 await asyncio.sleep(15)
                 continue
@@ -635,7 +593,7 @@ class Application(Gtk.Application):
             try:
                 await steamgifts_session.configure()
             except steamgifts.ConfigureError:
-                error(_("Unable to configure steamgifts"))
+                self.window.set_status("steamgifts", error=_("Unable to configure steamgifts"))
                 await asyncio.sleep(20)
                 continue
 
@@ -654,14 +612,20 @@ class Application(Gtk.Application):
                         reverse=reverse_sorting,
                     )
             else:
-                info(_("No giveaways to join."))
+                self.window.set_status("steamgifts", info=_("No giveaways to join."))
                 joined = True
                 wait_min //= 2
                 wait_max //= 2
 
             for index, giveaway in enumerate(giveaways):
                 self.window.steamgifts_status.set_level(index, len(giveaway))
-                info(_("Waiting anti-ban timer"), giveaway)
+
+                self.window.set_status(
+                    "steamgifts",
+                    giveaway.id,
+                    "{} {} ({}:{}:{})".format(_("Waiting anti-ban timer"), *giveaway[:4]),
+                )
+
                 max_ban_wait = random.randint(5, 15)
                 for past_time in range(max_ban_wait):
                     try:
@@ -673,10 +637,16 @@ class Application(Gtk.Application):
 
                 try:
                     if await steamgifts_session.join(giveaway):
-                        info(_("Joined!"), giveaway)
+
+                        self.window.set_status(
+                            "steamgifts",
+                            giveaway.id,
+                            "{} {} ({}:{}:{})".format(_("Joined!"), *giveaway[:4]),
+                        )
+
                         joined = True
                     else:
-                        error(_("Unable to join {}").format(giveaway.id))
+                        self.window.set_status("steamgifts", giveaway.id, error=_("Unable to join {}"))
                         await asyncio.sleep(5)
                         continue
                 except steamgifts.NoGiveawaysError as exception:
@@ -685,24 +655,24 @@ class Application(Gtk.Application):
                     continue
                 except steamgifts.GiveawayEndedError as exception:
                     log.error(str(exception))
-                    error(_("Giveaway is already ended."))
+                    self.window.set_status("steamgifts", error=_("Giveaway is already ended."))
                     await asyncio.sleep(5)
                     continue
                 except webapi.LoginError as exception:
                     log.error(repr(exception))
                     self.window.set_login_icon('steamgifts', 'red')
-                    error(_("Login is lost. Trying to relogin."))
+                    self.window.set_status("steamgifts", error=_("Login is lost. Trying to relogin."))
                     await asyncio.sleep(5)
                     joined = False
                     break
                 except steamgifts.NoLevelError as exception:
                     log.error(str(exception))
-                    error(_("User don't have required level to join"))
+                    self.window.set_status("steamgifts", error=_("User don't have required level to join"))
                     await asyncio.sleep(5)
                     continue
                 except steamgifts.NoPointsError as exception:
                     log.error(str(exception))
-                    error(_("User don't have required points to join"))
+                    self.window.set_status("steamgifts", error=_("User don't have required points to join"))
                     await asyncio.sleep(5)
 
                     if steamgifts_session.user_info.points <= 2:
@@ -717,12 +687,11 @@ class Application(Gtk.Application):
             wait_offset = random.randint(wait_min, wait_max)
             log.debug(_("Setting wait_offset from steamgifts to %s"), wait_offset)
             for past_time in range(wait_offset):
-                info(_("Waiting more {} minutes").format(round((wait_offset - past_time) / 60)))
-
-                try:
-                    self.window.steamgifts_status.set_level(past_time, wait_offset)
-                except KeyError:
-                    self.window.steamgifts_status.set_level(0, 0)
+                self.window.set_status(
+                    "steamgifts",
+                    info=_("Waiting more {} minutes").format(round((wait_offset - past_time) / 60)),
+                    level=(past_time, wait_offset),
+                )
 
                 await asyncio.sleep(1)
 
