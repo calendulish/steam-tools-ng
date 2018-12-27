@@ -85,12 +85,12 @@ class Main(Gtk.ApplicationWindow):
         self.cardfarming_status = utils.Status(6, _("Card Farming"))
         self.status_grid.attach(self.cardfarming_status, 1, 1, 1, 1)
 
-        info_label = Gtk.Label()
-        info_label.set_text(_("If you have confirmations, they will be shown here. (15 seconds delay)"))
-        main_grid.attach(info_label, 0, 2, 4, 1)
+        self._info_label = Gtk.Label()
+        self._info_label.set_text(_("If you have confirmations, they will be shown here. (15 seconds delay)"))
+        main_grid.attach(self._info_label, 0, 2, 4, 1)
 
-        self.warning_label = Gtk.Label()
-        main_grid.attach(self.warning_label, 0, 3, 4, 1)
+        self._warning_label = Gtk.Label()
+        main_grid.attach(self._warning_label, 0, 3, 4, 1)
 
         self.text_tree = utils.SimpleTextTree((_('mode'), _('id'), _('key'), _('give'), _('to'), _('receive')), False)
         main_grid.attach(self.text_tree, 0, 4, 4, 1)
@@ -264,8 +264,8 @@ class Main(Gtk.ApplicationWindow):
             status.unset_level()
 
     def set_warning(self, message: str) -> None:
-        self.warning_label.set_markup(utils.markup(message, color='white', background='red'))
-        self.warning_label.show()
+        self._warning_label.set_markup(utils.markup(message, color='white', background='red'))
+        self._warning_label.show()
 
     def unset_warning(self) -> None:
-        self.warning_label.hide()
+        self._warning_label.hide()
