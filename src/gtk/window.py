@@ -59,7 +59,12 @@ class Main(Gtk.ApplicationWindow):
 
         self.set_default_size(650, 450)
         self.set_resizable(False)
-        self.set_deletable(False)
+
+        if config.parser.getboolean("gtk", "show_close_button"):
+            self.set_deletable(True)
+        else:
+            self.set_deletable(False)
+
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_titlebar(header_bar)
         self.set_title('Steam Tools NG')

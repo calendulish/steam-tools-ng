@@ -136,6 +136,9 @@ class SettingsDialog(Gtk.Dialog):
         theme = gtk_section.new("theme", _("Theme:"), Gtk.ComboBoxText, 0, 0, items=gtk_themes)
         theme.connect('changed', self.on_theme_changed)
 
+        show_close_button = gtk_section.new("show_close_button", _("Show close button:"), Gtk.CheckButton, 0, 1)
+        show_close_button.connect('toggled', self.on_show_close_button_toggled)
+
         gtk_section.show_all()
 
         steamtrades_section = utils.Section('steamtrades', _('Steamtrades Settings'))
@@ -230,13 +233,13 @@ class SettingsDialog(Gtk.Dialog):
 
         content_grid.attach(login_section, 0, 0, 1, 2)
         content_grid.attach(logger_section, 1, 0, 1, 1)
-        content_grid.attach(locale_section, 1, 1, 1, 1)
+        content_grid.attach(gtk_section, 1, 1, 1, 1)
 
         content_grid.attach(steamtrades_section, 0, 2, 1, 1)
         content_grid.attach(cardfarming_section, 0, 3, 1, 1)
         content_grid.attach(steamgifts_section, 1, 2, 1, 2)
 
-        content_grid.attach(gtk_section, 0, 4, 1, 1)
+        content_grid.attach(locale_section, 0, 4, 1, 1)
         content_grid.attach(plugins_section, 1, 4, 1, 1)
 
         content_grid.show()
@@ -246,6 +249,16 @@ class SettingsDialog(Gtk.Dialog):
         if button.get_active():
             advanced_settings = advanced.AdvancedSettingsDialog(button, self, self.session, self.webapi_session)
             advanced_settings.show_all()
+
+    def on_show_close_button_toggled(self, button: Gtk.Button) -> None:
+        current_value = button.get_active()
+
+        if current_value:
+            self.parent_window.set_deletable(True)
+        else:
+            self.parent_window.set_deletable(False)
+
+        config.new('gtk', 'show_close_button', current_value)
 
     def on_theme_changed(self, combo: Gtk.ComboBoxText) -> None:
         theme = list(gtk_themes)[combo.get_active()]

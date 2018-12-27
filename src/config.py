@@ -94,6 +94,7 @@ def init() -> None:
             },
             'gtk': {
                 'theme': 'light',
+                'show_close_button': False,
             },
             'plugins': {
                 'steamtrades': True,
