@@ -380,12 +380,12 @@ class Application(Gtk.Application):
                 deviceid = universe.generate_device_id(identity_secret)
                 config.new("login", "deviceid", deviceid)
 
-            if cookies:
-                self.session.cookie_jar.update_cookies(cookies)  # type: ignore
-            else:
+            if not cookies:
                 warning(_("Unable to find a valid login data"))
                 await asyncio.sleep(5)
                 continue
+
+            self.session.cookie_jar.update_cookies(cookies)  # type: ignore
 
             try:
                 confirmations = await self.webapi_session.get_confirmations(
@@ -423,9 +423,8 @@ class Application(Gtk.Application):
                             safe_receive,
                         ])
 
-                        if len(give) > 1 or len(receive) > 1:
-                            for item in itertools.zip_longest(give, receive):
-                                self.window.text_tree.store.append(iter_, ['', '', '', item[0], '', item[1]])
+                        for item in itertools.zip_longest(give, receive):
+                            self.window.text_tree.store.append(iter_, ['', '', '', item[0], '', item[1]])
                 else:
                     log.debug(_("Skipping confirmations update because data doesn't seem to have changed"))
 
