@@ -23,7 +23,7 @@ import tempfile
 from typing import Optional, Union, List
 
 import aiohttp
-from stlib import webapi, authenticator
+from stlib import webapi, universe
 
 from .. import i18n, config
 
@@ -39,7 +39,7 @@ async def add_authenticator(
         # FIXME: Impossible to add an authenticator without a phone
         raise NotImplementedError
 
-    deviceid = authenticator.generate_device_id(token=login_data.oauth['oauth_token'])
+    deviceid = universe.generate_device_id(token=login_data.oauth['oauth_token'])
     config.new("login", "deviceid", deviceid)
 
     try:
