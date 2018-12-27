@@ -400,7 +400,7 @@ def copy_childrens(from_model: Gtk.TreeStore, to_model: Gtk.ListStore, iter_: Gt
 def safe_confirmation_get(confirmation_: webapi.Confirmation, attribute: str) -> Tuple[str, List[str]]:
     value = getattr(confirmation_, attribute)
 
-    if len(value) == 0:
+    if not value:
         result = _("Nothing")
     elif len(value) == 1:
         result = value[0]
