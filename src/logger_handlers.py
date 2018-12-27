@@ -55,7 +55,7 @@ if sys.platform == 'win32':
         ]
 
 
-    class LowLevelConsoleAPI(object):
+    class LowLevelConsoleAPI:
         def __init__(self) -> None:
             self.saved_buffer_info = WindowsConsoleBufferInfo()
             self.screen_buffer = windll.kernel32.GetStdHandle(-11)
