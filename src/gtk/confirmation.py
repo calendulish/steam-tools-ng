@@ -79,7 +79,7 @@ class FinalizeDialog(Gtk.Dialog):
         self.no_button.connect("clicked", lambda button: self.destroy())
         self.header_bar.pack_start(self.no_button)
 
-        if self.iter is None or len(model) == 0:
+        if self.iter is None or not model:
             self.status.error(_("No items to accept or cancel"))
             self.header_bar.set_show_close_button(True)
         elif self.iter is False:
