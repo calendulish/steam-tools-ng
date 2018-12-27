@@ -174,8 +174,6 @@ class FinalizeDialog(Gtk.Dialog):
 
         self.status.info(_("Waiting Steam Server (OP: {})").format(self.model[self.iter][1]))
 
-        server_time = await self.webapi_session.get_server_time()
-
         result = await self.webapi_session.finalize_confirmation(
             identity_secret,
             steamid,
