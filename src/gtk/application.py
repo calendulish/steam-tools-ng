@@ -26,7 +26,7 @@ from typing import Any, List, Optional
 
 import aiohttp
 from gi.repository import Gio, Gtk
-from stlib import authenticator, client, plugins, webapi
+from stlib import universe, client, plugins, webapi
 
 from . import about, settings, setup, window, utils
 from .. import config, i18n
@@ -236,7 +236,7 @@ class Application(Gtk.Application):
                         await asyncio.sleep(10)
                         continue
 
-                auth_code = authenticator.get_code(server_time, shared_secret)
+                auth_code = universe.generate_steam_code(server_time, shared_secret)
             except (ValueError, binascii.Error):
                 self.window.steamguard_status.set_error(_("The currently secret is invalid"))
                 await asyncio.sleep(10)
@@ -377,7 +377,7 @@ class Application(Gtk.Application):
 
             if not deviceid:
                 log.debug(_("Unable to find deviceid. Generating from identity."))
-                deviceid = authenticator.generate_device_id(identity_secret)
+                deviceid = universe.generate_device_id(identity_secret)
                 config.new("login", "deviceid", deviceid)
 
             if cookies:
