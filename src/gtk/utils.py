@@ -287,7 +287,7 @@ class Section(Gtk.Frame):
         children_ = children  # type: Any
 
         class Item(children_):
-            def __init__(self, name: str, label: str) -> None:
+            def __init__(self, name: str, section_name: str, label: str) -> None:
                 super().__init__()
 
                 self.label = Gtk.Label(label)
@@ -296,7 +296,7 @@ class Section(Gtk.Frame):
 
                 self.set_hexpand(True)
                 self.set_name(name)
-                self._section_name = None
+                self._section_name = section_name
 
             def show_all(self) -> None:
                 self.label.show()
@@ -320,8 +320,7 @@ class Section(Gtk.Frame):
             *grid_position: int,
             items: 'OrderedDict[str, str]' = None,
     ) -> Gtk.Widget:
-        item = self.__item_factory(children)(name, label)
-        item._section_name = self.get_name()
+        item = self.__item_factory(children)(name, self.get_name(), label)
 
         self.grid.attach(item.label, *grid_position, 1, 1)
         self.grid.attach_next_to(item, item.label, Gtk.PositionType.RIGHT, 1, 1)
