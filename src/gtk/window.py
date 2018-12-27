@@ -18,6 +18,7 @@
 import asyncio
 import logging
 import os
+from typing import Union
 
 from gi.repository import GdkPixbuf, Gio, Gtk
 
@@ -110,19 +111,19 @@ class Main(Gtk.ApplicationWindow):
         tree_selection.connect("changed", self.on_tree_selection_changed)
 
         accept_button = Gtk.Button(_('Accept selected'))
-        accept_button.connect('clicked', self.on_accept_button_clicked, tree_selection)
+        accept_button.connect('clicked', self.on_validate_confirmations, "allow", *tree_selection.get_selected())
         main_grid.attach(accept_button, 0, 5, 1, 1)
 
         cancel_button = Gtk.Button(_('Cancel selected'))
-        cancel_button.connect('clicked', self.on_cancel_button_clicked, tree_selection)
+        cancel_button.connect('clicked', self.on_validate_confirmations, "cancel", *tree_selection.get_selected())
         main_grid.attach(cancel_button, 1, 5, 1, 1)
 
         accept_all_button = Gtk.Button(_('Accept all'))
-        accept_all_button.connect('clicked', self.on_accept_all_button_clicked)
+        accept_all_button.connect('clicked', self.on_validate_confirmations, "allow", self.text_tree.store)
         main_grid.attach(accept_all_button, 2, 5, 1, 1)
 
         cancel_all_button = Gtk.Button(_('Cancel all'))
-        cancel_all_button.connect('clicked', self.on_cancel_all_button_clicked)
+        cancel_all_button.connect('clicked', self.on_validate_confirmations, "cancel", self.text_tree.store)
         main_grid.attach(cancel_all_button, 3, 5, 1, 1)
 
         icon_bar = Gtk.Grid()
@@ -214,20 +215,13 @@ class Main(Gtk.ApplicationWindow):
         else:
             return False
 
-    def on_accept_button_clicked(self, button: Gtk.Button, selection: Gtk.TreeSelection) -> None:
-        finalize_dialog = confirmation.FinalizeDialog(self, self.webapi_session, "allow", *selection.get_selected())
-        finalize_dialog.show()
-
-    def on_cancel_button_clicked(self, button: Gtk.Button, selection: Gtk.TreeSelection) -> None:
-        finalize_dialog = confirmation.FinalizeDialog(self, self.webapi_session, "cancel", *selection.get_selected())
-        finalize_dialog.show()
-
-    def on_accept_all_button_clicked(self, button: Gtk.Button) -> None:
-        finalize_dialog = confirmation.FinalizeDialog(self, self.webapi_session, "allow", self.text_tree.store)
-        finalize_dialog.show()
-
-    def on_cancel_all_button_clicked(self, button: Gtk.Button) -> None:
-        finalize_dialog = confirmation.FinalizeDialog(self, self.webapi_session, "cancel", self.text_tree.store)
+    def on_validate_confirmations(
+            self,
+            button: Gtk.Button,
+            action: str,
+            model: Gtk.TreeModel,
+            iter_: Union[Gtk.TreeIter, bool, None] = False) -> None:
+        finalize_dialog = confirmation.FinalizeDialog(self, self.webapi_session, action, model, iter_)
         finalize_dialog.show()
 
     @staticmethod
