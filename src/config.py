@@ -21,9 +21,11 @@ import locale
 import logging
 import os
 import sys
+import time
 from typing import Dict, Any, Optional
 
-from stlib import webapi
+import aiohttp
+from stlib import webapi, client
 
 from . import i18n, logger_handlers
 
@@ -228,3 +230,21 @@ def save_login_data(
 
     for key, value in new_configs.items():
         new("login", key, value)
+
+
+async def time_offset(webapi_session: webapi.SteamWebAPI) -> int:
+    try:
+        with client.SteamGameServer() as server:
+            server_time = server.get_server_time()
+    except ProcessLookupError:
+        log.warning(_("Steam is not running."))
+        log.debug(_("Fallbacking time offset to WebAPI"))
+
+        try:
+            server_time = await webapi_session.get_server_time()
+        except aiohttp.ClientError:
+            log.warning(_("No Connection"))
+            log.debug(_("Falbacking time offset to 0"))
+            server_time = 0
+
+    return int(time.time()) - server_time

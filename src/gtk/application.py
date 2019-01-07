@@ -22,6 +22,7 @@ import itertools
 import logging
 import random
 import sys
+import time
 from typing import Any, List, Optional
 
 import aiohttp
@@ -50,6 +51,7 @@ class Application(Gtk.Application):
         self.gtk_settings = Gtk.Settings.get_default()
 
         self.api_login: Optional[webapi.Login] = None
+        self.time_offset = 0
 
     def do_startup(self) -> None:
         Gtk.Application.do_startup(self)
@@ -126,6 +128,7 @@ class Application(Gtk.Application):
     async def async_activate(self) -> None:
         setup_requested = False
         login_requested = False
+        self.time_offset = await config.time_offset(self.webapi_session)
 
         assert isinstance(self.window, Gtk.Window), "No window is found"
 
@@ -225,20 +228,7 @@ class Application(Gtk.Application):
                 if not shared_secret:
                     raise ValueError
 
-                try:
-                    with client.SteamGameServer() as server:
-                        server_time = server.get_server_time()
-                except ProcessLookupError:
-                    log.debug(_("Steam is not running."))
-                    log.debug(_("Fallbacking server_time to WebAPI"))
-
-                    try:
-                        server_time = await self.webapi_session.get_server_time()
-                    except aiohttp.ClientError:
-                        self.window.set_status("steamguard", error=_("Steam is not running"))
-                        await asyncio.sleep(10)
-                        continue
-
+                server_time = int(time.time()) - self.time_offset
                 auth_code = universe.generate_steam_code(server_time, shared_secret)
             except (ValueError, binascii.Error):
                 self.window.set_status("steamguard", error=_("The currently secret is invalid"))

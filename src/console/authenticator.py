@@ -19,9 +19,10 @@ import asyncio
 import base64
 import logging
 import sys
+import time
 
 import aiohttp
-from stlib import client, webapi, plugins, universe
+from stlib import webapi, plugins, universe
 
 from . import utils
 from .. import config, i18n
@@ -34,6 +35,7 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
     api_url = config.parser.get('steam', 'api_url')
     webapi_session = webapi.SteamWebAPI(session, api_url)
     steam_login_status = await utils.check_login(session, webapi_session)
+    time_offset = await config.time_offset(webapi_session)
 
     if not steam_login_status:
         sys.exit(1)
@@ -51,20 +53,7 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
         return 1
 
     while True:
-        try:
-            with client.SteamGameServer() as server:
-                server_time = server.get_server_time()
-        except ProcessLookupError:
-            log.warning(_("Steam is not running."))
-            log.debug(_("Fallbacking server_time to WebAPI"))
-
-            try:
-                server_time = await webapi_session.get_server_time()
-            except aiohttp.ClientError:
-                log.error(_("Steam is not running"))
-                await asyncio.sleep(10)
-                continue
-
+        server_time = int(time.time()) - time_offset
         auth_code = universe.generate_steam_code(server_time, shared_secret)
         seconds = 30 - (server_time % 30)
 
