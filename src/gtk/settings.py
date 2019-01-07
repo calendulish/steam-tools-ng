@@ -117,16 +117,23 @@ class SettingsDialog(Gtk.Dialog):
 
         plugins_section = utils.Section('plugins', _('Plugins Settings'))
 
-        steamguard = plugins_section.new("steamguard", _("SteamGuard:"), Gtk.CheckButton, 0, 1)
+        steamguard = plugins_section.new("steamguard", _("Authenticator:"), Gtk.CheckButton, 0, 1)
         steamguard.connect('toggled', on_setting_toggled)
+
+        confirmations = plugins_section.new("confirmations", _("Confirmations:"), Gtk.CheckButton, 2, 1)
+        confirmations.connect('toggled', on_setting_toggled)
+
+        __disabled = plugins_section.new("___", "________", Gtk.CheckButton, 4, 1)
+        __disabled.set_sensitive(False)
+        __disabled.label.set_sensitive(False)
 
         steamtrades = plugins_section.new("steamtrades", _("Steamtrades:"), Gtk.CheckButton, 0, 2)
         steamtrades.connect('toggled', on_setting_toggled)
 
-        steamgifts = plugins_section.new("steamgifts", _("Steamgifts:"), Gtk.CheckButton, 2, 1)
+        steamgifts = plugins_section.new("steamgifts", _("Steamgifts:"), Gtk.CheckButton, 2, 2)
         steamgifts.connect('toggled', on_setting_toggled)
 
-        cardfarming = plugins_section.new("cardfarming", _("Cardfarming:"), Gtk.CheckButton, 2, 2)
+        cardfarming = plugins_section.new("cardfarming", _("Cardfarming:"), Gtk.CheckButton, 4, 2)
         cardfarming.connect("toggled", on_setting_toggled)
 
         plugins_section.show_all()

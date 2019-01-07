@@ -90,15 +90,19 @@ class Main(Gtk.ApplicationWindow):
         self.cardfarming_status = utils.Status(6, _("Card Farming"))
         self.status_grid.attach(self.cardfarming_status, 1, 1, 1, 1)
 
+        self.confirmations_grid = Gtk.Grid()
+        self.confirmations_grid.set_row_spacing(10)
+        main_grid.attach(self.confirmations_grid, 0, 1, 1, 1)
+
         self._info_label = Gtk.Label()
         self._info_label.set_text(_("If you have confirmations, they will be shown here. (15 seconds delay)"))
-        main_grid.attach(self._info_label, 0, 2, 4, 1)
+        self.confirmations_grid.attach(self._info_label, 0, 2, 4, 1)
 
         self._warning_label = Gtk.Label()
-        main_grid.attach(self._warning_label, 0, 3, 4, 1)
+        self.confirmations_grid.attach(self._warning_label, 0, 3, 4, 1)
 
         self.text_tree = utils.SimpleTextTree((_('mode'), _('id'), _('key'), _('give'), _('to'), _('receive')), False)
-        main_grid.attach(self.text_tree, 0, 4, 4, 1)
+        self.confirmations_grid.attach(self.text_tree, 0, 4, 4, 1)
 
         for index, column in enumerate(self.text_tree.view.get_columns()):
             if index in (0, 1, 2):
@@ -117,19 +121,19 @@ class Main(Gtk.ApplicationWindow):
 
         accept_button = Gtk.Button(_('Accept selected'))
         accept_button.connect('clicked', self.on_validate_confirmations, "allow", *tree_selection.get_selected())
-        main_grid.attach(accept_button, 0, 5, 1, 1)
+        self.confirmations_grid.attach(accept_button, 0, 5, 1, 1)
 
         cancel_button = Gtk.Button(_('Cancel selected'))
         cancel_button.connect('clicked', self.on_validate_confirmations, "cancel", *tree_selection.get_selected())
-        main_grid.attach(cancel_button, 1, 5, 1, 1)
+        self.confirmations_grid.attach(cancel_button, 1, 5, 1, 1)
 
         accept_all_button = Gtk.Button(_('Accept all'))
         accept_all_button.connect('clicked', self.on_validate_confirmations, "allow", self.text_tree.store)
-        main_grid.attach(accept_all_button, 2, 5, 1, 1)
+        self.confirmations_grid.attach(accept_all_button, 2, 5, 1, 1)
 
         cancel_all_button = Gtk.Button(_('Cancel all'))
         cancel_all_button.connect('clicked', self.on_validate_confirmations, "cancel", self.text_tree.store)
-        main_grid.attach(cancel_all_button, 3, 5, 1, 1)
+        self.confirmations_grid.attach(cancel_all_button, 3, 5, 1, 1)
 
         icon_bar = Gtk.Grid()
         icon_bar.set_column_spacing(5)
@@ -148,6 +152,7 @@ class Main(Gtk.ApplicationWindow):
 
         icon_bar.show_all()
         main_grid.show_all()
+        self.confirmations_grid.show_all()
         self.show_all()
 
         asyncio.ensure_future(self.plugin_switch())
@@ -187,6 +192,13 @@ class Main(Gtk.ApplicationWindow):
                     self.status_grid.attach(plugin, 1, 1, 1, 1)
 
                 plugin.show()
+
+            if config.parser.getboolean("plugins", "confirmations"):
+                self.confirmations_grid.show_all()
+                self.set_size_request(650, 570)
+            else:
+                self.confirmations_grid.hide()
+                self.set_size_request(650, 0)
 
             await asyncio.sleep(1)
 

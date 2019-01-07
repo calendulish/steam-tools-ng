@@ -103,6 +103,7 @@ def init() -> None:
                 'steamgifts': True,
                 'cardfarming': True,
                 'steamguard': True,
+                'confirmations': True,
             },
             'login': {
                 'steamid': 0,

@@ -349,6 +349,10 @@ class Application(Gtk.Application):
         assert isinstance(self.window, Gtk.Window), "No window"
 
         while self.window.get_realized():
+            if not config.parser.getboolean("plugins", "confirmations"):
+                await asyncio.sleep(5)
+                continue
+
             identity_secret = config.parser.get("login", "identity_secret")
             steamid = config.parser.getint("login", "steamid")
             deviceid = config.parser.get("login", "deviceid")
