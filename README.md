@@ -1,4 +1,4 @@
-Steam Tools NG (formerly Steam Tools)
+[STNG] Steam Tools NG (formerly Steam Tools)
 ========================================
 [![STNG](https://lara.click/temp/stng_last.png)](https://github.com/ShyPixie/steam-tools-ng)  
   
@@ -9,7 +9,7 @@ Steam Tools NG (formerly Steam Tools)
 [![Code Coverage](https://scrutinizer-ci.com/g/ShyPixie/steam-tools-ng/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/ShyPixie/steam-tools-ng/?branch=master)
 [![GitHub license](https://img.shields.io/badge/license-GPLv3-green.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
 [![GitHub release](https://img.shields.io/github/release/ShyPixie/steam-tools-ng.svg)](https://github.com/ShyPixie/steam-tools-ng/releases)
-[![GitHub Test release](https://img.shields.io/badge/testing-0.0.0_DEV-orange.svg)](https://github.com/ShyPixie/steam-tools-ng/releases)
+[![GitHub Test release](https://img.shields.io/badge/testing-0.8_BETA-orange.svg)](https://github.com/ShyPixie/steam-tools-ng/releases)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=WVQ5XM935XNLN&item_name=steam-tools-ng)
 
 
@@ -42,7 +42,7 @@ Console Interface
 -----------------
 ```
 usage: steam-tools-ng.py [-h] [-c module [options]] [--config-dir] [--log-dir]
-                         [--reset]
+                         [--reset] [--reset-password]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -51,6 +51,7 @@ optional arguments:
   --config-dir          Shows directory used to save config files
   --log-dir             Shows directory used to save log files
   --reset               Clean up settings and log files
+  --reset-password      Clean up saved password
 
 Available modules for console mode:
     - authenticator
