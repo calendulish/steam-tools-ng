@@ -41,6 +41,7 @@ class SetupDialog(Gtk.Dialog):
             parent_window: Gtk.Widget,
             session: aiohttp.ClientSession,
             webapi_session: webapi.SteamWebAPI,
+            time_offset: int,
             mobile_login: bool = False,
             relogin: bool = False,
             advanced: bool = False,
@@ -56,6 +57,7 @@ class SetupDialog(Gtk.Dialog):
         self.advanced = advanced
         self.add_auth_after_login = add_auth_after_login
         self.destroy_after_run = destroy_after_run
+        self.time_offset = time_offset
 
         self.header_bar = self.get_header_bar()
         self.header_bar.set_show_close_button(True)
@@ -231,6 +233,7 @@ class SetupDialog(Gtk.Dialog):
             log.warning(_("No shared secret found. Trying to log-in without two-factor authentication."))
 
         kwargs['shared_secret'] = shared_secret
+        kwargs['time_offset'] = self.time_offset
 
         self.status.info(_("Waiting Steam Server..."))
         self.status.show()
@@ -543,6 +546,7 @@ class SetupDialog(Gtk.Dialog):
             self.webapi_session.finalize_add_authenticator(
                 login_data,
                 self.code_item.get_text(),
+                time_offset=self.time_offset,
             )
         )
         callback = functools.partial(self._finalize_add_authenticator_callback, login_data)

@@ -32,7 +32,8 @@ _ = i18n.get_translation
 async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -> int:
     api_url = config.parser.get('steam', 'api_url')
     webapi_session = webapi.SteamWebAPI(session, api_url)
-    steam_login_status = await utils.check_login(session, webapi_session)
+    time_offset = await config.time_offset(webapi_session)
+    steam_login_status = await utils.check_login(session, webapi_session, time_offset)
 
     if not steam_login_status:
         return 1

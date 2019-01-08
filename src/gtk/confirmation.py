@@ -171,6 +171,7 @@ class FinalizeDialog(Gtk.Dialog):
         identity_secret = config.parser.get("login", "identity_secret")
         steamid = config.parser.getint("login", "steamid")
         deviceid = config.parser.get("login", "deviceid")
+        time_offset = await config.time_offset(self.webapi_session)
 
         self.status.info(_("Waiting Steam Server (OP: {})").format(self.model[self.iter][1]))
 
@@ -181,6 +182,7 @@ class FinalizeDialog(Gtk.Dialog):
             self.model[self.iter][1],
             self.model[self.iter][2],
             self.raw_action,
+            time_offset=time_offset,
         )
         assert isinstance(result, dict), "finalize_confirmation return is not a dict"
 

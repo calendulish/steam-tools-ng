@@ -34,6 +34,7 @@ _ = i18n.get_translation
 async def add_authenticator(
         webapi_session: webapi.SteamWebAPI,
         login_data: webapi.LoginData,
+        time_offset: int,
 ) -> Optional[webapi.LoginData]:
     if not login_data.has_phone:
         # FIXME: Impossible to add an authenticator without a phone
@@ -52,7 +53,7 @@ async def add_authenticator(
         sms_code = safe_input(_("Write code received by SMS"))
 
         try:
-            complete = await webapi_session.finalize_add_authenticator(login_data, sms_code)
+            complete = await webapi_session.finalize_add_authenticator(login_data, sms_code, time_offset=time_offset)
         except webapi.SMSCodeError:
             log.error(_("Invalid SMS Code. Please, check the code and try again."))
             continue
@@ -73,6 +74,7 @@ async def add_authenticator(
 async def check_login(
         session: aiohttp.ClientSession,
         webapi_session: webapi.SteamWebAPI,
+        time_offset: int,
         captcha_gid: int = -1,
         captcha_text: str = '',
         mail_code: str = '',
@@ -189,6 +191,7 @@ async def check_login(
                 log.warning(_("No shared secret found. Trying to log-in without two-factor authentication."))
 
     kwargs['shared_secret'] = shared_secret
+    kwargs['time_offset'] = time_offset
     log.info(_("Waiting Steam Server..."))
 
     while True:
@@ -237,7 +240,7 @@ async def check_login(
             return False
 
         if add_auth_after_login:
-            login_data = await add_authenticator(webapi_session, login_data)
+            login_data = await add_authenticator(webapi_session, login_data, time_offset)
 
             print(_("WRITE DOWN THE RECOVERY CODE: %s"), login_data.auth['revocation_code'])
             print(_("YOU WILL NOT ABLE TO VIEW IT AGAIN!"))

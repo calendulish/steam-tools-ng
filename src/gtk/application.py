@@ -97,6 +97,7 @@ class Application(Gtk.Application):
             self.window,
             self.session,
             self.webapi_session,
+            self.time_offset,
             mobile_login=mobile_login,
             relogin=True,
             destroy_after_run=True,
@@ -142,7 +143,7 @@ class Application(Gtk.Application):
             if not token or not token_secure or not steamid:
                 if not setup_requested:
                     log.debug(_("Unable to find a valid configuration. Calling Magic Box."))
-                    setup_dialog = setup.SetupDialog(self.window, self.session, self.webapi_session)
+                    setup_dialog = setup.SetupDialog(self.window, self.session, self.webapi_session, self.time_offset)
                     setup_dialog.login_mode()
                     setup_dialog.show()
                     setup_requested = True
@@ -377,6 +378,7 @@ class Application(Gtk.Application):
                     identity_secret,
                     steamid,
                     deviceid,
+                    time_offset=self.time_offset,
                 )
             except AttributeError as exception:
                 log.warning(repr(exception))
@@ -677,7 +679,7 @@ class Application(Gtk.Application):
                 await asyncio.sleep(1)
 
     def on_settings_activate(self, *args: Any) -> None:
-        settings_dialog = settings.SettingsDialog(self.window, self.session, self.webapi_session)
+        settings_dialog = settings.SettingsDialog(self.window, self.session, self.webapi_session, self.time_offset)
         settings_dialog.show()
 
     def on_about_activate(self, *args: Any) -> None:

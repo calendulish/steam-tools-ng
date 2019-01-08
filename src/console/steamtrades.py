@@ -51,7 +51,8 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
         sys.exit(1)
 
     log.info(_("Loading, please wait..."))
-    steam_login_status = await utils.check_login(session, webapi_session)
+    time_offset = await config.time_offset(webapi_session)
+    steam_login_status = await utils.check_login(session, webapi_session, time_offset)
 
     if not steam_login_status:
         sys.exit(1)

@@ -70,11 +70,13 @@ class SettingsDialog(Gtk.Dialog):
             parent_window: Gtk.Widget,
             session: aiohttp.ClientSession,
             webapi_session: webapi.SteamWebAPI,
+            time_offset: int,
     ) -> None:
         super().__init__(use_header_bar=True)
         self.parent_window = parent_window
         self.session = session
         self.webapi_session = webapi_session
+        self.time_offset = time_offset
 
         self.set_default_size(300, 150)
         self.set_title(_('Settings'))
@@ -254,7 +256,14 @@ class SettingsDialog(Gtk.Dialog):
 
     def on_advanced_button_toggled(self, button: Gtk.Button) -> None:
         if button.get_active():
-            advanced_settings = advanced.AdvancedSettingsDialog(button, self, self.session, self.webapi_session)
+            advanced_settings = advanced.AdvancedSettingsDialog(
+                button,
+                self,
+                self.session,
+                self.webapi_session,
+                self.time_offset,
+            )
+
             advanced_settings.show_all()
 
     def on_show_close_button_toggled(self, button: Gtk.Button) -> None:
@@ -278,12 +287,12 @@ class SettingsDialog(Gtk.Dialog):
         config.new('gtk', 'theme', theme)
 
     def on_setup_clicked(self, button: Gtk.Button) -> None:
-        setup_dialog = setup.SetupDialog(self, self.session, self.webapi_session)
+        setup_dialog = setup.SetupDialog(self, self.session, self.webapi_session, self.time_offset)
         setup_dialog.login_mode()
         setup_dialog.show()
 
     def on_reset_password_clicked(self, button: Gtk.Button) -> None:
-        setup_dialog = setup.SetupDialog(self, self.session, self.webapi_session)
+        setup_dialog = setup.SetupDialog(self, self.session, self.webapi_session, self.time_offset)
         setup_dialog.show()
         setup_dialog.status.info(_("Reseting Password..."))
         setup_dialog.status.show()

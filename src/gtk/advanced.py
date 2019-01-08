@@ -74,12 +74,14 @@ class AdvancedSettingsDialog(Gtk.Dialog):
             parent_window: Gtk.Window,
             session: aiohttp.ClientSession,
             webapi_session: webapi.SteamWebAPI,
+            time_offset: int,
     ) -> None:
         super().__init__(use_header_bar=True)
         self.toggle_button = toggle_button
         self.parent_window = parent_window
         self.session = session
         self.webapi_session = webapi_session
+        self.time_offset = time_offset
 
         self.set_default_size(300, 150)
         self.set_title(_('Advanced Settings'))
@@ -153,7 +155,7 @@ class AdvancedSettingsDialog(Gtk.Dialog):
         self.destroy()
 
     def on_reset_clicked(self, button: Gtk.Button) -> None:
-        setup_dialog = setup.SetupDialog(self, self.session, self.webapi_session)
+        setup_dialog = setup.SetupDialog(self, self.session, self.webapi_session, self.time_offset)
         setup_dialog.show()
         setup_dialog.status.info(_("Reseting... Please wait!"))
         setup_dialog.status.show()
