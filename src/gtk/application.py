@@ -210,7 +210,8 @@ class Application(Gtk.Application):
             for module_name, task in modules.items():
                 if config.parser.getboolean("plugins", module_name):
                     if task.cancelled():
-                        self.window.set_status(module_name, info=_("Loading"))
+                        if module_name != "confirmations":
+                            self.window.set_status(module_name, info=_("Loading"))
                         coro = getattr(self, f"run_{module_name}")
                         modules[module_name] = asyncio.ensure_future(coro())
                 else:
@@ -220,7 +221,8 @@ class Application(Gtk.Application):
                         try:
                             await task
                         except asyncio.CancelledError:
-                            self.window.set_status(module_name, info=_("Disabled"))
+                            if module_name != "confirmations":
+                                self.window.set_status(module_name, info=_("Disabled"))
 
             await asyncio.sleep(3)
 
