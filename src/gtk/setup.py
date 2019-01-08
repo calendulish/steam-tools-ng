@@ -560,7 +560,7 @@ class SetupDialog(Gtk.Dialog):
         ))
 
         revocation_code = utils.Status(6, _("Recovery Code"))
-        revocation_code.set_current(code)
+        revocation_code.set_display(code)
         revocation_code.set_info('')
         self.content_area.add(revocation_code)
         revocation_code.show_all()

@@ -206,7 +206,7 @@ class FinalizeDialog(Gtk.Dialog):
         for index in range(confirmation_count):
             self.iter = self.model[index].iter
 
-            batch_status.set_current(self.model[self.iter][1])
+            batch_status.set_display(self.model[self.iter][1])
 
             try:
                 batch_status.set_level(index, confirmation_count)
