@@ -194,11 +194,13 @@ class Main(Gtk.ApplicationWindow):
                 plugin.show()
 
             if config.parser.getboolean("plugins", "confirmations"):
-                self.confirmations_grid.show_all()
-                self.set_size_request(650, 570)
+                if not self.confirmations_grid.get_visible():
+                    self.confirmations_grid.show_all()
+                    self.set_size_request(650, 570)
             else:
-                self.confirmations_grid.hide()
-                self.set_size_request(650, 0)
+                if self.confirmations_grid.get_visible():
+                    self.confirmations_grid.hide()
+                    self.set_size_request(650, 0)
 
             await asyncio.sleep(1)
 
