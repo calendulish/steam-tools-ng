@@ -112,7 +112,7 @@ class FinalizeDialog(Gtk.Dialog):
             self.grid.attach(self.give_tree, 0, 0, 1, 1)
 
             self.arrow = Gtk.Image()
-            self.arrow.set_from_icon_name('emblem-synchronizing', Gtk.IconSize.DIALOG)
+            self.arrow.set_from_icon_name('emblem-synchronizing-symbolic', Gtk.IconSize.DIALOG)
             self.grid.attach(self.arrow, 1, 0, 1, 1)
 
             self.receive_tree = utils.SimpleTextTree((_("You will receive"),), fixed_width=300, model=Gtk.ListStore)
