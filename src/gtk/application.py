@@ -417,7 +417,7 @@ class Application(Gtk.Application):
 
                 old_confirmations = confirmations
 
-            await asyncio.sleep(15)
+            await asyncio.sleep(20)
 
     async def run_steamtrades(self) -> None:
         if self.plugin_manager.has_plugin("steamtrades"):

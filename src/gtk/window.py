@@ -95,7 +95,7 @@ class Main(Gtk.ApplicationWindow):
         main_grid.attach(self.confirmations_grid, 0, 1, 1, 1)
 
         self._info_label = Gtk.Label()
-        self._info_label.set_text(_("If you have confirmations, they will be shown here. (15 seconds delay)"))
+        self._info_label.set_text(_("If you have confirmations, they will be shown here. (20 seconds delay)"))
         self.confirmations_grid.attach(self._info_label, 0, 2, 4, 1)
 
         self._warning_label = Gtk.Label()
