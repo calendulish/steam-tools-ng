@@ -197,31 +197,36 @@ class Application(Gtk.Application):
 
             break
 
-        modules = [
-            self.run_confirmations(),
-            self.run_steamguard(),
-            self.run_cardfarming(),
-            self.run_steamtrades(),
-            self.run_steamgifts(),
-        ]
+        modules = {
+            "confirmations": asyncio.ensure_future(self.run_confirmations()),
+            "steamguard": asyncio.ensure_future(self.run_steamguard()),
+            "steamtrades": asyncio.ensure_future(self.run_steamtrades()),
+            "steamgifts": asyncio.ensure_future(self.run_steamgifts()),
+            "cardfarming": asyncio.ensure_future(self.run_cardfarming()),
+        }
 
-        done, pending = await asyncio.wait(modules, return_when=asyncio.FIRST_EXCEPTION)
+        while self.window.get_realized():
+            for module_name, task in modules.items():
+                if config.parser.getboolean("plugins", module_name):
+                    if task.cancelled():
+                        self.window.set_status(module_name, info=_("Loading"))
+                        coro = getattr(self, f"run_{module_name}")
+                        modules[module_name] = asyncio.ensure_future(coro())
+                else:
+                    if not task.cancelled():
+                        task.cancel()
 
-        try:
-            raise done.pop().exception()
-        except Exception as exception:
-            log.exception(str(exception))
-            utils.fatal_error_dialog(str(exception), self.window)
-            self.window.destroy()
+                        try:
+                            await task
+                        except asyncio.CancelledError:
+                            self.window.set_status(module_name, info=_("Disabled"))
+
+            await asyncio.sleep(3)
 
     async def run_steamguard(self) -> None:
         assert isinstance(self.window, Gtk.Window), "No window"
 
         while self.window.get_realized():
-            if not config.parser.getboolean("plugins", "steamguard"):
-                await asyncio.sleep(5)
-                continue
-
             shared_secret = config.parser.get("login", "shared_secret")
 
             try:
@@ -250,10 +255,6 @@ class Application(Gtk.Application):
         assert isinstance(self.window, Gtk.Window), "No Window"
 
         while self.window.get_realized():
-            if not config.parser.getboolean("plugins", "cardfarming"):
-                await asyncio.sleep(5)
-                continue
-
             steamid = config.parser.get("login", "steamid")
             nickname = config.parser.get("login", "nickname")
             reverse_sorting = config.parser.getboolean("cardfarming", "reverse_sorting")
@@ -349,10 +350,6 @@ class Application(Gtk.Application):
         assert isinstance(self.window, Gtk.Window), "No window"
 
         while self.window.get_realized():
-            if not config.parser.getboolean("plugins", "confirmations"):
-                await asyncio.sleep(5)
-                continue
-
             identity_secret = config.parser.get("login", "identity_secret")
             steamid = config.parser.getint("login", "steamid")
             deviceid = config.parser.get("login", "deviceid")
@@ -431,11 +428,6 @@ class Application(Gtk.Application):
         assert isinstance(self.window, Gtk.Window), "No window"
 
         while self.window.get_realized():
-            if not config.parser.getboolean("plugins", "steamtrades"):
-                self.window.set_login_icon('steamtrades', 'red')
-                await asyncio.sleep(5)
-                continue
-
             self.window.set_status("steamtrades", info=_("Loading"))
             trade_ids = config.parser.get("steamtrades", "trade_ids")
             wait_min = config.parser.getint("steamtrades", "wait_min")
@@ -550,11 +542,6 @@ class Application(Gtk.Application):
         assert isinstance(self.window, Gtk.Window), "No window"
 
         while self.window.get_realized():
-            if not config.parser.getboolean("plugins", "steamgifts"):
-                self.window.set_login_icon('steamgifts', 'red')
-                await asyncio.sleep(5)
-                continue
-
             self.window.set_status("steamgifts", info=_("Loading"))
             wait_min = config.parser.getint("steamgifts", "wait_min")
             wait_max = config.parser.getint("steamgifts", "wait_max")
