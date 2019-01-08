@@ -120,11 +120,11 @@ class Main(Gtk.ApplicationWindow):
         tree_selection.connect("changed", self.on_tree_selection_changed)
 
         accept_button = Gtk.Button(_('Accept selected'))
-        accept_button.connect('clicked', self.on_validate_confirmations, "allow", *tree_selection.get_selected())
+        accept_button.connect('clicked', self.on_validate_confirmations, "allow", tree_selection)
         self.confirmations_grid.attach(accept_button, 0, 5, 1, 1)
 
         cancel_button = Gtk.Button(_('Cancel selected'))
-        cancel_button.connect('clicked', self.on_validate_confirmations, "cancel", *tree_selection.get_selected())
+        cancel_button.connect('clicked', self.on_validate_confirmations, "cancel", tree_selection)
         self.confirmations_grid.attach(cancel_button, 1, 5, 1, 1)
 
         accept_all_button = Gtk.Button(_('Accept all'))
@@ -236,9 +236,12 @@ class Main(Gtk.ApplicationWindow):
             self,
             button: Gtk.Button,
             action: str,
-            model: Gtk.TreeModel,
-            iter_: Union[Gtk.TreeIter, bool, None] = False) -> None:
-        finalize_dialog = confirmation.FinalizeDialog(self, self.webapi_session, action, model, iter_)
+            model: Union[Gtk.TreeModel, Gtk.TreeSelection]) -> None:
+        if isinstance(model, Gtk.TreeModel):
+            finalize_dialog = confirmation.FinalizeDialog(self, self.webapi_session, action, model, False)
+        else:
+            finalize_dialog = confirmation.FinalizeDialog(self, self.webapi_session, action, *model.get_selected())
+
         finalize_dialog.show()
 
     @staticmethod
