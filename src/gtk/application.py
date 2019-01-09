@@ -481,7 +481,7 @@ class Application(Gtk.Application):
                     bumped = False
                     break
 
-                self.window.set_status("steamtrades", trade_id, info=_("Waiting anti-ban timer"))
+                self.window.set_status("steamtrades", trade_info.id, info=trade_info.title)
                 max_ban_wait = random.randint(5, 15)
                 for past_time in range(max_ban_wait):
                     try:
@@ -608,7 +608,7 @@ class Application(Gtk.Application):
                 self.window.set_status(
                     "steamgifts",
                     giveaway.id,
-                    "{} {} ({}:{}:{})".format(_("Waiting anti-ban timer"), *giveaway[:4]),
+                    "{} ({}:{}:{})".format(*giveaway[:4]),
                 )
 
                 max_ban_wait = random.randint(5, 15)
