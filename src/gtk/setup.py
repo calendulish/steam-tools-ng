@@ -321,9 +321,12 @@ class SetupDialog(Gtk.Dialog):
                 else:
                     self.advanced_settings.hide()
                     self.status.append_link(
-                        _("click here"),
+                        _("\nclick here"),
                         self.__reset_and_restart,
-                        _("You removed the authenticator? If yes, "),
+                        _(
+                            "If your password is correct (PLEASE, CHECK AGAIN!)\n"
+                            "and you removed the authenticator from Steam Account "
+                        )
                     )
 
                 self.user_details_section.show()
@@ -342,6 +345,18 @@ class SetupDialog(Gtk.Dialog):
             login_data = future.result()
 
             if self.add_auth_after_login:
+                if not login_data.has_phone:
+                    self.status.error(_(
+                        "Unable to add an authenticator without a valid phone number.\n"
+                        "Please, go to https://store.steampowered.com/phone/manage\n"
+                        "add a phone number in your Steam account and try again.\n"
+                    ))
+                    self.user_details_section.show()
+                    self.previous_button.show()
+                    log.exception(webapi.PhoneNotRegistered)
+
+                    return None
+
                 self.prepare_add_authenticator(login_data)
             else:
                 args = [login_data, self.relogin]
@@ -515,10 +530,6 @@ class SetupDialog(Gtk.Dialog):
         return None
 
     def prepare_add_authenticator(self, login_data: webapi.LoginData) -> None:
-        if not login_data.has_phone:
-            # FIXME: Impossible to add an authenticator without a phone
-            raise NotImplementedError
-
         deviceid = universe.generate_device_id(token=login_data.oauth['oauth_token'])
         config.new("login", "deviceid", deviceid)
 
