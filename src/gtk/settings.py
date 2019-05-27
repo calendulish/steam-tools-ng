@@ -287,9 +287,10 @@ class SettingsDialog(Gtk.Dialog):
         config.new('gtk', 'theme', theme)
 
     def on_setup_clicked(self, button: Gtk.Button) -> None:
-        setup_dialog = setup.SetupDialog(self, self.session, self.webapi_session, self.time_offset)
+        setup_dialog = setup.SetupDialog(self.parent_window, self.session, self.webapi_session, self.time_offset)
         setup_dialog.login_mode()
         setup_dialog.show()
+        self.destroy()
 
     def on_reset_password_clicked(self, button: Gtk.Button) -> None:
         setup_dialog = setup.SetupDialog(self, self.session, self.webapi_session, self.time_offset)
