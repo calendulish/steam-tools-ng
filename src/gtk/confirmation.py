@@ -42,6 +42,7 @@ class FinalizeDialog(Gtk.Dialog):
     ) -> None:
         super().__init__(use_header_bar=True)
         self.webapi_session = webapi_session
+        self.parent_window = parent_window
 
         if action == "allow":
             self.action = _("accept")
@@ -57,7 +58,7 @@ class FinalizeDialog(Gtk.Dialog):
 
         self.set_default_size(300, 60)
         self.set_title(_('Finalize Confirmation'))
-        self.set_transient_for(parent_window)
+        self.set_transient_for(self.parent_window)
         self.set_modal(True)
         self.set_destroy_with_parent(True)
         self.set_resizable(False)
@@ -139,6 +140,7 @@ class FinalizeDialog(Gtk.Dialog):
 
         self.set_size_request(0, 0)
         self.header_bar.set_show_close_button(False)
+        self.parent_window.text_tree_lock = True
 
         task: asyncio.Future[Union[Dict[str, Any], List[Tuple[Any, Dict[str, Any]]]]]
 
@@ -165,6 +167,7 @@ class FinalizeDialog(Gtk.Dialog):
                 self.header_bar.set_show_close_button(True)
                 self.yes_button.hide()
         else:
+            self.parent_window.text_tree_lock = False
             self.destroy()
 
     async def finalize(self, keep_iter: bool = False) -> Dict[str, Any]:

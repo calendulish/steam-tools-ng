@@ -375,6 +375,11 @@ class Application(Gtk.Application):
 
             self.session.cookie_jar.update_cookies(cookies)  # type: ignore
 
+            if self.window.text_tree_lock:
+                self.window.set_warning(_("Waiting another confirmation process"))
+                await asyncio.sleep(10)
+                continue
+
             try:
                 confirmations = await self.webapi_session.get_confirmations(
                     identity_secret,

@@ -104,6 +104,8 @@ class Main(Gtk.ApplicationWindow):
         self.text_tree = utils.SimpleTextTree((_('mode'), _('id'), _('key'), _('give'), _('to'), _('receive')), False)
         self.confirmations_grid.attach(self.text_tree, 0, 4, 4, 1)
 
+        self.text_tree_lock = False
+
         for index, column in enumerate(self.text_tree.view.get_columns()):
             if index in (0, 1, 2):
                 column.set_visible(False)
