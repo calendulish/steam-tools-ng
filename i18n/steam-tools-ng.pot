@@ -3,8 +3,8 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: 0.9.2.\n"
-"POT-Creation-Date: 2019-05-27 17:00-0300\n"
+"Project-Id-Version: 0.9.3.\n"
+"POT-Creation-Date: 2019-09-21 01:35-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -14,46 +14,42 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: src\config.py:132
+#: src\config.py:142
 msgid ""
 "Please, fix your config file. Accepted values for log_level are:\n"
 "{}"
 msgstr ""
 
-#: src\config.py:139
+#: src\config.py:149
 msgid ""
 "Please, fix your config file. Accepted values for log_console_level are:\n"
 "{}"
 msgstr ""
 
-#: src\config.py:161
+#: src\config.py:171
 msgid "Unable to open steam-tools-ng.log"
 msgstr ""
 
-#: src\config.py:178
+#: src\config.py:188
 msgid "Saving %s:%s on config file"
 msgstr ""
 
-#: src\config.py:184
+#: src\config.py:194
 msgid "Not saving %s:%s because values are already updated"
 msgstr ""
 
-#: src\config.py:241
+#: src\config.py:251
 msgid "Steam is not running."
 msgstr ""
 
-#: src\config.py:242
+#: src\config.py:252
 msgid "Fallbacking time offset to WebAPI"
 msgstr ""
 
-#: src\config.py:247 src\console\cardfarming.py:57 src\console\utils.py:239
-#: src\gtk\application.py:285 src\gtk\application.py:566 src\gtk\setup.py:335
+#: src\config.py:258 src\console\cardfarming.py:57 src\console\utils.py:239
+#: src\gtk\application.py:285 src\gtk\application.py:571 src\gtk\setup.py:335
 #: src\gtk\setup.py:386 src\gtk\setup.py:444
 msgid "No Connection"
-msgstr ""
-
-#: src\config.py:248
-msgid "Falbacking time offset to 0"
 msgstr ""
 
 #: src\console\authenticator.py:49
@@ -69,7 +65,7 @@ msgid "SteamGuard Code:"
 msgstr ""
 
 #: src\console\cardfarming.py:42 src\gtk\application.py:214
-#: src\gtk\application.py:435 src\gtk\application.py:549
+#: src\gtk\application.py:440 src\gtk\application.py:554
 msgid "Loading"
 msgstr ""
 
@@ -100,8 +96,8 @@ msgstr ""
 
 #: src\console\cardfarming.py:96 src\console\steamgifts.py:62
 #: src\console\steamtrades.py:63 src\gtk\application.py:339
-#: src\gtk\application.py:396 src\gtk\application.py:462
-#: src\gtk\application.py:480
+#: src\gtk\application.py:401 src\gtk\application.py:467
+#: src\gtk\application.py:485
 msgid "No connection"
 msgstr ""
 
@@ -121,11 +117,11 @@ msgstr ""
 msgid "Loading, please wait..."
 msgstr ""
 
-#: src\console\steamgifts.py:68 src\gtk\application.py:581
+#: src\console\steamgifts.py:68 src\gtk\application.py:586
 msgid "Unable to configure steamgifts"
 msgstr ""
 
-#: src\console\steamgifts.py:83 src\gtk\application.py:600
+#: src\console\steamgifts.py:83 src\gtk\application.py:605
 msgid "No giveaways to join."
 msgstr ""
 
@@ -141,16 +137,16 @@ msgstr ""
 msgid "Unable to join %s"
 msgstr ""
 
-#: src\console\steamgifts.py:116 src\gtk\application.py:518
-#: src\gtk\application.py:649
+#: src\console\steamgifts.py:116 src\gtk\application.py:523
+#: src\gtk\application.py:654
 msgid "Login is lost. Trying to relogin."
 msgstr ""
 
-#: src\console\steamgifts.py:120 src\gtk\application.py:655
+#: src\console\steamgifts.py:120 src\gtk\application.py:660
 msgid "User don't have required level to join"
 msgstr ""
 
-#: src\console\steamgifts.py:124 src\gtk\application.py:660
+#: src\console\steamgifts.py:124 src\gtk\application.py:665
 msgid "User don't have required points to join"
 msgstr ""
 
@@ -162,7 +158,7 @@ msgstr ""
 msgid "Unable to find steamtrades plugin"
 msgstr ""
 
-#: src\console\steamtrades.py:50 src\gtk\application.py:442
+#: src\console\steamtrades.py:50 src\gtk\application.py:447
 msgid "No trade ID found in config file"
 msgstr ""
 
@@ -347,83 +343,83 @@ msgstr ""
 msgid "Please, try again."
 msgstr ""
 
-#: src\gtk\about.py:43
+#: src\gtk\about.py:44
 msgid "Git Repository"
 msgstr ""
 
-#: src\gtk\about.py:46
+#: src\gtk\about.py:47
 msgid "Made with Love <3"
 msgstr ""
 
-#: src\gtk\advanced.py:36 src\gtk\settings.py:33
+#: src\gtk\advanced.py:36 src\gtk\settings.py:34
 msgid "Light"
 msgstr ""
 
-#: src\gtk\advanced.py:37 src\gtk\settings.py:34
+#: src\gtk\advanced.py:37 src\gtk\settings.py:35
 msgid "Dark"
 msgstr ""
 
-#: src\gtk\advanced.py:41 src\gtk\settings.py:38
+#: src\gtk\advanced.py:41 src\gtk\settings.py:39
 msgid "Critical"
 msgstr ""
 
-#: src\gtk\advanced.py:42 src\gtk\settings.py:39
+#: src\gtk\advanced.py:42 src\gtk\settings.py:40
 msgid "Error"
 msgstr ""
 
-#: src\gtk\advanced.py:43 src\gtk\settings.py:40
+#: src\gtk\advanced.py:43 src\gtk\settings.py:41
 msgid "Warning"
 msgstr ""
 
-#: src\gtk\advanced.py:44 src\gtk\settings.py:41
+#: src\gtk\advanced.py:44 src\gtk\settings.py:42
 msgid "Info"
 msgstr ""
 
-#: src\gtk\advanced.py:45 src\gtk\settings.py:42
+#: src\gtk\advanced.py:45 src\gtk\settings.py:43
 msgid "Debug"
 msgstr ""
 
-#: src\gtk\advanced.py:49 src\gtk\settings.py:46
+#: src\gtk\advanced.py:49 src\gtk\settings.py:47
 msgid "English"
 msgstr ""
 
-#: src\gtk\advanced.py:50 src\gtk\settings.py:47
+#: src\gtk\advanced.py:50 src\gtk\settings.py:48
 msgid "Portuguese (Brazil)"
 msgstr ""
 
-#: src\gtk\advanced.py:54 src\gtk\settings.py:51
+#: src\gtk\advanced.py:54 src\gtk\settings.py:53
 msgid "Main Giveaways"
 msgstr ""
 
-#: src\gtk\advanced.py:55 src\gtk\settings.py:52
+#: src\gtk\advanced.py:55 src\gtk\settings.py:54
 msgid "New Giveaways"
 msgstr ""
 
-#: src\gtk\advanced.py:56 src\gtk\settings.py:53
+#: src\gtk\advanced.py:56 src\gtk\settings.py:55
 msgid "Recommended"
 msgstr ""
 
-#: src\gtk\advanced.py:57 src\gtk\settings.py:54
+#: src\gtk\advanced.py:57 src\gtk\settings.py:56
 msgid "Wishlist Only"
 msgstr ""
 
-#: src\gtk\advanced.py:58 src\gtk\settings.py:55
+#: src\gtk\advanced.py:58 src\gtk\settings.py:57
 msgid "Group Only"
 msgstr ""
 
-#: src\gtk\advanced.py:62 src\gtk\settings.py:59
+#: src\gtk\advanced.py:62 src\gtk\settings.py:61
 msgid "Name"
 msgstr ""
 
-#: src\gtk\advanced.py:63 src\gtk\settings.py:60
+#: src\gtk\advanced.py:63 src\gtk\settings.py:62
 msgid "Copies"
 msgstr ""
 
-#: src\gtk\advanced.py:64 src\gtk\settings.py:61
+#: src\gtk\advanced.py:64 src\gtk\settings.py:63
 msgid "Points"
 msgstr ""
 
-#: src\gtk\advanced.py:65 src\gtk\settings.py:62
+#: src\gtk\advanced.py:65 src\gtk\settings.py:64
 msgid "Level"
 msgstr ""
 
@@ -431,7 +427,7 @@ msgstr ""
 msgid "Advanced Settings"
 msgstr ""
 
-#: src\gtk\advanced.py:103 src\gtk\settings.py:98
+#: src\gtk\advanced.py:103 src\gtk\settings.py:100
 msgid "Login Settings"
 msgstr ""
 
@@ -534,260 +530,276 @@ msgstr ""
 msgid "Unable to find deviceid. Generating from identity."
 msgstr ""
 
-#: src\gtk\application.py:387
+#: src\gtk\application.py:379
+msgid "Waiting another confirmation process"
+msgstr ""
+
+#: src\gtk\application.py:392
 msgid "Error when fetch confirmations"
 msgstr ""
 
-#: src\gtk\application.py:389
+#: src\gtk\application.py:394
 msgid "Steam is not running"
 msgstr ""
 
-#: src\gtk\application.py:392 src\gtk\application.py:456
-#: src\gtk\application.py:571
+#: src\gtk\application.py:397 src\gtk\application.py:461
+#: src\gtk\application.py:576
 msgid "User is not logged in"
 msgstr ""
 
-#: src\gtk\application.py:418
+#: src\gtk\application.py:423
 msgid "Skipping confirmations update because data doesn't seem to have changed"
 msgstr ""
 
-#: src\gtk\application.py:429
+#: src\gtk\application.py:434
 msgid "Unable to find Steamtrades plugin"
 msgstr ""
 
-#: src\gtk\application.py:475
+#: src\gtk\application.py:480
 msgid "Unable to find trade id"
 msgstr ""
 
-#: src\gtk\application.py:496
+#: src\gtk\application.py:501
 msgid "Bumped!"
 msgstr ""
 
-#: src\gtk\application.py:499
+#: src\gtk\application.py:504
 msgid "Unable to bump"
 msgstr ""
 
-#: src\gtk\application.py:528
+#: src\gtk\application.py:533
 msgid "Setting wait_offset from steamtrades to %s"
 msgstr ""
 
-#: src\gtk\application.py:532 src\gtk\application.py:677
+#: src\gtk\application.py:537 src\gtk\application.py:682
 msgid "Waiting more {} minutes"
 msgstr ""
 
-#: src\gtk\application.py:543
+#: src\gtk\application.py:548
 msgid "Unable to find Steamgifts plugin"
 msgstr ""
 
-#: src\gtk\application.py:629
+#: src\gtk\application.py:634
 msgid "Joined!"
 msgstr ""
 
-#: src\gtk\application.py:634
+#: src\gtk\application.py:639
 msgid "Unable to join {}"
 msgstr ""
 
-#: src\gtk\application.py:643
+#: src\gtk\application.py:648
 msgid "Giveaway is already ended."
 msgstr ""
 
-#: src\gtk\application.py:673
+#: src\gtk\application.py:678
 msgid "Setting wait_offset from steamgifts to %s"
 msgstr ""
 
-#: src\gtk\confirmation.py:47
+#: src\gtk\confirmation.py:48
 msgid "accept"
 msgstr ""
 
-#: src\gtk\confirmation.py:49
+#: src\gtk\confirmation.py:50
 msgid "cancel"
 msgstr ""
 
-#: src\gtk\confirmation.py:59
+#: src\gtk\confirmation.py:60
 msgid "Finalize Confirmation"
 msgstr ""
 
-#: src\gtk\confirmation.py:74
+#: src\gtk\confirmation.py:75
 msgid "Continue"
 msgstr ""
 
-#: src\gtk\confirmation.py:78
+#: src\gtk\confirmation.py:79
 msgid "Cancel"
 msgstr ""
 
-#: src\gtk\confirmation.py:83
+#: src\gtk\confirmation.py:84
 msgid "No items to accept or cancel"
 msgstr ""
 
-#: src\gtk\confirmation.py:87
+#: src\gtk\confirmation.py:88
 msgid ""
 "Do you really want to {} ALL confirmations?\n"
 "It can't be undone!"
 msgstr ""
 
-#: src\gtk\confirmation.py:101
+#: src\gtk\confirmation.py:102
 msgid "You are trading the following items with {}:"
 msgstr ""
 
-#: src\gtk\confirmation.py:106
+#: src\gtk\confirmation.py:107
 msgid ""
 "Do you really want to {} that?\n"
 "It can't be undone!"
 msgstr ""
 
-#: src\gtk\confirmation.py:111
+#: src\gtk\confirmation.py:112
 msgid "You will give"
 msgstr ""
 
-#: src\gtk\confirmation.py:118
+#: src\gtk\confirmation.py:119
 msgid "You will receive"
 msgstr ""
 
-#: src\gtk\confirmation.py:162
+#: src\gtk\confirmation.py:164
 msgid "Steam Server is slow. Please, try again."
 msgstr ""
 
-#: src\gtk\confirmation.py:176
+#: src\gtk\confirmation.py:179
 msgid "Waiting Steam Server (OP: {})"
 msgstr ""
 
-#: src\gtk\confirmation.py:193
+#: src\gtk\confirmation.py:196
 msgid "Unable to remove tree path %s (already removed?). Ignoring."
 msgstr ""
 
-#: src\gtk\confirmation.py:202
+#: src\gtk\confirmation.py:205
 msgid "Waiting Steam Server response"
 msgstr ""
 
-#: src\gtk\confirmation.py:223
+#: src\gtk\confirmation.py:226
 msgid "Updating tree"
 msgstr ""
 
-#: src\gtk\settings.py:82 src\gtk\window.py:50
+#: src\gtk\settings.py:49
+msgid "French"
+msgstr ""
+
+#: src\gtk\settings.py:84 src\gtk\window.py:50
 msgid "Settings"
 msgstr ""
 
-#: src\gtk\settings.py:100 src\gtk\setup.py:94
+#: src\gtk\settings.py:102 src\gtk\setup.py:94
 msgid "Username:"
 msgstr ""
 
-#: src\gtk\settings.py:103
+#: src\gtk\settings.py:105
+msgid "Config Files"
+msgstr ""
+
+#: src\gtk\settings.py:110
+msgid "Log Files"
+msgstr ""
+
+#: src\gtk\settings.py:115
 msgid "Advanced"
 msgstr ""
 
-#: src\gtk\settings.py:108 src\gtk\setup.py:73
+#: src\gtk\settings.py:120 src\gtk\setup.py:73
 msgid "Magic Box"
 msgstr ""
 
-#: src\gtk\settings.py:113
+#: src\gtk\settings.py:125
 msgid "Reset Password"
 msgstr ""
 
-#: src\gtk\settings.py:120
+#: src\gtk\settings.py:132
 msgid "Plugins Settings"
 msgstr ""
 
-#: src\gtk\settings.py:122
+#: src\gtk\settings.py:134
 msgid "Authenticator:"
 msgstr ""
 
-#: src\gtk\settings.py:125
+#: src\gtk\settings.py:137
 msgid "Confirmations:"
 msgstr ""
 
-#: src\gtk\settings.py:132
+#: src\gtk\settings.py:144
 msgid "Steamtrades:"
 msgstr ""
 
-#: src\gtk\settings.py:135
+#: src\gtk\settings.py:147
 msgid "Steamgifts:"
 msgstr ""
 
-#: src\gtk\settings.py:138
+#: src\gtk\settings.py:150
 msgid "Cardfarming:"
 msgstr ""
 
-#: src\gtk\settings.py:143
+#: src\gtk\settings.py:155
 msgid "Gtk Settings"
 msgstr ""
 
-#: src\gtk\settings.py:145
+#: src\gtk\settings.py:157
 msgid "Theme:"
 msgstr ""
 
-#: src\gtk\settings.py:148
+#: src\gtk\settings.py:160
 msgid "Show close button:"
 msgstr ""
 
-#: src\gtk\settings.py:153
+#: src\gtk\settings.py:165
 msgid "Steamtrades Settings"
 msgstr ""
 
-#: src\gtk\settings.py:155
+#: src\gtk\settings.py:167
 msgid "Trade IDs:"
 msgstr ""
 
-#: src\gtk\settings.py:159 src\gtk\settings.py:198 src\gtk\settings.py:208
+#: src\gtk\settings.py:171 src\gtk\settings.py:210 src\gtk\settings.py:220
 msgid "Wait MIN:"
 msgstr ""
 
-#: src\gtk\settings.py:162 src\gtk\settings.py:201 src\gtk\settings.py:211
+#: src\gtk\settings.py:174 src\gtk\settings.py:213 src\gtk\settings.py:223
 msgid "Wait MAX:"
 msgstr ""
 
-#: src\gtk\settings.py:167
+#: src\gtk\settings.py:179
 msgid "Steamgifts Settings"
 msgstr ""
 
-#: src\gtk\settings.py:171
+#: src\gtk\settings.py:183
 msgid "Giveaway Type:"
 msgstr ""
 
-#: src\gtk\settings.py:180
+#: src\gtk\settings.py:192
 msgid "Sort Giveaways:"
 msgstr ""
 
-#: src\gtk\settings.py:187
+#: src\gtk\settings.py:199
 msgid "Reverse Sorting:"
 msgstr ""
 
-#: src\gtk\settings.py:192
+#: src\gtk\settings.py:204
 msgid "Developer Giveaways"
 msgstr ""
 
-#: src\gtk\settings.py:206
+#: src\gtk\settings.py:218
 msgid "Cardfarming settings"
 msgstr ""
 
-#: src\gtk\settings.py:214
+#: src\gtk\settings.py:226
 msgid "More cards First:"
 msgstr ""
 
-#: src\gtk\settings.py:218
+#: src\gtk\settings.py:230
 msgid "Locale settings"
 msgstr ""
 
-#: src\gtk\settings.py:219
+#: src\gtk\settings.py:231
 msgid "Language"
 msgstr ""
 
-#: src\gtk\settings.py:224
+#: src\gtk\settings.py:236
 msgid "Logger settings"
 msgstr ""
 
-#: src\gtk\settings.py:226
+#: src\gtk\settings.py:238
 msgid "Level:"
 msgstr ""
 
-#: src\gtk\settings.py:230
+#: src\gtk\settings.py:242
 msgid "Console level:"
 msgstr ""
 
-#: src\gtk\settings.py:298
+#: src\gtk\settings.py:316
 msgid "Reseting Password..."
 msgstr ""
 
-#: src\gtk\settings.py:304 steam-tools-ng.py:146 steam-tools-ng.py:151
+#: src\gtk\settings.py:322 steam-tools-ng.py:137 steam-tools-ng.py:142
 msgid "Done!"
 msgstr ""
 
@@ -1022,23 +1034,23 @@ msgstr ""
 msgid "to"
 msgstr ""
 
-#: src\gtk\window.py:122
+#: src\gtk\window.py:124
 msgid "Accept selected"
 msgstr ""
 
-#: src\gtk\window.py:126
+#: src\gtk\window.py:128
 msgid "Cancel selected"
 msgstr ""
 
-#: src\gtk\window.py:130
+#: src\gtk\window.py:132
 msgid "Accept all"
 msgstr ""
 
-#: src\gtk\window.py:134
+#: src\gtk\window.py:136
 msgid "Cancel all"
 msgstr ""
 
-#: steam-tools-ng.py:231
+#: steam-tools-ng.py:222
 msgid "Exiting..."
 msgstr ""
 
