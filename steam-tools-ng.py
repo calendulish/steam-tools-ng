@@ -45,15 +45,6 @@ _ = i18n.get_translation
 
 log = logging.getLogger(__name__)
 
-if sys.platform == 'win32':
-    event_loop = asyncio.ProactorEventLoop()
-    file_manager = 'explorer'
-else:
-    file_manager = 'xdg-open'
-    event_loop = asyncio.new_event_loop()
-
-asyncio.set_event_loop(event_loop)
-
 if __name__ == "__main__":
     freeze_support()
     config.init()
@@ -115,11 +106,11 @@ if __name__ == "__main__":
     console_params = command_parser.parse_args()
 
     if console_params.config_dir:
-        os.system(f'{file_manager} {config.config_file_directory}')
+        os.system(f'{config.file_manager} {config.config_file_directory}')
         sys.exit(0)
 
     if console_params.log_dir:
-        os.system(f'{file_manager} {config.parser.get("logger", "log_directory")}')
+        os.system(f'{config.file_manager} {config.parser.get("logger", "log_directory")}')
         sys.exit(0)
 
     try:
@@ -174,7 +165,7 @@ if __name__ == "__main__":
             if not future.cancelled() and future.exception():
                 log.critical(repr(future.exception()))
 
-            event_loop.stop()
+            config.event_loop.stop()
 
 
         task = asyncio.ensure_future(module.run(http_session, plugin_manager, *module_options))  # type: ignore
@@ -211,7 +202,7 @@ if __name__ == "__main__":
                 asyncio.ensure_future(async_gtk_iterator())
             else:
                 app.quit()
-                event_loop.stop()
+                config.event_loop.stop()
 
 
         asyncio.ensure_future(async_gtk_iterator())
@@ -222,21 +213,21 @@ if __name__ == "__main__":
             method(*args, **kwargs)
         except KeyboardInterrupt:
             # delayed stop
-            asyncio.ensure_future(asyncio.coroutine(event_loop.stop)())
-            event_loop.run_forever()
+            asyncio.ensure_future(asyncio.coroutine(config.event_loop.stop)())
+            config.event_loop.run_forever()
 
 
-    never_fall_down(event_loop.run_forever)
+    never_fall_down(config.event_loop.run_forever)
 
     log.info(_("Exiting..."))
-    unfinished_tasks = asyncio.all_tasks(event_loop)
+    unfinished_tasks = asyncio.all_tasks(config.event_loop)
 
     for task in unfinished_tasks:
         task.cancel()
 
         with contextlib.suppress(asyncio.CancelledError):
-            never_fall_down(event_loop.run_until_complete, task)
+            never_fall_down(config.event_loop.run_until_complete, task)
 
-    never_fall_down(event_loop.run_until_complete, http_session.close())
+    never_fall_down(config.event_loop.run_until_complete, http_session.close())
     # FIXME https://github.com/aio-libs/aiohttp/issues/1925
-    never_fall_down(event_loop.run_until_complete, asyncio.sleep(1))
+    never_fall_down(config.event_loop.run_until_complete, asyncio.sleep(1))

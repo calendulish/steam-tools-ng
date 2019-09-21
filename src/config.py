@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import asyncio
 import codecs
 import configparser
 import locale
@@ -47,6 +48,15 @@ config_file_directory = os.path.join(data_dir, 'steam-tools-ng')
 config_file_name = 'steam-tools-ng.config'
 config_file = os.path.join(config_file_directory, config_file_name)
 log_levels = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
+
+if sys.platform == 'win32':
+    event_loop = asyncio.ProactorEventLoop()
+    file_manager = 'explorer'
+else:
+    file_manager = 'xdg-open'
+    event_loop = asyncio.new_event_loop()
+
+asyncio.set_event_loop(event_loop)
 
 
 def update_log_level(type_: str, level_string: str) -> None:
