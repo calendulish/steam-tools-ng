@@ -17,6 +17,7 @@
 #
 import asyncio
 import logging
+import os
 from collections import OrderedDict
 
 import aiohttp
@@ -100,20 +101,30 @@ class SettingsDialog(Gtk.Dialog):
         account_name = login_section.new('account_name', _("Username:"), Gtk.Entry, 0, 0)
         account_name.connect('changed', on_setting_changed)
 
+        config_button = Gtk.Button(_("Config Files"))
+        config_button.set_name("config_button")
+        config_button.connect("clicked", self.on_config_button_clicked)
+        login_section.grid.attach(config_button, 0, 7, 4, 1)
+
+        log_button = Gtk.Button(_("Log Files"))
+        log_button.set_name("log_button")
+        log_button.connect("clicked", self.on_log_button_clicked)
+        login_section.grid.attach(log_button, 0, 8, 4, 1)
+
         advanced_button = Gtk.ToggleButton(_("Advanced"))
         advanced_button.set_name("advanced_button")
         advanced_button.connect("toggled", self.on_advanced_button_toggled)
-        login_section.grid.attach(advanced_button, 0, 7, 4, 1)
+        login_section.grid.attach(advanced_button, 0, 9, 4, 1)
 
         setup_button = Gtk.Button(_("Magic Box"))
         setup_button.set_name("setup_button")
         setup_button.connect('clicked', self.on_setup_clicked)
-        login_section.grid.attach(setup_button, 0, 8, 4, 1)
+        login_section.grid.attach(setup_button, 0, 10, 4, 1)
 
         reset_password_button = Gtk.Button(_("Reset Password"))
         reset_password_button.set_name("reset_password_button")
         reset_password_button.connect("clicked", self.on_reset_password_clicked)
-        login_section.grid.attach(reset_password_button, 0, 10, 4, 1)
+        login_section.grid.attach(reset_password_button, 0, 11, 4, 1)
 
         login_section.show_all()
 
@@ -122,20 +133,20 @@ class SettingsDialog(Gtk.Dialog):
         steamguard = plugins_section.new("steamguard", _("Authenticator:"), Gtk.CheckButton, 0, 1)
         steamguard.connect('toggled', on_setting_toggled)
 
-        confirmations = plugins_section.new("confirmations", _("Confirmations:"), Gtk.CheckButton, 2, 1)
+        confirmations = plugins_section.new("confirmations", _("Confirmations:"), Gtk.CheckButton, 0, 2)
         confirmations.connect('toggled', on_setting_toggled)
 
-        __disabled = plugins_section.new("___", "________", Gtk.CheckButton, 4, 1)
+        __disabled = plugins_section.new("___", "IndieGala", Gtk.CheckButton, 2, 3)
         __disabled.set_sensitive(False)
         __disabled.label.set_sensitive(False)
 
-        steamtrades = plugins_section.new("steamtrades", _("Steamtrades:"), Gtk.CheckButton, 0, 2)
+        steamtrades = plugins_section.new("steamtrades", _("Steamtrades:"), Gtk.CheckButton, 2, 1)
         steamtrades.connect('toggled', on_setting_toggled)
 
         steamgifts = plugins_section.new("steamgifts", _("Steamgifts:"), Gtk.CheckButton, 2, 2)
         steamgifts.connect('toggled', on_setting_toggled)
 
-        cardfarming = plugins_section.new("cardfarming", _("Cardfarming:"), Gtk.CheckButton, 4, 2)
+        cardfarming = plugins_section.new("cardfarming", _("Cardfarming:"), Gtk.CheckButton, 0, 3)
         cardfarming.connect("toggled", on_setting_toggled)
 
         plugins_section.show_all()
@@ -240,19 +251,25 @@ class SettingsDialog(Gtk.Dialog):
 
         self.connect('response', lambda dialog, response_id: self.destroy())
 
-        content_grid.attach(login_section, 0, 0, 1, 2)
+        content_grid.attach(login_section, 0, 0, 1, 3)
         content_grid.attach(logger_section, 1, 0, 1, 1)
         content_grid.attach(gtk_section, 1, 1, 1, 1)
 
-        content_grid.attach(steamtrades_section, 0, 2, 1, 1)
-        content_grid.attach(cardfarming_section, 0, 3, 1, 1)
-        content_grid.attach(steamgifts_section, 1, 2, 1, 2)
+        content_grid.attach(steamtrades_section, 0, 3, 1, 1)
+        content_grid.attach(cardfarming_section, 0, 4, 1, 2)
+        content_grid.attach(steamgifts_section, 1, 2, 1, 3)
 
-        content_grid.attach(locale_section, 0, 4, 1, 1)
-        content_grid.attach(plugins_section, 1, 4, 1, 1)
+        content_grid.attach(locale_section, 0, 6, 1, 1)
+        content_grid.attach(plugins_section, 1, 5, 1, 2)
 
         content_grid.show()
         self.show()
+
+    def on_log_button_clicked(self, button: Gtk.Button) -> None:
+        os.system(f'{config.file_manager} {config.parser.get("logger", "log_directory")}')
+
+    def on_config_button_clicked(self, button: Gtk.Button) -> None:
+        os.system(f'{config.file_manager} {config.config_file_directory}')
 
     def on_advanced_button_toggled(self, button: Gtk.Button) -> None:
         if button.get_active():
