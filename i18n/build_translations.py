@@ -45,6 +45,7 @@ msgfmt = SourceFileLoader('msgfmt', os.path.join(tools_path, 'msgfmt.py')).load_
 
 translations = [
     "pt_BR",
+    "fr",
 ]
 
 

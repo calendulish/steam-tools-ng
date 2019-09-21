@@ -36,7 +36,8 @@ class AboutDialog(Gtk.AboutDialog):
         ])
 
         self.set_translator_credits(
-            "Fernando Manfredi (pt_BR)"
+            "Fernando Manfredi (pt_BR)\n"
+            "mano (fr)"
         )
 
         self.set_website("http://github.com/ShyPixie/steam-tools-ng")

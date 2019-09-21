@@ -46,6 +46,7 @@ log_levels = OrderedDict([
 translations = OrderedDict([
     ('en', _("English")),
     ('pt_BR', _("Portuguese (Brazil)")),
+    ('fr', _("French")),
 ])
 
 giveaway_types = OrderedDict([
