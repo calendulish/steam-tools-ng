@@ -338,6 +338,9 @@ class Application(Gtk.Application):
                         except aiohttp.ClientError:
                             self.window.set_status("cardfarming", error=_("No connection"))
                             await asyncio.sleep(10)
+                        except webapi.BadgeError:
+                            self.window.set_status("cardfarming", error=_("Steam Server is busy"))
+                            await asyncio.sleep(20)
 
                 self.window.set_status(
                     "cardfarming",
