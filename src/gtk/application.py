@@ -211,7 +211,7 @@ class Application(Gtk.Application):
                 if config.parser.getboolean("plugins", module_name):
                     if task.cancelled():
                         if module_name != "confirmations":
-                            self.window.set_status(module_name, info=_("Loading"))
+                            self.window.set_status(module_name, status=_("Loading"))
                         coro = getattr(self, f"run_{module_name}")
                         modules[module_name] = asyncio.ensure_future(coro())
                 else:
@@ -222,7 +222,7 @@ class Application(Gtk.Application):
                             await task
                         except asyncio.CancelledError:
                             if module_name != "confirmations":
-                                self.window.set_status(module_name, info=_("Disabled"))
+                                self.window.set_status(module_name, status=_("Disabled"))
 
             await asyncio.sleep(3)
 
@@ -245,12 +245,18 @@ class Application(Gtk.Application):
                 self.window.set_status("steamguard", error=_("Steam Client is not running"))
                 await asyncio.sleep(10)
             else:
-                self.window.set_status("steamguard", info=_("Loading..."))
+                self.window.set_status("steamguard", status=_("Loading..."))
 
                 seconds = 30 - (server_time % 30)
 
                 for past_time in range(seconds * 9):
-                    self.window.set_status("steamguard", auth_code, info=_("Running"), level=(past_time, seconds * 8))
+                    self.window.set_status(
+                        "steamguard",
+                        display=auth_code,
+                        status=_("Running"),
+                        info=_("New code in {} seconds").format(seconds * 9 - past_time),
+                        level=(past_time, seconds * 8)
+                    )
 
                     await asyncio.sleep(0.125)
 
@@ -308,8 +314,8 @@ class Application(Gtk.Application):
 
                 self.window.set_status(
                     "cardfarming",
-                    badge.game_id,
-                    info=_("{} ({})").format(_("Running"), badge.game_name),
+                    display=badge.game_id,
+                    status=_("Running {}").format(badge.game_name),
                 )
 
                 wait_offset = random.randint(wait_min, wait_max)
@@ -318,7 +324,7 @@ class Application(Gtk.Application):
                     for past_time in range(wait_offset):
                         self.window.set_status(
                             "cardfarming",
-                            badge.game_id,
+                            display=badge.game_id,
                             info=_("Waiting drops for {} minutes").format(round((wait_offset - past_time) / 60)),
                             level=(past_time, wait_offset),
                         )
@@ -327,7 +333,7 @@ class Application(Gtk.Application):
 
                     self.window.set_status(
                         "cardfarming",
-                        badge.game_id,
+                        display=badge.game_id,
                         info=_("{} ({})").format(_("Updating drops"), badge.game_name),
                     )
 
@@ -344,7 +350,7 @@ class Application(Gtk.Application):
 
                 self.window.set_status(
                     "cardfarming",
-                    badge.game_id,
+                    display=badge.game_id,
                     info=_("{} ({})").format(_("Closing"), badge.game_name),
                 )
 
@@ -430,10 +436,13 @@ class Application(Gtk.Application):
             await asyncio.sleep(20)
 
     async def run_steamtrades(self) -> None:
-        if self.plugin_manager.has_plugin("steamtrades"):
-            steamtrades = self.plugin_manager.load_plugin("steamtrades")
-            steamtrades_session = steamtrades.Main(self.session, api_url=self.api_url)
-        else:
+        try:
+            if self.plugin_manager.has_plugin("steamtrades"):
+                steamtrades = self.plugin_manager.load_plugin("steamtrades")
+                steamtrades_session = steamtrades.Main(self.session, api_url=self.api_url)
+            else:
+                raise ImportError
+        except ImportError:
             self.window.set_status("steamtrades", error=_("Unable to find Steamtrades plugin"))
             return
 
@@ -489,7 +498,7 @@ class Application(Gtk.Application):
                     bumped = False
                     break
 
-                self.window.set_status("steamtrades", trade_info.id, info=trade_info.title)
+                self.window.set_status("steamtrades", display=trade_info.id, info=trade_info.title)
                 max_ban_wait = random.randint(5, 15)
                 for past_time in range(max_ban_wait):
                     try:
@@ -501,10 +510,10 @@ class Application(Gtk.Application):
 
                 try:
                     if await steamtrades_session.bump(trade_info):
-                        self.window.set_status("steamtrades", trade_id, info=_("Bumped!"))
+                        self.window.set_status("steamtrades", display=trade_id, info=_("Bumped!"))
                         bumped = True
                     else:
-                        self.window.set_status("steamtrades", trade_id, error=_("Unable to bump"))
+                        self.window.set_status("steamtrades", display=trade_id, error=_("Unable to bump"))
                         await asyncio.sleep(5)
                         continue
                 except steamtrades.NoTradesError as exception:
@@ -544,17 +553,20 @@ class Application(Gtk.Application):
                 await asyncio.sleep(1)
 
     async def run_steamgifts(self) -> None:
-        if self.plugin_manager.has_plugin("steamgifts"):
-            steamgifts = self.plugin_manager.load_plugin("steamgifts")
-            steamgifts_session = steamgifts.Main(self.session, api_url=self.api_url)
-        else:
+        try:
+            if self.plugin_manager.has_plugin("steamgifts"):
+                steamgifts = self.plugin_manager.load_plugin("steamgifts")
+                steamgifts_session = steamgifts.Main(self.session, api_url=self.api_url)
+            else:
+                raise ImportError
+        except ImportError:
             self.window.set_status("steamgifts", error=_("Unable to find Steamgifts plugin"))
             return
 
         assert isinstance(self.window, Gtk.Window), "No window"
 
         while self.window.get_realized():
-            self.window.set_status("steamgifts", info=_("Loading"))
+            self.window.set_status("steamgifts", status=_("Loading"))
             wait_min = config.parser.getint("steamgifts", "wait_min")
             wait_max = config.parser.getint("steamgifts", "wait_max")
             giveaway_type = config.parser.get("steamgifts", "giveaway_type")
@@ -605,19 +617,13 @@ class Application(Gtk.Application):
                         reverse=reverse_sorting,
                     )
             else:
-                self.window.set_status("steamgifts", info=_("No giveaways to join."))
+                self.window.set_status("steamgifts", status=_("No giveaways to join."))
                 joined = True
                 wait_min //= 2
                 wait_max //= 2
 
             for index, giveaway in enumerate(giveaways):
                 self.window.steamgifts_status.set_level(index, len(giveaway))
-
-                self.window.set_status(
-                    "steamgifts",
-                    giveaway.id,
-                    "{} ({}:{}:{})".format(*giveaway[:4]),
-                )
 
                 max_ban_wait = random.randint(5, 15)
                 for past_time in range(max_ban_wait):
@@ -633,13 +639,13 @@ class Application(Gtk.Application):
 
                         self.window.set_status(
                             "steamgifts",
-                            giveaway.id,
-                            "{} {} ({}:{}:{})".format(_("Joined!"), *giveaway[:4]),
+                            display=giveaway.id,
+                            status="{} {} ({}:{}:{})".format(_("Joined!"), *giveaway[:4]),
                         )
 
                         joined = True
                     else:
-                        self.window.set_status("steamgifts", giveaway.id, error=_("Unable to join {}"))
+                        self.window.set_status("steamgifts", display=giveaway.id, error=_("Unable to join {}"))
                         await asyncio.sleep(5)
                         continue
                 except steamgifts.NoGiveawaysError as exception:

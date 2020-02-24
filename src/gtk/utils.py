@@ -212,8 +212,11 @@ class Status(Gtk.Frame):
         self._status.set_markup(markup(_("Loading..."), color='green', font_size='small'))
         self._grid.attach(self._status, 0, 1, 1, 1)
 
+        self._info = Gtk.Label()
+        self._grid.attach(self._info, 0, 2, 1, 1)
+
         self._level_bar = Gtk.LevelBar()
-        self._grid.attach(self._level_bar, 0, 2, 1, 1)
+        self._grid.attach(self._level_bar, 0, 3, 1, 1)
 
         self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
 
@@ -246,13 +249,21 @@ class Status(Gtk.Frame):
     def set_display(self, text: str) -> None:
         self._display.set_markup(markup(text, font_size='large', font_weight='bold'))
 
-    def set_info(self, text: str) -> None:
+    def set_status(self, text: str) -> None:
         if self._gtk_settings.props.gtk_application_prefer_dark_theme:
             color = 'lightgreen'
         else:
             color = 'green'
 
         self._status.set_markup(markup(text, color=color, font_size='small'))
+
+    def set_info(self, text: str) -> None:
+        if self._gtk_settings.props.gtk_application_prefer_dark_theme:
+            color = 'lightgreen'
+        else:
+            color = 'green'
+
+        self._info.set_markup(markup(text, color=color, font_size='small'))
 
     def set_error(self, text: str) -> None:
         if self._gtk_settings.props.gtk_application_prefer_dark_theme:

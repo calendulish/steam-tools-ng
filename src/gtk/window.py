@@ -261,31 +261,36 @@ class Main(Gtk.ApplicationWindow):
     def set_status(
             self,
             module: str,
+            *,
             display: Optional[str] = None,
+            status: Optional[str] = None,
             info: Optional[str] = None,
             error: Optional[str] = None,
             level: Optional[Tuple[int, int]] = None,
     ) -> None:
-        status = getattr(self, f'{module}_status')
+        _status = getattr(self, f'{module}_status')
 
         if display:
-            status.set_display(display)
+            _status.set_display(display)
         else:
-            status.unset_display()
+            _status.unset_display()
+
+        if status:
+            _status.set_status(status)
 
         if info:
-            status.set_info(info)
+            _status.set_info(info)
 
         if error:
-            status.set_error(error)
+            _status.set_error(error)
 
         if level:
             try:
-                status.set_level(*level)
+                _status.set_level(*level)
             except KeyError:
-                status.unset_level()
+                _status.unset_level()
         else:
-            status.unset_level()
+            _status.unset_level()
 
     def set_warning(self, message: str) -> None:
         self._warning_label.set_markup(utils.markup(message, color='white', background='red'))
