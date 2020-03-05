@@ -113,10 +113,13 @@ class Application(Gtk.Application):
             setup_dialog.status.info(_("Could not connect to the Steam Servers.\nPlease, relogin."))
             setup_dialog.status.show()
 
-        if block:
-            setup_dialog.run()
-        else:
-            setup_dialog.show()
+        # FIXME: Gtk 'run' actually is not compatible with STNG
+        #        'show' function can't block the login process
+        #         Threads isn't usefull here, it's ugly and bad
+        #if block:
+        #    setup_dialog.run()
+        #else:
+        setup_dialog.show()
 
     def async_activate_callback(self, future: 'asyncio.Future[Any]') -> None:
         exception = future.exception()
