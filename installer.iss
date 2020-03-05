@@ -1,13 +1,13 @@
-﻿#define STNG_VERSION "0.9.3"
-#define STNG_PATH "build\STNG-WIN64-" + STNG_VERSION + "-Py37"
+﻿#define STNG_VERSION "0.9.4"
+#define STNG_PATH "build\STNG-WIN64-" + STNG_VERSION + "-Py38"
 
 [Setup]
 ArchitecturesInstallIn64BitMode=x64
 ArchitecturesAllowed=x64
 AppId={{983543BE-2504-48BF-B6E7-308EA032DAB3}
 AppName=Steam Tools NG
-AppVersion=STNG_VERSION
-;AppVerName=Steam Tools NG 0.9.3
+AppVersion=0.9.4
+;AppVerName=Steam Tools NG 0.9.4
 AppPublisherURL=https://lara.click
 AppSupportURL=https://github.com/ShyPixie/steam-tools-ng/issues
 AppUpdatesURL=https://github.com/ShyPixie/steam-tools-ng/releases
