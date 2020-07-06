@@ -84,7 +84,7 @@ def init() -> None:
                 'language': str(locale.getdefaultlocale()[0])
             },
             'steam': {
-                'api_url': 'https://api.lara.click',
+                'api_url': 'https://api.lara.monster',
             },
             'steamtrades': {
                 'wait_min': 3700,
