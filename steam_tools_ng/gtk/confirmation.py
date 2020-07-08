@@ -35,14 +35,14 @@ class FinalizeDialog(Gtk.Dialog):
     def __init__(
             self,
             parent_window: Gtk.Window,
-            webapi_session: webapi.SteamWebAPI,
+            application: Gtk.Application,
             action: str,
             model: Gtk.TreeModel,
             iter_: Union[Gtk.TreeIter, bool, None] = False,
     ) -> None:
         super().__init__(use_header_bar=True)
-        self.webapi_session = webapi_session
         self.parent_window = parent_window
+        self.application = application
 
         if action == "allow":
             self.action = _("accept")
@@ -174,18 +174,17 @@ class FinalizeDialog(Gtk.Dialog):
         identity_secret = config.parser.get("login", "identity_secret")
         steamid = config.parser.getint("login", "steamid")
         deviceid = config.parser.get("login", "deviceid")
-        time_offset = await config.time_offset(self.webapi_session)
 
         self.status.info(_("Waiting Steam Server (OP: {})").format(self.model[self.iter][1]))
 
-        result = await self.webapi_session.finalize_confirmation(
+        result = await self.application.webapi_session.finalize_confirmation(
             identity_secret,
             steamid,
             deviceid,
             self.model[self.iter][1],
             self.model[self.iter][2],
             self.raw_action,
-            time_offset=time_offset,
+            time_offset=self.application.time_offset,
         )
         assert isinstance(result, dict), "finalize_confirmation return is not a dict"
 

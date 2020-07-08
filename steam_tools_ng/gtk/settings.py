@@ -71,16 +71,12 @@ giveaway_sort_types = OrderedDict([
 class SettingsDialog(Gtk.Dialog):
     def __init__(
             self,
-            parent_window: Gtk.Widget,
-            session: aiohttp.ClientSession,
-            webapi_session: webapi.SteamWebAPI,
-            time_offset: int,
+            parent_window: Gtk.Window,
+            application: Gtk.Application,
     ) -> None:
         super().__init__(use_header_bar=True)
         self.parent_window = parent_window
-        self.session = session
-        self.webapi_session = webapi_session
-        self.time_offset = time_offset
+        self.application = application
 
         self.set_default_size(300, 150)
         self.set_title(_('Settings'))
@@ -312,14 +308,7 @@ class SettingsDialog(Gtk.Dialog):
 
     def on_advanced_button_toggled(self, button: Gtk.Button) -> None:
         if button.get_active():
-            advanced_settings = advanced.AdvancedSettingsDialog(
-                button,
-                self,
-                self.session,
-                self.webapi_session,
-                self.time_offset,
-            )
-
+            advanced_settings = advanced.AdvancedSettingsDialog(self, self.application, button)
             advanced_settings.show_all()
 
     def on_show_close_button_toggled(self, button: Gtk.Button) -> None:
@@ -343,13 +332,13 @@ class SettingsDialog(Gtk.Dialog):
         config.new('gtk', 'theme', theme)
 
     def on_setup_clicked(self, button: Gtk.Button) -> None:
-        setup_dialog = setup.SetupDialog(self.parent_window, self.session, self.webapi_session, self.time_offset)
+        setup_dialog = setup.SetupDialog(self.parent_window, self.application)
         setup_dialog.login_mode()
         setup_dialog.show()
         self.destroy()
 
     def on_reset_password_clicked(self, button: Gtk.Button) -> None:
-        setup_dialog = setup.SetupDialog(self, self.session, self.webapi_session, self.time_offset)
+        setup_dialog = setup.SetupDialog(self, self.application)
         setup_dialog.show()
         setup_dialog.status.info(_("Reseting Password..."))
         setup_dialog.status.show()

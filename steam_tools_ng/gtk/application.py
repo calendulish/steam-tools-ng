@@ -93,9 +93,7 @@ class SteamToolsNG(Gtk.Application):
 
         setup_dialog = setup.SetupDialog(
             self.main_window,
-            self.session,
-            self.webapi_session,
-            self.time_offset,
+            self,
             mobile_login=mobile_login,
             relogin=True,
             destroy_after_run=True,
@@ -144,7 +142,7 @@ class SteamToolsNG(Gtk.Application):
             if not token or not token_secure or not steamid:
                 if not setup_requested:
                     log.debug(_("Unable to find a valid configuration. Calling Magic Box."))
-                    setup_dialog = setup.SetupDialog(self.main_window, self.session, self.webapi_session, self.time_offset)
+                    setup_dialog = setup.SetupDialog(self.main_window, self)
                     setup_dialog.login_mode()
                     setup_dialog.show()
                     setup_requested = True
@@ -697,7 +695,7 @@ class SteamToolsNG(Gtk.Application):
                 await asyncio.sleep(1)
 
     def on_settings_activate(self, *args: Any) -> None:
-        settings_dialog = settings.SettingsDialog(self.main_window, self.session, self.webapi_session, self.time_offset)
+        settings_dialog = settings.SettingsDialog(self.main_window, self)
         settings_dialog.show()
 
     def on_about_activate(self, *args: Any) -> None:

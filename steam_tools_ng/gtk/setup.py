@@ -15,17 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import aiohttp
 import asyncio
 import codecs
 import contextlib
 import functools
 import logging
 import os
-from typing import Any, Optional
-
-import aiohttp
 from gi.repository import Gtk, Gdk, GdkPixbuf
 from stlib import webapi, universe
+from typing import Any, Optional
 
 from . import utils
 from .. import config, i18n
@@ -38,10 +37,8 @@ _ = i18n.get_translation
 class SetupDialog(Gtk.Dialog):
     def __init__(
             self,
-            parent_window: Gtk.Widget,
-            session: aiohttp.ClientSession,
-            webapi_session: webapi.SteamWebAPI,
-            time_offset: int,
+            parent_window: Gtk.Window,
+            application: Gtk.Application,
             mobile_login: bool = False,
             relogin: bool = False,
             advanced: bool = False,
@@ -49,15 +46,13 @@ class SetupDialog(Gtk.Dialog):
             destroy_after_run: bool = False,
     ) -> None:
         super().__init__(use_header_bar=True)
-        self.session = session
-        self.webapi_session = webapi_session
-        self.login_session: Optional[webapi.Login] = None
+        self.application = application
+        self._login_session = None
         self.mobile_login = mobile_login
         self.relogin = relogin
         self.advanced = advanced
         self.add_auth_after_login = add_auth_after_login
         self.destroy_after_run = destroy_after_run
-        self.time_offset = time_offset
 
         self.header_bar = self.get_header_bar()
         self.header_bar.set_show_close_button(True)
@@ -117,6 +112,11 @@ class SetupDialog(Gtk.Dialog):
         self.connect('response', lambda dialog, response_id: self.destroy())
         self.connect('key-release-event', self.__on_key_release)
         self.egg_index = 0
+
+    @property
+    def login_session(self) -> webapi.Login:
+        assert isinstance(self._login_session, webapi.Login)
+        return self._login_session
 
     def __on_key_release(self, dialog: Gtk.Dialog, event: Gdk.Event) -> None:
         if event.keyval == Gdk.KEY_Return:
@@ -193,7 +193,13 @@ class SetupDialog(Gtk.Dialog):
         username = self.username_item.get_text()
         __password = self.__password_item.get_text()
 
-        self.login_session = webapi.Login(self.session, self.webapi_session, username, __password)
+        self._login_session = webapi.Login(
+            self.application.session,
+            self.application.webapi_session,
+            username,
+            __password,
+        )
+
         kwargs = {'emailauth': mail_code, 'mobile_login': self.mobile_login}
 
         # no reason to send captcha_text if no gid is found
@@ -233,7 +239,7 @@ class SetupDialog(Gtk.Dialog):
             log.warning(_("No shared secret found. Trying to log-in without two-factor authentication."))
 
         kwargs['shared_secret'] = shared_secret
-        kwargs['time_offset'] = self.time_offset
+        kwargs['time_offset'] = self.application.time_offset
 
         self.status.info(_("Waiting Steam Server..."))
         self.status.show()
@@ -539,7 +545,7 @@ class SetupDialog(Gtk.Dialog):
         self.status.show()
         self.set_size_request(0, 0)
 
-        task = asyncio.ensure_future(self.webapi_session.add_authenticator(login_data, deviceid))
+        task = asyncio.ensure_future(self.application.webapi_session.add_authenticator(login_data, deviceid))
         task.add_done_callback(self._add_authenticator_callback)
 
     def prepare_finalize_add_authenticator(
@@ -554,10 +560,10 @@ class SetupDialog(Gtk.Dialog):
         self.status.set_size_request(0, 0)
 
         task = asyncio.ensure_future(
-            self.webapi_session.finalize_add_authenticator(
+            self.application.webapi_session.finalize_add_authenticator(
                 login_data,
                 self.code_item.get_text(),
-                time_offset=self.time_offset,
+                time_offset=self.application.time_offset,
             )
         )
         callback = functools.partial(self._finalize_add_authenticator_callback, login_data)

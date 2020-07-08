@@ -18,9 +18,8 @@
 import asyncio
 import logging
 import os
-from typing import Union, Optional, Tuple
-
 from gi.repository import GdkPixbuf, Gio, Gtk
+from typing import Union, Optional, Tuple
 
 from . import confirmation, utils
 from .. import config, i18n
@@ -34,9 +33,6 @@ class Main(Gtk.ApplicationWindow):
     def __init__(self, application: Gtk.Application, title: str) -> None:
         super().__init__(application=application, title=title)
         self.application = application
-        self.session = application.session
-        self.webapi_session = application.webapi_session
-        self.plugin_manager = application.plugin_manager
 
         header_bar = Gtk.HeaderBar()
         header_bar.set_show_close_button(True)
@@ -242,9 +238,20 @@ class Main(Gtk.ApplicationWindow):
             action: str,
             model: Union[Gtk.TreeModel, Gtk.TreeSelection]) -> None:
         if isinstance(model, Gtk.TreeModel):
-            finalize_dialog = confirmation.FinalizeDialog(self, self.webapi_session, action, model, False)
+            finalize_dialog = confirmation.FinalizeDialog(
+                self,
+                self.application.webapi_session,
+                action,
+                model,
+                False
+            )
         else:
-            finalize_dialog = confirmation.FinalizeDialog(self, self.webapi_session, action, *model.get_selected())
+            finalize_dialog = confirmation.FinalizeDialog(
+                self,
+                self.application.webapi_session,
+                action,
+                *model.get_selected()
+            )
 
         finalize_dialog.show()
 
