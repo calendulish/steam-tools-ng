@@ -19,6 +19,7 @@ import aiohttp
 import codecs
 import getpass
 import logging
+import os
 import ssl
 import sys
 import tempfile

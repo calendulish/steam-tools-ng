@@ -21,6 +21,7 @@ import binascii
 import configparser
 import itertools
 import logging
+import os
 import random
 import ssl
 import sys
@@ -127,9 +128,9 @@ class SteamToolsNG(Gtk.Application):
         # FIXME: Gtk 'run' actually is not compatible with STNG
         #        'show' function can't block the login process
         #         Threads isn't usefull here, it's ugly and bad
-        #if block:
+        # if block:
         #    setup_dialog.run()
-        #else:
+        # else:
         setup_dialog.show()
 
     def async_activate_callback(self, future: 'asyncio.Future[Any]') -> None:
