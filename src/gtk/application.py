@@ -300,21 +300,6 @@ class Application(Gtk.Application):
                 break
 
             for badge in badges:
-                executor = client.SteamApiExecutor(badge.game_id)
-
-                while self.window.get_realized():
-                    try:
-                        await executor.init()
-                        break
-                    except client.SteamAPIError:
-                        log.error(_("Invalid game_id %s. Ignoring."), badge.game_id)
-                        # noinspection PyProtectedMember
-                        badge = badge._replace(cards=0)
-                        break
-                    except ProcessLookupError:
-                        self.window.set_status("cardfarming", error=_("Steam Client is not running."))
-                        await asyncio.sleep(5)
-
                 self.window.set_status(
                     "cardfarming",
                     display=badge.game_id,
@@ -324,6 +309,21 @@ class Application(Gtk.Application):
                 wait_offset = random.randint(wait_min, wait_max)
 
                 while badge.cards != 0:
+                    executor = client.SteamApiExecutor(badge.game_id)
+
+                    while self.window.get_realized():
+                        try:
+                            await executor.init()
+                            break
+                        except client.SteamAPIError:
+                            log.error(_("Invalid game_id %s. Ignoring."), badge.game_id)
+                            # noinspection PyProtectedMember
+                            badge = badge._replace(cards=0)
+                            break
+                        except ProcessLookupError:
+                            self.window.set_status("cardfarming", error=_("Steam Client is not running."))
+                            await asyncio.sleep(5)
+
                     for past_time in range(wait_offset):
                         self.window.set_status(
                             "cardfarming",
@@ -340,6 +340,9 @@ class Application(Gtk.Application):
                         info=_("{} ({})").format(_("Updating drops"), badge.game_name),
                     )
 
+                    await executor.shutdown()
+                    await asyncio.sleep(60)
+
                     while self.window.get_realized():
                         try:
                             badge = await self.webapi_session.update_badge_drops(badge, nickname)
@@ -354,10 +357,8 @@ class Application(Gtk.Application):
                 self.window.set_status(
                     "cardfarming",
                     display=badge.game_id,
-                    info=_("{} ({})").format(_("Closing"), badge.game_name),
+                    info=_("{} ({})").format(_("Done"), badge.game_name),
                 )
-
-                await executor.shutdown()
 
     async def run_confirmations(self) -> None:
         old_confirmations: List[webapi.Confirmation] = []

@@ -62,25 +62,25 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
             break
 
         for badge in badges:
-            print(_("Running"), f"{badge.game_name} ({badge.game_id})")
-            executor = client.SteamApiExecutor(badge.game_id)
-
-            while True:
-                try:
-                    await executor.init()
-                    break
-                except client.SteamAPIError:
-                    log.error(_("Invalid game_id %s. Ignoring."), badge.game_id)
-                    # noinspection PyProtectedMember
-                    badge = badge._replace(cards=0)
-                    break
-                except ProcessLookupError:
-                    log.error(_("Steam Client is not running."))
-                    await asyncio.sleep(5)
-
             wait_offset = random.randint(wait_min, wait_max)
 
             while badge.cards != 0:
+                print(_("Running"), f"{badge.game_name} ({badge.game_id})")
+                executor = client.SteamApiExecutor(badge.game_id)
+
+                while True:
+                    try:
+                        await executor.init()
+                        break
+                    except client.SteamAPIError:
+                        log.error(_("Invalid game_id %s. Ignoring."), badge.game_id)
+                        # noinspection PyProtectedMember
+                        badge = badge._replace(cards=0)
+                        break
+                    except ProcessLookupError:
+                        log.error(_("Steam Client is not running."))
+                        await asyncio.sleep(5)
+
                 for past_time in range(wait_offset):
                     print(_("Waiting drops for {:4d} minutes").format(round((wait_offset - past_time) / 60)),
                           end='\r')
@@ -88,6 +88,9 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
                     await asyncio.sleep(1)
 
                 print(_("Updating drops for {} ({})").format(badge.game_name, badge.game_id), end='\r')
+                await executor.shutdown()
+                await asyncio.sleep(60)
+
                 while True:
                     try:
                         badge = await webapi_session.update_badge_drops(badge, nickname)
@@ -96,8 +99,7 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
                         log.error(_("No connection"))
                         await asyncio.sleep(10)
 
-            print(_("Closing"), f"{badge.game_name} ({badge.game_id})", end='\r')
-            await executor.shutdown()
+            print(_("Done"), f"{badge.game_name} ({badge.game_id})", end='\r')
 
         log.info(_("No more cards to drop. Searching new..."))
 
