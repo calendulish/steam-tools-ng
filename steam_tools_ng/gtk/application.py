@@ -52,6 +52,7 @@ class SteamToolsNG(Gtk.Application):
 
         self.api_login: Optional[webapi.Login] = None
         self._time_offset = 0
+        self.api_url = config.parser.get("steam", "api_url")
 
     @property
     def main_window(self) -> Gtk.ApplicationWindow:
@@ -153,9 +154,7 @@ class SteamToolsNG(Gtk.Application):
 
         tcp_connector = aiohttp.TCPConnector(ssl=ssl_context)
         self._session = aiohttp.ClientSession(raise_for_status=True, connector=tcp_connector)
-
-        api_url = config.parser.get("steam", "api_url")
-        self._webapi_session = webapi.SteamWebAPI(self.session, api_url)
+        self._webapi_session = webapi.SteamWebAPI(self.session, self.api_url)
 
         self._time_offset = await config.time_offset(self.webapi_session)
 
