@@ -125,6 +125,10 @@ class SettingsDialog(Gtk.Dialog):
             console_button.connect("toggled", self.on_console_button_toggled)
             general_section.grid.attach(console_button, 0, 3, 1, 1)
 
+            console_warning = Gtk.Label()
+            console_warning.set_text(_("Press the button again to close the debug console"))
+            general_section.grid.attach(console_warning, 0, 4, 1, 1)
+
         general_section.show_all()
 
         login_section = utils.Section("login", _("Login Settings"))
