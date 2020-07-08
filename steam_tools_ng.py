@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Lara Maia <dev@lara.click> 2015 ~ 2018
+# Lara Maia <dev@lara.monster> 2015 ~ 2020
 #
 # The Steam Tools NG is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -134,7 +134,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     log.info(f'Steam Tools NG version {version.__version__} (Made with Girl Power <33)')
-    log.info('Copyright (C) 2015 ~ 2018 Lara Maia - <dev@lara.click>')
+    log.info('Copyright (C) 2015 ~ 2020 Lara Maia - <dev@lara.monster>')
     plugin_manager = plugins.Manager()
 
     if console_params.module:

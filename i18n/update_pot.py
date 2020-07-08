@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Lara Maia <dev@lara.click> 2015 ~ 2018
+# Lara Maia <dev@lara.monster> 2015 ~ 2020
 #
 # The Steam Tools NG is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -65,7 +65,7 @@ current_datetime = '{:%Y-%m-%d %H:%M}{}'.format(
 
 pygettext.pot_header = f'''\
 # Steam Tools NG - Useful tools for Steam
-# Lara Maia <dev@lara.click> (C) 2015 ~ 2018
+# Lara Maia <dev@lara.monster> (C) 2015 ~ 2020
 #
 msgid ""
 msgstr ""
