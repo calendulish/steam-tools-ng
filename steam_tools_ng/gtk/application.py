@@ -15,10 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import aiohttp
 import asyncio
 import binascii
-import configparser
 import itertools
 import logging
 import os
@@ -26,9 +24,11 @@ import random
 import ssl
 import sys
 import time
+from typing import Any, List, Optional
+
+import aiohttp
 from gi.repository import Gio, Gtk
 from stlib import universe, client, plugins, webapi
-from typing import Any, List, Optional
 
 from . import about, settings, setup, window, utils
 from .. import config, i18n
@@ -86,7 +86,7 @@ class SteamToolsNG(Gtk.Application):
         self.add_action(about_action)
 
         exit_action = Gio.SimpleAction.new("exit")
-        exit_action.connect("activate", lambda action, data: self.main_window.destroy())  # type: ignore
+        exit_action.connect("activate", self.on_exit_activate)
         self.add_action(exit_action)
 
         theme = config.parser.get("gtk", "theme")
@@ -729,3 +729,8 @@ class SteamToolsNG(Gtk.Application):
     def on_about_activate(self, *args: Any) -> None:
         dialog = about.AboutDialog(self.main_window)
         dialog.show()
+
+    def on_exit_activate(self, *args: Any) -> None:
+        loop = asyncio.get_running_loop()
+        loop.stop()
+        self.main_window.destroy()
