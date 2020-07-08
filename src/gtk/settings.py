@@ -16,8 +16,10 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
+import ctypes
 import logging
 import os
+import sys
 from collections import OrderedDict
 
 import aiohttp
@@ -116,6 +118,12 @@ class SettingsDialog(Gtk.Dialog):
         log_button.set_name("log_button")
         log_button.connect("clicked", self.on_log_button_clicked)
         general_section.grid.attach(log_button, 0, 2, 1, 1)
+
+        if os.name == 'nt' and hasattr(sys, 'frozen'):
+            console_button = Gtk.ToggleButton(_("Show debug console"))
+            console_button.set_name("console_button")
+            console_button.connect("toggled", self.on_console_button_toggled)
+            general_section.grid.attach(console_button, 0, 3, 1, 1)
 
         general_section.show_all()
 
@@ -287,6 +295,16 @@ class SettingsDialog(Gtk.Dialog):
 
     def on_config_button_clicked(self, button: Gtk.Button) -> None:
         os.system(f'{config.file_manager} {config.config_file_directory}')
+
+    def on_console_button_toggled(self, button: Gtk.Button) -> None:
+        if button.get_active():
+            console = ctypes.windll.kernel32.GetConsoleWindow()
+            ctypes.windll.user32.ShowWindow(console, 1)
+            ctypes.windll.kernel32.CloseHandle(console)
+        else:
+            console = ctypes.windll.kernel32.GetConsoleWindow()
+            ctypes.windll.user32.ShowWindow(console, 0)
+            ctypes.windll.kernel32.CloseHandle(console)
 
     def on_advanced_button_toggled(self, button: Gtk.Button) -> None:
         if button.get_active():
