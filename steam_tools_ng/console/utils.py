@@ -15,15 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import aiohttp
 import codecs
 import getpass
 import logging
+import ssl
 import sys
 import tempfile
-from typing import Optional, Union, List
-
-import aiohttp
 from stlib import webapi, universe
+from typing import Optional, Union, List
 
 from .. import i18n, config
 
@@ -308,3 +308,14 @@ def safe_input(
         except ValueError as exception:
             log.error(exception.args[0])
             log.error(_('Please, try again.'))
+
+
+async def http_session(raise_for_status: bool = True) -> None:
+    ssl_context = ssl.SSLContext()
+
+    if hasattr(sys, 'frozen'):
+        _executable_path = os.path.dirname(sys.executable)
+        ssl_context.load_verify_locations(cafile=os.path.join(_executable_path, 'etc', 'cacert.pem'))
+
+    tcp_connector = aiohttp.TCPConnector(ssl=ssl_context)
+    return aiohttp.ClientSession(raise_for_status=raise_for_stattus, connector=tcp_connector)

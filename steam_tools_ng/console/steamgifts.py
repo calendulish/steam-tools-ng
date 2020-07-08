@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
 
-async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -> None:
+async def run(plugin_manager: plugins.Manager) -> None:
     wait_min = config.parser.getint("steamgifts", "wait_min")
     wait_max = config.parser.getint("steamgifts", "wait_max")
     giveaway_type = config.parser.get("steamgifts", "giveaway_type")
@@ -40,6 +40,7 @@ async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -
     sort_giveaways = config.parser.get("steamgifts", "sort")
     reverse_sorting = config.parser.getboolean("steamgifts", "reverse_sorting")
     api_url = config.parser.get('steam', 'api_url')
+    session = utils.http_session()
     webapi_session = webapi.SteamWebAPI(session, api_url)
 
     if plugin_manager.has_plugin("steamgifts"):

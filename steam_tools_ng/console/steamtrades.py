@@ -32,11 +32,12 @@ log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
 
-async def run(session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -> None:
+async def run(plugin_manager: plugins.Manager) -> None:
     trade_ids = config.parser.get("steamtrades", "trade_ids")
     wait_min = config.parser.getint("steamtrades", "wait_min")
     wait_max = config.parser.getint("steamtrades", "wait_max")
     api_url = config.parser.get('steam', 'api_url')
+    session = utils.http_session()
     webapi_session = webapi.SteamWebAPI(session, api_url)
 
     if plugin_manager.has_plugin("steamtrades"):

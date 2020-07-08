@@ -15,19 +15,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import aiohttp
 import asyncio
 import binascii
 import configparser
 import itertools
 import logging
 import random
+import ssl
 import sys
 import time
-from typing import Any, List, Optional
-
-import aiohttp
 from gi.repository import Gio, Gtk
 from stlib import universe, client, plugins, webapi
+from typing import Any, List, Optional
 
 from . import about, settings, setup, window, utils
 from .. import config, i18n
@@ -38,24 +38,39 @@ log = logging.getLogger(__name__)
 
 # noinspection PyUnusedLocal
 class SteamToolsNG(Gtk.Application):
-    def __init__(self, session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -> None:
+    def __init__(self, plugin_manager: plugins.Manager) -> None:
         super().__init__(application_id="click.lara.SteamToolsNG",
                          flags=Gio.ApplicationFlags.FLAGS_NONE)
 
-        self.session = session
-        self.api_url = config.parser.get('steam', 'api_url')
-        self.webapi_session = webapi.SteamWebAPI(session, self.api_url)
+        self._session = None
+        self._webapi_session = None
         self.plugin_manager = plugin_manager
 
         self._main_window_id = 0
         self.gtk_settings = Gtk.Settings.get_default()
 
         self.api_login: Optional[webapi.Login] = None
-        self.time_offset = 0
+        self._time_offset = 0
 
     @property
     def main_window(self) -> Gtk.ApplicationWindow:
+        current_window = self.get_window_by_id(self._main_window_id)
+        assert isinstance(current_window, Gtk.ApplicationWindow), "main window has not been created"
         return self.get_window_by_id(self._main_window_id)
+
+    @property
+    def time_offset(self) -> int:
+        return self._time_offset
+
+    @property
+    def session(self) -> aiohttp.ClientSession:
+        assert isinstance(self._session, aiohttp.ClientSession), "session has not been created"
+        return self._session
+
+    @property
+    def webapi_session(self) -> webapi.SteamWebAPI:
+        assert isinstance(self._webapi_session, webapi.SteamWebAPI), "webapi session has not been created"
+        return self._webapi_session
 
     def do_startup(self) -> None:
         Gtk.Application.do_startup(self)
@@ -128,7 +143,20 @@ class SteamToolsNG(Gtk.Application):
     async def async_activate(self) -> None:
         setup_requested = False
         login_requested = False
-        self.time_offset = await config.time_offset(self.webapi_session)
+
+        ssl_context = ssl.SSLContext()
+
+        if hasattr(sys, 'frozen'):
+            _executable_path = os.path.dirname(sys.executable)
+            ssl_context.load_verify_locations(cafile=os.path.join(_executable_path, 'etc', 'cacert.pem'))
+
+        tcp_connector = aiohttp.TCPConnector(ssl=ssl_context)
+        self._session = aiohttp.ClientSession(raise_for_status=True, connector=tcp_connector)
+
+        api_url = config.parser.get("steam", "api_url")
+        self._webapi_session = webapi.SteamWebAPI(self.session, api_url)
+
+        self._time_offset = await config.time_offset(self.webapi_session)
 
         assert isinstance(self.main_window, Gtk.Window), "No window is found"
 

@@ -23,13 +23,11 @@ import contextlib
 import importlib
 import logging
 import os
-import ssl
 import sys
 import textwrap
 from multiprocessing import freeze_support
 from typing import Any
 
-import aiohttp
 from steam_tools_ng.gtk import async_gtk
 from stlib import plugins
 
@@ -137,15 +135,6 @@ if __name__ == "__main__":
 
     log.info(f'Steam Tools NG version {version.__version__} (Made with Girl Power <33)')
     log.info('Copyright (C) 2015 ~ 2018 Lara Maia - <dev@lara.click>')
-
-    ssl_context = ssl.SSLContext()
-
-    if hasattr(sys, 'frozen'):
-        _executable_path = os.path.dirname(sys.executable)
-        ssl_context.load_verify_locations(cafile=os.path.join(_executable_path, 'etc', 'cacert.pem'))
-
-    tcp_connector = aiohttp.TCPConnector(ssl=ssl_context)
-    http_session = aiohttp.ClientSession(raise_for_status=True, connector=tcp_connector)
     plugin_manager = plugins.Manager()
 
     if console_params.module:
@@ -161,7 +150,7 @@ if __name__ == "__main__":
             config.event_loop.stop()
 
 
-        task = asyncio.ensure_future(module.run(http_session, plugin_manager, *module_options))  # type: ignore
+        task = asyncio.ensure_future(module.run(plugin_manager, *module_options))  # type: ignore
         task.add_done_callback(console_safe_exit)
     else:
 
@@ -179,5 +168,5 @@ if __name__ == "__main__":
             log.critical('Use -c / --cli <module> for the command line interface.')
             sys.exit(1)
 
-        app = application.SteamToolsNG(http_session, plugin_manager)
+        app = application.SteamToolsNG(plugin_manager)
         async_gtk.run(app)
