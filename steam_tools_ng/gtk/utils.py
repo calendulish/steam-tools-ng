@@ -16,13 +16,12 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
+import cairo
 import logging
 from collections import OrderedDict
-from typing import Any, Callable, List, Tuple, Optional, Union
-
-import cairo
 from gi.repository import Gtk, Gdk
 from stlib import webapi
+from typing import Any, Callable, List, Tuple, Optional, Union
 
 from .. import i18n, config
 

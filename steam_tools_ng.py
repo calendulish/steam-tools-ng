@@ -27,11 +27,13 @@ import ssl
 import sys
 import textwrap
 from multiprocessing import freeze_support
-from typing import Any, Callable
+from typing import Any
 
 import aiohttp
-from steam_tools_ng import config, i18n, version
+from steam_tools_ng.gtk import async_gtk
 from stlib import plugins
+
+from steam_tools_ng import config, i18n, version
 
 _ = i18n.get_translation
 log = logging.getLogger(__name__)
@@ -162,7 +164,6 @@ if __name__ == "__main__":
         task = asyncio.ensure_future(module.run(http_session, plugin_manager, *module_options))  # type: ignore
         task.add_done_callback(console_safe_exit)
     else:
-        from gi.repository import Gtk
 
         if os.name == 'nt' and hasattr(sys, 'frozen'):
             import ctypes
@@ -179,46 +180,4 @@ if __name__ == "__main__":
             sys.exit(1)
 
         app = application.SteamToolsNG(http_session, plugin_manager)
-        app.register()
-        app.activate()
-
-
-        async def async_gtk_iterator() -> None:
-            while Gtk.events_pending():
-                Gtk.main_iteration_do(False)
-
-            await asyncio.sleep(0.01)
-
-            if app.window and app.window.get_realized():
-                asyncio.ensure_future(async_gtk_iterator())
-            else:
-                app.quit()
-                config.event_loop.stop()
-
-
-        asyncio.ensure_future(async_gtk_iterator())
-
-
-    def never_fall_down(method: Callable[..., None], *args, **kwargs) -> None:
-        try:
-            method(*args, **kwargs)
-        except KeyboardInterrupt:
-            # delayed stop
-            asyncio.ensure_future(asyncio.coroutine(config.event_loop.stop)())
-            config.event_loop.run_forever()
-
-
-    never_fall_down(config.event_loop.run_forever)
-
-    log.info(_("Exiting..."))
-    unfinished_tasks = asyncio.all_tasks(config.event_loop)
-
-    for task in unfinished_tasks:
-        task.cancel()
-
-        with contextlib.suppress(asyncio.CancelledError):
-            never_fall_down(config.event_loop.run_until_complete, task)
-
-    never_fall_down(config.event_loop.run_until_complete, http_session.close())
-    # FIXME https://github.com/aio-libs/aiohttp/issues/1925
-    never_fall_down(config.event_loop.run_until_complete, asyncio.sleep(1))
+        async_gtk.run(app)

@@ -31,8 +31,8 @@ log = logging.getLogger(__name__)
 
 # noinspection PyUnusedLocal
 class Main(Gtk.ApplicationWindow):
-    def __init__(self, application: Gtk.Application) -> None:
-        super().__init__(application=application, title="Steam Tools NG")
+    def __init__(self, application: Gtk.Application, title: str) -> None:
+        super().__init__(application=application, title=title)
         self.application = application
         self.session = application.session
         self.webapi_session = application.webapi_session
