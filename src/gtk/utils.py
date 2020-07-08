@@ -382,6 +382,11 @@ class Section(Gtk.Frame):
 
         return item
 
+    def stackup_section(self, stack: Gtk.Stack) -> None:
+        name = self.get_name()
+        title = name.capitalize()
+        stack.add_titled(self, name, title)
+
 
 def markup(text: str, **kwargs: Any) -> str:
     markup_string = ['<span']

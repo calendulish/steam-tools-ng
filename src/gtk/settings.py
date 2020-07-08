@@ -97,6 +97,13 @@ class SettingsDialog(Gtk.Dialog):
         content_grid.set_column_spacing(10)
         content_area.add(content_grid)
 
+        stack = Gtk.Stack()
+        content_grid.attach(stack, 1, 0, 1, 1)
+
+        sidebar = Gtk.StackSidebar()
+        sidebar.set_stack(stack)
+        content_grid.attach(sidebar, 0, 0, 1, 1)
+
         login_section = utils.Section("login", _("Login Settings"))
 
         account_name = login_section.new('account_name', _("Username:"), Gtk.Entry, 0, 0)
@@ -252,17 +259,20 @@ class SettingsDialog(Gtk.Dialog):
 
         self.connect('response', lambda dialog, response_id: self.destroy())
 
-        content_grid.attach(login_section, 0, 0, 1, 3)
-        content_grid.attach(logger_section, 1, 0, 1, 1)
-        content_grid.attach(gtk_section, 1, 1, 1, 1)
+        for section in [
+            login_section,
+            logger_section,
+            gtk_section,
+            steamtrades_section,
+            cardfarming_section,
+            steamgifts_section,
+            locale_section,
+            plugins_section,
+        ]:
+            section.stackup_section(stack)
 
-        content_grid.attach(steamtrades_section, 0, 3, 1, 1)
-        content_grid.attach(cardfarming_section, 0, 4, 1, 2)
-        content_grid.attach(steamgifts_section, 1, 2, 1, 3)
-
-        content_grid.attach(locale_section, 0, 6, 1, 1)
-        content_grid.attach(plugins_section, 1, 5, 1, 2)
-
+        stack.show()
+        sidebar.show()
         content_grid.show()
         self.show()
 
