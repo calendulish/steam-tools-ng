@@ -104,20 +104,25 @@ class SettingsDialog(Gtk.Dialog):
         sidebar.set_stack(stack)
         content_grid.attach(sidebar, 0, 0, 1, 1)
 
+        general_section = utils.Section("general", _("General Settings"))
+
+        config_button = Gtk.Button(_("Config File Directory"))
+        config_button.set_name("config_button")
+        config_button.set_hexpand(True)
+        config_button.connect("clicked", self.on_config_button_clicked)
+        general_section.grid.attach(config_button, 0, 1, 1, 1)
+
+        log_button = Gtk.Button(_("Log File Directory"))
+        log_button.set_name("log_button")
+        log_button.connect("clicked", self.on_log_button_clicked)
+        general_section.grid.attach(log_button, 0, 2, 1, 1)
+
+        general_section.show_all()
+
         login_section = utils.Section("login", _("Login Settings"))
 
         account_name = login_section.new('account_name', _("Username:"), Gtk.Entry, 0, 0)
         account_name.connect('changed', on_setting_changed)
-
-        config_button = Gtk.Button(_("Config Files"))
-        config_button.set_name("config_button")
-        config_button.connect("clicked", self.on_config_button_clicked)
-        login_section.grid.attach(config_button, 0, 7, 4, 1)
-
-        log_button = Gtk.Button(_("Log Files"))
-        log_button.set_name("log_button")
-        log_button.connect("clicked", self.on_log_button_clicked)
-        login_section.grid.attach(log_button, 0, 8, 4, 1)
 
         advanced_button = Gtk.ToggleButton(_("Advanced"))
         advanced_button.set_name("advanced_button")
@@ -260,6 +265,7 @@ class SettingsDialog(Gtk.Dialog):
         self.connect('response', lambda dialog, response_id: self.destroy())
 
         for section in [
+            general_section,
             login_section,
             logger_section,
             gtk_section,
