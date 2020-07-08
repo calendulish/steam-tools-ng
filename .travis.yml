@@ -17,7 +17,7 @@ install:
 
 before_script:
     - git clone https://github.com/ShyPixie/stlib
-    - cd stlib/src/steam_api
+    - cd stlib/steam_tools_ng/steam_api
     - docker login -u shypixie -p $DOCKER_SECRET
     - image_id=$(docker create shypixie/steamworks_sdk)
     - docker cp $image_id:steamworks_sdk - > steamworks.tar.gz

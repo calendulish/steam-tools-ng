@@ -37,7 +37,7 @@ log = logging.getLogger(__name__)
 
 
 # noinspection PyUnusedLocal
-class Application(Gtk.Application):
+class SteamToolsNG(Gtk.Application):
     def __init__(self, session: aiohttp.ClientSession, plugin_manager: plugins.Manager) -> None:
         super().__init__(application_id="click.lara.SteamToolsNG",
                          flags=Gio.ApplicationFlags.FLAGS_NONE)

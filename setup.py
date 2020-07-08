@@ -28,7 +28,7 @@ from setuptools.command.build_py import build_py
 from setuptools.command.install import install
 from setuptools.command.install_scripts import install_scripts
 
-from src import version
+from steam_tools_ng import version
 
 po_build_path = os.path.join('build', 'share', 'locale')
 
@@ -45,7 +45,7 @@ if os.name == 'nt':
 else:
     from setuptools import setup
 
-    icon_path = os.path.abspath(os.path.join(os.path.sep, 'usr', 'share', 'steam-tools-ng', 'icons'))
+    icon_path = os.path.abspath(os.path.join(os.path.sep, 'usr', 'share', 'steam_tools_ng', 'icons'))
 
 
 class RemoveExtension(install_scripts):
@@ -171,15 +171,15 @@ def freeze_options() -> Mapping[str, Any]:
 
     executables = [
         Executable(
-            "steam-tools-ng.py",
+            "steam_tools_ng.py",
             base=None,
-            icon=os.path.join('icons', 'steam-tools-ng.ico'),
+            icon=os.path.join('icons', 'steam_tools_ng.ico'),
             shortcutName='Steam Tools NG',
             copyright='Lara Maia (C) 2015 ~ 2018',
         )
     ]
 
-    packages = ['asyncio', 'src', 'gi', 'idna', 'six', 'pkg_resources']  # idna for cx_freeze <= 5.1.1
+    packages = ['asyncio', 'steam_tools_ng', 'gi', 'idna', 'six', 'pkg_resources']  # idna for cx_freeze <= 5.1.1
 
     paths = ['.']
     paths.extend(sys.path)
@@ -226,15 +226,15 @@ def freeze_options() -> Mapping[str, Any]:
 
 def data_files() -> Mapping[str, List[Tuple[str, List[str]]]]:
     icons = [
-        os.path.join('icons', 'steam-tools-ng.png'),
-        os.path.join('icons', 'steam-tools-ng.ico'),
+        os.path.join('icons', 'steam_tools_ng.png'),
+        os.path.join('icons', 'steam_tools_ng.ico'),
     ]
 
     return {'data_files': [(icon_path, icons)]}
 
 
 setup(
-    name='steam-tools-ng',
+    name='steam_tools_ng',
     version=version.__version__,
     description="Useful tools for Steam",
     author='Lara Maia',
@@ -246,8 +246,8 @@ setup(
         'steam_tools_ng.console',
         'steam_tools_ng.gtk',
     ],
-    package_dir={'steam_tools_ng': 'src'},
-    scripts=['steam-tools-ng.py'],
+    package_dir={'steam_tools_ng': 'steam_tools_ng'},
+    scripts=['steam_tools_ng.py'],
     install_requires=['stlib>=0.6.2', 'aiohttp'],
     cmdclass={
         'build_py': BuildTranslations,

@@ -42,7 +42,7 @@ class Main(Gtk.ApplicationWindow):
         header_bar.set_show_close_button(True)
 
         icon = Gtk.Image()
-        pix = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(config.icons_dir, 'steam-tools-ng.png'), 28, 28)
+        pix = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(config.icons_dir, 'steam_tools_ng.png'), 28, 28)
         icon.set_from_pixbuf(pix)
         header_bar.pack_start(icon)
 

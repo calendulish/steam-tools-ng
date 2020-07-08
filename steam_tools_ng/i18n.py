@@ -36,7 +36,7 @@ def new_hash(text: str) -> bytes:
 
 def get_translation(text: str) -> str:
     language = config.parser.get('locale', 'language')
-    translation = gettext.translation("steam-tools-ng", languages=[language], fallback=True)
+    translation = gettext.translation("steam_tools_ng", languages=[language], fallback=True)
     translated_text = translation.gettext(text)
     cache[new_hash(translated_text)] = text
 

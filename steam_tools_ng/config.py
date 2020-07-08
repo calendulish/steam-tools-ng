@@ -34,7 +34,7 @@ parser = configparser.RawConfigParser()
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
-if os.path.isdir('src'):
+if os.path.isdir('steam_tools_ng'):
     data_dir = 'config'
     icons_dir = 'icons'
 elif hasattr(sys, 'frozen') or sys.platform == 'win32':
@@ -42,10 +42,10 @@ elif hasattr(sys, 'frozen') or sys.platform == 'win32':
     icons_dir = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'share', 'icons')
 else:
     data_dir = os.getenv('XDG_CONFIG_HOME', os.path.join(os.path.expanduser('~'), '.config'))
-    icons_dir = os.path.abspath(os.path.join(os.path.sep, 'usr', 'share', 'steam-tools-ng', 'icons'))
+    icons_dir = os.path.abspath(os.path.join(os.path.sep, 'usr', 'share', 'steam_tools_ng', 'icons'))
 
-config_file_directory = os.path.join(data_dir, 'steam-tools-ng')
-config_file_name = 'steam-tools-ng.config'
+config_file_directory = os.path.join(data_dir, 'steam_tools_ng')
+config_file_name = 'steam_tools_ng.config'
 config_file = os.path.join(config_file_directory, config_file_name)
 log_levels = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
 
@@ -75,7 +75,7 @@ def init() -> None:
     parser.read_dict(
         {
             'logger': {
-                'log_directory': os.path.join(data_dir, 'steam-tools-ng'),
+                'log_directory': os.path.join(data_dir, 'steam_tools_ng'),
                 'log_level': 'debug',
                 'log_console_level': 'info',
                 'log_color': True,
@@ -159,7 +159,7 @@ def init_logger() -> None:
     log_level = parser.get("logger", "log_level")
     log_console_level = parser.get("logger", "log_console_level")
 
-    log_file_handler = logger_handlers.RotatingFileHandler(os.path.join(log_directory, 'steam-tools-ng.log'),
+    log_file_handler = logger_handlers.RotatingFileHandler(os.path.join(log_directory, 'steam_tools_ng.log'),
                                                            backupCount=1,
                                                            encoding='utf-8')
     log_file_handler.setFormatter(logging.Formatter('%(module)s:%(levelname)s (%(funcName)s) => %(message)s'))
@@ -168,7 +168,7 @@ def init_logger() -> None:
     try:
         log_file_handler.doRollover()
     except PermissionError:
-        log.debug(_("Unable to open steam-tools-ng.log"))
+        log.debug(_("Unable to open steam_tools_ng.log"))
         log_file_handler.close()
         log_file_handler = logger_handlers.NullHandler()  # type: ignore
 

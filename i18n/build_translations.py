@@ -55,7 +55,7 @@ def build(destination):
 
         msgfmt.make(
             os.path.join('i18n', translation),
-            os.path.join(destination, translation, 'LC_MESSAGES', 'steam-tools-ng.mo')
+            os.path.join(destination, translation, 'LC_MESSAGES', 'steam_tools_ng.mo')
         )
 
 

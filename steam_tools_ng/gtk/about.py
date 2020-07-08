@@ -47,7 +47,7 @@ class AboutDialog(Gtk.AboutDialog):
         self.set_comments(_("Made with Love <3"))
         self.set_license_type(Gtk.License.GPL_3_0)
 
-        logo = GdkPixbuf.Pixbuf.new_from_file(os.path.join(config.icons_dir, 'steam-tools-ng.png'))
+        logo = GdkPixbuf.Pixbuf.new_from_file(os.path.join(config.icons_dir, 'steam_tools_ng.png'))
         self.set_logo(logo)
 
         self.connect("response", lambda dialog, response_id: self.destroy())

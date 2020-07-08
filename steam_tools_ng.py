@@ -30,19 +30,10 @@ from multiprocessing import freeze_support
 from typing import Any, Callable
 
 import aiohttp
+from steam_tools_ng import config, i18n, version
 from stlib import plugins
 
-if hasattr(sys, 'frozen') or os.path.isdir('src'):
-    module_folder = 'src'
-else:
-    module_folder = 'steam_tools_ng'
-
-config = importlib.import_module('.config', module_folder)
-i18n = importlib.import_module('.i18n', module_folder)
-version = importlib.import_module('.version', module_folder)
-
 _ = i18n.get_translation
-
 log = logging.getLogger(__name__)
 
 if __name__ == "__main__":
@@ -131,8 +122,8 @@ if __name__ == "__main__":
         logging.root.removeHandler(logging.root.handlers[0])
 
         log_directory = config.parser.get("logger", "log_directory")
-        os.remove(os.path.join(log_directory, 'steam-tools-ng.log'))
-        os.remove(os.path.join(log_directory, 'steam-tools-ng.log.1'))
+        os.remove(os.path.join(log_directory, 'steam_tools_ng.log'))
+        os.remove(os.path.join(log_directory, 'steam_tools_ng.log.1'))
 
         log.info(_('Done!'))
         sys.exit(0)
@@ -180,14 +171,14 @@ if __name__ == "__main__":
             ctypes.windll.user32.ShowWindow(console, 0)
             ctypes.windll.kernel32.CloseHandle(console)
 
-        application = importlib.import_module('.application', f'{module_folder}.gtk')
+        from steam_tools_ng.gtk import application
 
         if sys.platform.startswith("linux") and not os.getenv('DISPLAY'):
             log.critical('The DISPLAY is not set!')
             log.critical('Use -c / --cli <module> for the command line interface.')
             sys.exit(1)
 
-        app = application.Application(http_session, plugin_manager)
+        app = application.SteamToolsNG(http_session, plugin_manager)
         app.register()
         app.activate()
 

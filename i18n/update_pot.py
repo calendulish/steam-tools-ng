@@ -26,7 +26,7 @@ from tokenize import TokenError, tokenize
 from typing import NamedTuple
 
 sys.path.append('..')
-version = importlib.import_module('.version', 'src')
+version = importlib.import_module('.version', 'steam_tools_ng')
 script_path = os.path.dirname(__file__)
 
 if script_path:
@@ -82,15 +82,15 @@ msgstr ""
 '''
 
 if __name__ == "__main__":
-    output_file = os.path.join('i18n', 'steam-tools-ng.pot')
+    output_file = os.path.join('i18n', 'steam_tools_ng.pot')
     translatable_files = []
 
-    for root, dirs, files in os.walk('src'):
+    for root, dirs, files in os.walk('steam_tools_ng'):
         for file in files:
             if file.endswith(".py"):
                 translatable_files.append(os.path.join(root, file))
 
-    translatable_files.append('steam-tools-ng.py')
+    translatable_files.append('steam_tools_ng.py')
 
     pygettext.make_escapes(True)
     eater = pygettext.TokenEater(Options())

@@ -23,7 +23,7 @@ build:
     project_setup:
         before:
             - command: git clone https://github.com/ShyPixie/stlib
-            - command: cd stlib/src/steam_api
+            - command: cd stlib/steam_tools_ng/steam_api
             - command: image_id=$(docker create shypixie/steamworks_sdk)
             - command: docker cp $image_id:steamworks_sdk - > steamworks.tar.gz
             - command: tar xfv steamworks.tar.gz

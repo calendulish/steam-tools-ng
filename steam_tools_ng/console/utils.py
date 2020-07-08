@@ -229,9 +229,9 @@ async def check_login(
             continue
         except webapi.LoginError:
             log.error(_("Unable to log-in! Please, check your username/password and try again."))
-            log.error(_("(If you change your password, run steam-tools-ng --reset-password and try again.)"))
+            log.error(_("(If you change your password, run steam_tools_ng --reset-password and try again.)"))
             log.error(
-                _("(If you removed the authenticator from your account, run steam-tools-ng --reset and try again.)")
+                _("(If you removed the authenticator from your account, run steam_tools_ng --reset and try again.)")
             )
 
             return False
