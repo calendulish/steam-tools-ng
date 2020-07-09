@@ -154,6 +154,8 @@ class Main(Gtk.ApplicationWindow):
         self.confirmations_grid.show_all()
         self.show_all()
 
+        self.connect("destroy", self.application.on_exit_activate)
+
         asyncio.ensure_future(self.plugin_switch())
 
     async def plugin_switch(self) -> None:
