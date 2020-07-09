@@ -18,8 +18,9 @@
 import asyncio
 import logging
 import os
-from gi.repository import GdkPixbuf, Gio, Gtk
 from typing import Union, Optional, Tuple
+
+from gi.repository import GdkPixbuf, Gio, Gtk
 
 from . import confirmation, utils
 from .. import config, i18n
@@ -240,7 +241,7 @@ class Main(Gtk.ApplicationWindow):
         if isinstance(model, Gtk.TreeModel):
             finalize_dialog = confirmation.FinalizeDialog(
                 self,
-                self.application.webapi_session,
+                self.application,
                 action,
                 model,
                 False
@@ -248,7 +249,7 @@ class Main(Gtk.ApplicationWindow):
         else:
             finalize_dialog = confirmation.FinalizeDialog(
                 self,
-                self.application.webapi_session,
+                self.application,
                 action,
                 *model.get_selected()
             )
