@@ -134,8 +134,13 @@ def init() -> None:
         parser.read(config_file)
 
     log_directory = parser.get("logger", "log_directory")
+
+    if not os.path.isdir(log_directory):
+        log.error(_("Incorrect log directory. Fallbacking to default."))
+        log_directory = os.path.join(data_dir, 'steam_tools_ng')
+        new("logger", "log_directory", log_directory)
+
     log_level = parser.get("logger", "log_level")
-    log_console_level = parser.get("logger", "log_console_level")
 
     if log_level and not log_level.upper() in log_levels:
         raise configparser.Error(
@@ -143,6 +148,8 @@ def init() -> None:
                 ', '.join(log_levels),
             )
         )
+
+    log_console_level = parser.get("logger", "log_console_level")
 
     if log_console_level and not log_console_level.upper() in log_levels:
         raise configparser.Error(
