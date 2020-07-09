@@ -57,5 +57,10 @@ Name: "{group}\Log Files"; Filename: "{app}\steam_tools_ng.exe"; Parameters: "--
 Name: "{group}\Uninstaller"; Filename: "{uninstallexe}"
 Name: "{commondesktop}\Steam Tools NG"; Filename: "{app}\steam_tools_ng.exe"; Tasks: desktopicon
 
+[InstallDelete]
+Type: files; Name: "{app}\steam-tools-ng.exe"
+Type: files; Name: "{app}\share\icons\steam-tools-ng*"
+Type: filesandordirs; Name: "{app}\lib\src"
+
 [Run]
-Filename: "{app}\steam-tools-ng.exe"; Description: "{cm:LaunchProgram,Steam Tools NG}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\steam_tools_ng.exe"; Description: "{cm:LaunchProgram,Steam Tools NG}"; Flags: nowait postinstall skipifsilent
