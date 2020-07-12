@@ -320,7 +320,7 @@ class SteamToolsNG(Gtk.Application):
                 continue
 
             if not badges:
-                self.main_window.set_status("cardfarming", info=_("No more cards to drop."))
+                self.main_window.set_status("cardfarming", status=_("Stopped"), info=_("No more cards to drop."))
                 break
 
             for badge in badges:
