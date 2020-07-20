@@ -65,16 +65,16 @@ class ClickableLabel(Gtk.EventBox):
 class VariableButton(Gtk.Button):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        super().connect('clicked', lambda button: self.__callback())
+        super().connect('clicked', self.__callback)
         self._user_callback: Optional[Callable[..., Any]] = None
         self._user_args: Any = None
         self._user_kwargs: Any = None
 
-    def __callback(self) -> None:
+    def __callback(self, button: Gtk.Button) -> None:
         if not self._user_callback:
             return
 
-        self._user_callback(*self._user_args, **self._user_kwargs)
+        self._user_callback(button, *self._user_args, **self._user_kwargs)
 
     def connect(self, signal: str, callback: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
         if signal != "clicked":
@@ -88,16 +88,16 @@ class VariableButton(Gtk.Button):
 class AsyncButton(Gtk.Button):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        super().connect('clicked', lambda button: self.__callback())
+        super().connect('clicked', self.__callback)
         self._user_callback: Optional[Callable[..., Any]] = None
         self._user_args: Any = None
         self._user_kwargs: Any = None
 
-    def __callback(self) -> None:
+    def __callback(self, button: Gtk.Button) -> None:
         if not self._user_callback:
             return
 
-        task = self._user_callback(*self._user_args, **self._user_kwargs)
+        task = self._user_callback(button, *self._user_args, **self._user_kwargs)
         asyncio.ensure_future(task)
 
     def connect(self, signal: str, callback: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
