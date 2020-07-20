@@ -118,6 +118,7 @@ class SteamToolsNG(Gtk.Application):
 
     async def do_login(self, *, block: bool = True, auto: bool = False) -> None:
         login_dialog = login.LoginDialog(self.main_window, self)
+        login_dialog.set_deletable(False)
         login_dialog.show()
 
         if auto:
@@ -212,7 +213,7 @@ class SteamToolsNG(Gtk.Application):
                 server_time = int(time.time()) - self.time_offset
                 auth_code = universe.generate_steam_code(server_time, shared_secret)
             except (ValueError, binascii.Error):
-                log.debug(_("The current shared secret is invalid."))
+                log.error(_("The current shared secret is invalid."))
                 config.new("plugins", "steamguard", False)
                 await asyncio.sleep(10)
             except ProcessLookupError:

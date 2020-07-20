@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-
+import binascii
 import codecs
 import logging
 
@@ -53,12 +53,12 @@ class LoginDialog(Gtk.Dialog):
 
         self.parent_window = parent_window
         self.set_default_size(400, 100)
-        self.set_title(_('Magic Box'))
+        self.set_title(_('Login'))
         self.set_transient_for(parent_window)
         self.set_modal(True)
         self.set_destroy_with_parent(True)
         self.set_resizable(False)
-        self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
+        self.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
 
         self.content_area = self.get_content_area()
         self.content_area.set_orientation(Gtk.Orientation.VERTICAL)
@@ -112,9 +112,8 @@ class LoginDialog(Gtk.Dialog):
             0, 1,
         )
 
-        self.connect('response', self.application.on_exit_activate)
+        self.connect('response', lambda dialog, _action: dialog.destroy())
         self.connect('key-release-event', self.on_key_release_event)
-        self.egg_index = 0
 
         self.content_area.show_all()
         self.steam_code_item.hide()
@@ -211,35 +210,33 @@ class LoginDialog(Gtk.Dialog):
         kwargs['authenticator_code'] = self.steam_code
 
         self.status.info(_("Logging in"))
+        self.captcha_item.hide()
+        self.captcha_text_item.hide()
+        self.steam_code_item.hide()
+        self.mail_code_item.hide()
 
         try:
             login_data = await self.login_session.do_login(**kwargs)
         except webapi.MailCodeError:
             self.status.info(_("Write code received by email\nand click on 'Log-in' button"))
-            self.captcha_item.hide()
-            self.captcha_text_item.hide()
             self.mail_code_item.set_text("")
             self.mail_code_item.show_all()
-            self.steam_code_item.hide()
+            self.mail_code_item.grab_focus()
         except webapi.TwoFactorCodeError:
-            self.status.error(_(
-                "Write Steam Code bellow and click on 'Log-in' again or\n"
-                "remove your current authenticator and use STNG as Steam Authenticator.\n\n"
-                "(If you choose to keep your current authenticator some functions will be disabled)"
-            ))
-
+            self.status.error(_("Write Steam Code bellow and click on 'Log-in'"))
             self.steam_code_item.set_text("")
             self.steam_code_item.show_all()
             self.steam_code_item.grab_focus()
-            self.mail_code_item.hide()
         except webapi.LoginBlockedError:
             self.status.error(_(
                 "Your network is blocked!\n"
                 "It'll take some time until unblocked. Please, try again later\n"
             ))
             self.user_details_section.hide()
+            self.advanced_login.hide()
             self.advanced_login_section.hide()
             self.login_button.hide()
+            self.set_deletable(True)
         except webapi.CaptchaError as exception:
             self.status.info(_("Write captcha code as shown bellow\nand click on 'Log-in' button"))
             self.captcha_gid = exception.captcha_gid
@@ -252,41 +249,70 @@ class LoginDialog(Gtk.Dialog):
             self.captcha_item.show()
             self.captcha_text_item.set_text("")
             self.captcha_text_item.show()
+            self.captcha_text_item.grab_focus()
         except webapi.LoginError as exception:
-            log.debug("Login error: %s", exception)
-            self.captcha_item.hide()
-            self.captcha_text_item.hide()
+            log.error("Login error: %s", exception)
             self.__password_item.set_text('')
+            self.__password_item.grab_focus()
 
             self.status.error(_(
                 "Unable to log-in!\n"
                 "Please, check your username/password and try again.\n"
             ))
-
             self.username_item.set_sensitive(True)
             self.__password_item.set_sensitive(True)
-            self.save_password_item.set_sensitive(True)
-            self.login_button.set_sensitive(True)
+            self.__password_item.grab_focus()
         except aiohttp.ClientError:
-            self.status.error(_("No Connection"))
+            self.status.error(_("No Connection. Try again."))
+            self.username_item.set_sensitive(True)
+            self.__password_item.set_sensitive(True)
+        except binascii.Error:
+            self.status.error(_("shared secret is invalid!"))
+            self.username_item.set_sensitive(True)
+            self.__password_item.set_sensitive(True)
+            self.shared_secret_item.grab_focus()
         else:
-            if self.identity_secret:
-                config.new("login", "identity_secret", self.identity_secret)
+            new_configs = {"account_name": self.username}
 
-            if self.shared_secret:
-                config.new("login", "shared_secret", self.shared_secret)
+            if "shared_secret" in login_data.auth:
+                new_configs["shared_secret"] = login_data.auth["shared_secret"]
+            elif self.shared_secret:
+                new_configs["shared_secret"] = self.shared_secret
 
-            data = [login_data]
+            if "identity_secret" in login_data.auth:
+                new_configs['identity_secret'] = login_data.auth['identity_secret']
+            elif self.identity_secret:
+                new_configs["identity_secret"] = self.identity_secret
 
             if self.save_password_item.get_active():
-                data.append(self.__password.encode())
+                # Just for curious people. It's not even safe.
+                key = codecs.encode(self.__password.encode(), 'base64')
+                out = codecs.encode(key.decode(), 'rot13')
+                new_configs["password"] = out
 
-            config.save_login_data(*data)
+            if login_data.oauth:
+                new_configs['steamid'] = login_data.oauth['steamid']
+                new_configs['token'] = login_data.oauth['wgtoken']
+                new_configs['token_secure'] = login_data.oauth['wgtoken_secure']
+                new_configs['oauth_token'] = login_data.oauth['oauth_token']
+            else:
+                new_configs['steamid'] = login_data.auth['transfer_parameters']['steamid']
+                new_configs['token'] = login_data.auth['transfer_parameters']['webcookie']
+                new_configs['token_secure'] = login_data.auth['transfer_parameters']['token_secure']
+
+            for key, value in new_configs.items():
+                config.new("login", key, value)
+
             self.has_user_data = True
             self.destroy()
+        finally:
+            self.save_password_item.set_sensitive(True)
+            self.login_button.set_sensitive(True)
 
     def on_advanced_login_clicked(self, *args) -> None:
         if self.advanced_login_section.props.visible:
+            self.identity_secret_item.set_text('')
+            self.shared_secret_item.set_text('')
             self.advanced_login_section.hide()
             self.set_size_request(400, 100)
         else:

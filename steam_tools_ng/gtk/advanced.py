@@ -20,11 +20,10 @@ import contextlib
 import logging
 import os
 from collections import OrderedDict
-from typing import Any
 
 from gi.repository import Gtk
 
-from . import utils, settings
+from . import utils, settings, login
 from .. import i18n, config
 
 log = logging.getLogger(__name__)
@@ -115,7 +114,7 @@ class AdvancedSettingsDialog(Gtk.Dialog):
         steamid_item.set_input_purpose(Gtk.InputPurpose.DIGITS)
         steamid_item.connect("changed", settings.on_digit_only_setting_changed)
 
-        reset_button = Gtk.Button(_("Reset Everything (USE WITH CAUTION!!!)"))
+        reset_button = utils.AsyncButton(_("Reset Everything (USE WITH CAUTION!!!)"))
         reset_button.set_name("reset_button")
         reset_button.connect("clicked", self.on_reset_clicked)
         login_section.grid.attach(reset_button, 0, 9, 4, 1)
@@ -129,38 +128,24 @@ class AdvancedSettingsDialog(Gtk.Dialog):
         content_grid.show()
         self.show()
 
-    @staticmethod
-    async def __fast_reset(setup_dialog: Gtk.Dialog) -> bool:
-        await asyncio.sleep(5)
+    def _exit(self) -> None:
+        self.toggle_button.set_active(False)
+        utils.reset_dialog(self.parent_window, self.application.main_window, self.application)
+        self.destroy()
 
-        if not setup_dialog.get_realized():
-            return False
+    async def on_reset_clicked(self, button: Gtk.Button) -> None:
+        login_dialog = login.LoginDialog(self.parent_window, self.application)
+        login_dialog.status.info(_("Reseting... Please wait!"))
+        login_dialog.set_deletable(False)
+        login_dialog.user_details_section.hide()
+        login_dialog.advanced_login.hide()
+        login_dialog.show()
+        await asyncio.sleep(3)
 
         with contextlib.suppress(FileNotFoundError):
             os.remove(config.config_file)
 
         config.parser.clear()
         config.init()
-
-        return True
-
-    def _exit(self) -> None:
-        self.toggle_button.set_active(False)
-        self.parent_window.reset()
-        self.destroy()
-
-    def on_reset_clicked(self, button: Gtk.Button) -> None:
-        setup_dialog = setup.SetupDialog(self, self.application)
-        setup_dialog.show()
-        setup_dialog.status.info(_("Reseting... Please wait!"))
-        setup_dialog.status.show()
-
-        main_window = self.parent_window.parent_window
-        task = asyncio.ensure_future(self.__fast_reset(setup_dialog))
-        task.add_done_callback(self.on_reset_done)
-
-    def on_reset_done(self, future: 'asyncio.Future[Any]') -> None:
-        main_window = self.parent_window.parent_window
-
-        if future.result():
-            main_window.destroy()
+        utils.reset_dialog(login_dialog, self.application.main_window, self.application)
+        self.parent_window.destroy()

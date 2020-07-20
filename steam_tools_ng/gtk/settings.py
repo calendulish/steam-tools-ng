@@ -24,7 +24,7 @@ from collections import OrderedDict
 
 from gi.repository import Gtk, Pango
 
-from . import utils, advanced
+from . import utils, advanced, authenticator, login
 from .. import config, i18n
 
 log = logging.getLogger(__name__)
@@ -130,20 +130,25 @@ class SettingsDialog(Gtk.Dialog):
         account_name = login_section.new('account_name', _("Username:"), Gtk.Entry, 0, 0)
         account_name.connect('changed', on_setting_changed)
 
+        login_button = Gtk.Button(_("Login with another account"))
+        login_button.set_name("login_button")
+        login_button.connect('clicked', self.on_login_button_clicked)
+        login_section.grid.attach(login_button, 0, 1, 2, 1)
+
+        new_authenticator_button = Gtk.Button(_("Use STNG as your Steam Authenticator"))
+        new_authenticator_button.set_name("new_authenticator_button")
+        new_authenticator_button.connect("clicked", self.on_new_authenticator_clicked)
+        login_section.grid.attach(new_authenticator_button, 0, 2, 2, 1)
+
+        reset_password_button = Gtk.Button(_("Remove Saved Password"))
+        reset_password_button.set_name("reset_password_button")
+        reset_password_button.connect("clicked", self.on_reset_password_clicked)
+        login_section.grid.attach(reset_password_button, 0, 3, 2, 1)
+
         advanced_button = Gtk.ToggleButton(_("Advanced"))
         advanced_button.set_name("advanced_button")
         advanced_button.connect("toggled", self.on_advanced_button_toggled)
-        login_section.grid.attach(advanced_button, 0, 9, 4, 1)
-
-        setup_button = Gtk.Button(_("Magic Box"))
-        setup_button.set_name("setup_button")
-        setup_button.connect('clicked', self.on_setup_clicked)
-        login_section.grid.attach(setup_button, 0, 10, 4, 1)
-
-        reset_password_button = Gtk.Button(_("Reset Password"))
-        reset_password_button.set_name("reset_password_button")
-        reset_password_button.connect("clicked", self.on_reset_password_clicked)
-        login_section.grid.attach(reset_password_button, 0, 11, 4, 1)
+        login_section.grid.attach(advanced_button, 0, 4, 2, 1)
 
         login_section.show_all()
 
@@ -320,14 +325,6 @@ class SettingsDialog(Gtk.Dialog):
         content_grid.show()
         self.show()
 
-    def reset(self) -> None:
-        content_area = self.get_content_area()
-
-        for widget in content_area.get_children():
-            widget.destroy()
-
-        self.__init__(self.parent_window, self.application)
-
     def on_log_button_clicked(self, button: Gtk.Button) -> None:
         os.system(f'{config.file_manager} {config.parser.get("logger", "log_directory")}')
 
@@ -369,23 +366,27 @@ class SettingsDialog(Gtk.Dialog):
 
         config.new('gtk', 'theme', theme)
 
-    def on_setup_clicked(self, button: Gtk.Button) -> None:
-        setup_dialog = setup.SetupDialog(self.parent_window, self.application)
-        setup_dialog.login_mode()
-        setup_dialog.show()
+    def on_login_button_clicked(self, button: Gtk.Button) -> None:
+        login_dialog = login.LoginDialog(self.parent_window, self.application)
+        login_dialog.show()
+        self.destroy()
+
+    def on_new_authenticator_clicked(self, button: Gtk.Button) -> None:
+        new_authenticator_dialog = authenticator.NewAuthenticatorDialog(self.parent_window, self.application)
+        new_authenticator_dialog.show()
         self.destroy()
 
     def on_reset_password_clicked(self, button: Gtk.Button) -> None:
-        setup_dialog = setup.SetupDialog(self, self.application)
-        setup_dialog.show()
-        setup_dialog.status.info(_("Reseting Password..."))
-        setup_dialog.status.show()
-        setup_dialog.header_bar.set_show_close_button(False)
+        login_dialog = login.LoginDialog(self.parent_window, self.application)
+        login_dialog.status.info(_("Removing saved password..."))
+        login_dialog.status.show()
+        login_dialog.user_details_section.hide()
+        login_dialog.advanced_login.hide()
+        login_dialog.set_deletable(False)
+        login_dialog.show()
 
         config.new("login", "password", "")
-
-        setup_dialog.status.info(_("Done!"))
-        asyncio.get_event_loop().call_later(2, setup_dialog.destroy)
+        asyncio.get_event_loop().call_later(2, login_dialog.destroy)
 
     def update_language(self, combo: Gtk.ComboBoxText) -> None:
         language = list(translations)[combo.get_active()]

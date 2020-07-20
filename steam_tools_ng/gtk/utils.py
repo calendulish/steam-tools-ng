@@ -483,4 +483,18 @@ def fatal_error_dialog(error_message: str, transient_for: Optional[Gtk.Window] =
     error_dialog.set_title(_("Fatal Error"))
     error_dialog.set_markup(error_message)
     error_dialog.set_position(Gtk.WindowPosition.CENTER)
+    error_dialog.connect("response", lambda dialog, _action: dialog.destroy())
     error_dialog.run()
+
+
+def reset_dialog(dialog: Gtk.Dialog, *args, **kwargs) -> None:
+    content_area = dialog.get_content_area()
+    header_bar = dialog.get_header_bar()
+
+    for widget in content_area.get_children():
+        widget.destroy()
+
+    for widget in header_bar.get_children():
+        widget.destroy()
+
+    dialog.__init__(*args, **kwargs)
