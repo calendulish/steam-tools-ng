@@ -16,14 +16,13 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
-import codecs
 import configparser
 import locale
 import logging
 import os
 import sys
 import time
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 import aiohttp
 from stlib import webapi, client
@@ -206,47 +205,13 @@ def login_cookies() -> Dict[str, str]:
     token_secure = parser.get("login", "token_secure")
 
     if not steamid or not token or not token_secure:
+        log.warning(_("No login cookies"))
         return {}
 
     return {
         'steamLogin': f'{steamid}%7C%7C{token}',
         'steamLoginSecure': f'{steamid}%7C%7C{token_secure}',
     }
-
-
-def save_login_data(
-        login_data: webapi.LoginData,
-        relogin: bool = False,
-        raw_password: Optional[bytes] = None,
-) -> None:
-    if login_data.oauth:
-        new_configs = {
-            'steamid': login_data.oauth['steamid'],
-            'token': login_data.oauth['wgtoken'],
-            'token_secure': login_data.oauth['wgtoken_secure'],
-            'oauth_token': login_data.oauth['oauth_token'],
-            'account_name': login_data.username,
-        }
-
-        if not relogin:
-            new_configs['shared_secret'] = login_data.auth['shared_secret']
-            new_configs['identity_secret'] = login_data.auth['identity_secret']
-    else:
-        new_configs = {
-            'steamid': login_data.auth['transfer_parameters']['steamid'],
-            'token': login_data.auth['transfer_parameters']['webcookie'],
-            'token_secure': login_data.auth['transfer_parameters']['token_secure'],
-            'account_name': login_data.username,
-        }
-
-    if raw_password:
-        # Just for curious people. It's not even safe.
-        key = codecs.encode(raw_password, 'base64')
-        out = codecs.encode(key.decode(), 'rot13')
-        new_configs['password'] = out
-
-    for key, value in new_configs.items():
-        new("login", key, value)
 
 
 async def time_offset(webapi_session: webapi.SteamWebAPI) -> int:
