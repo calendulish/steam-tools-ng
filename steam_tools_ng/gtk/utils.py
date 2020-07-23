@@ -159,29 +159,8 @@ class SimpleStatus(Gtk.Frame):
         self._label.show()
         self._grid.attach(self._label, 0, 0, 1, 1)
 
-        self._link_grid = Gtk.Grid()
-        self._grid.attach(self._link_grid, 0, 1, 1, 1)
-
-        self._before_link_label = Gtk.Label()
-        self._link_grid.add(self._before_link_label)
-        self._user_callback: Optional[Callable[..., Any]] = None
-        self._link_label = ClickableLabel()
-        self._link_label.connect("clicked", lambda event, button: self.__callback())
-        self._link_grid.add(self._link_label)
-
-        self._after_link_label = Gtk.Label()
-        self._link_grid.add(self._after_link_label)
-
         self.info(_("Waiting"))
         self.set_size_request(100, 60)
-
-    def __callback(self) -> None:
-        if not self._user_callback:
-            log.error("user callback is not defined!")
-            return
-
-        self._link_grid.hide()
-        self._user_callback()
 
     @staticmethod
     def __do_status_draw(frame: Gtk.Frame, cairo_context: cairo.Context) -> None:
@@ -191,31 +170,10 @@ class SimpleStatus(Gtk.Frame):
         cairo_context.fill()
 
     def error(self, text: str) -> None:
-        self._link_grid.hide()
         self._label.set_markup(markup(text, color='hotpink', face='monospace'))
 
     def info(self, text: str) -> None:
-        self._link_grid.hide()
         self._label.set_markup(markup(text, color='cyan', face='monospace'))
-
-    def append_link(
-            self,
-            text: str,
-            callback: Callable[..., Any],
-            add_before: Optional[str] = None,
-            add_after: Optional[str] = None,
-    ) -> None:
-        self._user_callback = callback
-
-        if add_before:
-            self._before_link_label.set_markup(markup(add_before, color='cyan', face='monospace'))
-
-        self._link_label.set_markup(markup(text, color='lightblue', face='monospace'))
-
-        if add_after:
-            self._after_link_label.set_markup(markup(add_after, color='cyan', face='monospace'))
-
-        self._link_grid.show_all()
 
 
 class Status(Gtk.Frame):
