@@ -42,6 +42,9 @@ class ClickableLabel(Gtk.EventBox):
         self.add(self._label)
         self._label.show()
 
+    def __getattr__(self, item: Any) -> Any:
+        return getattr(self._label, item)
+
     def _on_enter_notify_event(self, *args, **kwargs) -> None:
         hand_cursor = Gdk.Cursor.new(Gdk.CursorType.HAND2)
         self.get_window().set_cursor(hand_cursor)
@@ -54,12 +57,6 @@ class ClickableLabel(Gtk.EventBox):
             raise NotImplementedError
 
         super().connect("button-press-event", callback)
-
-    def set_text(self, *args, **kwargs) -> None:
-        self._label.set_text(*args, **kwargs)
-
-    def set_markup(self, *args, **kwargs) -> None:
-        self._label.set_markup(*args, **kwargs)
 
 
 class VariableButton(Gtk.Button):
