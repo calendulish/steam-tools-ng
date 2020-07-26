@@ -284,58 +284,66 @@ class Section(Gtk.Frame):
         self.grid.set_row_spacing(10)
         self.grid.set_column_spacing(10)
         self.grid.set_border_width(10)
-
         self.add(self.grid)
 
-    def __item_factory(self, children: Callable[..., Gtk.Widget]) -> Any:
-        # FIXME: https://github.com/python/mypy/issues/2477
-        children_ = children  # type: Any
+    # noinspection PyProtectedMember
+    @staticmethod
+    def __get_section_name(item: 'Item') -> str:
+        assert isinstance(item._section_name, str)
+        return item._section_name
 
-        class Item(children_):
-            def __init__(self, name: str, section_name: str, label: str) -> None:
-                super().__init__()
+    @staticmethod
+    def __show(item: 'Item') -> None:
+        item.label.show()
+        super(item.__class__, item).show()
 
-                self.label = Gtk.Label(label)
-                self.label.set_name(name)
-                self.label.set_halign(Gtk.Align.START)
+    @staticmethod
+    def __hide(item: 'Item') -> None:
+        item.label.hide()
+        super(item.__class__, item).hide()
 
-                self.set_hexpand(True)
-                self.set_name(name)
-                self._section_name = section_name
-
-            def show_all(self) -> None:
-                self.label.show()
-                super().show()
-
-            def hide(self) -> None:
-                self.label.hide()
-                super().hide()
-
-            def get_section_name(self) -> str:
-                assert isinstance(self._section_name, str)
-                return self._section_name
-
-        return Item
+    def show_all(self) -> None:
+        self.grid.show_all()
+        self.show()
 
     def new(
             self,
             name: str,
             label: str,
-            children: Callable[..., Gtk.Widget],
+            widget: Callable[..., Gtk.Widget],
             *grid_position: int,
             items: 'OrderedDict[str, str]' = None,
     ) -> Gtk.Widget:
-        item = self.__item_factory(children)(name, self.get_name(), label)
+        bases = (widget,)
+
+        body = {
+            'label': Gtk.Label(),
+            '_section_name': None,
+            '__init__': lambda item_: super(item_.__class__, item_).__init__(),
+            'get_section_name': self.__get_section_name,
+            'show': self.__show,
+            'hide': self.__hide,
+        }
+
+        section = self.get_name()
+        option = name
+        value: Union[str, bool, int]
+
+        item = type('Item', bases, body)()
+        assert isinstance(item, Gtk.Widget)
+
+        item.set_hexpand(True)
+        item.set_name(name)
+        item._section_name = section
+
+        item.label.set_name(name)
+        item.label.set_text(label)
+        item.label.set_halign(Gtk.Align.START)
 
         self.grid.attach(item.label, *grid_position, 1, 1)
         self.grid.attach_next_to(item, item.label, Gtk.PositionType.RIGHT, 1, 1)
 
-        section = self.get_name()
-        option = item.get_name()
-        # noinspection PyUnusedLocal
-        value: Union[str, bool, int]
-
-        if option.startswith('_'):
+        if name.startswith('_'):
             return item
 
         if isinstance(item, Gtk.ComboBoxText):
