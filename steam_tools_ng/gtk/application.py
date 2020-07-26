@@ -272,7 +272,12 @@ class SteamToolsNG(Gtk.Application):
                     status=_("Running {}").format(badge.game_name),
                 )
 
-                wait_offset = random.randint(wait_min, wait_max)
+                game_info = await self.webapi_session.get_owned_games(self.steamid, appids_filter=[badge.game_id])
+
+                if game_info.playtime >= 2 * 60:
+                    wait_offset = random.randint(wait_min, wait_max)
+                else:
+                    wait_offset = (2 * 60 - game_info.playtime) * 60
 
                 while badge.cards != 0:
                     executor = client.SteamApiExecutor(badge.game_id)
