@@ -145,7 +145,6 @@ class SteamToolsNG(Gtk.Application):
         self._webapi_session = webapi.SteamWebAPI(self.session, self.api_url)
         self._time_offset = await config.time_offset(self.webapi_session)
 
-        self.main_window.set_login_icon('steam', 'yellow')
         self.main_window.set_warning(_("Logging on Steam. Please wait!"))
         log.info(_("Logging on Steam"))
 
@@ -159,7 +158,6 @@ class SteamToolsNG(Gtk.Application):
 
         try:
             if await self.webapi_session.is_logged_in(self.steamid):
-                self.main_window.set_login_icon("steam", "green")
                 log.info("Steam login Successful")
             else:
                 await self.do_login(auto=True)
@@ -430,7 +428,6 @@ class SteamToolsNG(Gtk.Application):
                 await asyncio.sleep(5)
                 continue
 
-            self.main_window.set_login_icon('steamtrades', 'yellow')
             self.session.cookie_jar.update_cookies(cookies)  # type: ignore
 
             try:
@@ -439,18 +436,14 @@ class SteamToolsNG(Gtk.Application):
 
                 await steamtrades_session.do_login()
             except webapi.LoginError:
-                self.main_window.set_login_icon('steamtrades', 'red')
                 self.main_window.set_status("steamtrades", error=_("User is not logged in"))
                 await self.do_login(auto=True)
                 await asyncio.sleep(15)
                 continue
             except aiohttp.ClientError:
-                self.main_window.set_login_icon('steamtrades', 'red')
                 self.main_window.set_status("steamtrades", error=_("No connection"))
                 await asyncio.sleep(15)
                 continue
-
-            self.main_window.set_login_icon('steamtrades', 'green')
 
             trades = [trade.strip() for trade in trade_ids.split(',')]
             bumped = False
@@ -463,7 +456,6 @@ class SteamToolsNG(Gtk.Application):
                     bumped = False
                     break
                 except aiohttp.ClientError:
-                    self.main_window.set_login_icon('steamtrades', 'red')
                     self.main_window.set_status("steamtrades", error=_("No connection"))
                     bumped = False
                     break
@@ -501,7 +493,6 @@ class SteamToolsNG(Gtk.Application):
                     continue
                 except webapi.LoginError as exception:
                     log.error(str(exception))
-                    self.main_window.set_login_icon("steamtrades", "red")
                     self.main_window.set_status("steamtrades", error=_("Login is lost. Trying to relogin."))
                     await asyncio.sleep(5)
                     bumped = False
@@ -542,8 +533,6 @@ class SteamToolsNG(Gtk.Application):
             giveaway_type = config.parser.get("steamgifts", "giveaway_type")
             pinned_giveaways = config.parser.get("steamgifts", "developer_giveaways")
             cookies = config.login_cookies()
-
-            self.main_window.set_login_icon('steamgifts', 'yellow')
             self.session.cookie_jar.update_cookies(cookies)  # type: ignore
 
             try:
@@ -552,18 +541,14 @@ class SteamToolsNG(Gtk.Application):
 
                 await steamgifts_session.do_login()
             except aiohttp.ClientConnectionError:
-                self.main_window.set_login_icon('steamgifts', 'red')
                 self.main_window.set_status("steamgifts", error=_("No Connection"))
                 await asyncio.sleep(15)
                 continue
             except webapi.LoginError:
-                self.main_window.set_login_icon('steamgifts', 'red')
                 self.main_window.set_status("steamgifts", error=_("User is not logged in"))
                 await self.do_login(auto=True)
                 await asyncio.sleep(15)
                 continue
-
-            self.main_window.set_login_icon('steamgifts', 'green')
 
             try:
                 await steamgifts_session.configure()
@@ -629,7 +614,6 @@ class SteamToolsNG(Gtk.Application):
                     continue
                 except webapi.LoginError as exception:
                     log.error(repr(exception))
-                    self.main_window.set_login_icon('steamgifts', 'red')
                     self.main_window.set_status("steamgifts", error=_("Login is lost. Trying to relogin."))
                     await asyncio.sleep(5)
                     joined = False

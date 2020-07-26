@@ -134,22 +134,6 @@ class Main(Gtk.ApplicationWindow):
         cancel_all_button.connect('clicked', self.on_validate_confirmations, "cancel", self.text_tree.store)
         self.confirmations_grid.attach(cancel_all_button, 3, 5, 1, 1)
 
-        icon_bar = Gtk.Grid()
-        icon_bar.set_column_spacing(5)
-        main_grid.attach(icon_bar, 0, 6, 4, 1)
-
-        self.steam_icon = Gtk.Image.new_from_file(os.path.join(config.icons_dir, 'steam_red.png'))
-        self.steam_icon.set_hexpand(True)
-        self.steam_icon.set_halign(Gtk.Align.END)
-        icon_bar.add(self.steam_icon)
-
-        self.steamtrades_icon = Gtk.Image.new_from_file(os.path.join(config.icons_dir, 'steamtrades_red.png'))
-        icon_bar.attach_next_to(self.steamtrades_icon, self.steam_icon, Gtk.PositionType.RIGHT, 1, 1)
-
-        self.steamgifts_icon = Gtk.Image.new_from_file(os.path.join(config.icons_dir, 'steamgifts_red.png'))
-        icon_bar.attach_next_to(self.steamgifts_icon, self.steamtrades_icon, Gtk.PositionType.RIGHT, 1, 1)
-
-        icon_bar.show_all()
         main_grid.show_all()
         self.confirmations_grid.show_all()
         self.show_all()
@@ -204,13 +188,6 @@ class Main(Gtk.ApplicationWindow):
                     self.set_size_request(650, 0)
 
             await asyncio.sleep(1)
-
-    def set_login_icon(self, plugin_name: str, color: str) -> None:
-        plugin_icon = getattr(self, f'{plugin_name}_icon')
-
-        plugin_icon.set_from_file(
-            os.path.join(config.icons_dir, f'{plugin_name}_{color}.png'),
-        )
 
     @staticmethod
     def on_query_confirmations_tooltip(
