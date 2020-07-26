@@ -213,6 +213,7 @@ class Status(Gtk.Frame):
         self._grid.remove(event_status)
         self._grid.attach(self._status, 0, 1, 1, 1)
         self._status.show()
+        self._display.set_sensitive(True)
 
     def __on_display_event_changed(self, event_box: Gtk.EventBox, event_button: Gdk.EventButton) -> None:
         if event_button.type == Gdk.EventType.BUTTON_PRESS:
@@ -233,6 +234,8 @@ class Status(Gtk.Frame):
             event_status.set_markup(markup(message, font_size='small', color=color))
             self.clipboard.set_text(self._display.get_text(), -1)
             asyncio.get_event_loop().call_later(5, self.__disable_tooltip, event_box, event_status)
+
+            self._display.set_sensitive(False)
 
     def set_display(self, text: str) -> None:
         self._display.set_markup(markup(text, font_size='large', font_weight='bold'))
