@@ -448,6 +448,7 @@ def fatal_error_dialog(exception: BaseException, stack: str, transient_for: Opti
     error_dialog.set_title(_("Fatal Error"))
     error_dialog.set_markup(str(exception))
     error_dialog.format_secondary_text("\n".join([str(frame) for frame in stack]))
+    error_dialog.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
     error_dialog.connect("response", lambda dialog, _action: dialog.destroy())
     error_dialog.run()
 
