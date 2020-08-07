@@ -22,7 +22,6 @@ from typing import Any, Callable, List, Tuple, Optional, Union
 
 import cairo
 from gi.repository import Gtk, Gdk
-from stlib import webapi
 
 from .. import i18n, config
 
@@ -420,9 +419,7 @@ def copy_childrens(from_model: Gtk.TreeStore, to_model: Gtk.ListStore, iter_: Gt
         to_model.append([value])
 
 
-def safe_confirmation_get(confirmation_: webapi.Confirmation, attribute: str) -> Tuple[str, List[str]]:
-    value = getattr(confirmation_, attribute)
-
+def sanitize_confirmation(value: Optional[List[str]]) -> Tuple[str, List[str]]:
     if not value:
         result = _("Nothing")
     elif len(value) == 1:
@@ -430,7 +427,7 @@ def safe_confirmation_get(confirmation_: webapi.Confirmation, attribute: str) ->
     else:
         result = _("Various")
 
-    return result, value
+    return result
 
 
 def remove_letters(text: str) -> str:
