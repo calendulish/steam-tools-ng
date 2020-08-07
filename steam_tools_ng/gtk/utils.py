@@ -443,12 +443,11 @@ def remove_letters(text: str) -> str:
     return ''.join(new_text)
 
 
-def fatal_error_dialog(error_message: str, transient_for: Optional[Gtk.Window] = None) -> None:
-    log.critical(error_message)
+def fatal_error_dialog(exception: BaseException, stack: str, transient_for: Optional[Gtk.Window] = None) -> None:
     error_dialog = Gtk.MessageDialog(transient_for=transient_for)
     error_dialog.set_title(_("Fatal Error"))
-    error_dialog.set_markup(error_message)
-    error_dialog.set_position(Gtk.WindowPosition.CENTER)
+    error_dialog.set_markup(str(exception))
+    error_dialog.format_secondary_text("\n".join([str(frame) for frame in stack]))
     error_dialog.connect("response", lambda dialog, _action: dialog.destroy())
     error_dialog.run()
 
