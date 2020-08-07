@@ -17,12 +17,13 @@
 #
 import asyncio
 import configparser
+import http
 import locale
 import logging
 import os
 import sys
 import time
-from typing import Dict, Any
+from typing import Any
 
 import aiohttp
 from stlib import webapi, client
@@ -199,7 +200,7 @@ def new(section: str, option: str, value: Any) -> None:
         log.debug(_('Not saving %s:%s because values are already updated'), section, option)
 
 
-def login_cookies() -> Dict[str, str]:
+def login_cookies() -> http.cookies.SimpleCookie:
     steamid = parser.getint("login", "steamid")
     token = parser.get("login", "token")
     token_secure = parser.get("login", "token_secure")
@@ -208,10 +209,12 @@ def login_cookies() -> Dict[str, str]:
         log.warning(_("No login cookies"))
         return {}
 
-    return {
+    cookies_dict = {
         'steamLogin': f'{steamid}%7C%7C{token}',
         'steamLoginSecure': f'{steamid}%7C%7C{token_secure}',
     }
+
+    return http.cookies.SimpleCookie(cookies_dict)
 
 
 async def time_offset(webapi_session: webapi.SteamWebAPI) -> int:
