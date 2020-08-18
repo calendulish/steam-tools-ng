@@ -16,22 +16,19 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
-import binascii
 import itertools
 import logging
 import os
-import random
 import ssl
 import sys
-import time
 from typing import Any, List, Optional
 
 import aiohttp
 from gi.repository import Gio, Gtk
-from stlib import universe, client, plugins, webapi
+from stlib import universe, plugins, webapi
 
 from . import about, settings, login, window, utils
-from .. import config, i18n
+from .. import config, i18n, core
 
 _ = i18n.get_translation
 log = logging.getLogger(__name__)
@@ -112,9 +109,17 @@ class SteamToolsNG(Gtk.Application):
         exception = future.exception()
 
         if exception and not isinstance(exception, asyncio.CancelledError):
-            log.critical(repr(exception))
-            utils.fatal_error_dialog(str(future.exception()), self.main_window)
-            self.main_window.destroy()  # type: ignore
+            stack = future.get_stack()
+
+            for frame in stack:
+                log.critical(f"{type(exception).__name__} at {frame}")
+
+            log.critical(f"Fatal Error: {str(exception)}")
+
+            utils.fatal_error_dialog(exception, stack, self.main_window)
+            loop = asyncio.get_running_loop()
+            loop.stop()
+            self.quit()
 
     async def do_login(self, *, block: bool = True, auto: bool = False) -> None:
         login_dialog = login.LoginDialog(self.main_window, self)
@@ -142,7 +147,7 @@ class SteamToolsNG(Gtk.Application):
 
         tcp_connector = aiohttp.TCPConnector(ssl=ssl_context)
         self._session = aiohttp.ClientSession(raise_for_status=True, connector=tcp_connector)
-        self._webapi_session = webapi.SteamWebAPI(self.session, self.api_url)
+        self._webapi_session = webapi.get_session(0, api_url=self.api_url, http_session=self._session)
         self._time_offset = await config.time_offset(self.webapi_session)
 
         self.main_window.set_warning(_("Logging on Steam. Please wait!"))
@@ -163,12 +168,9 @@ class SteamToolsNG(Gtk.Application):
                 await self.do_login(auto=True)
         except aiohttp.ClientError as exception:
             log.exception(str(exception))
-            utils.fatal_error_dialog(
-                _("No Connection. Please, check your connection and try again."),
-                self.main_window,
-            )
-            self.main_window.destroy()
-            return None
+            self.main_window.set_warning(_("No Connection. Please, check your connection."))
+            await asyncio.sleep(10)
+            return  # FIXME: RETRY ###
 
         self.main_window.unset_warning()
 
@@ -182,6 +184,8 @@ class SteamToolsNG(Gtk.Application):
 
         while self.main_window.get_realized():
             for module_name, task in modules.items():
+                task.add_done_callback(self.async_activate_callback)
+
                 if config.parser.getboolean("plugins", module_name):
                     if task.cancelled():
                         if module_name != "confirmations":
@@ -203,133 +207,22 @@ class SteamToolsNG(Gtk.Application):
     async def run_steamguard(self) -> None:
         while self.main_window.get_realized():
             shared_secret = config.parser.get("login", "shared_secret")
+            steamguard = core.steamguard.main(shared_secret, self.time_offset)
 
-            try:
-                if not shared_secret:
-                    raise ValueError
-
-                server_time = int(time.time()) - self.time_offset
-                auth_code = universe.generate_steam_code(server_time, shared_secret)
-            except (ValueError, binascii.Error):
-                log.error(_("The current shared secret is invalid."))
-                config.new("plugins", "steamguard", False)
-                await asyncio.sleep(10)
-            except ProcessLookupError:
-                self.main_window.set_status("steamguard", error=_("Steam Client is not running"))
-                await asyncio.sleep(10)
-            else:
-                self.main_window.set_status("steamguard", status=_("Loading..."))
-
-                seconds = 30 - (server_time % 30)
-
-                for past_time in range(seconds * 9):
-                    self.main_window.set_status(
-                        "steamguard",
-                        display=auth_code,
-                        status=_("Running"),
-                        info=_("New code in {} seconds").format(seconds * 9 - past_time),
-                        level=(past_time, seconds * 8)
-                    )
-
-                    await asyncio.sleep(0.125)
+            async for module_data in steamguard:
+                self.main_window.set_status("steamguard", module_data)
 
     async def run_cardfarming(self) -> None:
         while self.main_window.get_realized():
             reverse_sorting = config.parser.getboolean("cardfarming", "reverse_sorting")
             wait_min = config.parser.getint("cardfarming", "wait_min")
             wait_max = config.parser.getint("cardfarming", "wait_max")
-            cookies = config.login_cookies()
 
-            if not self.steamid:
-                raise NotImplementedError
+            self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
+            cardfarming = core.cardfarming.main(self.steamid, reverse_sorting, (wait_min, wait_max))
 
-            if cookies:
-                self.session.cookie_jar.update_cookies(cookies)  # type: ignore
-            else:
-                self.main_window.set_status("cardfarming", error=_("Unable to find a valid login data"))
-                await asyncio.sleep(5)
-                continue
-
-            try:
-                badges = sorted(
-                    await self.webapi_session.get_badges(self.steamid),
-                    key=lambda badge_: badge_.cards,
-                    reverse=reverse_sorting
-                )
-            except aiohttp.ClientError:
-                self.main_window.set_status("cardfarming", error=_("No Connection"))
-                await asyncio.sleep(10)
-                continue
-
-            if not badges:
-                self.main_window.set_status("cardfarming", status=_("Stopped"), info=_("No more cards to drop."))
-                break
-
-            for badge in badges:
-                self.main_window.set_status(
-                    "cardfarming",
-                    display=badge.game_id,
-                    status=_("Running {}").format(badge.game_name),
-                )
-
-                game_info = await self.webapi_session.get_owned_games(self.steamid, appids_filter=[badge.game_id])
-
-                if game_info.playtime >= 2 * 60:
-                    wait_offset = random.randint(wait_min, wait_max)
-                else:
-                    wait_offset = (2 * 60 - game_info.playtime) * 60
-
-                while badge.cards != 0:
-                    executor = client.SteamApiExecutor(badge.game_id)
-
-                    while self.main_window.get_realized():
-                        try:
-                            await executor.init()
-                            break
-                        except client.SteamAPIError:
-                            log.error(_("Invalid game_id %s. Ignoring."), badge.game_id)
-                            # noinspection PyProtectedMember
-                            badge = badge._replace(cards=0)
-                            break
-                        except ProcessLookupError:
-                            self.main_window.set_status("cardfarming", error=_("Steam Client is not running."))
-                            await asyncio.sleep(5)
-
-                    for past_time in range(wait_offset):
-                        self.main_window.set_status(
-                            "cardfarming",
-                            display=badge.game_id,
-                            info=_("Waiting drops for {} minutes").format(round((wait_offset - past_time) / 60)),
-                            level=(past_time, wait_offset),
-                        )
-
-                        await asyncio.sleep(1)
-
-                    self.main_window.set_status(
-                        "cardfarming",
-                        display=badge.game_id,
-                        info=_("{} ({})").format(_("Updating drops"), badge.game_name),
-                    )
-
-                    await executor.shutdown()
-                    await asyncio.sleep(60)
-
-                    while self.main_window.get_realized():
-                        try:
-                            badge = await self.webapi_session.update_badge_drops(badge, self.steamid)
-                            break
-                        except aiohttp.ClientError:
-                            self.main_window.set_status("cardfarming", error=_("No connection"))
-                            await asyncio.sleep(10)
-                        except webapi.BadgeError:
-                            self.main_window.set_status("cardfarming", error=_("Steam Server is busy"))
-                            await asyncio.sleep(20)
-
-                self.main_window.set_status(
-                    "cardfarming",
-                    display=badge.game_id,
-                    info=_("{} ({})").format(_("Done"), badge.game_name),
-                )
+            async for module_data in cardfarming:
+                self.main_window.set_status("cardfarming", module_data)
 
     async def run_confirmations(self) -> None:
         old_confirmations: List[webapi.Confirmation] = []
@@ -337,321 +230,98 @@ class SteamToolsNG(Gtk.Application):
         while self.main_window.get_realized():
             identity_secret = config.parser.get("login", "identity_secret")
             deviceid = config.parser.get("login", "deviceid")
-            # cookies = config.login_cookies()
-
-            if not identity_secret:
-                log.debug(_("The current identity secret is invalid."))
-                config.new("plugins", "confirmations", False)
-                await asyncio.sleep(10)
-                continue
 
             if not deviceid:
-                log.debug(_("Unable to find deviceid. Generating from identity."))
+                log.warning(_("Unable to find deviceid. Generating from identity."))
                 deviceid = universe.generate_device_id(identity_secret)
                 config.new("login", "deviceid", deviceid)
 
-            # if not cookies:
-            #    self.main_window.set_warning(_("Unable to find a valid login data"))
-            #    await asyncio.sleep(5)
-            #    continue
+            self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
+            confirmations = core.confirmations.main(self.steamid, identity_secret, deviceid, self.time_offset)
 
-            # self.session.cookie_jar.update_cookies(cookies)  # type: ignore
+            async for module_data in confirmations:
+                #self.main_window.set_status("confirmations", module_data)
+                self.main_window.set_warning(module_data)
 
-            if self.main_window.text_tree_lock:
-                self.main_window.set_warning(_("Waiting another confirmation process"))
-                await asyncio.sleep(5)
-                continue
+                while self.main_window.text_tree_lock:
+                    self.main_window.set_warning(_("Waiting another confirmation process"))
+                    await asyncio.sleep(5)
 
-            try:
-                confirmations = await self.webapi_session.get_confirmations(
-                    identity_secret,
-                    self.steamid,
-                    deviceid,
-                    time_offset=self.time_offset,
-                )
-            except AttributeError as exception:
-                log.warning(repr(exception))
-                self.main_window.set_warning(_("Error when fetch confirmations"))
-            except ProcessLookupError:
-                self.main_window.set_warning(_("Steam is not running"))
-            except webapi.LoginError as exception:
-                log.warning(repr(exception))
-                self.main_window.set_warning(_("User is not logged in"))
-                await self.do_login(auto=True)
-            except aiohttp.ClientError as exception:
-                log.warning(repr(exception))
-                self.main_window.set_warning(_("No connection"))
-            else:
                 self.main_window.unset_warning()
-                if old_confirmations != confirmations:
+
+                if module_data.action == "login":
+                    await self.do_login(auto=True)
+                    continue
+
+                if module_data.action == "update":
+                    if module_data.raw_data == old_confirmations:
+                        self.main_window.set_warning(
+                            _("Skipping confirmations update because data doesn't seem to have changed"),
+                        )
+                        continue
+
                     self.main_window.text_tree.store.clear()
 
-                    for confirmation_ in confirmations:
-                        safe_give, give = utils.safe_confirmation_get(confirmation_, 'give')
-                        safe_receive, receive = utils.safe_confirmation_get(confirmation_, 'receive')
+                    for confirmation_ in module_data.raw_data:
+                        # translatable strings
+                        t_give = utils.sanitize_confirmation(confirmation_.give)
+                        t_receive = utils.sanitize_confirmation(confirmation_.receive)
 
                         iter_ = self.main_window.text_tree.store.append(None, [
                             confirmation_.mode,
                             str(confirmation_.id),
                             str(confirmation_.key),
-                            safe_give,
+                            t_give,
                             confirmation_.to,
-                            safe_receive,
+                            t_receive,
                         ])
 
-                        for item in itertools.zip_longest(give, receive):
+                        for item in itertools.zip_longest(confirmation_.give, confirmation_.receive):
                             self.main_window.text_tree.store.append(iter_, ['', '', '', item[0], '', item[1]])
-                else:
-                    log.debug(_("Skipping confirmations update because data doesn't seem to have changed"))
 
-                old_confirmations = confirmations
-
-            await asyncio.sleep(20)
+                    old_confirmations = module_data.raw_data
 
     async def run_steamtrades(self) -> None:
-        try:
-            if self.plugin_manager.has_plugin("steamtrades"):
-                steamtrades = self.plugin_manager.load_plugin("steamtrades")
-                steamtrades_session = steamtrades.Main(self.session, api_url=self.api_url)
-            else:
-                raise ImportError
-        except ImportError:
-            self.main_window.set_status("steamtrades", error=_("Unable to find Steamtrades plugin"))
-            return
-
-        assert isinstance(self.main_window, Gtk.Window), "No window"
-
         while self.main_window.get_realized():
             self.main_window.set_status("steamtrades", info=_("Loading"))
             trade_ids = config.parser.get("steamtrades", "trade_ids")
             wait_min = config.parser.getint("steamtrades", "wait_min")
             wait_max = config.parser.getint("steamtrades", "wait_max")
-            cookies = config.login_cookies()
 
             if not trade_ids:
-                self.main_window.set_status("steamtrades", error=_("No trade ID found in config file"))
+                self.main_window.set_status("steamtrades", error=_("No trade ID found"), info=_("Waiting Changes"))
                 await asyncio.sleep(5)
                 continue
 
-            self.session.cookie_jar.update_cookies(cookies)  # type: ignore
-
-            try:
-                if not cookies:
-                    raise webapi.LoginError
-
-                await steamtrades_session.do_login()
-            except webapi.LoginError:
-                self.main_window.set_status("steamtrades", error=_("User is not logged in"))
-                await self.do_login(auto=True)
-                await asyncio.sleep(15)
-                continue
-            except aiohttp.ClientError:
-                self.main_window.set_status("steamtrades", error=_("No connection"))
-                await asyncio.sleep(15)
-                continue
-
+            self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
             trades = [trade.strip() for trade in trade_ids.split(',')]
-            bumped = False
+            steamtrades = core.steamtrades.main(trades, (wait_min, wait_max))
 
-            for trade_id in trades:
-                try:
-                    trade_info = await steamtrades_session.get_trade_info(trade_id)
-                except (IndexError, aiohttp.ClientResponseError):
-                    self.main_window.set_status("steamtrades", error=_("Unable to find trade id"))
-                    bumped = False
-                    break
-                except aiohttp.ClientError:
-                    self.main_window.set_status("steamtrades", error=_("No connection"))
-                    bumped = False
-                    break
+            async for module_data in steamtrades:
+                self.main_window.set_status("steamtrades", module_data)
 
-                self.main_window.set_status("steamtrades", display=trade_info.id, info=trade_info.title)
-                max_ban_wait = random.randint(5, 15)
-                for past_time in range(max_ban_wait):
-                    try:
-                        self.main_window.steamtrades_status.set_level(past_time, max_ban_wait)
-                    except KeyError:
-                        self.main_window.steamtrades_status.set_level(0, 0)
-
-                    await asyncio.sleep(1)
-
-                try:
-                    if await steamtrades_session.bump(trade_info):
-                        self.main_window.set_status("steamtrades", display=trade_id, info=_("Bumped!"))
-                        bumped = True
-                    else:
-                        self.main_window.set_status("steamtrades", display=trade_id, error=_("Unable to bump"))
-                        await asyncio.sleep(5)
-                        continue
-                except steamtrades.NoTradesError as exception:
-                    log.error(str(exception))
-                    await asyncio.sleep(15)
+                if module_data.action == "login":
+                    await self.do_login(auto=True)
                     continue
-                except steamtrades.TradeNotReadyError as exception:
-                    wait_min = exception.time_left * 60
-                    wait_max = wait_min + 400
-                    bumped = True
-                except steamtrades.TradeClosedError as exception:
-                    log.error(str(exception))
-                    self.main_window.set_status("steamtrades", error=str(exception))
-                    await asyncio.sleep(5)
-                    continue
-                except webapi.LoginError as exception:
-                    log.error(str(exception))
-                    self.main_window.set_status("steamtrades", error=_("Login is lost. Trying to relogin."))
-                    await asyncio.sleep(5)
-                    bumped = False
-                    break
-
-            if not bumped:
-                await asyncio.sleep(10)
-                continue
-
-            wait_offset = random.randint(wait_min, wait_max)
-            log.debug(_("Setting wait_offset from steamtrades to %s"), wait_offset)
-            for past_time in range(wait_offset):
-                self.main_window.set_status(
-                    "steamtrades",
-                    info=_("Waiting more {} minutes").format(round(wait_offset / 60)),
-                    level=(past_time, wait_offset),
-                )
-
-                await asyncio.sleep(1)
 
     async def run_steamgifts(self) -> None:
-        try:
-            if self.plugin_manager.has_plugin("steamgifts"):
-                steamgifts = self.plugin_manager.load_plugin("steamgifts")
-                steamgifts_session = steamgifts.Main(self.session, api_url=self.api_url)
-            else:
-                raise ImportError
-        except ImportError:
-            self.main_window.set_status("steamgifts", error=_("Unable to find Steamgifts plugin"))
-            return
-
-        assert isinstance(self.main_window, Gtk.Window), "No window"
-
         while self.main_window.get_realized():
             self.main_window.set_status("steamgifts", status=_("Loading"))
             wait_min = config.parser.getint("steamgifts", "wait_min")
             wait_max = config.parser.getint("steamgifts", "wait_max")
-            giveaway_type = config.parser.get("steamgifts", "giveaway_type")
-            pinned_giveaways = config.parser.get("steamgifts", "developer_giveaways")
-            cookies = config.login_cookies()
-            self.session.cookie_jar.update_cookies(cookies)  # type: ignore
+            type = config.parser.get("steamgifts", "giveaway_type")
+            pinned = config.parser.get("steamgifts", "developer_giveaways")
+            sort = config.parser.get("steamgifts", "sort")
+            reverse = config.parser.getboolean("steamgifts", "reverse_sorting")
+            self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
+            steamgifts = core.steamgifts.main(type, pinned, sort, reverse, (wait_min, wait_max))
 
-            try:
-                if not cookies:
-                    raise webapi.LoginError
+            async for module_data in steamgifts:
+                self.main_window.set_status("steamgifts", module_data)
 
-                await steamgifts_session.do_login()
-            except aiohttp.ClientConnectionError:
-                self.main_window.set_status("steamgifts", error=_("No Connection"))
-                await asyncio.sleep(15)
-                continue
-            except webapi.LoginError:
-                self.main_window.set_status("steamgifts", error=_("User is not logged in"))
-                await self.do_login(auto=True)
-                await asyncio.sleep(15)
-                continue
-
-            try:
-                await steamgifts_session.configure()
-            except steamgifts.ConfigureError:
-                self.main_window.set_status("steamgifts", error=_("Unable to configure steamgifts"))
-                await asyncio.sleep(20)
-                continue
-
-            giveaways = await steamgifts_session.get_giveaways(giveaway_type, pinned_giveaways=pinned_giveaways)
-            joined = False
-
-            if giveaways:
-                sort_giveaways = config.parser.get("steamgifts", "sort")
-                reverse_sorting = config.parser.getboolean("steamgifts", "reverse_sorting")
-
-                if sort_giveaways:
-                    # FIXME: check if config is valid
-                    giveaways = sorted(
-                        giveaways,
-                        key=lambda giveaway_: getattr(giveaway_, sort_giveaways),
-                        reverse=reverse_sorting,
-                    )
-            else:
-                self.main_window.set_status("steamgifts", status=_("No giveaways to join."))
-                joined = True
-                wait_min //= 2
-                wait_max //= 2
-
-            for index, giveaway in enumerate(giveaways):
-                self.main_window.steamgifts_status.set_level(index, len(giveaway))
-
-                max_ban_wait = random.randint(5, 15)
-                for past_time in range(max_ban_wait):
-                    try:
-                        self.main_window.steamgifts_status.set_level(past_time, max_ban_wait)
-                    except KeyError:
-                        self.main_window.steamgifts_status.set_level(0, 0)
-
-                    await asyncio.sleep(1)
-
-                try:
-                    if await steamgifts_session.join(giveaway):
-
-                        self.main_window.set_status(
-                            "steamgifts",
-                            display=giveaway.id,
-                            status="{} {} ({}:{}:{})".format(_("Joined!"), *giveaway[:4]),
-                        )
-
-                        joined = True
-                    else:
-                        self.main_window.set_status("steamgifts", display=giveaway.id, error=_("Unable to join {}"))
-                        await asyncio.sleep(5)
-                        continue
-                except steamgifts.NoGiveawaysError as exception:
-                    log.error(str(exception))
-                    await asyncio.sleep(15)
+                if module_data.action == "login":
+                    await self.do_login(auto=True)
                     continue
-                except steamgifts.GiveawayEndedError as exception:
-                    log.error(str(exception))
-                    self.main_window.set_status("steamgifts", error=_("Giveaway is already ended."))
-                    await asyncio.sleep(5)
-                    continue
-                except webapi.LoginError as exception:
-                    log.error(repr(exception))
-                    self.main_window.set_status("steamgifts", error=_("Login is lost. Trying to relogin."))
-                    await asyncio.sleep(5)
-                    joined = False
-                    break
-                except steamgifts.NoLevelError as exception:
-                    log.error(str(exception))
-                    self.main_window.set_status("steamgifts", error=_("User don't have required level to join"))
-                    await asyncio.sleep(5)
-                    continue
-                except steamgifts.NoPointsError as exception:
-                    log.error(str(exception))
-                    self.main_window.set_status("steamgifts", error=_("User don't have required points to join"))
-                    await asyncio.sleep(5)
-
-                    if steamgifts_session.user_info.points <= 2:
-                        break
-                    else:
-                        continue
-
-            if not joined:
-                await asyncio.sleep(10)
-                continue
-
-            wait_offset = random.randint(wait_min, wait_max)
-            log.debug(_("Setting wait_offset from steamgifts to %s"), wait_offset)
-            for past_time in range(wait_offset):
-                self.main_window.set_status(
-                    "steamgifts",
-                    info=_("Waiting more {} minutes").format(round((wait_offset - past_time) / 60)),
-                    level=(past_time, wait_offset),
-                )
-
-                await asyncio.sleep(1)
 
     def on_settings_activate(self, *args: Any) -> None:
         settings_dialog = settings.SettingsDialog(self.main_window, self)
