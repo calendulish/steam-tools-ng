@@ -21,7 +21,7 @@ import logging
 
 import aiohttp
 from gi.repository import Gtk, Gdk, GdkPixbuf
-from stlib import webapi
+from stlib import login
 
 from . import utils
 from .. import i18n, config
@@ -125,8 +125,8 @@ class LoginDialog(Gtk.Dialog):
         self.check_login_availability()
 
     @property
-    def login_session(self) -> webapi.Login:
-        assert isinstance(self._login_session, webapi.Login)
+    def login_session(self) -> login.Login:
+        assert isinstance(self._login_session, login.Login)
         return self._login_session
 
     @property
@@ -184,13 +184,7 @@ class LoginDialog(Gtk.Dialog):
         self.save_password_item.set_sensitive(False)
         self.login_button.set_sensitive(False)
 
-        self._login_session = webapi.Login(
-            self.application.session,
-            self.application.webapi_session,
-            self.username,
-            self.__password,
-        )
-
+        self._login_session = login.get_session(0, self.username, self.__password)
         kwargs = {'emailauth': self.mail_code, 'mobile_login': self.mobile_login}
 
         # no reason to send captcha_text if no gid is found
@@ -217,17 +211,17 @@ class LoginDialog(Gtk.Dialog):
 
         try:
             login_data = await self.login_session.do_login(**kwargs)
-        except webapi.MailCodeError:
+        except login.MailCodeError:
             self.status.info(_("Write code received by email\nand click on 'Log-in' button"))
             self.mail_code_item.set_text("")
             self.mail_code_item.show_all()
             self.mail_code_item.grab_focus()
-        except webapi.TwoFactorCodeError:
+        except login.TwoFactorCodeError:
             self.status.error(_("Write Steam Code bellow and click on 'Log-in'"))
             self.steam_code_item.set_text("")
             self.steam_code_item.show_all()
             self.steam_code_item.grab_focus()
-        except webapi.LoginBlockedError:
+        except login.LoginBlockedError:
             self.status.error(_(
                 "Your network is blocked!\n"
                 "It'll take some time until unblocked. Please, try again later\n"
@@ -237,7 +231,7 @@ class LoginDialog(Gtk.Dialog):
             self.advanced_login_section.hide()
             self.login_button.hide()
             self.set_deletable(True)
-        except webapi.CaptchaError as exception:
+        except login.CaptchaError as exception:
             self.status.info(_("Write captcha code as shown bellow\nand click on 'Log-in' button"))
             self.captcha_gid = exception.captcha_gid
 
@@ -250,7 +244,7 @@ class LoginDialog(Gtk.Dialog):
             self.captcha_text_item.set_text("")
             self.captcha_text_item.show()
             self.captcha_text_item.grab_focus()
-        except webapi.LoginError as exception:
+        except login.LoginError as exception:
             log.error("Login error: %s", exception)
             self.__password_item.set_text('')
             self.__password_item.grab_focus()
