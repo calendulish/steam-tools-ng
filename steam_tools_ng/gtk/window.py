@@ -23,7 +23,7 @@ from typing import Union, Optional, Tuple
 from gi.repository import GdkPixbuf, Gio, Gtk
 
 from . import confirmation, utils
-from .. import config, i18n
+from .. import config, i18n, core
 
 _ = i18n.get_translation
 log = logging.getLogger(__name__)
@@ -248,6 +248,7 @@ class Main(Gtk.ApplicationWindow):
     def set_status(
             self,
             module: str,
+            module_data: Optional[core.utils.ModuleData] = None,
             *,
             display: Optional[str] = None,
             status: Optional[str] = None,
@@ -257,27 +258,34 @@ class Main(Gtk.ApplicationWindow):
     ) -> None:
         _status = getattr(self, f'{module}_status')
 
-        if display:
-            _status.set_display(display)
+        if not module_data:
+            module_data = core.utils.ModuleData(display, status, info, error, level)
+
+        if module_data.display:
+            log.debug(f"display data: {module_data.display}")
+            _status.set_display(module_data.display)
         else:
             _status.unset_display()
 
-        if status:
-            _status.set_status(status)
+        if module_data.status:
+            log.debug(f"status data: {module_data.status}")
+            _status.set_status(module_data.status)
 
-        if info:
-            _status.set_info(info)
+        if module_data.info:
+            log.debug(f"info data: {module_data.info}")
+            _status.set_info(module_data.info)
 
-        if error:
-            _status.set_error(error)
+        if module_data.error:
+            log.error(module_data.error)
+            _status.set_error(module_data.error)
 
-        if level:
+        if module_data.level:
             try:
-                _status.set_level(*level)
+                _status.set_level(*module_data.level)
             except KeyError:
                 _status.unset_level()
-        else:
-            _status.unset_level()
+            else:
+                _status.unset_level()
 
     def set_warning(self, message: str) -> None:
         self._warning_label.set_markup(utils.markup(message, color='white', background='red'))
