@@ -106,22 +106,35 @@ class SettingsDialog(Gtk.Dialog):
         config_button.set_name("config_button")
         config_button.set_hexpand(True)
         config_button.connect("clicked", self.on_config_button_clicked)
-        general_section.grid.attach(config_button, 0, 1, 1, 1)
 
-        log_button = Gtk.Button(_("Log File Directory"))
-        log_button.set_name("log_button")
-        log_button.connect("clicked", self.on_log_button_clicked)
-        general_section.grid.attach(log_button, 0, 2, 1, 1)
+        if config.parser.get("logger", "log_directory") == config.config_file_directory:
+            config_button.set_label(_("Config / Log file Directory"))
+            general_section.grid.attach(config_button, 0, 1, 2, 1)
+        else:
+            log_button = Gtk.Button(_("Log File Directory"))
+            log_button.set_name("log_button")
+            log_button.connect("clicked", self.on_log_button_clicked)
+            general_section.grid.attach(config_button, 0, 1, 1, 1)
+            general_section.grid.attach(log_button, 1, 1, 1, 1)
+
+        theme = general_section.new("theme", _("Theme:"), Gtk.ComboBoxText, 0, 3, items=gtk_themes)
+        theme.connect('changed', self.on_theme_changed)
+
+        show_close_button = general_section.new("show_close_button", _("Show close button:"), Gtk.CheckButton, 0, 4)
+        show_close_button.connect('toggled', self.on_show_close_button_toggled)
+
+        language_item = general_section.new("language", _("Language"), Gtk.ComboBoxText, 0, 5, items=translations)
+        language_item.connect("changed", self.update_language)
 
         if os.name == 'nt' and hasattr(sys, 'frozen'):
             console_button = Gtk.ToggleButton(_("Show debug console"))
             console_button.set_name("console_button")
             console_button.connect("toggled", self.on_console_button_toggled)
-            general_section.grid.attach(console_button, 0, 3, 1, 1)
+            general_section.grid.attach(console_button, 0, 6, 2, 1)
 
             console_warning = Gtk.Label()
             console_warning.set_text(_("Press the button again to close the debug console"))
-            general_section.grid.attach(console_warning, 0, 4, 1, 1)
+            general_section.grid.attach(console_warning, 0, 7, 2, 1)
 
         general_section.show_all()
 
@@ -207,16 +220,6 @@ class SettingsDialog(Gtk.Dialog):
 
         plugins_section.show_all()
 
-        gtk_section = utils.Section('gtk', _('Gtk Settings'))
-
-        theme = gtk_section.new("theme", _("Theme:"), Gtk.ComboBoxText, 0, 0, items=gtk_themes)
-        theme.connect('changed', self.on_theme_changed)
-
-        show_close_button = gtk_section.new("show_close_button", _("Show close button:"), Gtk.CheckButton, 0, 1)
-        show_close_button.connect('toggled', self.on_show_close_button_toggled)
-
-        gtk_section.show_all()
-
         steamtrades_section = utils.Section('steamtrades', _('Steamtrades Settings'))
 
         trade_ids = steamtrades_section.new("trade_ids", _("Trade IDs:"), Gtk.Entry, 0, 0)
@@ -282,12 +285,6 @@ class SettingsDialog(Gtk.Dialog):
 
         cardfarming_section.show_all()
 
-        locale_section = utils.Section("locale", _('Locale settings'))
-        language_item = locale_section.new("language", _("Language"), Gtk.ComboBoxText, 0, 0, items=translations)
-        language_item.connect("changed", self.update_language)
-
-        locale_section.show_all()
-
         logger_section = utils.Section("logger", _('Logger settings'))
 
         log_level_item = logger_section.new("log_level", _("Level:"), Gtk.ComboBoxText, 0, 0, items=log_levels)
@@ -311,11 +308,9 @@ class SettingsDialog(Gtk.Dialog):
             general_section,
             login_section,
             logger_section,
-            gtk_section,
             steamtrades_section,
             cardfarming_section,
             steamgifts_section,
-            locale_section,
             plugins_section,
         ]:
             section.stackup_section(stack)

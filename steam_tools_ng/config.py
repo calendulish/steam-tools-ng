@@ -80,9 +80,6 @@ def init() -> None:
                 'log_console_level': 'info',
                 'log_color': True,
             },
-            'locale': {
-                'language': str(locale.getdefaultlocale()[0])
-            },
             'steam': {
                 'api_url': 'https://api.lara.monster',
             },
@@ -104,9 +101,10 @@ def init() -> None:
                 'wait_min': 480,
                 'wait_max': 600,
             },
-            'gtk': {
+            'general': {
                 'theme': 'light',
                 'show_close_button': False,
+                'language': str(locale.getdefaultlocale()[0]),
             },
             'plugins': {
                 'steamtrades': True,
