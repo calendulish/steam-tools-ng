@@ -103,7 +103,7 @@ def init() -> None:
             },
             'general': {
                 'theme': 'light',
-                'show_close_button': False,
+                'show_close_button': True,
                 'language': str(locale.getdefaultlocale()[0]),
             },
             'plugins': {
