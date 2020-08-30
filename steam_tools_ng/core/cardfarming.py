@@ -56,7 +56,8 @@ async def main(steamid: int, reverse: bool, wait_time: Tuple[int, int]) -> Gener
             status=_("Running {}").format(badge.game_name),
         )
 
-        game_info = await session.get_owned_games(steamid, appids_filter=[badge.game_id])[0]
+        game_info = await session.get_owned_games(steamid, appids_filter=[badge.game_id])
+        assert isinstance(game_info, webapi.Game), "game_info is not a Game object"
 
         if game_info.playtime >= 2 * 60:
             wait_offset = random.randint(*wait_time)
