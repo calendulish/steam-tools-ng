@@ -18,7 +18,7 @@
 
 # Never use VHL methods in this file to avoid infinite recursion:
 # [method>get_translation->vhlm->get_translation->vhlm] IT'S NOT A BUG!
-
+import configparser
 import gettext
 import hashlib
 from typing import Dict
@@ -35,7 +35,12 @@ def new_hash(text: str) -> bytes:
 
 
 def get_translation(text: str) -> str:
-    language = config.parser.get('locale', 'language')
+    try:
+        language = config.parser.get('general', 'language')
+    except configparser.NoSectionError:
+        # assume that config is not fully load yet
+        return text
+
     translation = gettext.translation("steam_tools_ng", languages=[language], fallback=True)
     translated_text = translation.gettext(text)
     cache[new_hash(translated_text)] = text
