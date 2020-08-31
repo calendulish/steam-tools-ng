@@ -95,8 +95,8 @@ asyncio.set_event_loop(event_loop)
 default_config = {
     'logger': {
         'log_directory': os.path.join(data_dir, 'steam_tools_ng'),
-        'log_level': 'debug',
-        'log_console_level': 'info',
+        'log_level': 'info',
+        'log_console_level': 'warning',
         'log_color': True,
     },
     'steam': {
