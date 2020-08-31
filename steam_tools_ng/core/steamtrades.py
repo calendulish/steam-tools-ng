@@ -43,8 +43,8 @@ async def main(trades: List[str], wait_time: Tuple[int, int]) -> Generator[utils
         yield utils.ModuleData(error=_("No Connection."))
         await asyncio.sleep(15)
         return
-    except (login.LoginError, steamtrades.TooFast):
-        yield utils.ModuleData(error=_("User is not logged in. Trying again in 15 seconds"))
+    except steamtrades.TooFast:
+        yield utils.ModuleData(error=_("Unable to login. Trying again in 15 seconds"))
         await asyncio.sleep(15)
         return
     except steamtrades.UserSuspended:
@@ -53,6 +53,14 @@ async def main(trades: List[str], wait_time: Tuple[int, int]) -> Generator[utils
         return
     except steamtrades.PrivateProfile:
         yield utils.ModuleData(error=_("Your profile must be public to use steamtrades."))
+        await asyncio.sleep(30)
+        return
+    except steamtrades.UserLevelError:
+        yield utils.ModuleData(error=_("You must be level 1 or greater to use steamtrades."))
+        await asyncio.sleep(300)
+        return
+    except login.LoginError:
+        yield utils.ModuleData(error=_("User is not logged in. Trying again in 30 seconds"))
         await asyncio.sleep(30)
         return
 
@@ -89,7 +97,7 @@ async def main(trades: List[str], wait_time: Tuple[int, int]) -> Generator[utils
                 await asyncio.sleep(5)
                 continue
         except steamtrades.NoTradesError as exception:
-            yield utils.ModuleData(error=str(exception))  # FIXME wtf??
+            yield utils.ModuleData(error=_("No trades available to bump"))
             await asyncio.sleep(15)
             continue
         except steamtrades.TradeNotReadyError as exception:
@@ -97,7 +105,7 @@ async def main(trades: List[str], wait_time: Tuple[int, int]) -> Generator[utils
             wait_max = wait_min + 400
             bumped = True
         except steamtrades.TradeClosedError as exception:
-            yield utils.ModuleData(error=str(exception))  # FIXME wtf??
+            yield utils.ModuleData(error=_("Trade {}({}) is closed").format(exception.title, exception.id))
             await asyncio.sleep(5)
             continue
         except login.LoginError as exception:

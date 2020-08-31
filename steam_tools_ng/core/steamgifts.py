@@ -49,8 +49,8 @@ async def main(
         yield utils.ModuleData(error=_("No Connection."))
         await asyncio.sleep(15)
         return
-    except (login.LoginError, steamgifts.TooFast):
-        yield utils.ModuleData(error=_("User is not logged in. Trying again in 15 seconds"))
+    except steamgifts.TooFast:
+        yield utils.ModuleData(error=_("Unable to login. Trying again in 15 seconds"))
         await asyncio.sleep(15)
         return
     except steamgifts.UserSuspended:
@@ -59,6 +59,10 @@ async def main(
         return
     except steamgifts.PrivateProfile:
         yield utils.ModuleData(error=_("Your profile must be public to use steamgifts."))
+        await asyncio.sleep(30)
+        return
+    except login.LoginError:
+        yield utils.ModuleData(error=_("User is not logged in. Trying again in 30 seconds"))
         await asyncio.sleep(30)
         return
 
@@ -74,7 +78,6 @@ async def main(
 
     if giveaways:
         if sort:
-            # FIXME: check if config is valid
             giveaways = sorted(
                 giveaways,
                 key=lambda giveaway_: getattr(giveaway_, sort),
@@ -109,7 +112,7 @@ async def main(
                 await asyncio.sleep(5)
                 continue
         except steamgifts.NoGiveawaysError as exception:
-            yield utils.ModuleData(error=str(exception))  # FIXME wtf?
+            yield utils.ModuleData(error=_("No giveaways available to join."))
             await asyncio.sleep(15)
             continue
         except steamgifts.GiveawayEndedError as exception:

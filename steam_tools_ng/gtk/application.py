@@ -184,14 +184,15 @@ class SteamToolsNG(Gtk.Application):
 
         while self.main_window.get_realized():
             for module_name, task in modules.items():
-                task.add_done_callback(self.async_activate_callback)
-
                 if config.parser.getboolean("plugins", module_name):
                     if task.cancelled():
                         if module_name != "confirmations":
                             self.main_window.set_status(module_name, status=_("Loading"))
+
                         coro = getattr(self, f"run_{module_name}")
                         modules[module_name] = asyncio.ensure_future(coro())
+                    else:
+                        task.add_done_callback(self.async_activate_callback)
                 else:
                     if not task.cancelled():
                         task.cancel()
@@ -283,7 +284,7 @@ class SteamToolsNG(Gtk.Application):
 
     async def run_steamtrades(self) -> None:
         while self.main_window.get_realized():
-            self.main_window.set_status("steamtrades", info=_("Loading"))
+            self.main_window.set_status("steamtrades", status=_("Loading"))
             trade_ids = config.parser.get("steamtrades", "trade_ids")
             wait_min = config.parser.getint("steamtrades", "wait_min")
             wait_max = config.parser.getint("steamtrades", "wait_max")
@@ -309,12 +310,12 @@ class SteamToolsNG(Gtk.Application):
             self.main_window.set_status("steamgifts", status=_("Loading"))
             wait_min = config.parser.getint("steamgifts", "wait_min")
             wait_max = config.parser.getint("steamgifts", "wait_max")
-            type = config.parser.get("steamgifts", "giveaway_type")
+            type_ = config.parser.get("steamgifts", "giveaway_type")
             pinned = config.parser.get("steamgifts", "developer_giveaways")
             sort = config.parser.get("steamgifts", "sort")
             reverse = config.parser.getboolean("steamgifts", "reverse_sorting")
             self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
-            steamgifts = core.steamgifts.main(type, pinned, sort, reverse, (wait_min, wait_max))
+            steamgifts = core.steamgifts.main(type_, pinned, sort, reverse, (wait_min, wait_max))
 
             async for module_data in steamgifts:
                 self.main_window.set_status("steamgifts", module_data)
