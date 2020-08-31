@@ -182,7 +182,8 @@ class Status(Gtk.Frame):
         self._gtk_settings = Gtk.Settings.get_default()
 
         self.set_label(label_text)
-        self.set_label_align(0.02, 0.5)
+        self.set_label_align(0.05, 0.5)
+        self.set_border_width(5)
 
         self._grid = Gtk.Grid()
         self._grid.set_border_width(5)

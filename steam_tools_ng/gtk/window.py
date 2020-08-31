@@ -280,12 +280,7 @@ class Main(Gtk.ApplicationWindow):
             _status.set_error(module_data.error)
 
         if module_data.level:
-            try:
-                _status.set_level(*module_data.level)
-            except KeyError:
-                _status.unset_level()
-            else:
-                _status.unset_level()
+            _status.set_level(*module_data.level)
 
     def set_warning(self, message: str) -> None:
         self._warning_label.set_markup(utils.markup(message, color='white', background='red'))

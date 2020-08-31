@@ -69,7 +69,6 @@ async def main(steamid: int, reverse: bool, wait_time: Tuple[int, int]) -> Gener
 
             try:
                 await executor.init()
-                break
             except client.SteamAPIError:
                 yield utils.ModuleData(info=_("Invalid game id {}. Ignoring.").format(badge.game_id))
                 badge = badge._replace(cards=0)
@@ -77,11 +76,12 @@ async def main(steamid: int, reverse: bool, wait_time: Tuple[int, int]) -> Gener
             except ProcessLookupError:
                 yield utils.ModuleData(error=_("Steam Client is not running."))
                 await asyncio.sleep(5)
+                break
 
             for past_time in range(wait_offset):
                 yield utils.ModuleData(
                     display=str(badge.game_id),
-                    info=_("Waiting drops for {} minutes").format(round((wait_offset - past_time) / 60)),
+                    info=_("Waiting drops for {} minutes.").format(round((wait_offset - past_time) / 60)),
                     level=(past_time, wait_offset),
                 )
 

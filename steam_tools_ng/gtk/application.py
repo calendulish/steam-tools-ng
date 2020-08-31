@@ -106,6 +106,9 @@ class SteamToolsNG(Gtk.Application):
         task.add_done_callback(self.async_activate_callback)
 
     def async_activate_callback(self, future: 'asyncio.Future[Any]') -> None:
+        if future.cancelled():
+            return
+
         exception = future.exception()
 
         if exception and not isinstance(exception, asyncio.CancelledError):
@@ -241,7 +244,6 @@ class SteamToolsNG(Gtk.Application):
             confirmations = core.confirmations.main(self.steamid, identity_secret, deviceid, self.time_offset)
 
             async for module_data in confirmations:
-                #self.main_window.set_status("confirmations", module_data)
                 self.main_window.set_warning(module_data)
 
                 while self.main_window.text_tree_lock:
@@ -256,9 +258,7 @@ class SteamToolsNG(Gtk.Application):
 
                 if module_data.action == "update":
                     if module_data.raw_data == old_confirmations:
-                        self.main_window.set_warning(
-                            _("Skipping confirmations update because data doesn't seem to have changed"),
-                        )
+                        log.warning(_("Skipping confirmations update because data doesn't seem to have changed"))
                         continue
 
                     self.main_window.text_tree.store.clear()
