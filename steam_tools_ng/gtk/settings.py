@@ -30,40 +30,6 @@ from .. import config, i18n
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
-gtk_themes = OrderedDict([
-    ('light', _("Light")),
-    ('dark', _("Dark")),
-])
-
-log_levels = OrderedDict([
-    ('critical', _("Critical")),
-    ('error', _("Error")),
-    ('warning', _("Warning")),
-    ('info', _("Info")),
-    ('debug', _("Debug")),
-])
-
-translations = OrderedDict([
-    ('en', _("English")),
-    ('pt_BR', _("Portuguese (Brazil)")),
-    ('fr', _("French")),
-])
-
-giveaway_types = OrderedDict([
-    ('main', _("Main Giveaways")),
-    ('new', _("New Giveaways")),
-    ('recommended', _("Recommended")),
-    ('wishlist', _("Wishlist Only")),
-    ('group', _('Group Only')),
-])
-
-giveaway_sort_types = OrderedDict([
-    ('name', _("Name")),
-    ('copies', _("Copies")),
-    ('points', _("Points")),
-    ('level', _("Level")),
-])
-
 
 # noinspection PyUnusedLocal
 class SettingsDialog(Gtk.Dialog):
@@ -117,13 +83,15 @@ class SettingsDialog(Gtk.Dialog):
             general_section.grid.attach(config_button, 0, 1, 1, 1)
             general_section.grid.attach(log_button, 1, 1, 1, 1)
 
-        theme = general_section.new("theme", _("Theme:"), Gtk.ComboBoxText, 0, 3, items=gtk_themes)
+        theme = general_section.new("theme", _("Theme:"), Gtk.ComboBoxText, 0, 3, items=config.gtk_themes)
         theme.connect('changed', self.on_theme_changed)
 
         show_close_button = general_section.new("show_close_button", _("Show close button:"), Gtk.CheckButton, 0, 4)
         show_close_button.connect('toggled', self.on_show_close_button_toggled)
 
-        language_item = general_section.new("language", _("Language"), Gtk.ComboBoxText, 0, 5, items=translations)
+        language_item = general_section.new(
+            "language", _("Language"), Gtk.ComboBoxText, 0, 5, items=config.translations
+        )
         language_item.connect("changed", self.update_language)
 
         if os.name == 'nt' and hasattr(sys, 'frozen'):
@@ -241,18 +209,18 @@ class SettingsDialog(Gtk.Dialog):
             _("Giveaway Type:"),
             Gtk.ComboBoxText,
             0, 0,
-            items=giveaway_types,
+            items=config.giveaway_types,
         )
-        giveaway_type.connect("changed", on_combo_setting_changed, giveaway_types)
+        giveaway_type.connect("changed", on_combo_setting_changed, config.giveaway_types)
 
         sort_giveaways = steamgifts_section.new(
             "sort",
             _("Sort Giveaways:"),
             Gtk.ComboBoxText,
             0, 1,
-            items=giveaway_sort_types,
+            items=config.giveaway_sort_types,
         )
-        sort_giveaways.connect("changed", on_combo_setting_changed, giveaway_sort_types)
+        sort_giveaways.connect("changed", on_combo_setting_changed, config.giveaway_sort_types)
 
         reverse_sorting = steamgifts_section.new("reverse_sorting", _("Reverse Sorting:"), Gtk.CheckButton, 0, 2)
         reverse_sorting.connect("toggled", on_setting_toggled)
@@ -287,18 +255,18 @@ class SettingsDialog(Gtk.Dialog):
 
         logger_section = utils.Section("logger", _('Logger settings'))
 
-        log_level_item = logger_section.new("log_level", _("Level:"), Gtk.ComboBoxText, 0, 0, items=log_levels)
+        log_level_item = logger_section.new("log_level", _("Level:"), Gtk.ComboBoxText, 0, 0, items=config.log_levels)
 
         log_console_level_item = logger_section.new(
             "log_console_level",
             _("Console level:"),
             Gtk.ComboBoxText,
             0, 1,
-            items=log_levels,
+            items=config.log_levels,
         )
 
-        log_level_item.connect("changed", on_combo_setting_changed, log_levels)
-        log_console_level_item.connect("changed", on_combo_setting_changed, log_levels)
+        log_level_item.connect("changed", on_combo_setting_changed, config.log_levels)
+        log_console_level_item.connect("changed", on_combo_setting_changed, config.log_levels)
 
         logger_section.show_all()
 
@@ -352,7 +320,7 @@ class SettingsDialog(Gtk.Dialog):
         config.new('gtk', 'show_close_button', current_value)
 
     def on_theme_changed(self, combo: Gtk.ComboBoxText) -> None:
-        theme = list(gtk_themes)[combo.get_active()]
+        theme = list(config.gtk_themes)[combo.get_active()]
 
         if theme == 'dark':
             self.gtk_settings_class.props.gtk_application_prefer_dark_theme = True
@@ -384,7 +352,7 @@ class SettingsDialog(Gtk.Dialog):
         asyncio.get_event_loop().call_later(2, login_dialog.destroy)
 
     def update_language(self, combo: Gtk.ComboBoxText) -> None:
-        language = list(translations)[combo.get_active()]
+        language = list(config.translations)[combo.get_active()]
         config.new('locale', 'language', language)
         Gtk.Container.foreach(self, refresh_widget_text)
         Gtk.Container.foreach(self.parent_window, refresh_widget_text)

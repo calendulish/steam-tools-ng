@@ -23,6 +23,7 @@ import logging
 import os
 import sys
 import time
+from collections import OrderedDict
 from typing import Any
 
 import aiohttp
@@ -47,7 +48,40 @@ else:
 config_file_directory = os.path.join(data_dir, 'steam_tools_ng')
 config_file_name = 'steam_tools_ng.config'
 config_file = os.path.join(config_file_directory, config_file_name)
-log_levels = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
+
+gtk_themes = OrderedDict([
+    ('light', _("Light")),
+    ('dark', _("Dark")),
+])
+
+log_levels = OrderedDict([
+    ('critical', _("Critical")),
+    ('error', _("Error")),
+    ('warning', _("Warning")),
+    ('info', _("Info")),
+    ('debug', _("Debug")),
+])
+
+translations = OrderedDict([
+    ('en', _("English")),
+    ('pt_BR', _("Portuguese (Brazil)")),
+    ('fr', _("French")),
+])
+
+giveaway_types = OrderedDict([
+    ('main', _("Main Giveaways")),
+    ('new', _("New Giveaways")),
+    ('recommended', _("Recommended")),
+    ('wishlist', _("Wishlist Only")),
+    ('group', _('Group Only')),
+])
+
+giveaway_sort_types = OrderedDict([
+    ('name', _("Name")),
+    ('copies', _("Copies")),
+    ('points', _("Points")),
+    ('level', _("Level")),
+])
 
 if sys.platform == 'win32':
     event_loop = asyncio.ProactorEventLoop()
@@ -57,6 +91,59 @@ else:
     event_loop = asyncio.new_event_loop()
 
 asyncio.set_event_loop(event_loop)
+
+default_config = {
+    'logger': {
+        'log_directory': os.path.join(data_dir, 'steam_tools_ng'),
+        'log_level': 'debug',
+        'log_console_level': 'info',
+        'log_color': True,
+    },
+    'steam': {
+        'api_url': 'https://api.lara.monster',
+    },
+    'steamtrades': {
+        'wait_min': 3700,
+        'wait_max': 4100,
+        'trade_ids': '',
+    },
+    'steamgifts': {
+        'wait_min': 3700,
+        'wait_max': 4100,
+        'giveaway_type': 'main',
+        'developer_giveaways': 'True',
+        'sort': 'name',
+        'reverse_sorting': False,
+    },
+    'cardfarming': {
+        'reverse_sorting': False,
+        'wait_min': 480,
+        'wait_max': 600,
+    },
+    'general': {
+        'theme': 'light',
+        'show_close_button': True,
+        'language': str(locale.getdefaultlocale()[0]),
+    },
+    'plugins': {
+        'steamtrades': True,
+        'steamgifts': True,
+        'cardfarming': True,
+        'steamguard': True,
+        'confirmations': True,
+    },
+    'login': {
+        'steamid': 0,
+        'deviceid': '',
+        'token': '',
+        'token_secure': '',
+        'oauth_token': '',
+        'account_name': '',
+        'shared_secret': '',
+        'identity_secret': '',
+        'password': '',
+    },
+}
 
 
 def update_log_level(type_: str, level_string: str) -> None:
@@ -69,63 +156,20 @@ def update_log_level(type_: str, level_string: str) -> None:
         file_handler.setLevel(level)
 
 
+def validate_config(section: str, option: str, defaults: OrderedDict) -> None:
+    value = parser.get(section, option)
+
+    if value and not value in defaults.keys():
+        raise configparser.Error(_("Please, fix your config file. Accepted values for {} are:\n{}").format(
+            option,
+            ', '.join(defaults.keys()),
+        ))
+
+
 def init() -> None:
     os.makedirs(config_file_directory, exist_ok=True)
 
-    parser.read_dict(
-        {
-            'logger': {
-                'log_directory': os.path.join(data_dir, 'steam_tools_ng'),
-                'log_level': 'debug',
-                'log_console_level': 'info',
-                'log_color': True,
-            },
-            'steam': {
-                'api_url': 'https://api.lara.monster',
-            },
-            'steamtrades': {
-                'wait_min': 3700,
-                'wait_max': 4100,
-                'trade_ids': '',
-            },
-            'steamgifts': {
-                'wait_min': 3700,
-                'wait_max': 4100,
-                'giveaway_type': 'main',
-                'developer_giveaways': 'True',
-                'sort': 'name',
-                'reverse_sorting': False,
-            },
-            'cardfarming': {
-                'reverse_sorting': False,
-                'wait_min': 480,
-                'wait_max': 600,
-            },
-            'general': {
-                'theme': 'light',
-                'show_close_button': True,
-                'language': str(locale.getdefaultlocale()[0]),
-            },
-            'plugins': {
-                'steamtrades': True,
-                'steamgifts': True,
-                'cardfarming': True,
-                'steamguard': True,
-                'confirmations': True,
-            },
-            'login': {
-                'steamid': 0,
-                'deviceid': '',
-                'token': '',
-                'token_secure': '',
-                'oauth_token': '',
-                'account_name': '',
-                'shared_secret': '',
-                'identity_secret': '',
-                'password': '',
-            },
-        }
-    )
+    parser.read_dict(default_config)
 
     if os.path.isfile(config_file):
         parser.read(config_file)
@@ -137,23 +181,12 @@ def init() -> None:
         log_directory = os.path.join(data_dir, 'steam_tools_ng')
         new("logger", "log_directory", log_directory)
 
-    log_level = parser.get("logger", "log_level")
-
-    if log_level and not log_level.upper() in log_levels:
-        raise configparser.Error(
-            _("Please, fix your config file. Accepted values for log_level are:\n{}").format(
-                ', '.join(log_levels),
-            )
-        )
-
-    log_console_level = parser.get("logger", "log_console_level")
-
-    if log_console_level and not log_console_level.upper() in log_levels:
-        raise configparser.Error(
-            _("Please, fix your config file. Accepted values for log_console_level are:\n{}").format(
-                ', '.join(log_levels),
-            )
-        )
+    validate_config("logger", "log_level", log_levels)
+    validate_config("logger", "log_console_level", log_levels)
+    validate_config("general", "theme", gtk_themes)
+    validate_config("general", "language", translations)
+    validate_config("steamgifts", "giveaway_type", giveaway_types)
+    validate_config("steamgifts", "sort", giveaway_sort_types)
 
     os.makedirs(log_directory, exist_ok=True)
 
