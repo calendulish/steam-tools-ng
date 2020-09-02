@@ -113,6 +113,7 @@ def fix_gtk() -> List[Tuple[str, str]]:
         'GdkPixbuf-2.0',
         'GModule-2.0',
         'Atk-1.0',
+        'HarfBuzz-0.0',
     ]
 
     required_dlls = [
