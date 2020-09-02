@@ -90,7 +90,7 @@ class SteamToolsNG(Gtk.Application):
         exit_action.connect("activate", self.on_exit_activate)
         self.add_action(exit_action)
 
-        theme = config.parser.get("gtk", "theme")
+        theme = config.parser.get("general", "theme")
 
         if theme == 'dark':
             self.gtk_settings.props.gtk_application_prefer_dark_theme = True

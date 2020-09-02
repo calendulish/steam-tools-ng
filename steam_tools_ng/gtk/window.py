@@ -57,7 +57,7 @@ class Main(Gtk.ApplicationWindow):
         self.set_default_size(650, 450)
         self.set_resizable(False)
 
-        if config.parser.getboolean("gtk", "show_close_button"):
+        if config.parser.getboolean("general", "show_close_button"):
             self.set_deletable(True)
         else:
             self.set_deletable(False)
