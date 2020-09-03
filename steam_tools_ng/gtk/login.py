@@ -184,7 +184,13 @@ class LoginDialog(Gtk.Dialog):
         self.save_password_item.set_sensitive(False)
         self.login_button.set_sensitive(False)
 
-        self._login_session = login.get_session(0, self.username, self.__password)
+        self._login_session = login.get_session(
+            0,
+            self.username,
+            self.__password,
+            http_session=self.application.session,
+        )
+
         kwargs = {'emailauth': self.mail_code, 'mobile_login': self.mobile_login}
 
         # no reason to send captcha_text if no gid is found
