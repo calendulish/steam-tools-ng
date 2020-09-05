@@ -188,14 +188,14 @@ class SteamToolsNG(Gtk.Application):
         while self.main_window.get_realized():
             for module_name, task in modules.items():
                 if config.parser.getboolean("plugins", module_name):
-                    if task.cancelled():
+                    if task.cancelled() and not task.exception():
                         if module_name != "confirmations":
                             self.main_window.set_status(module_name, status=_("Loading"))
 
                         coro = getattr(self, f"run_{module_name}")
                         modules[module_name] = asyncio.ensure_future(coro())
-                    else:
-                        task.add_done_callback(self.async_activate_callback)
+
+                    task.add_done_callback(self.async_activate_callback)
                 else:
                     if not task.cancelled():
                         task.cancel()
