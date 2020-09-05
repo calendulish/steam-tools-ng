@@ -73,7 +73,7 @@ class SteamToolsNG(Gtk.Application):
 
     @property
     def steamid(self) -> Optional[int]:
-        return config.parser.get("login", "steamid")
+        return config.parser.getint("login", "steamid")
 
     def do_startup(self) -> None:
         Gtk.Application.do_startup(self)
