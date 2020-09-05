@@ -110,7 +110,7 @@ class NewAuthenticatorDialog(Gtk.Dialog):
             try:
                 self._login_data = await self.application.webapi_session.add_authenticator(login_data, deviceid)
             except aiohttp.ClientError:
-                self.status.error(_("No Connection. Try again."))
+                self.status.error(_("Check your connection. (server down?)"))
             except webapi.AuthenticatorExists:
                 self.status.error(_(
                     "There's already an authenticator active for that account.\n"
@@ -145,7 +145,7 @@ class NewAuthenticatorDialog(Gtk.Dialog):
             self.sms_code_item.set_text('')
             self.sms_code_item.grab_focus()
         except aiohttp.ClientError:
-            self.status.error(_("No Connection. Try again."))
+            self.status.error(_("Check your connection. (server down?)"))
             self.user_details_section.show_all()
             self.sms_code_item.set_text('')
             self.sms_code_item.grab_focus()

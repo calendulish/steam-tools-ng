@@ -41,7 +41,7 @@ async def main(steamid: int, reverse: bool, wait_time: Tuple[int, int]) -> Gener
             reverse=reverse
         )
     except aiohttp.ClientError:
-        yield utils.ModuleData(error=_("No Connection"))
+        yield utils.ModuleData(error=_("Check your connection. (server down?)"))
         await asyncio.sleep(10)
         return
 
@@ -99,7 +99,7 @@ async def main(steamid: int, reverse: bool, wait_time: Tuple[int, int]) -> Gener
                 badge = await session.update_badge_drops(badge, steamid)
                 break
             except aiohttp.ClientError:
-                yield utils.ModuleData(error=_("No connection"))
+                yield utils.ModuleData(error=_("Check your connection. (server down?)"))
                 await asyncio.sleep(10)
             except webapi.BadgeError:
                 yield utils.ModuleData(error=_("Steam Server is busy"))

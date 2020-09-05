@@ -46,7 +46,7 @@ async def main(steamid, identity: str, deviceid: str, time_offset: int) -> Gener
     except login.LoginError as exception:
         yield utils.ModuleData(error=_("User is not logged in"), action="login")
     except aiohttp.ClientError as exception:
-        yield utils.ModuleData(error=_("No connection"))
+        yield utils.ModuleData(error=_("Check your connection. (server down?)"))
     else:
         yield utils.ModuleData(action="update", raw_data=confirmations)
 

@@ -171,7 +171,7 @@ class SteamToolsNG(Gtk.Application):
                 await self.do_login(auto=True)
         except aiohttp.ClientError as exception:
             log.exception(str(exception))
-            self.main_window.set_warning(_("No Connection. Please, check your connection."))
+            self.main_window.set_warning(_("Check your connection. (server down?)"))
             await asyncio.sleep(10)
             return  # FIXME: RETRY ###
 

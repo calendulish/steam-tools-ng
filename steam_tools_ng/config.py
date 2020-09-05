@@ -260,7 +260,7 @@ async def time_offset(webapi_session: webapi.SteamWebAPI) -> int:
             try:
                 server_time = await webapi_session.get_server_time()
             except aiohttp.ClientError:
-                log.error(_("No Connection"))
+                log.error(_("Check your connection. (server down?)"))
                 await asyncio.sleep(5)
             else:
                 break

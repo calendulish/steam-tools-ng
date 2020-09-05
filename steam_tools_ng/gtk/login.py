@@ -263,7 +263,7 @@ class LoginDialog(Gtk.Dialog):
             self.__password_item.set_sensitive(True)
             self.__password_item.grab_focus()
         except aiohttp.ClientError:
-            self.status.error(_("No Connection. Try again."))
+            self.status.error(_("Check your connection. (server down?)"))
             self.username_item.set_sensitive(True)
             self.__password_item.set_sensitive(True)
         except binascii.Error:

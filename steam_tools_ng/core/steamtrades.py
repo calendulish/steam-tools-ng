@@ -39,8 +39,8 @@ async def main(trades: List[str], wait_time: Tuple[int, int]) -> Generator[utils
 
     try:
         await steamtrades.do_login()
-    except aiohttp.ClientConnectionError:
-        yield utils.ModuleData(error=_("No Connection."))
+    except aiohttp.ClientError:
+        yield utils.ModuleData(error=_("Check your connection. (server down?)"))
         await asyncio.sleep(15)
         return
     except steamtrades.TooFast:
@@ -74,7 +74,7 @@ async def main(trades: List[str], wait_time: Tuple[int, int]) -> Generator[utils
             bumped = False
             break
         except aiohttp.ClientError:
-            yield utils.ModuleData(error=_("No connection"))
+            yield utils.ModuleData(error=_("Check your connection. (server down?)"))
             bumped = False
             break
 

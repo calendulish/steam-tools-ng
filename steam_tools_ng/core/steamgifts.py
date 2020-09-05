@@ -45,8 +45,8 @@ async def main(
 
     try:
         await steamgifts.do_login()
-    except aiohttp.ClientConnectionError:
-        yield utils.ModuleData(error=_("No Connection."))
+    except aiohttp.ClientError:
+        yield utils.ModuleData(error=_("Check your connection. (server down?)"))
         await asyncio.sleep(15)
         return
     except steamgifts.TooFast:
