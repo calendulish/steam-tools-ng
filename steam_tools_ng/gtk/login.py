@@ -308,6 +308,7 @@ class LoginDialog(Gtk.Dialog):
         finally:
             self.save_password_item.set_sensitive(True)
             self.login_button.set_sensitive(True)
+            self.set_size_request(400, 100)
 
     def on_advanced_login_clicked(self, *args) -> None:
         if self.advanced_login_section.props.visible:
