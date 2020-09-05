@@ -122,7 +122,8 @@ class NewAuthenticatorDialog(Gtk.Dialog):
                     "Go to your Steam Account Settings, add a Phone Number, and try again."
                 ))
             except NotImplementedError as exception:
-                utils.fatal_error_dialog(str(exception))
+                import sys, traceback
+                utils.fatal_error_dialog(exception, traceback.print_tb(sys.exc_info), self.parent_window)
                 self.application.on_exit_activate()
             else:
                 self.status.info(_("Enter bellow the code received by SMS\nand click on 'Add Authenticator' button"))
@@ -150,8 +151,9 @@ class NewAuthenticatorDialog(Gtk.Dialog):
             self.sms_code_item.set_text('')
             self.sms_code_item.grab_focus()
         except Exception as exception:
-            utils.fatal_error_dialog(str(exception), self.parent_window)
-            self.application.on_quit_activate()
+            import sys, traceback
+            utils.fatal_error_dialog(exception, traceback.print_tb(sys.exc_info), self.parent_window)
+            self.application.on_exit_activate()
         else:
             self.status.info(_("Saving new secrets"))
             config.new("login", "shared_secret", self._login_data.auth['shared_secret'])
