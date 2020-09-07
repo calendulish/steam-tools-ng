@@ -265,13 +265,14 @@ class SteamToolsNG(Gtk.Application):
             confirmations = core.confirmations.main(self.steamid, identity_secret, deviceid, self.time_offset)
 
             async for module_data in confirmations:
-                self.main_window.set_warning(module_data)
+                if module_data.error:
+                    self.main_window.set_warning(module_data.error)
+                else:
+                    self.main_window.unset_warning()
 
                 while self.main_window.text_tree_lock:
                     self.main_window.set_warning(_("Waiting another confirmation process"))
                     await asyncio.sleep(5)
-
-                self.main_window.unset_warning()
 
                 if module_data.action == "login":
                     await self.do_login(auto=True)
