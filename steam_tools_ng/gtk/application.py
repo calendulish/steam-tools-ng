@@ -21,7 +21,7 @@ import logging
 import os
 import ssl
 import sys
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Dict
 
 import aiohttp
 from gi.repository import Gio, Gtk
@@ -102,17 +102,19 @@ class SteamToolsNG(Gtk.Application):
         self._main_window_id = current_window.get_id()
         current_window.show()
 
-        task = asyncio.gather(self.async_activate())
+        loop = asyncio.get_event_loop()
+        task = loop.create_task(self.async_activate())
         task.add_done_callback(self.async_activate_callback)
 
-    def async_activate_callback(self, future: 'asyncio.Future[Any]') -> None:
-        if future.cancelled():
+    def async_activate_callback(self, task: asyncio.Task) -> None:
+        if task.cancelled():
+            log.debug(_("%s has been stopped due user request"), task.get_coro())
             return
 
-        exception = future.exception()
+        exception = task.exception()
 
         if exception and not isinstance(exception, asyncio.CancelledError):
-            stack = future.get_stack()
+            stack = task.get_stack()
 
             for frame in stack:
                 log.critical(f"{type(exception).__name__} at {frame}")
@@ -177,36 +179,47 @@ class SteamToolsNG(Gtk.Application):
 
         self.main_window.unset_warning()
 
-        modules = {
-            "confirmations": asyncio.ensure_future(self.run_confirmations()),
-            "steamguard": asyncio.ensure_future(self.run_steamguard()),
-            "steamtrades": asyncio.ensure_future(self.run_steamtrades()),
-            "steamgifts": asyncio.ensure_future(self.run_steamgifts()),
-            "cardfarming": asyncio.ensure_future(self.run_cardfarming()),
-        }
+        modules: Dict = {}
 
         while self.main_window.get_realized():
-            for module_name, task in modules.items():
+            for module_name in config.plugins.keys():
+                task = None
+
+                if module_name in modules:
+                    task = modules[module_name]
+
                 if config.parser.getboolean("plugins", module_name):
-                    if task.cancelled() and not task.exception():
+                    if task:
+                        if task.cancelled() and not task._exception:  # why task.exception() is raising?
+                            log.debug(_("%s is requesting a reinitialization."), module_name)
+                            modules.pop(module_name)
+
+                        await asyncio.sleep(1)
+                    else:
+                        log.debug(_("%s is enabled but not initialized. Initializing now."), module_name)
+
                         if module_name != "confirmations":
                             self.main_window.set_status(module_name, status=_("Loading"))
 
-                        coro = getattr(self, f"run_{module_name}")
-                        modules[module_name] = asyncio.ensure_future(coro())
+                        module = getattr(self, f"run_{module_name}")
+                        task = asyncio.create_task(module())
+                        log.debug(_("Adding a new callback for %s"), task)
+                        task.add_done_callback(self.async_activate_callback)
+                        modules[module_name] = task
 
-                    task.add_done_callback(self.async_activate_callback)
+                    continue
+
+                if task and not task.cancelled():
+                    log.debug(_("%s is disabled but not cancelled. Cancelling now."), module_name)
+                    task.cancel()
+
+                    try:
+                        await task
+                    except asyncio.CancelledError:
+                        if module_name != "confirmations":
+                            self.main_window.set_status(module_name, status=_("Disabled"))
                 else:
-                    if not task.cancelled():
-                        task.cancel()
-
-                        try:
-                            await task
-                        except asyncio.CancelledError:
-                            if module_name != "confirmations":
-                                self.main_window.set_status(module_name, status=_("Disabled"))
-
-            await asyncio.sleep(3)
+                    await asyncio.sleep(1)
 
     async def run_steamguard(self) -> None:
         while self.main_window.get_realized():

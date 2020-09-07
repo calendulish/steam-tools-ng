@@ -135,23 +135,23 @@ class SettingsDialog(Gtk.Dialog):
 
         plugins_section = utils.Section('plugins', _('Plugins Settings'))
 
-        steamguard = plugins_section.new("steamguard", _("Authenticator:"), Gtk.CheckButton, 0, 1)
+        steamguard = plugins_section.new("steamguard", config.plugins['steamguard'], Gtk.CheckButton, 0, 1)
         steamguard.connect('toggled', on_setting_toggled)
 
-        confirmations = plugins_section.new("confirmations", _("Confirmations:"), Gtk.CheckButton, 0, 2)
+        confirmations = plugins_section.new("confirmations", config.plugins['confirmations'], Gtk.CheckButton, 0, 2)
         confirmations.connect('toggled', on_setting_toggled)
 
         __disabled = plugins_section.new("___", "IndieGala", Gtk.CheckButton, 2, 3)
         __disabled.set_sensitive(False)
         __disabled.label.set_sensitive(False)
 
-        steamtrades = plugins_section.new("steamtrades", _("Steamtrades:"), Gtk.CheckButton, 2, 1)
+        steamtrades = plugins_section.new("steamtrades", config.plugins['steamtrades'], Gtk.CheckButton, 2, 1)
         steamtrades.connect('toggled', on_setting_toggled)
 
-        steamgifts = plugins_section.new("steamgifts", _("Steamgifts:"), Gtk.CheckButton, 2, 2)
+        steamgifts = plugins_section.new("steamgifts", config.plugins['steamgifts'], Gtk.CheckButton, 2, 2)
         steamgifts.connect('toggled', on_setting_toggled)
 
-        cardfarming = plugins_section.new("cardfarming", _("Cardfarming:"), Gtk.CheckButton, 0, 3)
+        cardfarming = plugins_section.new("cardfarming", config.plugins['cardfarming'], Gtk.CheckButton, 0, 3)
         cardfarming.connect("toggled", on_setting_toggled)
 
         if not config.parser.get("login", "shared_secret"):

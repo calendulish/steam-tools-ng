@@ -75,16 +75,16 @@ class Main(Gtk.ApplicationWindow):
         self.status_grid.set_column_homogeneous(True)
         main_grid.attach(self.status_grid, 0, 0, 4, 1)
 
-        self.steamtrades_status = utils.Status(5, "SteamTrades (bump)")
+        self.steamtrades_status = utils.Status(5, config.plugins['steamtrades'])
         self.status_grid.attach(self.steamtrades_status, 0, 0, 1, 1)
 
-        self.steamgifts_status = utils.Status(5, "SteamGifts (join)")
+        self.steamgifts_status = utils.Status(5, config.plugins['steamgifts'])
         self.status_grid.attach(self.steamgifts_status, 1, 0, 1, 1)
 
-        self.steamguard_status = utils.Status(4, _('Steam Guard Code'))
+        self.steamguard_status = utils.Status(4, config.plugins['steamguard'])
         self.status_grid.attach(self.steamguard_status, 0, 1, 1, 1)
 
-        self.cardfarming_status = utils.Status(6, _("Card Farming"))
+        self.cardfarming_status = utils.Status(6, config.plugins['cardfarming'])
         self.status_grid.attach(self.cardfarming_status, 1, 1, 1, 1)
 
         self.confirmations_grid = Gtk.Grid()
@@ -140,17 +140,37 @@ class Main(Gtk.ApplicationWindow):
 
         self.connect("destroy", self.application.on_exit_activate)
 
-        asyncio.ensure_future(self.plugin_switch())
+        loop = asyncio.get_event_loop()
+        task = loop.create_task(self.plugin_switch())
+        task.add_done_callback(self.application.async_activate_callback)
 
     async def plugin_switch(self) -> None:
+        plugins = []
+
         while self.get_realized():
             plugins_enabled = []
 
-            for plugin_name in ["steamgifts", "steamtrades", "steamguard", "cardfarming"]:
+            for plugin_name in config.plugins.keys():
                 plugin_config = config.parser.getboolean("plugins", plugin_name)
+
+                if plugin_name == "confirmations":
+                    if plugin_config:
+                        self.confirmations_grid.show_all()
+                        self.set_size_request(655, 560)
+                    else:
+                        self.confirmations_grid.hide()
+                        self.set_size_request(655, 0)
+
+                    continue
 
                 if plugin_config:
                     plugins_enabled.append(plugin_name)
+
+            if plugins_enabled == plugins:
+                await asyncio.sleep(1)
+                continue
+            else:
+                plugins = plugins_enabled
 
             for widget in self.status_grid.get_children():
                 self.status_grid.remove(widget)
@@ -177,17 +197,6 @@ class Main(Gtk.ApplicationWindow):
                     self.status_grid.attach(plugin, 1, 1, 1, 1)
 
                 plugin.show()
-
-            if config.parser.getboolean("plugins", "confirmations"):
-                if not self.confirmations_grid.get_visible():
-                    self.confirmations_grid.show_all()
-                    self.set_size_request(650, 570)
-            else:
-                if self.confirmations_grid.get_visible():
-                    self.confirmations_grid.hide()
-                    self.set_size_request(650, 0)
-
-            await asyncio.sleep(1)
 
     @staticmethod
     def on_query_confirmations_tooltip(
@@ -262,17 +271,17 @@ class Main(Gtk.ApplicationWindow):
             module_data = core.utils.ModuleData(display, status, info, error, level)
 
         if module_data.display:
-            log.debug(f"display data: {module_data.display}")
+            # log.debug(f"display data: {module_data.display}")
             _status.set_display(module_data.display)
         else:
             _status.unset_display()
 
         if module_data.status:
-            log.debug(f"status data: {module_data.status}")
+            # log.debug(f"status data: {module_data.status}")
             _status.set_status(module_data.status)
 
         if module_data.info:
-            log.debug(f"info data: {module_data.info}")
+            # log.debug(f"info data: {module_data.info}")
             _status.set_info(module_data.info)
 
         if module_data.error:
@@ -284,7 +293,6 @@ class Main(Gtk.ApplicationWindow):
 
     def set_warning(self, message: str) -> None:
         self._warning_label.set_markup(utils.markup(message, color='white', background='red'))
-        self._warning_label.show()
 
     def unset_warning(self) -> None:
-        self._warning_label.hide()
+        self._warning_label.set_text("")

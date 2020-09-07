@@ -83,6 +83,14 @@ giveaway_sort_types = OrderedDict([
     ('level', _("Level")),
 ])
 
+plugins = OrderedDict([
+    ("confirmations", _("Confirmations")),
+    ("steamtrades", _("Steam Trades")),
+    ("steamgifts", _("Steam Gifts")),
+    ("steamguard", _("Steam Guard")),
+    ("cardfarming", _("Card Farming")),
+])
+
 if sys.platform == 'win32':
     event_loop = asyncio.ProactorEventLoop()
     file_manager = 'explorer'
