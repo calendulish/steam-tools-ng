@@ -224,6 +224,10 @@ class SteamToolsNG(Gtk.Application):
     async def run_steamguard(self) -> None:
         while self.main_window.get_realized():
             shared_secret = config.parser.get("login", "shared_secret")
+
+            if not shared_secret:
+                config.new("plugins", "steamguard", "false")
+
             steamguard = core.steamguard.main(shared_secret, self.time_offset)
 
             async for module_data in steamguard:
@@ -246,6 +250,10 @@ class SteamToolsNG(Gtk.Application):
 
         while self.main_window.get_realized():
             identity_secret = config.parser.get("login", "identity_secret")
+
+            if not identity_secret:
+                config.new("plugins", "confirmations", "false")
+
             deviceid = config.parser.get("login", "deviceid")
 
             if not deviceid:
