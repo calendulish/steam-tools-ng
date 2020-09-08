@@ -53,7 +53,7 @@ async def main(steamid: int, reverse: bool, wait_time: Tuple[int, int]) -> Gener
     for badge in badges:
         yield utils.ModuleData(
             display=str(badge.game_id),
-            status=_("Running {}").format(badge.game_name),
+            status=_("Loading {}").format(badge.game_name),
         )
 
         game_info = await session.get_owned_games(steamid, appids_filter=[badge.game_id])
@@ -75,13 +75,14 @@ async def main(steamid: int, reverse: bool, wait_time: Tuple[int, int]) -> Gener
                 break
             except ProcessLookupError:
                 yield utils.ModuleData(error=_("Steam Client is not running."))
-                await asyncio.sleep(5)
+                await asyncio.sleep(10)
                 break
 
             for past_time in range(wait_offset):
                 yield utils.ModuleData(
                     display=str(badge.game_id),
                     info=_("Waiting drops for {} minutes.").format(round((wait_offset - past_time) / 60)),
+                    status=_("Running {}").format(badge.game_name),
                     level=(past_time, wait_offset),
                 )
 
