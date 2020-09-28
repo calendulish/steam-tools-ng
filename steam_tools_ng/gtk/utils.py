@@ -16,6 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
+import functools
 import logging
 from collections import OrderedDict
 from typing import Any, Callable, List, Tuple, Optional, Union
@@ -175,6 +176,15 @@ class SimpleStatus(Gtk.Frame):
         self._label.set_markup(markup(text, color='cyan', face='monospace'))
 
 
+def when_running(function: Callable[..., Any]) -> Callable[..., Any]:
+    @functools.wraps(function)
+    def wrapper(self, *args, **kwargs) -> None:
+        if self.play_event.is_set():
+            function(self, *args, **kwargs)
+
+    return wrapper
+
+
 class Status(Gtk.Frame):
     def __init__(self, display_size: int, label_text: str) -> None:
         super().__init__()
@@ -196,6 +206,14 @@ class Status(Gtk.Frame):
         self._display.set_has_tooltip(True)
         self._grid.attach(self._display, 0, 0, 1, 1)
 
+        self._play_pause_button = Gtk.ToggleButton()
+        self._play_pause_button.set_label("⏵/⏸")
+        self._play_pause_button.connect("toggled", self.__on_play_pause_button_toggled)
+        self._grid.attach(self._play_pause_button, 1, 0, 1, 1)
+
+        self.play_event = asyncio.Event()
+        self._play_pause_button.clicked()
+
         self._status = Gtk.Label()
         self._status.set_markup(markup(_("Loading..."), color='green', font_size='small'))
         self._grid.attach(self._status, 0, 1, 1, 1)
@@ -204,7 +222,7 @@ class Status(Gtk.Frame):
         self._grid.attach(self._info, 0, 2, 1, 1)
 
         self._level_bar = Gtk.LevelBar()
-        self._grid.attach(self._level_bar, 0, 3, 1, 1)
+        self._grid.attach(self._level_bar, 0, 3, 2, 1)
 
         self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
 
@@ -237,9 +255,19 @@ class Status(Gtk.Frame):
 
             self._display.set_sensitive(False)
 
+    def __on_play_pause_button_toggled(self, button: Gtk.ToggleButton) -> None:
+        if button.get_active():
+            button.set_label("⏸")
+            self.play_event.set()
+        else:
+            button.set_label("⏵")
+            self.play_event.clear()
+
+    @when_running
     def set_display(self, text: str) -> None:
         self._display.set_markup(markup(text, font_size='large', font_weight='bold'))
 
+    @when_running
     def set_status(self, text: str) -> None:
         if self._gtk_settings.props.gtk_application_prefer_dark_theme:
             color = 'lightgreen'
@@ -248,6 +276,7 @@ class Status(Gtk.Frame):
 
         self._status.set_markup(markup(text, color=color, font_size='small'))
 
+    @when_running
     def set_info(self, text: str) -> None:
         if self._gtk_settings.props.gtk_application_prefer_dark_theme:
             color = 'lightgreen'
@@ -256,6 +285,7 @@ class Status(Gtk.Frame):
 
         self._info.set_markup(markup(text, color=color, font_size='small'))
 
+    @when_running
     def set_error(self, text: str) -> None:
         if self._gtk_settings.props.gtk_application_prefer_dark_theme:
             color = 'hotpink'
@@ -264,6 +294,7 @@ class Status(Gtk.Frame):
 
         self._status.set_markup(markup(text, color=color, font_size='small'))
 
+    @when_running
     def set_level(self, value: int, max_value: int) -> None:
         self._level_bar.set_value(value)
         self._level_bar.set_max_value(max_value)

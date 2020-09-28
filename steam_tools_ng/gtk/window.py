@@ -296,3 +296,7 @@ class Main(Gtk.ApplicationWindow):
 
     def unset_warning(self) -> None:
         self._warning_label.set_text("")
+
+    def get_play_event(self, module: str) -> asyncio.Event:
+        _status = getattr(self, f'{module}_status')
+        return _status.play_event
