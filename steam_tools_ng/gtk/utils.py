@@ -208,6 +208,7 @@ class Status(Gtk.Frame):
 
         self._play_pause_button = Gtk.ToggleButton()
         self._play_pause_button.set_label("⏵/⏸")
+        self._play_pause_button.set_can_focus(False)
         self._play_pause_button.connect("toggled", self.__on_play_pause_button_toggled)
         self._grid.attach(self._play_pause_button, 1, 0, 1, 1)
 

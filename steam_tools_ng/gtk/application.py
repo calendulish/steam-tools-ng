@@ -16,12 +16,13 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
+import functools
 import itertools
 import logging
 import os
 import ssl
 import sys
-from typing import Any, List, Optional, Dict
+from typing import Any, Optional, Dict, Callable, List
 
 import aiohttp
 from gi.repository import Gio, Gtk
@@ -32,6 +33,15 @@ from .. import config, i18n, core
 
 _ = i18n.get_translation
 log = logging.getLogger(__name__)
+
+
+def while_window_realized(function: Callable[..., Any]) -> Callable[..., Any]:
+    @functools.wraps(function)
+    async def wrapper(self, *args, **kwargs) -> None:
+        while self.main_window.get_realized():
+            await function(self, *args, **kwargs)
+
+    return wrapper
 
 
 # noinspection PyUnusedLocal
@@ -50,6 +60,8 @@ class SteamToolsNG(Gtk.Application):
         self.api_login: Optional[webapi.Login] = None
         self._time_offset = 0
         self.api_url = config.parser.get("steam", "api_url")
+
+        self.old_confirmations: List[webapi.Confirmation] = []
 
     @property
     def main_window(self) -> Gtk.ApplicationWindow:
@@ -198,11 +210,15 @@ class SteamToolsNG(Gtk.Application):
                     else:
                         log.debug(_("%s is enabled but not initialized. Initializing now."), module_name)
 
-                        if module_name != "confirmations":
-                            self.main_window.set_status(module_name, status=_("Loading"))
-
                         module = getattr(self, f"run_{module_name}")
-                        task = asyncio.create_task(module())
+
+                        if module_name == "confirmations":
+                            task = asyncio.create_task(module())
+                        else:
+                            self.main_window.set_status(module_name, status=_("Loading"))
+                            play_event = self.main_window.get_play_event(module_name)
+                            task = asyncio.create_task(module(play_event))
+
                         log.debug(_("Adding a new callback for %s"), task)
                         task.add_done_callback(self.async_activate_callback)
                         modules[module_name] = task
@@ -221,130 +237,140 @@ class SteamToolsNG(Gtk.Application):
                 else:
                     await asyncio.sleep(1)
 
-    async def run_steamguard(self) -> None:
-        while self.main_window.get_realized():
-            shared_secret = config.parser.get("login", "shared_secret")
+    @while_window_realized
+    async def run_steamguard(self, play_event) -> None:
+        await play_event.wait()
 
-            if not shared_secret:
-                config.new("plugins", "steamguard", "false")
+        shared_secret = config.parser.get("login", "shared_secret")
 
-            steamguard = core.steamguard.main(shared_secret, self.time_offset)
+        if not shared_secret:
+            config.new("plugins", "steamguard", "false")
 
-            async for module_data in steamguard:
-                self.main_window.set_status("steamguard", module_data)
+        steamguard = core.steamguard.main(shared_secret, self.time_offset)
 
-    async def run_cardfarming(self) -> None:
-        while self.main_window.get_realized():
-            reverse_sorting = config.parser.getboolean("cardfarming", "reverse_sorting")
-            wait_min = config.parser.getint("cardfarming", "wait_min")
-            wait_max = config.parser.getint("cardfarming", "wait_max")
+        async for module_data in steamguard:
+            self.main_window.set_status("steamguard", module_data)
 
-            self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
-            cardfarming = core.cardfarming.main(self.steamid, reverse_sorting, (wait_min, wait_max))
+    @while_window_realized
+    async def run_cardfarming(self, play_event) -> None:
+        reverse_sorting = config.parser.getboolean("cardfarming", "reverse_sorting")
+        wait_min = config.parser.getint("cardfarming", "wait_min")
+        wait_max = config.parser.getint("cardfarming", "wait_max")
 
-            async for module_data in cardfarming:
-                self.main_window.set_status("cardfarming", module_data)
+        self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
+        cardfarming = core.cardfarming.main(self.steamid, reverse_sorting, (wait_min, wait_max))
 
+        async for module_data in cardfarming:
+            executor = module_data.raw_data
+            self.main_window.set_status("cardfarming", module_data)
+
+            if not play_event.is_set():
+                executor.shutdown()
+                await play_event.wait()
+                executor.init()
+
+    @while_window_realized
     async def run_confirmations(self) -> None:
-        old_confirmations: List[webapi.Confirmation] = []
+        identity_secret = config.parser.get("login", "identity_secret")
 
-        while self.main_window.get_realized():
-            identity_secret = config.parser.get("login", "identity_secret")
+        if not identity_secret:
+            config.new("plugins", "confirmations", "false")
 
-            if not identity_secret:
-                config.new("plugins", "confirmations", "false")
+        deviceid = config.parser.get("login", "deviceid")
 
-            deviceid = config.parser.get("login", "deviceid")
+        if not deviceid:
+            log.warning(_("Unable to find deviceid. Generating from identity."))
+            deviceid = universe.generate_device_id(identity_secret)
+            config.new("login", "deviceid", deviceid)
 
-            if not deviceid:
-                log.warning(_("Unable to find deviceid. Generating from identity."))
-                deviceid = universe.generate_device_id(identity_secret)
-                config.new("login", "deviceid", deviceid)
+        self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
+        confirmations = core.confirmations.main(self.steamid, identity_secret, deviceid, self.time_offset)
 
-            self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
-            confirmations = core.confirmations.main(self.steamid, identity_secret, deviceid, self.time_offset)
+        async for module_data in confirmations:
+            if module_data.error:
+                self.main_window.set_warning(module_data.error)
+            else:
+                self.main_window.unset_warning()
 
-            async for module_data in confirmations:
-                if module_data.error:
-                    self.main_window.set_warning(module_data.error)
-                else:
-                    self.main_window.unset_warning()
-
-                while self.main_window.text_tree_lock:
-                    self.main_window.set_warning(_("Waiting another confirmation process"))
-                    await asyncio.sleep(5)
-
-                if module_data.action == "login":
-                    await self.do_login(auto=True)
-                    continue
-
-                if module_data.action == "update":
-                    if module_data.raw_data == old_confirmations:
-                        log.warning(_("Skipping confirmations update because data doesn't seem to have changed"))
-                        continue
-
-                    self.main_window.text_tree.store.clear()
-
-                    for confirmation_ in module_data.raw_data:
-                        # translatable strings
-                        t_give = utils.sanitize_confirmation(confirmation_.give)
-                        t_receive = utils.sanitize_confirmation(confirmation_.receive)
-
-                        iter_ = self.main_window.text_tree.store.append(None, [
-                            confirmation_.mode,
-                            str(confirmation_.id),
-                            str(confirmation_.key),
-                            t_give,
-                            confirmation_.to,
-                            t_receive,
-                        ])
-
-                        for item in itertools.zip_longest(confirmation_.give, confirmation_.receive):
-                            self.main_window.text_tree.store.append(iter_, ['', '', '', item[0], '', item[1]])
-
-                    old_confirmations = module_data.raw_data
-
-    async def run_steamtrades(self) -> None:
-        while self.main_window.get_realized():
-            self.main_window.set_status("steamtrades", status=_("Loading"))
-            trade_ids = config.parser.get("steamtrades", "trade_ids")
-            wait_min = config.parser.getint("steamtrades", "wait_min")
-            wait_max = config.parser.getint("steamtrades", "wait_max")
-
-            if not trade_ids:
-                self.main_window.set_status("steamtrades", error=_("No trade ID found"), info=_("Waiting Changes"))
+            while self.main_window.text_tree_lock:
+                self.main_window.set_warning(_("Waiting another confirmation process"))
                 await asyncio.sleep(5)
+
+            if module_data.action == "login":
+                await self.do_login(auto=True)
                 continue
 
-            self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
-            trades = [trade.strip() for trade in trade_ids.split(',')]
-            steamtrades = core.steamtrades.main(trades, (wait_min, wait_max))
-
-            async for module_data in steamtrades:
-                self.main_window.set_status("steamtrades", module_data)
-
-                if module_data.action == "login":
-                    await self.do_login(auto=True)
+            if module_data.action == "update":
+                if module_data.raw_data == self.old_confirmations:
+                    log.warning(_("Skipping confirmations update because data doesn't seem to have changed"))
                     continue
 
-    async def run_steamgifts(self) -> None:
-        while self.main_window.get_realized():
-            self.main_window.set_status("steamgifts", status=_("Loading"))
-            wait_min = config.parser.getint("steamgifts", "wait_min")
-            wait_max = config.parser.getint("steamgifts", "wait_max")
-            type_ = config.parser.get("steamgifts", "giveaway_type")
-            pinned = config.parser.get("steamgifts", "developer_giveaways")
-            sort = config.parser.get("steamgifts", "sort")
-            reverse = config.parser.getboolean("steamgifts", "reverse_sorting")
-            self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
-            steamgifts = core.steamgifts.main(type_, pinned, sort, reverse, (wait_min, wait_max))
+                self.main_window.text_tree.store.clear()
 
-            async for module_data in steamgifts:
-                self.main_window.set_status("steamgifts", module_data)
+                for confirmation_ in module_data.raw_data:
+                    # translatable strings
+                    t_give = utils.sanitize_confirmation(confirmation_.give)
+                    t_receive = utils.sanitize_confirmation(confirmation_.receive)
 
-                if module_data.action == "login":
-                    await self.do_login(auto=True)
-                    continue
+                    iter_ = self.main_window.text_tree.store.append(None, [
+                        confirmation_.mode,
+                        str(confirmation_.id),
+                        str(confirmation_.key),
+                        t_give,
+                        confirmation_.to,
+                        t_receive,
+                    ])
+
+                    for item in itertools.zip_longest(confirmation_.give, confirmation_.receive):
+                        self.main_window.text_tree.store.append(iter_, ['', '', '', item[0], '', item[1]])
+
+                self.old_confirmations = module_data.raw_data
+
+    @while_window_realized
+    async def run_steamtrades(self, play_event) -> None:
+        await play_event.wait()
+
+        self.main_window.set_status("steamtrades", status=_("Loading"))
+        trade_ids = config.parser.get("steamtrades", "trade_ids")
+        wait_min = config.parser.getint("steamtrades", "wait_min")
+        wait_max = config.parser.getint("steamtrades", "wait_max")
+
+        if not trade_ids:
+            self.main_window.set_status("steamtrades", error=_("No trade ID found"), info=_("Waiting Changes"))
+            await asyncio.sleep(5)
+            return
+
+        self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
+        trades = [trade.strip() for trade in trade_ids.split(',')]
+        steamtrades = core.steamtrades.main(trades, (wait_min, wait_max))
+
+        async for module_data in steamtrades:
+            self.main_window.set_status("steamtrades", module_data)
+
+            if module_data.action == "login":
+                await self.do_login(auto=True)
+                continue
+
+    @while_window_realized
+    async def run_steamgifts(self, play_event) -> None:
+        await play_event.wait()
+
+        self.main_window.set_status("steamgifts", status=_("Loading"))
+        wait_min = config.parser.getint("steamgifts", "wait_min")
+        wait_max = config.parser.getint("steamgifts", "wait_max")
+        type_ = config.parser.get("steamgifts", "giveaway_type")
+        pinned = config.parser.get("steamgifts", "developer_giveaways")
+        sort = config.parser.get("steamgifts", "sort")
+        reverse = config.parser.getboolean("steamgifts", "reverse_sorting")
+        self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
+        steamgifts = core.steamgifts.main(type_, pinned, sort, reverse, (wait_min, wait_max))
+
+        async for module_data in steamgifts:
+            self.main_window.set_status("steamgifts", module_data)
+
+            if module_data.action == "login":
+                await self.do_login(auto=True)
+                continue
 
     def on_settings_activate(self, *args: Any) -> None:
         settings_dialog = settings.SettingsDialog(self.main_window, self)

@@ -84,6 +84,7 @@ async def main(steamid: int, reverse: bool, wait_time: Tuple[int, int]) -> Gener
                     info=_("Waiting drops for {} minutes.").format(round((wait_offset - past_time) / 60)),
                     status=_("Running {}").format(badge.game_name),
                     level=(past_time, wait_offset),
+                    raw_data=executor,
                 )
 
                 await asyncio.sleep(1)
