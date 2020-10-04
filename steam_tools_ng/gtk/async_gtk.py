@@ -17,8 +17,10 @@
 #
 
 import asyncio
-import sys
+
 from gi.repository import Gtk
+
+from .. import core
 
 
 async def async_iterator(application: Gtk.Application, loop: asyncio.AbstractEventLoop) -> None:
@@ -47,12 +49,4 @@ def run(application: Gtk.Application) -> None:
     except KeyboardInterrupt:
         pass
     finally:
-        try:
-            asyncio.runners._cancel_all_tasks(loop)
-            loop.run_until_complete(loop.shutdown_asyncgens())
-
-            if sys.version_info.minor > 8:
-                loop.run_until_complete(loop.shutdown_default_executor())
-        finally:
-            asyncio.set_event_loop(None)
-            loop.close()
+        core.utils.asyncio_shutdown(loop)

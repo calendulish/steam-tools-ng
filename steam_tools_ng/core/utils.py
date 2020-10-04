@@ -16,8 +16,9 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
+import sys
 from dataclasses import dataclass
-from typing import Tuple, Any, Callable
+from typing import Tuple, Any
 
 
 @dataclass
@@ -29,3 +30,15 @@ class ModuleData:
     level: Tuple[int, int] = (0, 0)
     action: str = ''
     raw_data: Any = None
+
+
+def asyncio_shutdown(loop: asyncio.BaseEventLoop = asyncio.get_event_loop()) -> None:
+    try:
+        asyncio.runners._cancel_all_tasks(loop)
+        loop.run_until_complete(loop.shutdown_asyncgens())
+
+        if sys.version_info.minor > 8:
+            loop.run_until_complete(loop.shutdown_default_executor())
+    finally:
+        asyncio.set_event_loop(None)
+        loop.close()
