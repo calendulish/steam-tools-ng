@@ -18,16 +18,14 @@
 import codecs
 import getpass
 import logging
-import os
-import ssl
 import sys
 import tempfile
-from typing import Optional, Union, List
+from typing import Optional, Union, List, Tuple
 
 import aiohttp
-from stlib import webapi, universe
+from stlib import webapi, universe, login
 
-from .. import i18n, config
+from .. import i18n, config, core
 
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
@@ -35,9 +33,9 @@ _ = i18n.get_translation
 
 async def add_authenticator(
         webapi_session: webapi.SteamWebAPI,
-        login_data: webapi.LoginData,
+        login_data: login.LoginData,
         time_offset: int,
-) -> Optional[webapi.LoginData]:
+) -> Optional[login.LoginData]:
     if not login_data.has_phone:
         # FIXME: Impossible to add an authenticator without a phone
         raise NotImplementedError
@@ -299,12 +297,41 @@ def safe_input(
             log.error(_('Please, try again.'))
 
 
-async def http_session(raise_for_status: bool = True) -> None:
-    ssl_context = ssl.SSLContext()
+def set_console(
+        module_data: Optional[core.utils.ModuleData] = None,
+        *,
+        display: Optional[str] = None,
+        status: Optional[str] = None,
+        info: Optional[str] = None,
+        error: Optional[str] = None,
+        level: Optional[Tuple[int, int]] = None,
+) -> None:
+    if not module_data:
+        module_data = core.utils.ModuleData(display, status, info, error, level)
 
-    if hasattr(sys, 'frozen'):
-        _executable_path = os.path.dirname(sys.executable)
-        ssl_context.load_verify_locations(cafile=os.path.join(_executable_path, 'etc', 'cacert.pem'))
+    if module_data.error:
+        log.error(module_data.error)
+        return
 
-    tcp_connector = aiohttp.TCPConnector(ssl=ssl_context)
-    return aiohttp.ClientSession(raise_for_status=raise_for_stattus, connector=tcp_connector)
+    if module_data.status:
+        print(module_data.status, end=' ')
+
+    if module_data.display:
+        print(module_data.display, end=' ')
+
+    if module_data.level:
+        progress = module_data.level[0] + 1
+        total = module_data.level[1]
+        bar_size = 20
+
+        if total > 0:
+            total = int(progress * bar_size / total)
+        else:
+            total = bar_size
+
+        print("┌{:{}}┐".format('█' * total, bar_size), end=' ')
+
+    if module_data.info:
+        print(module_data.info, sep=' ', end=' ')
+
+    print('', end='\r')

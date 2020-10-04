@@ -17,21 +17,18 @@
 #
 
 import argparse
-import asyncio
 import configparser
 import contextlib
-import importlib
 import logging
 import os
 import sys
 import textwrap
 from multiprocessing import freeze_support
-from typing import Any
 
-from steam_tools_ng.gtk import async_gtk
 from stlib import plugins
 
 from steam_tools_ng import config, i18n, version
+from steam_tools_ng.gtk import async_gtk
 
 _ = i18n.get_translation
 log = logging.getLogger(__name__)
@@ -44,7 +41,7 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=textwrap.dedent('''
                 Available modules for console mode:
-                    - authenticator
+                    - steamguard
                     - steamtrades
                     - steamgifts
                     - cardfarming
@@ -52,7 +49,7 @@ if __name__ == "__main__":
 
     command_parser.add_argument(
         '-c', '--cli',
-        choices=['authenticator', 'steamtrades', 'steamgifts', 'cardfarming'],
+        choices=['steamguard', 'steamtrades', 'steamgifts', 'cardfarming'],
         metavar='module [options]',
         action='store',
         nargs=1,
@@ -140,20 +137,12 @@ if __name__ == "__main__":
     if console_params.module:
         module_name = console_params.module[0]
         module_options = console_params.options
-        module = importlib.import_module(f'.{module_name}', f'{module_folder}.console')
 
+        from steam_tools_ng.console import cli
 
-        def console_safe_exit(future: 'asyncio.Future[Any]') -> None:
-            if not future.cancelled() and future.exception():
-                log.critical(repr(future.exception()))
-
-            config.event_loop.stop()
-
-
-        task = asyncio.ensure_future(module.run(plugin_manager, *module_options))  # type: ignore
-        task.add_done_callback(console_safe_exit)
+        app = cli.SteamToolsNG(plugin_manager, module_name, module_options)
+        app.run()
     else:
-
         if os.name == 'nt' and hasattr(sys, 'frozen'):
             import ctypes
 
