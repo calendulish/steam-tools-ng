@@ -20,7 +20,7 @@ import logging
 
 import aiohttp
 from gi.repository import Gtk, Gdk
-from stlib import universe, webapi
+from stlib import universe, webapi, login
 
 from . import utils
 from .. import i18n, config
@@ -104,7 +104,7 @@ class NewAuthenticatorDialog(Gtk.Dialog):
 
         deviceid = universe.generate_device_id(token=self.oauth_token)
         oauth = {'steamid': self.steamid, 'oauth_token': self.oauth_token}
-        login_data = webapi.LoginData(auth={}, oauth=oauth)
+        login_data = login.LoginData(auth={}, oauth=oauth)
 
         if not self._login_data or not self.sms_code:
             try:
