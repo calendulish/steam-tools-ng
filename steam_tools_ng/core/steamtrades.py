@@ -18,24 +18,37 @@
 import asyncio
 import logging
 import random
-from typing import Generator, List, Tuple
+from typing import Generator
 
 import aiohttp
 from stlib import plugins, login
 
 from . import utils
-from .. import i18n
+from .. import i18n, config
 
 _ = i18n.get_translation
 log = logging.getLogger(__name__)
 
 
-async def main(trades: List[str], wait_time: Tuple[int, int]) -> Generator[utils.ModuleData, None, None]:
+async def main() -> Generator[utils.ModuleData, None, None]:
+    yield utils.ModuleData(status=_("Loading"))
+
     if plugins.has_plugin("steamtrades"):
         steamtrades = plugins.get_plugin("steamtrades")
     else:
         yield utils.ModuleData(error=_("Unable to find Steamtrades plugin"))
         return
+
+    trade_ids = config.parser.get("steamtrades", "trade_ids")
+    wait_min = config.parser.getint("steamtrades", "wait_min")
+    wait_max = config.parser.getint("steamtrades", "wait_max")
+
+    if not trade_ids:
+        yield utils.ModuleData(error=_("No trade ID found"), info=_("Waiting Changes"))
+        await asyncio.sleep(5)
+        return
+
+    trades = [trade.strip() for trade in trade_ids.split(',')]
 
     try:
         await steamtrades.do_login()
@@ -118,7 +131,7 @@ async def main(trades: List[str], wait_time: Tuple[int, int]) -> Generator[utils
         await asyncio.sleep(10)
         return
 
-    wait_offset = random.randint(*wait_time)
+    wait_offset = random.randint(wait_min, wait_max)
     log.debug(_("Setting wait_offset from steamtrades to %s"), wait_offset)
     for past_time in range(wait_offset):
         yield utils.ModuleData(

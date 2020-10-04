@@ -23,14 +23,17 @@ from typing import Generator
 from stlib import universe
 
 from . import utils
-from .. import i18n
+from .. import i18n, config
 
 _ = i18n.get_translation
 
 
-async def main(shared_secret: str, time_offset: int) -> Generator[utils.ModuleData, None, None]:
+async def main(time_offset: int) -> Generator[utils.ModuleData, None, None]:
+    shared_secret = config.parser.get("login", "shared_secret")
+
     try:
         if not shared_secret:
+            config.new("plugins", "steamguard", "false")
             raise ValueError
 
         server_time = int(time.time()) - time_offset

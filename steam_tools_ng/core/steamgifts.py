@@ -18,30 +18,33 @@
 import asyncio
 import logging
 import random
-from typing import Generator, Tuple
+from typing import Generator
 
 import aiohttp
 from stlib import plugins, login
 
 from . import utils
-from .. import i18n
+from .. import i18n, config
 
 _ = i18n.get_translation
 log = logging.getLogger(__name__)
 
 
-async def main(
-        type: str,
-        pinned: str,
-        sort: str,
-        reverse: bool,
-        wait_time: Tuple[int, int],
-) -> Generator[utils.ModuleData, None, None]:
+async def main() -> Generator[utils.ModuleData, None, None]:
+    yield utils.ModuleData(status=_("Loading"))
+
     if plugins.has_plugin("steamgifts"):
         steamgifts = plugins.get_plugin("steamgifts")
     else:
         yield utils.ModuleData(error=_("Unable to find Steamgifts plugin."))
         return
+
+    wait_min = config.parser.getint("steamgifts", "wait_min")
+    wait_max = config.parser.getint("steamgifts", "wait_max")
+    type_ = config.parser.get("steamgifts", "giveaway_type")
+    pinned = config.parser.get("steamgifts", "developer_giveaways")
+    sort = config.parser.get("steamgifts", "sort")
+    reverse = config.parser.getboolean("steamgifts", "reverse_sorting")
 
     try:
         await steamgifts.do_login()
@@ -86,7 +89,7 @@ async def main(
     else:
         yield utils.ModuleData(status=_("No giveaways to join."))
         joined = True
-        wait_time = tuple(time // 2 for time in wait_time)
+        wait_time = tuple(time // 2 for time in (wait_min, wait_max))
 
     for index, giveaway in enumerate(giveaways):
         yield utils.ModuleData(level=(index, len(giveaway)))
@@ -141,7 +144,7 @@ async def main(
         await asyncio.sleep(10)
         return
 
-    wait_offset = random.randint(*wait_time)
+    wait_offset = random.randint(wait_min, wait_max)
     log.debug(_("Setting wait_offset from steamgifts to %s."), wait_offset)
     for past_time in range(wait_offset):
         yield utils.ModuleData(

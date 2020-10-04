@@ -23,12 +23,16 @@ import aiohttp
 from stlib import webapi, client
 
 from . import utils
-from .. import i18n
+from .. import i18n, config
 
 _ = i18n.get_translation
 
 
-async def main(steamid: int, reverse: bool, wait_time: Tuple[int, int]) -> Generator[utils.ModuleData, None, None]:
+async def main(steamid: int) -> Generator[utils.ModuleData, None, None]:
+    reverse_sorting = config.parser.getboolean("cardfarming", "reverse_sorting")
+    wait_min = config.parser.getint("cardfarming", "wait_min")
+    wait_max = config.parser.getint("cardfarming", "wait_max")
+
     if not steamid:
         raise NotImplementedError("Card farming with no steamid")
 
@@ -38,7 +42,7 @@ async def main(steamid: int, reverse: bool, wait_time: Tuple[int, int]) -> Gener
         badges = sorted(
             await session.get_badges(steamid),
             key=lambda badge_: badge_.cards,
-            reverse=reverse
+            reverse=reverse_sorting
         )
     except aiohttp.ClientError:
         yield utils.ModuleData(error=_("Check your connection. (server down?)"))
@@ -60,7 +64,7 @@ async def main(steamid: int, reverse: bool, wait_time: Tuple[int, int]) -> Gener
         assert isinstance(game_info, webapi.Game), "game_info is not a Game object"
 
         if game_info.playtime >= 2 * 60:
-            wait_offset = random.randint(*wait_time)
+            wait_offset = random.randint(wait_min, wait_max)
         else:
             wait_offset = (2 * 60 - game_info.playtime) * 60
 

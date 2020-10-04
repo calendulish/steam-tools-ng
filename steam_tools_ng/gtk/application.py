@@ -26,7 +26,7 @@ from typing import Any, Optional, Dict, Callable, List
 
 import aiohttp
 from gi.repository import Gio, Gtk
-from stlib import universe, plugins, webapi
+from stlib import plugins, webapi
 
 from . import about, settings, login, window, utils
 from .. import config, i18n, core
@@ -240,25 +240,15 @@ class SteamToolsNG(Gtk.Application):
     @while_window_realized
     async def run_steamguard(self, play_event) -> None:
         await play_event.wait()
-
-        shared_secret = config.parser.get("login", "shared_secret")
-
-        if not shared_secret:
-            config.new("plugins", "steamguard", "false")
-
-        steamguard = core.steamguard.main(shared_secret, self.time_offset)
+        steamguard = core.steamguard.main(self.time_offset)
 
         async for module_data in steamguard:
             self.main_window.set_status("steamguard", module_data)
 
     @while_window_realized
     async def run_cardfarming(self, play_event) -> None:
-        reverse_sorting = config.parser.getboolean("cardfarming", "reverse_sorting")
-        wait_min = config.parser.getint("cardfarming", "wait_min")
-        wait_max = config.parser.getint("cardfarming", "wait_max")
-
         self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
-        cardfarming = core.cardfarming.main(self.steamid, reverse_sorting, (wait_min, wait_max))
+        cardfarming = core.cardfarming.main(self.steamid)
 
         async for module_data in cardfarming:
             executor = module_data.raw_data
@@ -271,20 +261,8 @@ class SteamToolsNG(Gtk.Application):
 
     @while_window_realized
     async def run_confirmations(self) -> None:
-        identity_secret = config.parser.get("login", "identity_secret")
-
-        if not identity_secret:
-            config.new("plugins", "confirmations", "false")
-
-        deviceid = config.parser.get("login", "deviceid")
-
-        if not deviceid:
-            log.warning(_("Unable to find deviceid. Generating from identity."))
-            deviceid = universe.generate_device_id(identity_secret)
-            config.new("login", "deviceid", deviceid)
-
         self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
-        confirmations = core.confirmations.main(self.steamid, identity_secret, deviceid, self.time_offset)
+        confirmations = core.confirmations.main(self.steamid, self.time_offset)
 
         async for module_data in confirmations:
             if module_data.error:
@@ -329,20 +307,8 @@ class SteamToolsNG(Gtk.Application):
     @while_window_realized
     async def run_steamtrades(self, play_event) -> None:
         await play_event.wait()
-
-        self.main_window.set_status("steamtrades", status=_("Loading"))
-        trade_ids = config.parser.get("steamtrades", "trade_ids")
-        wait_min = config.parser.getint("steamtrades", "wait_min")
-        wait_max = config.parser.getint("steamtrades", "wait_max")
-
-        if not trade_ids:
-            self.main_window.set_status("steamtrades", error=_("No trade ID found"), info=_("Waiting Changes"))
-            await asyncio.sleep(5)
-            return
-
         self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
-        trades = [trade.strip() for trade in trade_ids.split(',')]
-        steamtrades = core.steamtrades.main(trades, (wait_min, wait_max))
+        steamtrades = core.steamtrades.main()
 
         async for module_data in steamtrades:
             self.main_window.set_status("steamtrades", module_data)
@@ -354,16 +320,8 @@ class SteamToolsNG(Gtk.Application):
     @while_window_realized
     async def run_steamgifts(self, play_event) -> None:
         await play_event.wait()
-
-        self.main_window.set_status("steamgifts", status=_("Loading"))
-        wait_min = config.parser.getint("steamgifts", "wait_min")
-        wait_max = config.parser.getint("steamgifts", "wait_max")
-        type_ = config.parser.get("steamgifts", "giveaway_type")
-        pinned = config.parser.get("steamgifts", "developer_giveaways")
-        sort = config.parser.get("steamgifts", "sort")
-        reverse = config.parser.getboolean("steamgifts", "reverse_sorting")
         self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
-        steamgifts = core.steamgifts.main(type_, pinned, sort, reverse, (wait_min, wait_max))
+        steamgifts = core.steamgifts.main()
 
         async for module_data in steamgifts:
             self.main_window.set_status("steamgifts", module_data)

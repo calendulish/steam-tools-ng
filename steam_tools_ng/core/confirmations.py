@@ -20,25 +20,35 @@ import logging
 from typing import Generator
 
 import aiohttp
-from stlib import webapi, login
+from stlib import webapi, login, universe
 
 from . import utils
-from .. import i18n
+from .. import i18n, config
 
 _ = i18n.get_translation
 log = logging.getLogger(__name__)
 
 
-async def main(steamid, identity: str, deviceid: str, time_offset: int) -> Generator[utils.ModuleData, None, None]:
-    if not identity:
+async def main(steamid: int, time_offset: int) -> Generator[utils.ModuleData, None, None]:
+    identity_secret = config.parser.get("login", "identity_secret")
+
+    if not identity_secret:
+        config.new("plugins", "confirmations", "false")
         yield utils.ModuleData(error=_("The current identity secret is invalid."))
         await asyncio.sleep(10)
         return
 
+    deviceid = config.parser.get("login", "deviceid")
+
+    if not deviceid:
+        log.warning(_("Unable to find deviceid. Generating from identity."))
+        deviceid = universe.generate_device_id(identity_secret)
+        config.new("login", "deviceid", deviceid)
+
     session = webapi.get_session(0)
 
     try:
-        confirmations = await session.get_confirmations(identity, steamid, deviceid, time_offset=time_offset)
+        confirmations = await session.get_confirmations(identity_secret, steamid, deviceid, time_offset=time_offset)
     except AttributeError as exception:
         yield utils.ModuleData(error=_("Error when fetch confirmations"))
     except ProcessLookupError:
