@@ -46,11 +46,11 @@ async def main(shared_secret: str, time_offset: int) -> Generator[utils.ModuleDa
 
         seconds = 30 - (server_time % 30)
 
-        for past_time in range(seconds * 9):
+        for past_time in range(seconds * 8):
             yield utils.ModuleData(
                 display=auth_code,
                 status=_("Running"),
-                info=_("New code in {} seconds").format(seconds * 9 - past_time),
+                info=_("New code in {} seconds").format(seconds * 8 - past_time),
                 level=(past_time, seconds * 8),
             )
 
