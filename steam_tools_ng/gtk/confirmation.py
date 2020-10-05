@@ -199,6 +199,7 @@ class FinalizeDialog(Gtk.Dialog):
     async def batch_finalize(self) -> List[Tuple[Gtk.TreeIter, Dict[str, Any]]]:
         results = []
         batch_status = utils.Status(20, "")
+        batch_status.set_pausable(False)
         self.content_area.add(batch_status)
         batch_status.get_label_widget().hide()
         batch_status.set_info(_("Waiting Steam Server response"))

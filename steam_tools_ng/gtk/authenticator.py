@@ -174,7 +174,7 @@ class NewAuthenticatorDialog(Gtk.Dialog):
             self.add_authenticator_button.hide()
 
             revocation_status = utils.Status(6, _("Recovery Code"))
-            revocation_status.set_display(revocation_code)
+            revocation_status.set_pausable(False)
             revocation_status.set_display(revocation_code)
             revocation_status.set_status('')
             self.content_area.add(revocation_status)

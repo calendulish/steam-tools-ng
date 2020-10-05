@@ -212,7 +212,7 @@ class Status(Gtk.Frame):
         self._play_pause_button.connect("toggled", self.__on_play_pause_button_toggled)
         self._grid.attach(self._play_pause_button, 1, 0, 1, 1)
 
-        self.play_event = asyncio.Event()
+        self._play_event = asyncio.Event()
         self._play_pause_button.clicked()
 
         self._status = Gtk.Label()
@@ -226,6 +226,17 @@ class Status(Gtk.Frame):
         self._grid.attach(self._level_bar, 0, 3, 2, 1)
 
         self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+
+    @property
+    def play_event(self) -> asyncio.Event:
+        return self._play_event
+
+    @play_event.setter
+    def play_event(self, value: bool) -> None:
+        if value is True:
+            self._play_event.set()
+        else:
+            self._play_event.clear()
 
     def __disable_tooltip(self, event_box: Gtk.EventBox, event_status: Gtk.Label) -> None:
         event_box.set_has_tooltip(False)
@@ -263,6 +274,12 @@ class Status(Gtk.Frame):
         else:
             button.set_label("⏵")
             self.play_event.clear()
+
+    def set_pausable(self, value: bool = True) -> None:
+        if value is True:
+            self._play_pause_button.show()
+        else:
+            self._play_pause_button.hide()
 
     @when_running
     def set_display(self, text: str) -> None:
