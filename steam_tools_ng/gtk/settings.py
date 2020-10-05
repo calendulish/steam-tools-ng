@@ -317,7 +317,7 @@ class SettingsDialog(Gtk.Dialog):
         else:
             self.parent_window.set_deletable(False)
 
-        config.new('gtk', 'show_close_button', current_value)
+        config.new('general', 'show_close_button', current_value)
 
     def on_theme_changed(self, combo: Gtk.ComboBoxText) -> None:
         theme = list(config.gtk_themes)[combo.get_active()]
@@ -327,7 +327,7 @@ class SettingsDialog(Gtk.Dialog):
         else:
             self.gtk_settings_class.props.gtk_application_prefer_dark_theme = False
 
-        config.new('gtk', 'theme', theme)
+        config.new('general', 'theme', theme)
 
     def on_login_button_clicked(self, button: Gtk.Button) -> None:
         login_dialog = login.LoginDialog(self.parent_window, self.application)
@@ -353,7 +353,7 @@ class SettingsDialog(Gtk.Dialog):
 
     def update_language(self, combo: Gtk.ComboBoxText) -> None:
         language = list(config.translations)[combo.get_active()]
-        config.new('locale', 'language', language)
+        config.new('general', 'language', language)
         Gtk.Container.foreach(self, refresh_widget_text)
         Gtk.Container.foreach(self.parent_window, refresh_widget_text)
 
