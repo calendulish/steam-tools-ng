@@ -26,7 +26,7 @@ from typing import Any, Optional, Dict, Callable, List
 
 import aiohttp
 from gi.repository import Gio, Gtk
-from stlib import plugins, webapi
+from stlib import plugins, webapi, client
 
 from . import about, settings, login, window, utils
 from .. import config, i18n, core
@@ -251,13 +251,16 @@ class SteamToolsNG(Gtk.Application):
         cardfarming = core.cardfarming.main(self.steamid)
 
         async for module_data in cardfarming:
-            executor = module_data.raw_data
             self.main_window.set_status("cardfarming", module_data)
 
-            if not play_event.is_set():
-                executor.shutdown()
-                await play_event.wait()
-                executor.init()
+            if module_data.action == "check":
+                executor = module_data.raw_data
+                assert isinstance(executor, client.SteamApiExecutor), "No SteamApiExecutor"
+
+                if not play_event.is_set():
+                    await executor.shutdown()
+                    await play_event.wait()
+                    await executor.init()
 
     @while_window_realized
     async def run_confirmations(self) -> None:

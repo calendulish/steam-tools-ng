@@ -89,6 +89,7 @@ async def main(steamid: int) -> Generator[utils.ModuleData, None, None]:
                     status=_("Running {}").format(badge.game_name),
                     level=(past_time, wait_offset),
                     raw_data=executor,
+                    action="check",
                 )
 
                 await asyncio.sleep(1)
