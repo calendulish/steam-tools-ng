@@ -168,7 +168,12 @@ def validate_config(section: str, option: str, defaults: OrderedDict) -> None:
     value = parser.get(section, option)
 
     if value and not value in defaults.keys():
-        raise configparser.Error(_("Please, fix your config file. Accepted values for {} are:\n{}").format(
+        if option == 'language':
+            log.error(_("Unsupported language requested. Fallbacking to English."))
+            new('general', 'language', 'en')
+            return
+
+        raise configparser.Error(_("Please, fix your config file. Available values for {}:\n{}").format(
             option,
             ', '.join(defaults.keys()),
         ))
