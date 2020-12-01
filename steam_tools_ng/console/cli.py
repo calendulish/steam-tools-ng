@@ -26,7 +26,7 @@ from typing import Optional, Any, Callable
 import aiohttp
 from stlib import plugins, webapi
 
-from . import utils
+from . import utils, login
 from .. import i18n, config, core
 
 log = logging.getLogger(__name__)
@@ -85,6 +85,7 @@ class SteamToolsNG:
         except KeyboardInterrupt:
             pass
         finally:
+            loop.run_until_complete(self.session.close())
             core.utils.asyncio_shutdown(loop)
 
     def async_activate_callback(self, task: asyncio.Task) -> None:
@@ -103,14 +104,12 @@ class SteamToolsNG:
             log.critical(f"Fatal Error: {str(exception)}")
             loop = asyncio.get_running_loop()
             loop.stop()
-            self.quit()
+            self.on_quit()
 
     async def do_login(self, *, block: bool = True, auto: bool = False) -> None:
-        # utils.check_login(...)
-
-        if auto:
-            encrypted_password = config.parser.get("login", "password")
-            # set password and login
+        login_session = login.Login(self)
+        future = login_session.do_login(auto)
+        await asyncio.gather(future)
 
     async def async_activate(self) -> None:
         ssl_context = ssl.SSLContext()
