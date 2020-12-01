@@ -174,7 +174,7 @@ def freeze_options() -> Mapping[str, Any]:
         Executable(
             "steam_tools_ng.py",
             base=None,
-            icon=os.path.join('icons', 'steam_tools_ng.ico'),
+            icon=os.path.join('icons', 'stng.ico'),
             shortcutName='Steam Tools NG',
             copyright='Lara Maia (C) 2015 ~ 2020',
         )
@@ -227,8 +227,10 @@ def freeze_options() -> Mapping[str, Any]:
 
 def data_files() -> Mapping[str, List[Tuple[str, List[str]]]]:
     icons = [
-        os.path.join('icons', 'steam_tools_ng.png'),
-        os.path.join('icons', 'steam_tools_ng.ico'),
+        os.path.join('icons', 'stng.png'),
+        os.path.join('icons', 'stng.ico'),
+        os.path.join('icons', 'stng_nc.ico'),
+        os.path.join('icons', 'stng_console.ico'),
     ]
 
     return {'data_files': [(icon_path, icons)]}
