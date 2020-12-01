@@ -79,8 +79,8 @@ async def main(steamid: int) -> Generator[utils.ModuleData, None, None]:
                 break
             except ProcessLookupError:
                 yield utils.ModuleData(error=_("Steam Client is not running."))
-                await asyncio.sleep(10)
-                break
+                await asyncio.sleep(15)
+                continue
 
             for past_time in range(wait_offset):
                 yield utils.ModuleData(
