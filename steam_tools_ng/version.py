@@ -20,9 +20,9 @@ from typing import NamedTuple
 
 
 class _Version(NamedTuple):
-    major: int = 0
-    minor: int = 9
-    revision: int = 4
+    major: int = 1
+    minor: int = 0
+    revision: int = 0
     extra: str = ''
 
 

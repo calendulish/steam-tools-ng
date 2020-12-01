@@ -251,7 +251,7 @@ setup(
     ],
     package_dir={'steam_tools_ng': 'steam_tools_ng'},
     scripts=['steam_tools_ng.py'],
-    install_requires=['stlib>=0.6.2', 'aiohttp'],
+    install_requires=['stlib>=0.13', 'aiohttp'],
     cmdclass={
         'build_py': BuildTranslations,
         'install': Install,
