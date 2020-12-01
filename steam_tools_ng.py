@@ -34,7 +34,16 @@ log = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     freeze_support()
-    config.init()
+    try:
+        config.init()
+    except configparser.Error as exception:
+        if len(sys.argv) > 1:
+            raise exception from None
+        else:
+            from steam_tools_ng.gtk import utils
+
+            utils.fatal_error_dialog(str(exception), [])
+            sys.exit(1)
 
     command_parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -106,9 +115,9 @@ if __name__ == "__main__":
         if console_params.module:
             raise exception from None
         else:
-            from gtk import utils
+            from steam_tools_ng.gtk import utils
 
-            utils.fatal_error_dialog(str(exception))
+            utils.fatal_error_dialog(str(exception), [])
             sys.exit(1)
 
     if console_params.reset:
