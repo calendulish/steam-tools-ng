@@ -28,7 +28,6 @@ from multiprocessing import freeze_support
 from stlib import plugins
 
 from steam_tools_ng import config, i18n, version
-from steam_tools_ng.gtk import async_gtk
 
 _ = i18n.get_translation
 log = logging.getLogger(__name__)
@@ -150,6 +149,7 @@ if __name__ == "__main__":
             ctypes.windll.user32.ShowWindow(console, 0)
             ctypes.windll.kernel32.CloseHandle(console)
 
+        from steam_tools_ng.gtk import async_gtk
         from steam_tools_ng.gtk import application
 
         if sys.platform.startswith("linux") and not os.getenv('DISPLAY'):
