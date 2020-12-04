@@ -17,7 +17,7 @@
 #
 import asyncio
 import random
-from typing import Tuple, Generator
+from typing import Generator
 
 import aiohttp
 from stlib import webapi, client
@@ -28,7 +28,7 @@ from .. import i18n, config
 _ = i18n.get_translation
 
 
-async def main(steamid: int) -> Generator[utils.ModuleData, None, None]:
+async def main(steamid: int, custom_game_id: int = 0) -> Generator[utils.ModuleData, None, None]:
     reverse_sorting = config.parser.getboolean("cardfarming", "reverse_sorting")
     wait_min = config.parser.getint("cardfarming", "wait_min")
     wait_max = config.parser.getint("cardfarming", "wait_max")
@@ -49,12 +49,16 @@ async def main(steamid: int) -> Generator[utils.ModuleData, None, None]:
         await asyncio.sleep(10)
         return
 
-    if not badges:
+    if not badges or (custom_game_id and custom_game_id not in [badge.game_id for badge in badges]):
         yield utils.ModuleData(status=_("Stopped"), info=_("No more cards to drop."))
         await asyncio.sleep(random.randint(500, 1200))
         return
 
     for badge in badges:
+        if custom_game_id and badge.game_id != custom_game_id:
+            yield utils.ModuleData(info=_("Skipping {}").format(badge.game_id))
+            continue
+
         yield utils.ModuleData(
             display=str(badge.game_id),
             status=_("Loading {}").format(badge.game_name),

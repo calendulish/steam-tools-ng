@@ -48,11 +48,11 @@ if __name__ == "__main__":
     command_parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=textwrap.dedent('''
-                Available modules for console mode:
-                    - steamguard
-                    - steamtrades
-                    - steamgifts
-                    - cardfarming
+                Available modules | available options
+                 steamguard       | [oneshot]
+                 steamtrades      | [oneshot]
+                 steamgifts       | [oneshot]
+                 cardfarming      | [oneshot],[gameid]
                        '''))
 
     command_parser.add_argument(

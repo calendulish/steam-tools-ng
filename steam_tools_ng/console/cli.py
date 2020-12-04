@@ -40,6 +40,9 @@ def while_running(function: Callable[..., Any]) -> Callable[..., Any]:
         while True:
             await function(self, *args, **kwargs)
 
+            if self.stop:
+                self.on_quit()
+
     return wrapper
 
 
@@ -47,7 +50,19 @@ def while_running(function: Callable[..., Any]) -> Callable[..., Any]:
 class SteamToolsNG:
     def __init__(self, plugin_manager: plugins.Manager, module_name: str, module_options: str) -> None:
         self.module_name = module_name
-        self.module_options = module_options
+        self.stop = False
+        self.custom_gameid = 0
+
+        try:
+            for option in module_options:
+                if option == 'oneshot':
+                    self.stop = True
+                if module_name == 'cardfarming':
+                    self.stop = True # Must stop after first game
+                    self.custom_gameid = int(option)
+        except ValueError:
+            logging.critical("Wrong command line params!")
+            sys.exit(1)
 
         self._session = None
         self._webapi_session = None
@@ -157,7 +172,7 @@ class SteamToolsNG:
     @while_running
     async def run_cardfarming(self) -> None:
         self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
-        cardfarming = core.cardfarming.main(self.steamid)
+        cardfarming = core.cardfarming.main(self.steamid, self.custom_gameid)
 
         async for module_data in cardfarming:
             utils.set_console(module_data)
