@@ -16,6 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
+import contextlib
 import functools
 import logging
 import os
@@ -74,19 +75,15 @@ class SteamToolsNG:
     def steamid(self) -> Optional[int]:
         return config.parser.getint("login", "steamid")
 
+    # FIXME: https://github.com/python/asyncio/pull/465
     def run(self) -> None:
         loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        task = loop.create_task(self.async_activate())
+        task.add_done_callback(self.async_activate_callback)
 
-        try:
-            asyncio.set_event_loop(loop)
-            task = loop.create_task(self.async_activate())
-            task.add_done_callback(self.async_activate_callback)
+        with contextlib.suppress(KeyboardInterrupt):
             loop.run_forever()
-        except KeyboardInterrupt:
-            pass
-        finally:
-            loop.run_until_complete(self.session.close())
-            core.utils.asyncio_shutdown(loop)
 
     def async_activate_callback(self, task: asyncio.Task) -> None:
         if task.cancelled():

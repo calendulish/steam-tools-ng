@@ -18,6 +18,7 @@
 import codecs
 import getpass
 import logging
+import os
 import sys
 import tempfile
 from typing import Optional, Union, List, Tuple
@@ -306,6 +307,9 @@ def set_console(
         error: Optional[str] = None,
         level: Optional[Tuple[int, int]] = None,
 ) -> None:
+    for std in (sys.stdout, sys.stderr):
+        print(' ' * (os.get_terminal_size().columns - 1), end='\r', file=std)
+
     if not module_data:
         module_data = core.utils.ModuleData(display, status, info, error, level)
 

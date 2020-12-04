@@ -17,10 +17,9 @@
 #
 
 import asyncio
+import contextlib
 
 from gi.repository import Gtk
-
-from .. import core
 
 
 async def async_iterator(application: Gtk.Application, loop: asyncio.AbstractEventLoop) -> None:
@@ -39,14 +38,10 @@ async def async_iterator(application: Gtk.Application, loop: asyncio.AbstractEve
 # FIXME: https://github.com/python/asyncio/pull/465
 def run(application: Gtk.Application) -> None:
     loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.create_task(async_iterator(application, loop))
+    application.register()
+    application.activate()
 
-    try:
-        asyncio.set_event_loop(loop)
-        loop.create_task(async_iterator(application, loop))
-        application.register()
-        application.activate()
+    with contextlib.suppress(KeyboardInterrupt):
         loop.run_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        core.utils.asyncio_shutdown(loop)
