@@ -1,5 +1,6 @@
 ﻿#define STNG_VERSION "1.0"
 #define STNG_PATH "build\STNG-WIN64-" + STNG_VERSION + "-Py38"
+#include "environment.iss"
 
 [Setup]
 ArchitecturesInstallIn64BitMode=x64
@@ -24,6 +25,20 @@ SolidCompression=yes
 WizardStyle=modern
 WizardImageFile=icons\stng_left.bmp
 WizardSmallImageFile=icons\stng.bmp
+ChangesEnvironment=true
+
+[Code]
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+    if (CurStep = ssPostInstall) and IsTaskSelected('envPath')
+    then EnvAddPath(ExpandConstant('{app}'));
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+    if CurUninstallStep = usPostUninstall
+    then EnvRemovePath(ExpandConstant('{app}'));
+end;
 
 [Types]
 Name: "full"; Description: "Full installation"
@@ -37,6 +52,7 @@ Name: "plugins\steamgifts"; Description: "Steamgifts Plugin"; Types: full
 Name: "plugins\steamtrades"; Description: "Steamtrades Plugin"; Types: full
 
 [Tasks]
+Name: "envpath"; Description: "Add STNG to PATH"; GroupDescription: "Additional Settings"; Flags: unchecked
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
