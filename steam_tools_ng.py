@@ -53,11 +53,12 @@ if __name__ == "__main__":
                  steamtrades      | [oneshot]
                  steamgifts       | [oneshot]
                  cardfarming      | [oneshot],[gameid]
+                 fakerun          | <gameid>
                        '''))
 
     command_parser.add_argument(
         '-c', '--cli',
-        choices=['steamguard', 'steamtrades', 'steamgifts', 'cardfarming'],
+        choices=['steamguard', 'steamtrades', 'steamgifts', 'cardfarming', 'fakerun'],
         metavar='module [options]',
         action='store',
         nargs=1,

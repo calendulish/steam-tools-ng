@@ -22,6 +22,7 @@ __all__ = [
     'confirmations',
     'steamtrades',
     'steamgifts',
+    'fakerun',
 ]
 
 from . import *

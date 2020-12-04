@@ -54,11 +54,12 @@ class SteamToolsNG:
         self.custom_gameid = 0
 
         try:
+            if module_name == 'fakerun' and not module_options:
+                raise ValueError
+
             for option in module_options:
-                if option == 'oneshot':
-                    self.stop = True
-                if module_name == 'cardfarming':
-                    self.stop = True # Must stop after first game
+                self.stop = True
+                if option != 'oneshot':
                     self.custom_gameid = int(option)
         except ValueError:
             logging.critical("Wrong command line params!")
@@ -175,6 +176,14 @@ class SteamToolsNG:
         cardfarming = core.cardfarming.main(self.steamid, self.custom_gameid)
 
         async for module_data in cardfarming:
+            utils.set_console(module_data)
+
+    @while_running
+    async def run_fakerun(self) -> None:
+        self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
+        fakerun = core.fakerun.main(self.steamid, self.custom_gameid)
+
+        async for module_data in fakerun:
             utils.set_console(module_data)
 
     @while_running
