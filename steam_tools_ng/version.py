@@ -29,5 +29,5 @@ class _Version(NamedTuple):
 __version_info__ = _Version()
 
 __version__ = '.'.join(
-    [str(item) for item in __version_info__]
+    [str(item) for item in __version_info__ if item != '']
 )
