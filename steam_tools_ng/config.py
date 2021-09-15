@@ -109,6 +109,7 @@ default_config = {
     },
     'steam': {
         'api_url': 'https://api.steampowered.com',
+        'api_key': '',
     },
     'steamtrades': {
         'wait_min': 3700,
@@ -186,6 +187,12 @@ def init() -> None:
 
     if os.path.isfile(config_file):
         parser.read(config_file)
+
+    # fallback deprecated values
+    if (parser.get('steam', 'api_url') in [
+        'https://api.lara.monster', 'https://api.lara.click',
+    ]):
+        new('steam', 'api_url', default_config['steam']['api_url'])
 
     log_directory = parser.get("logger", "log_directory")
 

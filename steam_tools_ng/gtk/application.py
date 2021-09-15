@@ -60,6 +60,7 @@ class SteamToolsNG(Gtk.Application):
         self.api_login: Optional[webapi.Login] = None
         self._time_offset = 0
         self.api_url = config.parser.get("steam", "api_url")
+        self.api_key = config.parser.get("steam", "api_key")
 
         self.old_confirmations: List[webapi.Confirmation] = []
 
@@ -164,7 +165,14 @@ class SteamToolsNG(Gtk.Application):
 
         tcp_connector = aiohttp.TCPConnector(ssl=ssl_context)
         self._session = aiohttp.ClientSession(raise_for_status=True, connector=tcp_connector)
-        self._webapi_session = webapi.get_session(0, api_url=self.api_url, http_session=self._session)
+
+        self._webapi_session = webapi.get_session(
+            0,
+            api_url=self.api_url,
+            key=self.api_key,
+            http_session=self._session
+        )
+
         self._time_offset = await config.time_offset(self.webapi_session)
 
         self.main_window.set_warning(_("Logging on Steam. Please wait!"))
@@ -179,7 +187,7 @@ class SteamToolsNG(Gtk.Application):
         self.session.cookie_jar.update_cookies(config.login_cookies())  # type: ignore
 
         try:
-            if await self.webapi_session.is_logged_in(self.steamid):
+            if self.api_key and await self.webapi_session.is_logged_in(self.steamid):
                 log.info("Steam login Successful")
             else:
                 await self.do_login(auto=True)
