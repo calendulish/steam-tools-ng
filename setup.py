@@ -179,7 +179,7 @@ def freeze_options() -> Mapping[str, Any]:
 
     executables = [
         Executable(
-            "steam_tools_ng.py",
+            "steam-tools-ng.py",
             base=None,
             icon=os.path.join('icons', 'stng.ico'),
             shortcutName='Steam Tools NG',
@@ -244,7 +244,7 @@ def data_files() -> Mapping[str, List[Tuple[str, List[str]]]]:
 
 
 setup(
-    name='steam_tools_ng',
+    name='steam-tools-ng',
     version=version.__version__,
     description="Useful tools for Steam",
     author='Lara Maia',
@@ -258,7 +258,7 @@ setup(
         'steam_tools_ng.gtk',
     ],
     package_dir={'steam_tools_ng': 'steam_tools_ng'},
-    scripts=['steam_tools_ng.py'],
+    scripts=['steam-tools-ng.py'],
     install_requires=['stlib>=0.13', 'aiohttp'],
     cmdclass={
         'build_py': BuildTranslations,
