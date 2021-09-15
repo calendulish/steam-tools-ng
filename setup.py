@@ -18,6 +18,7 @@
 
 import os
 import sys
+import subprocess
 from distutils.command.install_data import install_data
 from distutils.sysconfig import get_python_lib
 from importlib.machinery import SourceFileLoader
@@ -61,13 +62,19 @@ class BuildTranslations(build_py):
     def run(self) -> None:
         build_py.run(self)
 
-        if os.getenv("SCRUTINIZER") or os.getenv("TRAVIS"):
-            print("bypassing BuildTranslations")
-            return
+        os.makedirs(po_build_path, exist_ok=True)
 
-        build_translations_path = os.path.join('i18n', 'build_translations.py')
-        build_translations = SourceFileLoader('build_translations', build_translations_path).load_module()
-        build_translations.build(os.path.join(po_build_path))
+        for root, directories, files in os.walk('i18n'):
+            for file in files:
+                if file.endswith(".po"):
+                    subprocess.run(
+                        [
+                            'msgfmt',
+                            os.path.join(root, file),
+                            '-o',
+                            os.path.join(po_build_path, os.path.splitext(file)[0]+".mo")
+                        ], check=True
+                    )
 
 
 class InstallTranslations(install_data):
