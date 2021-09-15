@@ -461,10 +461,11 @@ def copy_childrens(from_model: Gtk.TreeStore, to_model: Gtk.ListStore, iter_: Gt
                 to_model.append([value])
             else:
                 log.debug(
-                    _("Ignoring value from %s on column %s item %s because value is empty"),
-                    children_iter,
-                    column,
-                    index
+                    _("Ignoring value from {} on column {} item {} because value is empty").format(
+                        children_iter,
+                        column,
+                        index
+                    )
                 )
     else:
         value = from_model.get_value(iter_, column)

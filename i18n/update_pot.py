@@ -18,12 +18,8 @@
 
 import importlib
 import os
-import platform
+import subprocess
 import sys
-from datetime import datetime
-from importlib.machinery import SourceFileLoader
-from tokenize import TokenError, tokenize
-from typing import NamedTuple
 
 sys.path.append('..')
 version = importlib.import_module('.version', 'steam_tools_ng')
@@ -34,55 +30,13 @@ if script_path:
 else:
     os.chdir('..')
 
-if 'MSC' in platform.python_compiler():
-    tools_path = os.path.join(sys.prefix, 'Tools', 'i18n')
-else:
-    python_version = f'python{sys.version_info.major}.{sys.version_info.minor}'
-    tools_path = os.path.join(sys.prefix, 'lib', python_version, 'Tools', 'i18n')
-
-pygettext = SourceFileLoader('pygettext', os.path.join(tools_path, 'pygettext.py')).load_module()
-
-
-class Options(NamedTuple):
-    docstrings = 0
-    nodocstrings = {}
-    keywords = ['_']
-    toexclude = []
-    writelocations = 1
-
-    GNU = 1
-    SOLARIS = 2
-    locationstyle = GNU
-    width = 78
-
-
-now = datetime.now()
-current_datetime = '{:%Y-%m-%d %H:%M}{}'.format(
-    now,
-    # ensure tz as number
-    now.astimezone(tz=None).strftime('%z'),
-)
-
-pygettext.pot_header = f'''\
-# Steam Tools NG - Useful tools for Steam
-# Lara Maia <dev@lara.monster> (C) 2015 ~ 2020
-#
-msgid ""
-msgstr ""
-"Project-Id-Version: {version.__version__}\\n"
-"POT-Creation-Date: {current_datetime}\\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\\n"
-"Language-Team: LANGUAGE <LL@li.org>\\n"
-"MIME-Version: 1.0\\n"
-"Content-Type: text/plain; charset=%(charset)s\\n"
-"Content-Transfer-Encoding: %(encoding)s\\n"
-"Generated-By: pygettext.py %(version)s\\n"
-
+copyright='''
+Steam Tools NG - Useful tools for Steam
+Lara Maia <dev@lara.monster> (C) 2015 ~ 2021
 '''
 
 if __name__ == "__main__":
-    output_file = os.path.join('i18n', 'steam_tools_ng.pot')
+    output_file = os.path.join('i18n', 'steam-tools-ng.pot')
     translatable_files = []
 
     for root, dirs, files in os.walk('steam_tools_ng'):
@@ -90,21 +44,18 @@ if __name__ == "__main__":
             if file.endswith(".py"):
                 translatable_files.append(os.path.join(root, file))
 
-    translatable_files.append('steam_tools_ng.py')
-
-    pygettext.make_escapes(True)
-    eater = pygettext.TokenEater(Options())
+    translatable_files.append('steam-tools-ng.py')
 
     for file in translatable_files:
-        with open(file, 'rb') as file_pointer:
-            eater.set_filename(file)
-
-            try:
-                tokens = tokenize(file_pointer.readline)
-                for token in tokens:
-                    eater(*token)
-            except TokenError as exception:
-                print(repr(exception), file=sys.stderr)
-
-    with open(output_file, 'w', encoding='UTF-8', newline='\n') as file_pointer:
-        eater.write(file_pointer)
+        subprocess.run(
+            [
+                'xgettext',
+                '-jo',
+                os.path.join('i18n', 'steam-tools-ng.pot'),
+                file,
+                '--copyright-holder='+copyright,
+                '--package-name=steam-tools-ng',
+                '--package-version='+version.__version__,
+                '--msgid-bugs-address=dev@lara.monster',
+            ]
+        )

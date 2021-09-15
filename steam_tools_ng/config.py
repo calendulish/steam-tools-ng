@@ -235,13 +235,13 @@ def new(section: str, option: str, value: Any) -> None:
         update_log_level("console", value)
 
     if parser.get(section, option) != str(value):
-        log.debug(_('Saving %s:%s on config file'), section, option)
+        log.debug(_('Saving {}:{} on config file').format(section, option))
         parser.set(section, option, str(value))
 
         with open(config_file, 'w', encoding="utf8") as config_file_object:
             parser.write(config_file_object)
     else:
-        log.debug(_('Not saving %s:%s because values are already updated'), section, option)
+        log.debug(_('Not saving {}:{} because values are already updated').format(section, option))
 
 
 def login_cookies() -> http.cookies.SimpleCookie:
