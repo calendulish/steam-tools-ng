@@ -56,7 +56,7 @@ Name: "envpath"; Description: "Add STNG to PATH"; GroupDescription: "Additional 
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "{#STNG_PATH}\steam_tools_ng.exe"; DestDir: "{app}"; Flags: ignoreversion; Components: main
+Source: "{#STNG_PATH}\steam-tools-ng.exe"; DestDir: "{app}"; Flags: ignoreversion; Components: main
 Source: "{#STNG_PATH}\*.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: main
 Source: "{#STNG_PATH}\share\*"; DestDir: "{app}\share"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: main
 Source: "{#STNG_PATH}\etc\*"; DestDir: "{app}\etc"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: main
@@ -65,15 +65,15 @@ Source: "{#STNG_PATH}\plugins\steamgifts.pyc"; DestDir: "{app}\plugins"; Flags: 
 Source: "{#STNG_PATH}\plugins\steamtrades.pyc"; DestDir: "{app}\plugins"; Flags: ignoreversion; Components: plugins\steamtrades
 
 [Icons]
-Name: "{group}\Steam Tools NG"; Filename: "{app}\steam_tools_ng.exe"; IconFilename: "{app}\share\icons\stng.ico"
-Name: "{group}\(console) authenticator"; Filename: "{app}\steam_tools_ng.exe"; Parameters: "--cli steamguard"; IconFilename: "{app}\share\icons\stng_console.ico"
-Name: "{group}\(console) steamtrades"; Filename: "{app}\steam_tools_ng.exe"; Parameters: "--cli steamtrades"; Components: plugins\steamtrades; IconFilename: "{app}\share\icons\stng_console.ico"
-Name: "{group}\(console) steamgifts"; Filename: "{app}\steam_tools_ng.exe"; Parameters: "--cli steamgifts"; Components: plugins\steamgifts; IconFilename: "{app}\share\icons\stng_console.ico"
-Name: "{group}\(console) cardfarming"; Filename: "{app}\steam_tools_ng.exe"; Parameters: "--cli cardfarming"; IconFilename: "{app}\share\icons\stng_console.ico"
-Name: "{group}\Config Files"; Filename: "{app}\steam_tools_ng.exe"; Parameters: "--config-dir"; IconFilename: "{app}\share\icons\stng_nc.ico"
-Name: "{group}\Log Files"; Filename: "{app}\steam_tools_ng.exe"; Parameters: "--log-dir"; IconFilename: "{app}\share\icons\stng_nc.ico"
+Name: "{group}\Steam Tools NG"; Filename: "{app}\steam-tools-ng.exe"; IconFilename: "{app}\share\icons\stng.ico"
+Name: "{group}\(console) authenticator"; Filename: "{app}\steam-tools-ng.exe"; Parameters: "--cli steamguard"; IconFilename: "{app}\share\icons\stng_console.ico"
+Name: "{group}\(console) steamtrades"; Filename: "{app}\steam-tools-ng.exe"; Parameters: "--cli steamtrades"; Components: plugins\steamtrades; IconFilename: "{app}\share\icons\stng_console.ico"
+Name: "{group}\(console) steamgifts"; Filename: "{app}\steam-tools-ng.exe"; Parameters: "--cli steamgifts"; Components: plugins\steamgifts; IconFilename: "{app}\share\icons\stng_console.ico"
+Name: "{group}\(console) cardfarming"; Filename: "{app}\steam-tools-ng.exe"; Parameters: "--cli cardfarming"; IconFilename: "{app}\share\icons\stng_console.ico"
+Name: "{group}\Config Files"; Filename: "{app}\steam-tools-ng.exe"; Parameters: "--config-dir"; IconFilename: "{app}\share\icons\stng_nc.ico"
+Name: "{group}\Log Files"; Filename: "{app}\steam-tools-ng.exe"; Parameters: "--log-dir"; IconFilename: "{app}\share\icons\stng_nc.ico"
 Name: "{group}\Uninstaller"; Filename: "{uninstallexe}"; IconFilename: "{app}\icons\stng_nc.ico"
-Name: "{commondesktop}\Steam Tools NG"; Filename: "{app}\steam_tools_ng.exe"; Tasks: desktopicon; IconFilename: "{app}\share\icons\stng.ico"
+Name: "{commondesktop}\Steam Tools NG"; Filename: "{app}\steam-tools-ng.exe"; Tasks: desktopicon; IconFilename: "{app}\share\icons\stng.ico"
 
 [InstallDelete]
 Type: files; Name: "{app}\steam-tools-ng.exe"
@@ -81,4 +81,4 @@ Type: files; Name: "{app}\share\icons\steam-tools-ng*"
 Type: filesandordirs; Name: "{app}\lib\src"
 
 [Run]
-Filename: "{app}\steam_tools_ng.exe"; Description: "{cm:LaunchProgram,Steam Tools NG}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\steam-tools-ng.exe"; Description: "{cm:LaunchProgram,Steam Tools NG}"; Flags: nowait postinstall skipifsilent
