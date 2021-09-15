@@ -253,6 +253,7 @@ setup(
     license='GPL',
     packages=[
         'steam_tools_ng',
+        'steam_tools_ng.core',
         'steam_tools_ng.console',
         'steam_tools_ng.gtk',
     ],
