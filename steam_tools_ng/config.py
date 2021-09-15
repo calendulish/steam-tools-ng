@@ -108,7 +108,7 @@ default_config = {
         'log_color': True,
     },
     'steam': {
-        'api_url': 'https://api.lara.monster',
+        'api_url': 'https://api.steampowered.com',
     },
     'steamtrades': {
         'wait_min': 3700,
