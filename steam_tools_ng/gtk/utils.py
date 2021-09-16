@@ -17,6 +17,7 @@
 #
 import asyncio
 import functools
+import html
 import logging
 from collections import OrderedDict
 from typing import Any, Callable, List, Tuple, Optional, Union
@@ -444,7 +445,7 @@ def markup(text: str, **kwargs: Any) -> str:
     for key, value in kwargs.items():
         markup_string.append(f'{key}="{value}"')
 
-    markup_string.append(f'>{text}</span>')
+    markup_string.append(f'>{html.escape(text)}</span>')
 
     return ' '.join(markup_string)
 
