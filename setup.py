@@ -111,7 +111,7 @@ def fix_gtk() -> List[Tuple[str, str]]:
         'GLib-2.0',
         'Gio-2.0',
         'Pango-1.0',
-        'Cairo-1.0',
+        'cairo-1.0',
         'GdkPixbuf-2.0',
         'GModule-2.0',
         'Atk-1.0',

@@ -1,5 +1,5 @@
 ﻿#define STNG_VERSION "1.0"
-#define STNG_PATH "build\STNG-WIN64-" + STNG_VERSION + "-Py38"
+#define STNG_PATH "build\STNG-WIN64-" + STNG_VERSION + "-Python-3.9.6"
 #include "environment.iss"
 
 [Setup]
@@ -30,7 +30,7 @@ ChangesEnvironment=true
 [Code]
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
-    if (CurStep = ssPostInstall) and IsTaskSelected('envPath')
+    if (CurStep = ssPostInstall) and WizardIsTaskSelected('envPath')
     then EnvAddPath(ExpandConstant('{app}'));
 end;
 
