@@ -240,7 +240,10 @@ def data_files() -> Mapping[str, List[Tuple[str, List[str]]]]:
         os.path.join('icons', 'stng_console.ico'),
     ]
 
-    return {'data_files': [(icon_path, icons)]}
+    return {'data_files': [
+        (icon_path, icons),
+        ("share/applications", ["steam-tools-ng.desktop"]),
+    ]}
 
 
 setup(
