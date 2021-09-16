@@ -2,3 +2,6 @@ __pycache__
 .idea
 .mypy_cache
 venv
+*build*
+msys64/
+stlib*
