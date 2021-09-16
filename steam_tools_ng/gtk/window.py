@@ -166,7 +166,7 @@ class Main(Gtk.ApplicationWindow):
                 if plugin_config:
                     plugins_enabled.append(plugin_name)
 
-            if plugins_enabled == plugins:
+            if plugins_enabled and plugins_enabled == plugins:
                 await asyncio.sleep(1)
                 continue
             else:
@@ -174,6 +174,11 @@ class Main(Gtk.ApplicationWindow):
 
             for widget in self.status_grid.get_children():
                 self.status_grid.remove(widget)
+
+            if not plugins_enabled:
+                self.status_grid.show()
+                await asyncio.sleep(1)
+                continue
 
             for index, plugin_name in enumerate(plugins_enabled):
                 plugin = getattr(self, f'{plugin_name}_status')
