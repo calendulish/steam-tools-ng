@@ -195,7 +195,6 @@ def freeze_options() -> Mapping[str, Any]:
 
     excludes = [
         'tkinter',
-        'chardet',
         'distutils',
         'pydoc_data',
         'unittest',
