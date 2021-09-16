@@ -49,7 +49,7 @@ async def main() -> Generator[utils.ModuleData, None, None]:
     try:
         await steamgifts.do_login()
     except aiohttp.ClientError:
-        yield utils.ModuleData(error=_("Check your connection. (server down?)"))
+        yield utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
         await asyncio.sleep(15)
         return
     except steamgifts.TooFast:
@@ -61,7 +61,7 @@ async def main() -> Generator[utils.ModuleData, None, None]:
         await asyncio.sleep(18000)
         return
     except steamgifts.PrivateProfile:
-        yield utils.ModuleData(error=_("Your profile must be public to use steamgifts."))
+        yield utils.ModuleData(error=_("Your profile must be public to use steamgifts."), info=_("Waiting Changes"))
         await asyncio.sleep(30)
         return
     except login.LoginError:

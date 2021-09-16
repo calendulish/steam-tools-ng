@@ -34,7 +34,7 @@ async def main(steamid: int, time_offset: int) -> Generator[utils.ModuleData, No
 
     if not identity_secret:
         config.new("plugins", "confirmations", "false")
-        yield utils.ModuleData(error=_("The current identity secret is invalid."))
+        yield utils.ModuleData(error=_("The current identity secret is invalid."), info=_("Waiting Changes"))
         await asyncio.sleep(10)
         return
 
@@ -50,13 +50,13 @@ async def main(steamid: int, time_offset: int) -> Generator[utils.ModuleData, No
     try:
         confirmations = await session.get_confirmations(identity_secret, steamid, deviceid, time_offset=time_offset)
     except AttributeError as exception:
-        yield utils.ModuleData(error=_("Error when fetch confirmations"))
+        yield utils.ModuleData(error=_("Error when fetch confirmations"), info=_("Waiting Changes"))
     except ProcessLookupError:
-        yield utils.ModuleData(error=_("Steam is not running"))
+        yield utils.ModuleData(error=_("Steam is not running"), info=_("Waiting Changes"))
     except login.LoginError as exception:
         yield utils.ModuleData(error=_("User is not logged in"), action="login")
     except aiohttp.ClientError as exception:
-        yield utils.ModuleData(error=_("Check your connection. (server down?)"))
+        yield utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
     else:
         yield utils.ModuleData(action="update", raw_data=confirmations)
 

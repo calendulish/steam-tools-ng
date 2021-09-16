@@ -45,12 +45,12 @@ async def main(steamid: int, custom_game_id: int = 0) -> Generator[utils.ModuleD
             reverse=reverse_sorting
         )
     except aiohttp.ClientError:
-        yield utils.ModuleData(error=_("Check your connection. (server down?)"))
+        yield utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
         await asyncio.sleep(10)
         return
 
     if not badges or (custom_game_id and custom_game_id not in [badge.game_id for badge in badges]):
-        yield utils.ModuleData(status=_("Stopped"), info=_("No more cards to drop."))
+        yield utils.ModuleData(error=_("No more cards to drop."), info=_("Waiting Changes"))
         await asyncio.sleep(random.randint(500, 1200))
         return
 
@@ -82,7 +82,7 @@ async def main(steamid: int, custom_game_id: int = 0) -> Generator[utils.ModuleD
                 badge = badge._replace(cards=0)
                 break
             except ProcessLookupError:
-                yield utils.ModuleData(error=_("Steam Client is not running."))
+                yield utils.ModuleData(error=_("Steam Client is not running."), info=_("Waiting Changes"))
                 await asyncio.sleep(15)
                 continue
 
@@ -110,10 +110,10 @@ async def main(steamid: int, custom_game_id: int = 0) -> Generator[utils.ModuleD
                 badge = await session.update_badge_drops(badge, steamid)
                 break
             except aiohttp.ClientError:
-                yield utils.ModuleData(error=_("Check your connection. (server down?)"))
+                yield utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
                 await asyncio.sleep(10)
             except webapi.BadgeError:
-                yield utils.ModuleData(error=_("Steam Server is busy"))
+                yield utils.ModuleData(error=_("Steam Server is busy"), info=_("Waiting Changes"))
                 await asyncio.sleep(20)
 
         utils.ModuleData(

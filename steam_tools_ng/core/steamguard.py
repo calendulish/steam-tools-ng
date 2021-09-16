@@ -39,10 +39,10 @@ async def main(time_offset: int) -> Generator[utils.ModuleData, None, None]:
         server_time = int(time.time()) - time_offset
         auth_code = universe.generate_steam_code(server_time, shared_secret)
     except (ValueError, binascii.Error):
-        yield utils.ModuleData(error=_("The current shared secret is invalid."))
+        yield utils.ModuleData(error=_("The current shared secret is invalid."), info=_("Waiting Changes"))
         await asyncio.sleep(10)
     except ProcessLookupError:
-        yield utils.ModuleData(status=_("Steam Client is not running"))
+        yield utils.ModuleData(status=_("Steam Client is not running"), info=_("Waiting Changes"))
         await asyncio.sleep(10)
     else:
         yield utils.ModuleData(status=_("Loading..."))

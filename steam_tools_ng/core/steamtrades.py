@@ -65,7 +65,7 @@ async def main() -> Generator[utils.ModuleData, None, None]:
         await asyncio.sleep(18000)
         return
     except steamtrades.PrivateProfile:
-        yield utils.ModuleData(error=_("Your profile must be public to use steamtrades."))
+        yield utils.ModuleData(error=_("Your profile must be public to use steamtrades."), info=_("Waiting Changes"))
         await asyncio.sleep(30)
         return
     except steamtrades.UserLevelError:
