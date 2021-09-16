@@ -128,8 +128,8 @@ if __name__ == "__main__":
         logging.root.removeHandler(logging.root.handlers[0])
 
         log_directory = config.parser.get("logger", "log_directory")
-        os.remove(os.path.join(log_directory, 'steam_tools_ng.log'))
-        os.remove(os.path.join(log_directory, 'steam_tools_ng.log.1'))
+        os.remove(os.path.join(log_directory, 'steam-tools-ng.log'))
+        os.remove(os.path.join(log_directory, 'steam-tools-ng.log.1'))
 
         log.info(_('Done!'))
         sys.exit(0)

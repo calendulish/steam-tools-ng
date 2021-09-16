@@ -42,11 +42,11 @@ if os.name == 'nt':
     else:
         arch = 32
 
-    icon_path = os.path.join(get_python_lib(), 'steam_tools_ng', 'share', 'icons')
+    icon_path = os.path.join(get_python_lib(), 'steam-tools-ng', 'share', 'icons')
 else:
     from setuptools import setup
 
-    icon_path = os.path.abspath(os.path.join(os.path.sep, 'usr', 'share', 'steam_tools_ng', 'icons'))
+    icon_path = os.path.abspath(os.path.join(os.path.sep, 'usr', 'share', 'steam-tools-ng', 'icons'))
 
 
 class RemoveExtension(install_scripts):
@@ -81,23 +81,18 @@ class InstallTranslations(install_data):
     def run(self) -> None:
         install_data.run(self)
 
-        if os.getenv("SCRUTINIZER") or os.getenv("TRAVIS"):
-            print("bypassing InstallTranslations")
-            return
-
-        base_directory = 'share'
-        output_directory = os.path.join(self.install_dir, base_directory)
-
-        self.mkpath(output_directory)
+        locale_directory = os.path.join(self.install_dir, 'share', 'locale')
+        self.mkpath(locale_directory)
 
         for root, directories, files in os.walk(po_build_path):
-            current_folder = root[root.index(os.path.sep) + 1 + len(base_directory) + 1:]
-            self.mkpath(os.path.join(output_directory, current_folder))
-
             for file in files:
+                language = os.path.splitext(file)[0]
+                output_directory = os.path.join(locale_directory, language, 'LC_MESSAGES')
+                self.mkpath(output_directory)
+
                 output, _ = self.copy_file(
                     os.path.join(root, file),
-                    os.path.join(output_directory, current_folder)
+                    os.path.join(output_directory, 'steam-tools-ng.mo'),
                 )
                 self.outfiles.append(output)
 

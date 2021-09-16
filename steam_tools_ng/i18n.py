@@ -41,7 +41,7 @@ def get_translation(text: str) -> str:
         # assume that config is not fully load yet
         return text
 
-    translation = gettext.translation("steam_tools_ng", languages=[language], fallback=True)
+    translation = gettext.translation("steam-tools-ng", languages=[language], fallback=True)
     translated_text = translation.gettext(text)
     cache[new_hash(translated_text)] = text
 
