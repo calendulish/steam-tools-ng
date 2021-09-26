@@ -18,7 +18,7 @@
 
 PYTHON_VERSION=$(python --version | sed 's/ /-/')
 MINGW_VERSION="3.9"
-STLIB_VERSION="0.13.1"
+STLIB_VERSION="0.13.2"
 STLIB_PLUGINS_VERSION="0.2"
 
 delayed_exit() {
@@ -39,7 +39,7 @@ if ! grep -q "MSYS" <<<$(uname -s); then
 fi
 
 #clean
-rm -rfv build dist
+rm -rfv build dist stlib*
 
 # build stlib and install stlib
 # git clone https://github.com/ShyPixie/stlib || delayed_exit 1
