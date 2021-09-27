@@ -264,11 +264,11 @@ class LoginDialog(Gtk.Dialog):
             self.captcha_text_item.show()
             self.captcha_text_item.grab_focus()
         except login.LoginError as exception:
-            log.error("Login error: %s", exception)
+            log.error(str(exception))
             self.__password_item.set_text('')
             self.__password_item.grab_focus()
 
-            self.status.error(_("Unable to log-in!\n{}").format(exception))
+            self.status.error(':\n'.join(str(exception).split(': ')))
             self.username_item.set_sensitive(True)
             self.__password_item.set_sensitive(True)
             self.__password_item.grab_focus()
