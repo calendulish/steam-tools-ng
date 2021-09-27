@@ -155,7 +155,7 @@ class Login:
 
             log.info(_("Steam server is requesting a captcha code."))
 
-            with tempfile.TemporaryFile(buffering=0, prefix='stng_', suffix='.captcha') as temp_file:
+            with tempfile.NamedTemporaryFile(buffering=0, prefix='stng_', suffix='.captcha') as temp_file:
                 temp_file.write(exception.captcha)
                 temp_file.flush()
 
