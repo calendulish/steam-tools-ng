@@ -96,9 +96,13 @@ class Login:
         if not self.username or not self.__password:
             user_input = utils.safe_input(_("Please, write your username"))
             assert isinstance(user_input, str), "Safe input is returning bool when it should return str"
+            config.new("login", "account_name", user_input)
             self._username = user_input
 
             self.__password = getpass.getpass(_("Please, write your password (IT'S HIDDEN, and will be encrypted)"))
+            password_key = codecs.encode(self.__password.encode(), 'base64')
+            encrypted_password = codecs.encode(password_key.decode(), 'rot13')
+            config.new("login", "password", encrypted_password)
 
         self._login_session = login.get_session(
             0,
@@ -192,7 +196,7 @@ class Login:
             self._api_key = user_input
             await self.do_login(True)
         else:
-            new_configs = {"account_name": self.username}
+            new_configs = {}
 
             if "shared_secret" in login_data.auth:
                 new_configs["shared_secret"] = login_data.auth["shared_secret"]
@@ -203,11 +207,6 @@ class Login:
                 new_configs['identity_secret'] = login_data.auth['identity_secret']
             elif self.identity_secret:
                 new_configs["identity_secret"] = self.identity_secret
-
-            # Just for curious people. It's not even safe.
-            key = codecs.encode(self.__password.encode(), 'base64')
-            out = codecs.encode(key.decode(), 'rot13')
-            new_configs["password"] = out
 
             if login_data.oauth:
                 new_configs['steamid'] = login_data.oauth['steamid']
