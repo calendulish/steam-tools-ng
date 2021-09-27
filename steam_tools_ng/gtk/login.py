@@ -268,10 +268,7 @@ class LoginDialog(Gtk.Dialog):
             self.__password_item.set_text('')
             self.__password_item.grab_focus()
 
-            self.status.error(_(
-                "Unable to log-in!\n"
-                "Please, check your username/password and try again.\n"
-            ))
+            self.status.error(_("Unable to log-in!\n{}").format(exception))
             self.username_item.set_sensitive(True)
             self.__password_item.set_sensitive(True)
             self.__password_item.grab_focus()

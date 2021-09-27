@@ -171,11 +171,7 @@ class Login:
             self._captcha_text = user_input
             await self.do_login(True)
         except login.LoginError as exception:
-            log.error("Login error: %s", exception)
-            log.error(_(
-                "Unable to log-in!\n"
-                "Please, check your username/password and try again.\n"
-            ))
+            log.error(_("Unable to log-in!\n{}").format(exception))
             self.cli.on_quit()
         except aiohttp.ClientError:
             self.status.error(_("Check your connection. (server down?)"))
