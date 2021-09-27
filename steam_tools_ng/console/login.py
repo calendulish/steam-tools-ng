@@ -54,7 +54,7 @@ class Login:
 
     @property
     def username(self) -> str:
-        return config.parser.get("login", "account_name")
+        return self._username
 
     def set_password(self, encrypted_password: str) -> None:
         key = codecs.decode(encrypted_password, 'rot13')
@@ -89,6 +89,7 @@ class Login:
         utils.set_console(info=_("Retrieving user data"))
 
         if auto:
+            self._username = config.parser.get("login", "account_name")
             encrypted_password = config.parser.get("login", "password")
             self.set_password(encrypted_password)
 
