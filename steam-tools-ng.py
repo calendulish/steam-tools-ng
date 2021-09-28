@@ -25,8 +25,6 @@ import sys
 import textwrap
 from multiprocessing import freeze_support
 
-from stlib import plugins
-
 from steam_tools_ng import config, i18n, version
 
 _ = i18n.get_translation
@@ -141,7 +139,6 @@ if __name__ == "__main__":
 
     log.info(f'Steam Tools NG version {version.__version__} (Made with Girl Power <33)')
     log.info('Copyright (C) 2015 ~ 2020 Lara Maia - <dev@lara.monster>')
-    plugin_manager = plugins.Manager()
 
     if console_params.module:
         module_name = console_params.module[0]
@@ -149,7 +146,7 @@ if __name__ == "__main__":
 
         from steam_tools_ng.console import cli
 
-        app = cli.SteamToolsNG(plugin_manager, module_name, module_options)
+        app = cli.SteamToolsNG(module_name, module_options)
         app.run()
     else:
         if os.name == 'nt' and hasattr(sys, 'frozen'):
@@ -167,5 +164,5 @@ if __name__ == "__main__":
             log.critical('Use -c / --cli <module> for the command line interface.')
             sys.exit(1)
 
-        app = application.SteamToolsNG(plugin_manager)
+        app = application.SteamToolsNG()
         async_gtk.run(app)

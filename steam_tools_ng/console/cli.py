@@ -25,7 +25,7 @@ import sys
 from typing import Optional, Any, Callable
 
 import aiohttp
-from stlib import plugins, webapi
+from stlib import webapi
 
 from . import utils, login
 from .. import i18n, config, core
@@ -48,7 +48,7 @@ def while_running(function: Callable[..., Any]) -> Callable[..., Any]:
 
 # noinspection PyUnusedLocal
 class SteamToolsNG:
-    def __init__(self, plugin_manager: plugins.Manager, module_name: str, module_options: str) -> None:
+    def __init__(self, module_name: str, module_options: str) -> None:
         self.module_name = module_name
         self.stop = False
         self.custom_gameid = 0
@@ -67,7 +67,6 @@ class SteamToolsNG:
 
         self._session = None
         self._webapi_session = None
-        self.plugin_manager = plugin_manager
 
         self.api_login: Optional[webapi.Login] = None
         self._time_offset = 0

@@ -26,7 +26,7 @@ from typing import Any, Optional, Dict, Callable, List
 
 import aiohttp
 from gi.repository import Gio, Gtk
-from stlib import plugins, webapi, client
+from stlib import webapi, client
 
 from . import about, settings, login, window, utils
 from .. import config, i18n, core
@@ -46,13 +46,12 @@ def while_window_realized(function: Callable[..., Any]) -> Callable[..., Any]:
 
 # noinspection PyUnusedLocal
 class SteamToolsNG(Gtk.Application):
-    def __init__(self, plugin_manager: plugins.Manager) -> None:
+    def __init__(self) -> None:
         super().__init__(application_id="click.lara.SteamToolsNG",
                          flags=Gio.ApplicationFlags.FLAGS_NONE)
 
         self._session = None
         self._webapi_session = None
-        self.plugin_manager = plugin_manager
 
         self._main_window_id = 0
         self.gtk_settings = Gtk.Settings.get_default()
