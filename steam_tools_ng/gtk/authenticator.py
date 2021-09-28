@@ -123,7 +123,8 @@ class NewAuthenticatorDialog(Gtk.Dialog):
                 ))
             except NotImplementedError as exception:
                 import sys, traceback
-                utils.fatal_error_dialog(exception, traceback.print_tb(sys.exc_info), self.parent_window)
+                _, _, traceback_info = sys.exc_info()
+                utils.fatal_error_dialog(exception, traceback.extract_tb(traceback_info), self.parent_window)
                 self.application.on_exit_activate()
             else:
                 self.status.info(_("Enter bellow the code received by SMS\nand click on 'Add Authenticator' button"))
@@ -152,7 +153,8 @@ class NewAuthenticatorDialog(Gtk.Dialog):
             self.sms_code_item.grab_focus()
         except Exception as exception:
             import sys, traceback
-            utils.fatal_error_dialog(exception, traceback.print_tb(sys.exc_info), self.parent_window)
+            _, _, traceback_info = sys.exc_info()
+            utils.fatal_error_dialog(exception, traceback.extract_tb(traceback_info), self.parent_window)
             self.application.on_exit_activate()
         else:
             self.status.info(_("Saving new secrets"))

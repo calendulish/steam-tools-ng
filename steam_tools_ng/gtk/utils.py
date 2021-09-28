@@ -19,6 +19,7 @@ import asyncio
 import functools
 import html
 import logging
+import traceback
 from collections import OrderedDict
 from typing import Any, Callable, List, Tuple, Optional, Union
 
@@ -415,7 +416,8 @@ class Section(Gtk.Frame):
                     ', '.join(items.keys()),
                 )
                 log.exception(error_message)
-                fatal_error_dialog(ValueError(error_message), traceback.print_tb(sys.exc_info))
+                _, _, traceback_info = sys.exc_info()
+                fatal_error_dialog(ValueError(error_message), traceback.extract_tb(traceback_info))
                 # unset active item
                 current_option = -1
 
@@ -494,11 +496,18 @@ def remove_letters(text: str) -> str:
     return ''.join(new_text)
 
 
-def fatal_error_dialog(exception: BaseException, stack: str, transient_for: Optional[Gtk.Window] = None) -> None:
+def fatal_error_dialog(
+    exception: BaseException,
+    stack: Optional[List[traceback.FrameSummary]] = None,
+    transient_for: Optional[Gtk.Window] = None,
+    ) -> None:
     error_dialog = Gtk.MessageDialog(transient_for=transient_for)
     error_dialog.set_title(_("Fatal Error"))
     error_dialog.set_markup(str(exception))
-    error_dialog.format_secondary_text("\n".join([str(frame) for frame in stack]))
+
+    if stack:
+        error_dialog.format_secondary_text("\n".join([str(frame) for frame in stack]))
+
     error_dialog.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
     error_dialog.add_buttons(Gtk.STOCK_OK, Gtk.ResponseType.OK)
     error_dialog.connect("response", lambda dialog, _action: dialog.destroy())
