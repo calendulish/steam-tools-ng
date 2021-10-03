@@ -89,6 +89,9 @@ class NewAuthenticatorDialog(Gtk.Dialog):
             self.add_authenticator_button.clicked()
 
     async def on_add_authenticator_clicked(self, button: Gtk.Button) -> None:
+        # FIXME: I have no idea why translations is raising errors here
+        global _
+
         self.status.info(_("Retrieving user data"))
         button.set_sensitive(False)
         self.user_details_section.hide()
