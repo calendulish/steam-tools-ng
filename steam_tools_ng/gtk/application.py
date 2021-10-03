@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Lara Maia <dev@lara.monster> 2015 ~ 2020
+# Lara Maia <dev@lara.monster> 2015 ~ 2021
 #
 # The Steam Tools NG is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -47,7 +47,7 @@ def while_window_realized(function: Callable[..., Any]) -> Callable[..., Any]:
 # noinspection PyUnusedLocal
 class SteamToolsNG(Gtk.Application):
     def __init__(self) -> None:
-        super().__init__(application_id="click.lara.SteamToolsNG",
+        super().__init__(application_id="monster.lara.SteamToolsNG",
                          flags=Gio.ApplicationFlags.FLAGS_NONE)
 
         self._session = None
