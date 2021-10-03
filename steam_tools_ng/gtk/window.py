@@ -142,7 +142,7 @@ class Main(Gtk.ApplicationWindow):
 
         loop = asyncio.get_event_loop()
         task = loop.create_task(self.plugin_switch())
-        task.add_done_callback(self.application.async_activate_callback)
+        task.add_done_callback(utils.safe_task_callback)
 
     async def plugin_switch(self) -> None:
         plugins = []

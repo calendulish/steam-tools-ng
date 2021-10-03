@@ -141,24 +141,28 @@ class FinalizeDialog(Gtk.Dialog):
         self.set_size_request(0, 0)
         self.header_bar.set_show_close_button(False)
         self.parent_window.text_tree_lock = True
-
-        task: asyncio.Future[Union[Dict[str, Any], List[Tuple[Any, Dict[str, Any]]]]]
+        loop = asyncio.get_event_loop()
 
         if self.iter:
-            task = asyncio.ensure_future(self.finalize())
+            task = loop.create_task(self.finalize())
         else:
-            task = asyncio.ensure_future(self.batch_finalize())
+            task = loop.create_task(self.batch_finalize())
 
         task.add_done_callback(self.on_task_finish)
 
-    # FIXME: https://github.com/python/typing/issues/446
-    # noinspection PyUnresolvedReferences
-    def on_task_finish(self, future: 'asyncio.Future[Any]') -> None:
-        if future.exception():
+    def on_task_finish(self, task: asyncio.Task) -> None:
+        exception = task.exception()
+
+        if exception and not isinstance(exception, asyncio.CancelledError):
             try:
-                raise future.exception()
+                raise task.exception()
             except Exception as exception:
-                log.exception(str(exception))
+                stack = task.get_stack()
+
+                for frame in stack:
+                    log.error(f"{type(exception).__name__} at {frame}")
+
+                log.error(f"Steam Server is slow. {str(exception)}")
 
                 self.status.error(
                     _("Steam Server is slow. Please, try again.")

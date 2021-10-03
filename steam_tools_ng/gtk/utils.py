@@ -96,8 +96,9 @@ class AsyncButton(Gtk.Button):
         if not self._user_callback:
             return
 
-        task = self._user_callback(button, *self._user_args, **self._user_kwargs)
-        asyncio.ensure_future(task)
+        loop = asyncio.get_event_loop()
+        task = loop.create_task(self._user_callback(button, *self._user_args, **self._user_kwargs))
+        task.add_done_callback(safe_task_callback)
 
     def connect(self, signal: str, callback: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
         if signal != "clicked":
@@ -511,7 +512,30 @@ def fatal_error_dialog(
     error_dialog.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
     error_dialog.add_buttons(Gtk.STOCK_OK, Gtk.ResponseType.OK)
     error_dialog.connect("response", lambda dialog, _action: dialog.destroy())
+    error_dialog.set_urgency_hint(True)
     error_dialog.run()
+
+
+def safe_task_callback(task: asyncio.Task) -> None:
+    if task.cancelled():
+        log.debug(_("%s has been stopped due user request"), task.get_coro())
+        return
+
+    exception = task.exception()
+
+    if exception and not isinstance(exception, asyncio.CancelledError):
+        stack = task.get_stack()
+
+        for frame in stack:
+            log.critical(f"{type(exception).__name__} at {frame}")
+
+        log.critical(f"Fatal Error: {str(exception)}")
+
+        application = Gtk.Application.get_default()
+        fatal_error_dialog(exception, stack, application.get_active_window())
+        loop = asyncio.get_running_loop()
+        loop.stop()
+        application.quit()
 
 
 def reset_dialog(dialog: Gtk.Dialog, *args, **kwargs) -> None:

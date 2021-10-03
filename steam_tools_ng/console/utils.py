@@ -339,3 +339,21 @@ def set_console(
         print(module_data.info, sep=' ', end=' ')
 
     print('', end='\r')
+
+
+def safe_task_callback(task: asyncio.Task) -> None:
+    if task.cancelled():
+        log.debug(_("%s has been stopped due user request"), task.get_coro())
+        return
+
+    exception = task.exception()
+
+    if exception and not isinstance(exception, asyncio.CancelledError):
+        stack = task.get_stack()
+
+        for frame in stack:
+            log.critical(f"{type(exception).__name__} at {frame}")
+
+        log.critical(f"Fatal Error: {str(exception)}")
+        loop = asyncio.get_running_loop()
+        loop.stop()

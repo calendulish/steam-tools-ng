@@ -116,27 +116,7 @@ class SteamToolsNG(Gtk.Application):
 
         loop = asyncio.get_event_loop()
         task = loop.create_task(self.async_activate())
-        task.add_done_callback(self.async_activate_callback)
-
-    def async_activate_callback(self, task: asyncio.Task) -> None:
-        if task.cancelled():
-            log.debug(_("%s has been stopped due user request"), task.get_coro())
-            return
-
-        exception = task.exception()
-
-        if exception and not isinstance(exception, asyncio.CancelledError):
-            stack = task.get_stack()
-
-            for frame in stack:
-                log.critical(f"{type(exception).__name__} at {frame}")
-
-            log.critical(f"Fatal Error: {str(exception)}")
-
-            utils.fatal_error_dialog(exception, stack, self.main_window)
-            loop = asyncio.get_running_loop()
-            loop.stop()
-            self.quit()
+        task.add_done_callback(utils.safe_task_callback)
 
     async def do_login(self, *, block: bool = True, auto: bool = False) -> None:
         login_dialog = login.LoginDialog(self.main_window, self)
@@ -230,7 +210,7 @@ class SteamToolsNG(Gtk.Application):
                             task = asyncio.create_task(module(play_event))
 
                         log.debug(_("Adding a new callback for %s"), task)
-                        task.add_done_callback(self.async_activate_callback)
+                        task.add_done_callback(utils.safe_task_callback)
                         modules[module_name] = task
 
                     continue

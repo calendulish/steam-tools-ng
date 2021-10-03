@@ -96,28 +96,10 @@ class SteamToolsNG:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         task = loop.create_task(self.async_activate())
-        task.add_done_callback(self.async_activate_callback)
+        task.add_done_callback(utils.safe_task_callback)
 
         with contextlib.suppress(KeyboardInterrupt):
             loop.run_forever()
-
-    def async_activate_callback(self, task: asyncio.Task) -> None:
-        if task.cancelled():
-            log.debug(_("%s has been stopped due user request"), task.get_coro())
-            return
-
-        exception = task.exception()
-
-        if exception and not isinstance(exception, asyncio.CancelledError):
-            stack = task.get_stack()
-
-            for frame in stack:
-                log.critical(f"{type(exception).__name__} at {frame}")
-
-            log.critical(f"Fatal Error: {str(exception)}")
-            loop = asyncio.get_running_loop()
-            loop.stop()
-            self.on_quit()
 
     async def do_login(self, *, block: bool = True, auto: bool = False) -> None:
         login_session = login.Login(self)
@@ -168,7 +150,7 @@ class SteamToolsNG:
         module = getattr(self, f"run_{self.module_name}")
         task = asyncio.create_task(module())
         log.debug(_("Adding a new callback for %s"), task)
-        task.add_done_callback(self.async_activate_callback)
+        task.add_done_callback(utils.safe_task_callback)
 
     @while_running
     async def run_steamguard(self) -> None:
