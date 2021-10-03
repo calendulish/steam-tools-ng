@@ -267,6 +267,10 @@ class LoginDialog(Gtk.Dialog):
             log.error(str(exception))
             self.__password_item.set_text('')
             self.__password_item.grab_focus()
+            config.remove('login', 'token')
+            config.remove('login', 'token_secure')
+            config.remove('login', 'oauth_token')
+            self.login_session.http.cookie_jar.clear()
 
             self.status.error(':\n'.join(str(exception).split(': ')))
             self.username_item.set_sensitive(True)

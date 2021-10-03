@@ -172,6 +172,9 @@ class Login:
             await self.do_login(True)
         except login.LoginError as exception:
             log.error(str(exception))
+            config.remove('login', 'token')
+            config.remove('login', 'token_secure')
+            config.remove('login', 'oauth_token')
             self.cli.on_quit()
         except aiohttp.ClientError:
             self.status.error(_("Check your connection. (server down?)"))

@@ -252,6 +252,13 @@ def new(section: str, option: str, value: Any) -> None:
         log.debug(_('Not saving {}:{} because values are already updated').format(section, option))
 
 
+def remove(section: str, option: str) -> None:
+    parser.remove_option(section, option)
+
+    with open(config_file, 'w', encoding="utf8") as config_file_object:
+        parser.write(config_file_object)
+
+
 def login_cookies() -> http.cookies.SimpleCookie:
     steamid = parser.getint("login", "steamid")
     token = parser.get("login", "token")
