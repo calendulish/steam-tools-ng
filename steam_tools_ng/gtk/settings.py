@@ -68,7 +68,8 @@ class SettingsDialog(Gtk.Dialog):
 
         general_section = utils.Section("general", _("General Settings"))
 
-        config_button = Gtk.Button(_("Config File Directory"))
+        config_button = Gtk.Button()
+        config_button.set_label(_("Config File Directory"))
         config_button.set_name("config_button")
         config_button.set_hexpand(True)
         config_button.connect("clicked", self.on_config_button_clicked)
@@ -77,7 +78,8 @@ class SettingsDialog(Gtk.Dialog):
             config_button.set_label(_("Config / Log file Directory"))
             general_section.grid.attach(config_button, 0, 1, 2, 1)
         else:
-            log_button = Gtk.Button(_("Log File Directory"))
+            log_button = Gtk.Button()
+            log_button.set_label(_("Log File Directory"))
             log_button.set_name("log_button")
             log_button.connect("clicked", self.on_log_button_clicked)
             general_section.grid.attach(config_button, 0, 1, 1, 1)
@@ -95,7 +97,8 @@ class SettingsDialog(Gtk.Dialog):
         language_item.connect("changed", self.update_language)
 
         if os.name == 'nt' and hasattr(sys, 'frozen'):
-            console_button = Gtk.ToggleButton(_("Show debug console"))
+            console_button = Gtk.ToggleButton()
+            console_button.set_label(_("Show debug console"))
             console_button.set_name("console_button")
             console_button.connect("toggled", self.on_console_button_toggled)
             general_section.grid.attach(console_button, 0, 6, 2, 1)
@@ -111,22 +114,26 @@ class SettingsDialog(Gtk.Dialog):
         account_name = login_section.new('account_name', _("Username:"), Gtk.Entry, 0, 0)
         account_name.connect('changed', on_setting_changed)
 
-        login_button = Gtk.Button(_("Login with another account"))
+        login_button = Gtk.Button()
+        login_button.set_label(_("Login with another account"))
         login_button.set_name("login_button")
         login_button.connect('clicked', self.on_login_button_clicked)
         login_section.grid.attach(login_button, 0, 1, 2, 1)
 
-        new_authenticator_button = Gtk.Button(_("Use STNG as your Steam Authenticator"))
+        new_authenticator_button = Gtk.Button()
+        new_authenticator_button.set_label(_("Use STNG as your Steam Authenticator"))
         new_authenticator_button.set_name("new_authenticator_button")
         new_authenticator_button.connect("clicked", self.on_new_authenticator_clicked)
         login_section.grid.attach(new_authenticator_button, 0, 2, 2, 1)
 
-        reset_password_button = Gtk.Button(_("Remove Saved Password"))
+        reset_password_button = Gtk.Button()
+        reset_password_button.set_label(_("Remove Saved Password"))
         reset_password_button.set_name("reset_password_button")
         reset_password_button.connect("clicked", self.on_reset_password_clicked)
         login_section.grid.attach(reset_password_button, 0, 3, 2, 1)
 
-        advanced_button = Gtk.ToggleButton(_("Advanced"))
+        advanced_button = Gtk.ToggleButton()
+        advanced_button.set_label(_("Advanced"))
         advanced_button.set_name("advanced_button")
         advanced_button.connect("toggled", self.on_advanced_button_toggled)
         login_section.grid.attach(advanced_button, 0, 4, 2, 1)
@@ -288,13 +295,16 @@ class SettingsDialog(Gtk.Dialog):
         content_grid.show()
         self.show()
 
-    def on_log_button_clicked(self, button: Gtk.Button) -> None:
+    @staticmethod
+    def on_log_button_clicked(button: Gtk.Button) -> None:
         os.system(f'{config.file_manager} {config.parser.get("logger", "log_directory")}')
 
-    def on_config_button_clicked(self, button: Gtk.Button) -> None:
+    @staticmethod
+    def on_config_button_clicked(button: Gtk.Button) -> None:
         os.system(f'{config.file_manager} {config.config_file_directory}')
 
-    def on_console_button_toggled(self, button: Gtk.Button) -> None:
+    @staticmethod
+    def on_console_button_toggled(button: Gtk.Button) -> None:
         if button.get_active():
             console = ctypes.windll.kernel32.GetConsoleWindow()
             ctypes.windll.user32.ShowWindow(console, 1)

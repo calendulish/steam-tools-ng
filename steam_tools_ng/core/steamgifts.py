@@ -76,7 +76,7 @@ async def main() -> Generator[utils.ModuleData, None, None]:
         await asyncio.sleep(20)
         return
 
-    giveaways = await steamgifts.get_giveaways(type, pinned_giveaways=pinned)
+    giveaways = await steamgifts.get_giveaways(type_, pinned_giveaways=pinned)
     joined = False
 
     if giveaways:
@@ -89,7 +89,6 @@ async def main() -> Generator[utils.ModuleData, None, None]:
     else:
         yield utils.ModuleData(status=_("No giveaways to join."))
         joined = True
-        wait_time = tuple(time // 2 for time in (wait_min, wait_max))
 
     for index, giveaway in enumerate(giveaways):
         yield utils.ModuleData(level=(index, len(giveaway)))
@@ -114,24 +113,24 @@ async def main() -> Generator[utils.ModuleData, None, None]:
                 yield utils.ModuleData(display=giveaway.id, error=_("Unable to join {}."))
                 await asyncio.sleep(5)
                 continue
-        except steamgifts.NoGiveawaysError as exception:
+        except steamgifts.NoGiveawaysError:
             yield utils.ModuleData(error=_("No giveaways available to join."))
             await asyncio.sleep(15)
             continue
-        except steamgifts.GiveawayEndedError as exception:
+        except steamgifts.GiveawayEndedError:
             yield utils.ModuleData(error=_("Giveaway is already ended."))
             await asyncio.sleep(5)
             continue
-        except login.LoginError as exception:
+        except login.LoginError:
             yield utils.ModuleData(error=_("Login is lost. Trying to relogin."))
             await asyncio.sleep(5)
             joined = False
             break
-        except steamgifts.NoLevelError as exception:
+        except steamgifts.NoLevelError:
             yield utils.ModuleData(error=_("User don't have required level to join."))
             await asyncio.sleep(5)
             continue
-        except steamgifts.NoPointsError as exception:
+        except steamgifts.NoPointsError:
             yield utils.ModuleData(error=_("User don't have required points to join."))
             await asyncio.sleep(5)
 

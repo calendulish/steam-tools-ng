@@ -65,6 +65,7 @@ async def add_authenticator(
 
         break
 
+    # noinspection PyUnboundLocalVariable
     if complete:
         log.info(_("Success!"))
         return login_data
@@ -189,6 +190,7 @@ async def check_login(
         except webapi.MailCodeError:
             user_input = safe_input(_("Write code received by email"))
             assert isinstance(user_input, str), "safe_input is returning bool when it should return str"
+            # noinspection PyUnusedLocal
             mail_code = user_input
             continue
         except webapi.TwoFactorCodeError:

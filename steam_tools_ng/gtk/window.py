@@ -48,7 +48,8 @@ class Main(Gtk.ApplicationWindow):
         menu.append(_("About"), "app.about")
         menu.append(_("Exit"), "app.exit")
 
-        menu_button = Gtk.MenuButton("☰")
+        menu_button = Gtk.MenuButton()
+        menu_button.set_label("☰")
         menu_button.set_relief(Gtk.ReliefStyle.NONE)
         menu_button.set_use_popover(True)
         menu_button.set_menu_model(menu)
@@ -118,19 +119,23 @@ class Main(Gtk.ApplicationWindow):
         tree_selection = self.text_tree.view.get_selection()
         tree_selection.connect("changed", self.on_tree_selection_changed)
 
-        accept_button = Gtk.Button(_('Accept selected'))
+        accept_button = Gtk.Button()
+        accept_button.set_label(_('Accept selected'))
         accept_button.connect('clicked', self.on_validate_confirmations, "allow", tree_selection)
         self.confirmations_grid.attach(accept_button, 0, 5, 1, 1)
 
-        cancel_button = Gtk.Button(_('Cancel selected'))
+        cancel_button = Gtk.Button()
+        cancel_button.set_label(_('Cancel selected'))
         cancel_button.connect('clicked', self.on_validate_confirmations, "cancel", tree_selection)
         self.confirmations_grid.attach(cancel_button, 1, 5, 1, 1)
 
-        accept_all_button = Gtk.Button(_('Accept all'))
+        accept_all_button = Gtk.Button()
+        accept_all_button.set_label(_('Accept all'))
         accept_all_button.connect('clicked', self.on_validate_confirmations, "allow", self.text_tree.store)
         self.confirmations_grid.attach(accept_all_button, 2, 5, 1, 1)
 
-        cancel_all_button = Gtk.Button(_('Cancel all'))
+        cancel_all_button = Gtk.Button()
+        cancel_all_button.set_label(_('Cancel all'))
         cancel_all_button.connect('clicked', self.on_validate_confirmations, "cancel", self.text_tree.store)
         self.confirmations_grid.attach(cancel_all_button, 3, 5, 1, 1)
 

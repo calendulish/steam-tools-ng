@@ -169,7 +169,7 @@ def update_log_level(type_: str, level_string: str) -> None:
 def validate_config(section: str, option: str, defaults: OrderedDict) -> None:
     value = parser.get(section, option)
 
-    if value and not value in defaults.keys():
+    if value and value not in defaults.keys():
         if option == 'language':
             log.error(_("Unsupported language requested. Fallbacking to English."))
             new('general', 'language', 'en')
@@ -233,6 +233,7 @@ def init_logger() -> None:
     log_console_handler = logger_handlers.ColoredStreamHandler()
     log_console_handler.setLevel(getattr(logging, log_console_level.upper()))
 
+    # noinspection PyArgumentList
     logging.basicConfig(level=logging.DEBUG, handlers=[log_file_handler, log_console_handler])
 
 

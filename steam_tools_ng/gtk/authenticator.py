@@ -125,7 +125,8 @@ class NewAuthenticatorDialog(Gtk.Dialog):
                     "Go to your Steam Account Settings, add a Phone Number, and try again."
                 ))
             except NotImplementedError as exception:
-                import sys, traceback
+                import sys
+                import traceback
                 _, _, traceback_info = sys.exc_info()
                 utils.fatal_error_dialog(exception, traceback.extract_tb(traceback_info), self.parent_window)
                 self.application.on_exit_activate()
@@ -155,7 +156,8 @@ class NewAuthenticatorDialog(Gtk.Dialog):
             self.sms_code_item.set_text('')
             self.sms_code_item.grab_focus()
         except Exception as exception:
-            import sys, traceback
+            import sys
+            import traceback
             _, _, traceback_info = sys.exc_info()
             utils.fatal_error_dialog(exception, traceback.extract_tb(traceback_info), self.parent_window)
             self.application.on_exit_activate()

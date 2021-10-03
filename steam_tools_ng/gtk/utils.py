@@ -32,9 +32,11 @@ log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
 
+# noinspection PyUnusedLocal
 class ClickableLabel(Gtk.EventBox):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__()
+        # noinspection PyArgumentList
         self._label = Gtk.Label(*args, **kwargs)
         self._label.set_hexpand(True)
 
@@ -119,8 +121,10 @@ class SimpleTextTree(Gtk.ScrolledWindow):
             model: Callable[..., Gtk.TreeModel] = Gtk.TreeStore,
     ) -> None:
         super().__init__()
+        # noinspection PyUnusedLocal
         self._store = model(*[str for number in range(len(elements))])
-        self._view = Gtk.TreeView(model=self._store)
+        self._view = Gtk.TreeView()
+        self._view.set_model(self._store)
         self.add(self._view)
 
         self.set_hexpand(True)
@@ -130,7 +134,9 @@ class SimpleTextTree(Gtk.ScrolledWindow):
         renderer = Gtk.CellRendererText()
 
         for index, header in enumerate(elements):
-            column = Gtk.TreeViewColumn(header, renderer, text=index)
+            column = Gtk.TreeViewColumn()
+            column.set_title(header)
+            column.set_attributes(renderer, text=index)
             column.set_resizable(resizable)
 
             if fixed_width:
@@ -191,6 +197,7 @@ def when_running(function: Callable[..., Any]) -> Callable[..., Any]:
 class Status(Gtk.Frame):
     def __init__(self, display_size: int, label_text: str) -> None:
         super().__init__()
+        # noinspection PyUnusedLocal
         self._default_display_text = ' '.join(['_' for n in range(1, display_size)])
         self._gtk_settings = Gtk.Settings.get_default()
 
@@ -369,6 +376,9 @@ class Section(Gtk.Frame):
             *grid_position: int,
             items: 'OrderedDict[str, str]' = None,
     ) -> Gtk.Widget:
+        # FIXME: Translations raising errors
+        global _
+
         bases = (widget,)
 
         body = {
@@ -410,7 +420,8 @@ class Section(Gtk.Frame):
             try:
                 current_option = list(items).index(value)
             except ValueError:
-                import sys, traceback
+                import sys
+                import traceback
 
                 error_message = _("Please, fix your config file. Accepted values for {} are:\n{}").format(
                     option,
@@ -498,11 +509,12 @@ def remove_letters(text: str) -> str:
 
 
 def fatal_error_dialog(
-    exception: BaseException,
-    stack: Optional[List[traceback.FrameSummary]] = None,
-    transient_for: Optional[Gtk.Window] = None,
-    ) -> None:
-    error_dialog = Gtk.MessageDialog(transient_for=transient_for)
+        exception: BaseException,
+        stack: Optional[List[traceback.FrameSummary]] = None,
+        transient: Optional[Gtk.Window] = None,
+) -> None:
+    error_dialog = Gtk.MessageDialog()
+    error_dialog.set_transient_for = transient
     error_dialog.set_title(_("Fatal Error"))
     error_dialog.set_markup(str(exception))
 
@@ -548,4 +560,5 @@ def reset_dialog(dialog: Gtk.Dialog, *args, **kwargs) -> None:
     for widget in header_bar.get_children():
         widget.destroy()
 
+    # noinspection PyArgumentList
     dialog.__init__(*args, **kwargs)

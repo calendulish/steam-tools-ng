@@ -32,7 +32,7 @@ if script_path:
 else:
     os.chdir('..')
 
-copyright='''
+copyright_ = '''
 Steam Tools NG - Useful tools for Steam
 Lara Maia <dev@lara.monster> (C) 2015 ~ 2021
 '''
@@ -55,9 +55,9 @@ if __name__ == "__main__":
                 '-jo',
                 os.path.join('i18n', 'steam-tools-ng.pot'),
                 file,
-                '--copyright-holder='+copyright,
+                '--copyright-holder=' + copyright_,
                 '--package-name=steam-tools-ng',
-                '--package-version='+version.__version__,
+                '--package-version=' + version.__version__,
                 '--msgid-bugs-address=dev@lara.monster',
             ]
         )

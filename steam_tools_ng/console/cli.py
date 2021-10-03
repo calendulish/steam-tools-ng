@@ -199,6 +199,7 @@ class SteamToolsNG:
                 await self.do_login(auto=True)
                 continue
 
-    def on_quit(self, *args: Any) -> None:
+    @staticmethod
+    def on_quit(*args: Any) -> None:
         loop = asyncio.get_running_loop()
         loop.stop()

@@ -72,11 +72,13 @@ class FinalizeDialog(Gtk.Dialog):
         self.status = utils.SimpleStatus()
         self.content_area.add(self.status)
 
-        self.yes_button = Gtk.Button(_("Continue"))
+        self.yes_button = Gtk.Button()
+        self.yes_button.set_label(_("Continue"))
         self.yes_button.connect("clicked", self.on_yes_button_clicked)
         self.header_bar.pack_end(self.yes_button)
 
-        self.no_button = Gtk.Button(_("Cancel"))
+        self.no_button = Gtk.Button()
+        self.no_button.set_label(_("Cancel"))
         self.no_button.connect("clicked", lambda button: self.destroy())
         self.header_bar.pack_start(self.no_button)
 

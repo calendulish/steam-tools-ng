@@ -109,7 +109,7 @@ async def main() -> Generator[utils.ModuleData, None, None]:
                 yield utils.ModuleData(display=trade_id, error=_("Unable to bump"))
                 await asyncio.sleep(5)
                 continue
-        except steamtrades.NoTradesError as exception:
+        except steamtrades.NoTradesError:
             yield utils.ModuleData(error=_("No trades available to bump"))
             await asyncio.sleep(15)
             continue
@@ -121,7 +121,7 @@ async def main() -> Generator[utils.ModuleData, None, None]:
             yield utils.ModuleData(error=_("Trade {}({}) is closed").format(exception.title, exception.id))
             await asyncio.sleep(5)
             continue
-        except login.LoginError as exception:
+        except login.LoginError:
             yield utils.ModuleData(error=_("Login is lost. Trying to relogin."))
             await asyncio.sleep(5)
             bumped = False

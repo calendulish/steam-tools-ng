@@ -24,27 +24,27 @@ import sys
 
 log = logging.Logger(__name__)
 
-PATH='/mingw64/bin;/usr/local/bin;/usr/bin;/bin;/opt/bin'
+PATH = '/mingw64/bin;/usr/local/bin;/usr/bin;/bin;/opt/bin'
 
-PYTHON_VERSION="3.9"
-PYTHONHOME='/mingw64'
-PYTHONPATH=f'/mingw64/lib/python{PYTHON_VERSION}/lib-dynload'
+PYTHON_VERSION = "3.9"
+PYTHONHOME = '/mingw64'
+PYTHONPATH = f'/mingw64/lib/python{PYTHON_VERSION}/lib-dynload'
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         log.error("You must specify a version")
         sys.exit(1)
-    
-    if not 'WSL' in platform.release():
+
+    if 'WSL' not in platform.release():
         log.error("Unsupported")
         sys.exit(1)
 
-    current_directory=subprocess.run(['wslpath', '-w', os.getcwd()], check=True, stdout=subprocess.PIPE).stdout.decode()
-    msys2_command=f"msys64\\usr\\bin\\mintty.exe -d -e /bin/sh -c 'exec ./dist_script.sh {sys.argv[1]}'"
+    current_directory = subprocess.run(['wslpath', '-w', os.getcwd()], check=True,
+                                       stdout=subprocess.PIPE).stdout.decode()
+    msys2_command = f"msys64\\usr\\bin\\mintty.exe -d -e /bin/sh -c 'exec ./dist_script.sh {sys.argv[1]}'"
 
     subprocess.run([
         'powershell.exe',
         '-Command',
         f"$env:Path='{PATH}'; $env:PYTHONHOME='{PYTHONHOME}'; $env:PYTHONPATH='{PYTHONPATH}'; pushd {current_directory}; {msys2_command}"
     ], check=True)
-

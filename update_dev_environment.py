@@ -25,10 +25,12 @@ import sys
 log = logging.Logger(__name__)
 
 if __name__ == "__main__":
-    if not 'WSL' in platform.release():
+    if 'WSL' not in platform.release():
         log.error("Unsupported")
         sys.exit(1)
 
-    current_directory=subprocess.run(['wslpath', '-w', os.getcwd()], check=True, stdout=subprocess.PIPE).stdout.decode()
+    current_directory = subprocess.run(['wslpath', '-w', os.getcwd()], check=True,
+                                       stdout=subprocess.PIPE).stdout.decode()
 
-    subprocess.run(['powershell.exe', '-Command', f"pushd {current_directory}; .\\update_dev_environment.cmd"], check=True)
+    subprocess.run(['powershell.exe', '-Command', f"pushd {current_directory}; .\\update_dev_environment.cmd"],
+                   check=True)
