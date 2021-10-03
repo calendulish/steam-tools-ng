@@ -17,6 +17,7 @@
 #
 
 import importlib
+import logging
 import os
 import subprocess
 import sys
@@ -24,6 +25,7 @@ import sys
 sys.path.append('..')
 version = importlib.import_module('.version', 'steam_tools_ng')
 script_path = os.path.dirname(__file__)
+log = logging.getLogger(__name__)
 
 if script_path:
     os.chdir(os.path.join(script_path, '..'))
@@ -47,7 +49,7 @@ if __name__ == "__main__":
     translatable_files.append('steam-tools-ng.py')
 
     for file in translatable_files:
-        subprocess.run(
+        process_info = subprocess.run(
             [
                 'xgettext',
                 '-jo',
@@ -59,3 +61,9 @@ if __name__ == "__main__":
                 '--msgid-bugs-address=dev@lara.monster',
             ]
         )
+
+        log.info(f"Processing {file}")
+
+        if process_info.returncode == 1:
+            log.error(f"This error occurs when processing {file}")
+            break
