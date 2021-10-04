@@ -64,15 +64,15 @@ async def main(steamid: int, custom_game_id: int = 0) -> Generator[utils.ModuleD
             status=_("Loading {}").format(badge.game_name),
         )
 
-        game_info = await session.get_owned_games(steamid, appids_filter=[badge.game_id])
-        assert isinstance(game_info, webapi.Game), "game_info is not a Game object"
-
-        if game_info.playtime >= 2 * 60:
-            wait_offset = random.randint(wait_min, wait_max)
-        else:
-            wait_offset = (2 * 60 - game_info.playtime) * 60
-
         while badge.cards != 0:
+            game_info = await session.get_owned_games(steamid, appids_filter=[badge.game_id])
+            assert isinstance(game_info, webapi.Game), "game_info is not a Game object"
+
+            if game_info.playtime >= 2 * 60:
+                wait_offset = random.randint(wait_min, wait_max)
+            else:
+                wait_offset = (2 * 60 - game_info.playtime) * 60
+
             executor = client.SteamApiExecutor(badge.game_id)
 
             try:
@@ -100,7 +100,7 @@ async def main(steamid: int, custom_game_id: int = 0) -> Generator[utils.ModuleD
 
             yield utils.ModuleData(
                 display=str(badge.game_id),
-                info=_("{} ({})").format(_("Updating drops"), badge.game_name),
+                info="{} ({})".format(_("Updating drops"), badge.game_name),
             )
 
             await executor.shutdown()
@@ -108,7 +108,6 @@ async def main(steamid: int, custom_game_id: int = 0) -> Generator[utils.ModuleD
 
             try:
                 badge = await session.update_badge_drops(badge, steamid)
-                break
             except aiohttp.ClientError:
                 yield utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
                 await asyncio.sleep(10)
