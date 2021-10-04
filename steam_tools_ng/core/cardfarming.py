@@ -88,9 +88,16 @@ async def main(steamid: int, custom_game_id: int = 0) -> Generator[utils.ModuleD
                 continue
 
             for past_time in range(wait_offset):
+                current_time = round((wait_offset - past_time) / 60)
+                current_time_size = _('minutes')
+
+                if current_time <= 1:
+                    current_time = wait_offset - past_time
+                    current_time_size = _('seconds')
+
                 yield utils.ModuleData(
                     display=str(badge.game_id),
-                    info=_("Waiting drops for {} minutes.").format(round((wait_offset - past_time) / 60)),
+                    info=_("Waiting drops for {} {}.").format(current_time, current_time_size),
                     status=_("Running {}").format(badge.game_name),
                     level=(past_time, wait_offset),
                     raw_data=executor,
@@ -99,14 +106,17 @@ async def main(steamid: int, custom_game_id: int = 0) -> Generator[utils.ModuleD
 
                 await asyncio.sleep(1)
 
-            yield utils.ModuleData(
-                display=str(badge.game_id),
-                info="{} ({})".format(_("Updating drops"), badge.game_name),
-                status=_("Paused"),
-            )
-
             await executor.shutdown()
-            await asyncio.sleep(random.randint(min_wait, int(min_wait / 100 * 125)))
+            wait_offset = random.randint(min_wait, int(min_wait / 100 * 125))
+            for past_time in range(wait_offset):
+                yield utils.ModuleData(
+                    display=str(badge.game_id),
+                    info="{} ({})".format(_("Updating drops"), badge.game_name),
+                    status=_("Paused"),
+                    level=(past_time, wait_offset),
+                )
+
+                await asyncio.sleep(1)
 
             try:
                 badge = await session.update_badge_drops(badge, steamid)
