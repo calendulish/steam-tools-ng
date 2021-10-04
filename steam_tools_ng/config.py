@@ -244,7 +244,7 @@ def new(section: str, option: str, value: Any) -> None:
     elif option == "log_console_level":
         update_log_level("console", value)
 
-    if parser.get(section, option) != str(value):
+    if parser.get(section, option, fallback='') != str(value):
         log.debug(_('Saving {}:{} on config file').format(section, option))
         parser.set(section, option, str(value))
 
