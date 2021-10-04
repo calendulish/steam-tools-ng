@@ -166,7 +166,7 @@ class NewAuthenticatorDialog(Gtk.Dialog):
             config.new("login", "shared_secret", self._login_data.auth['shared_secret'])
             config.new("login", "identity_secret", self._login_data.auth['identity_secret'])
             config.new("plugins", "steamguard", True)
-            config.new("plguins", "confirmations", True)
+            config.new("plugins", "confirmations", True)
 
             self.status.info(_(
                 "RECOVERY CODE\n\n"
