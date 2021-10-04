@@ -248,7 +248,7 @@ class SteamToolsNG(Gtk.Application):
                 assert isinstance(executor, client.SteamApiExecutor), "No SteamApiExecutor"
 
                 if not play_event.is_set():
-                    await executor.shutdown()
+                    await executor.soft_shutdown()
                     await play_event.wait()
                     await executor.init()
 

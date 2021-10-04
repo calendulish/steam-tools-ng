@@ -18,7 +18,7 @@
 
 PYTHON_VERSION=$(python --version | sed 's/ /-/')
 MINGW_VERSION="3.9"
-STLIB_VERSION="0.13.3"
+STLIB_VERSION="0.13.4"
 STLIB_PLUGINS_VERSION="0.2"
 
 delayed_exit() {
