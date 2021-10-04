@@ -127,8 +127,8 @@ default_config = {
     },
     'cardfarming': {
         'reverse_sorting': False,
-        'wait_min': 480,
-        'wait_max': 600,
+        'wait_min': 900,
+        'wait_max': 1500,
     },
     'general': {
         'theme': 'light',
