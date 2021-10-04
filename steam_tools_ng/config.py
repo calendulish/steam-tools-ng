@@ -128,7 +128,7 @@ default_config = {
     'cardfarming': {
         'reverse_sorting': False,
         'first_wait': 7200,
-        'default_wait': 900,
+        'default_wait': 600,
         'min_wait': 120,
     },
     'general': {
