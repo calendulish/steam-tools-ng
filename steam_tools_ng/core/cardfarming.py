@@ -101,6 +101,7 @@ async def main(steamid: int, custom_game_id: int = 0) -> Generator[utils.ModuleD
             yield utils.ModuleData(
                 display=str(badge.game_id),
                 info="{} ({})".format(_("Updating drops"), badge.game_name),
+                status=_("Paused"),
             )
 
             await executor.shutdown()
