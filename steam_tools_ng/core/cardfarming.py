@@ -30,8 +30,9 @@ _ = i18n.get_translation
 
 async def main(steamid: int, custom_game_id: int = 0) -> Generator[utils.ModuleData, None, None]:
     reverse_sorting = config.parser.getboolean("cardfarming", "reverse_sorting")
-    wait_min = config.parser.getint("cardfarming", "wait_min")
-    wait_max = config.parser.getint("cardfarming", "wait_max")
+    first_wait = config.parser.getint("cardfarming", "first_wait")
+    default_wait = config.parser.getint("cardfarming", "default_wait")
+    min_wait = config.parser.getint("cardfarming", "min_wait")
 
     if not steamid:
         raise NotImplementedError("Card farming with no steamid")
@@ -68,10 +69,10 @@ async def main(steamid: int, custom_game_id: int = 0) -> Generator[utils.ModuleD
             game_info = await session.get_owned_games(steamid, appids_filter=[badge.game_id])
             assert isinstance(game_info, webapi.Game), "game_info is not a Game object"
 
-            if game_info.playtime >= 2 * 60:
-                wait_offset = random.randint(wait_min, wait_max)
+            if game_info.playtime * 60 >= first_wait:
+                wait_offset = random.randint(default_wait, int(default_wait / 100 * 125))
             else:
-                wait_offset = (2 * 60 - game_info.playtime) * 60
+                wait_offset = first_wait - game_info.playtime * 60
 
             executor = client.SteamApiExecutor(badge.game_id)
 
@@ -105,7 +106,7 @@ async def main(steamid: int, custom_game_id: int = 0) -> Generator[utils.ModuleD
             )
 
             await executor.shutdown()
-            await asyncio.sleep(random.randint(60, 120))
+            await asyncio.sleep(random.randint(min_wait, int(min_wait / 100 * 125)))
 
             try:
                 badge = await session.update_badge_drops(badge, steamid)

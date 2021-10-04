@@ -250,13 +250,16 @@ class SettingsDialog(Gtk.Dialog):
 
         cardfarming_section = utils.Section("cardfarming", _("Cardfarming settings"))
 
-        wait_min = cardfarming_section.new("wait_min", _("Wait MIN:"), Gtk.Entry, 0, 0)
-        wait_min.connect("changed", on_digit_only_setting_changed)
+        first_wait = cardfarming_section.new("first_wait", _("First Wait:"), Gtk.Entry, 0, 0)
+        first_wait.connect("changed", on_digit_only_setting_changed)
 
-        wait_max = cardfarming_section.new("wait_max", _("Wait MAX:"), Gtk.Entry, 0, 1)
-        wait_max.connect("changed", on_digit_only_setting_changed)
+        default_wait = cardfarming_section.new("default_wait", _("Default Wait:"), Gtk.Entry, 0, 1)
+        default_wait.connect("changed", on_digit_only_setting_changed)
 
-        reverse_sorting = cardfarming_section.new("reverse_sorting", _("More cards First:"), Gtk.CheckButton, 0, 2)
+        min_wait = cardfarming_section.new("min_wait", _("MIN Wait:"), Gtk.Entry, 0, 2)
+        min_wait.connect("changed", on_digit_only_setting_changed)
+
+        reverse_sorting = cardfarming_section.new("reverse_sorting", _("More cards First:"), Gtk.CheckButton, 0, 3)
 
         cardfarming_section.show_all()
 
