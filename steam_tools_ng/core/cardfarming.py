@@ -66,8 +66,13 @@ async def main(steamid: int, custom_game_id: int = 0) -> Generator[utils.ModuleD
         )
 
         while badge.cards != 0:
-            game_info = await session.get_owned_games(steamid, appids_filter=[badge.game_id])
-            assert isinstance(game_info, webapi.Game), "game_info is not a Game object"
+            try:
+                game_info = await session.get_owned_games(steamid, appids_filter=[badge.game_id])
+                assert isinstance(game_info, webapi.Game), "game_info is not a Game object"
+            except aiohttp.ClientError:
+                yield utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
+                await asyncio.sleep(10)
+                continue
 
             if game_info.playtime * 60 >= first_wait:
                 wait_offset = random.randint(default_wait, int(default_wait / 100 * 125))

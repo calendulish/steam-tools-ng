@@ -71,12 +71,22 @@ async def main() -> Generator[utils.ModuleData, None, None]:
 
     try:
         await steamgifts.configure()
+    except aiohttp.ClientError:
+        yield utils.ModuleData(error=_("Check your connection. (server down?)"))
+        await asyncio.sleep(15)
+        return
     except steamgifts.ConfigureError:
         yield utils.ModuleData(error=_("Unable to configure steamgifts."))
         await asyncio.sleep(20)
         return
 
-    giveaways = await steamgifts.get_giveaways(type_, pinned_giveaways=pinned)
+    try:
+        giveaways = await steamgifts.get_giveaways(type_, pinned_giveaways=pinned)
+    except aiohttp.ClientError:
+        yield utils.ModuleData(error=_("Check your connection. (server down?)"))
+        await asyncio.sleep(15)
+        return
+
     joined = False
 
     if giveaways:
@@ -113,6 +123,11 @@ async def main() -> Generator[utils.ModuleData, None, None]:
                 yield utils.ModuleData(display=giveaway.id, error=_("Unable to join {}."))
                 await asyncio.sleep(5)
                 continue
+        except aiohttp.ClientError:
+            yield utils.ModuleData(error=_("Check your connection. (server down?)"))
+            await asyncio.sleep(15)
+            joined = False
+            break
         except steamgifts.NoGiveawaysError:
             yield utils.ModuleData(error=_("No giveaways available to join."))
             await asyncio.sleep(15)

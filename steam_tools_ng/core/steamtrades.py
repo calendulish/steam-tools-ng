@@ -109,6 +109,11 @@ async def main() -> Generator[utils.ModuleData, None, None]:
                 yield utils.ModuleData(display=trade_id, error=_("Unable to bump"))
                 await asyncio.sleep(5)
                 continue
+        except aiohttp.ClientError:
+            yield utils.ModuleData(error=_("Check your connection. (server down?)"))
+            await asyncio.sleep(10)
+            bumped = False
+            break
         except steamtrades.NoTradesError:
             yield utils.ModuleData(error=_("No trades available to bump"))
             await asyncio.sleep(15)

@@ -18,6 +18,7 @@
 import asyncio
 from typing import Generator
 
+import aiohttp
 from stlib import webapi, client
 
 from . import utils
@@ -32,6 +33,10 @@ async def main(steam_id: int, game_id: int) -> Generator[utils.ModuleData, None,
     try:
         game_info = await session.get_owned_games(steam_id, appids_filter=[game_id])
         assert isinstance(game_info, webapi.Game), "game_info is not a Game object"
+    except aiohttp.ClientError:
+        yield utils.ModuleData(error=_("Check your connection. (server down?)"))
+        await asyncio.sleep(15)
+        return
     except ValueError:
         yield utils.ModuleData(error=_("Game {} doesn't exist").format(game_id))
         return
