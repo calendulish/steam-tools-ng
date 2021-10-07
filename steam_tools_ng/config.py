@@ -28,6 +28,7 @@ from typing import Any
 
 import aiohttp
 from stlib import webapi
+from stlib import plugins as stlib_plugins
 
 from . import i18n, logger_handlers
 
@@ -220,6 +221,12 @@ def init() -> None:
     validate_config("steamgifts", "sort", giveaway_sort_types)
 
     os.makedirs(log_directory, exist_ok=True)
+
+    if not stlib_plugins.has_plugin("steamtrades"):
+        new("plugins", "steamtrades", False)
+
+    if not stlib_plugins.has_plugin("steamgifts"):
+        new("plugins", "steamgifts", False)
 
 
 def init_logger() -> None:

@@ -23,6 +23,7 @@ import sys
 from collections import OrderedDict
 
 from gi.repository import Gtk, Pango
+from stlib import plugins
 
 from . import utils, advanced, authenticator, login
 from .. import config, i18n
@@ -207,6 +208,36 @@ class SettingsDialog(Gtk.Dialog):
 
             _cardfarming_disabled.set_markup(utils.markup(_message, color="hotpink"))
             plugins_section.grid.attach(_cardfarming_disabled, 0, 12, 4, 4)
+
+        if not plugins.has_plugin("steamtrades"):
+            steamtrades.set_sensitive(False)
+            steamtrades.label.set_sensitive(False)
+            _steamtrades_disabled = Gtk.Label()
+            _steamtrades_disabled.set_halign(Gtk.Align.CENTER)
+
+            _message = _(
+                "steamtrades module has been disabled because you don't\n"
+                "have steamtrades plugin installed. To enable it again,\n"
+                "install the steamtrades plugin.\n"
+            )
+
+            _steamtrades_disabled.set_markup(utils.markup(_message, color="hotpink"))
+            plugins_section.grid.attach(_steamtrades_disabled, 0, 16, 4, 4)
+
+        if not plugins.has_plugin("steamgifts"):
+            steamgifts.set_sensitive(False)
+            steamgifts.label.set_sensitive(False)
+            _steamgifts_disabled = Gtk.Label()
+            _steamgifts_disabled.set_halign(Gtk.Align.CENTER)
+
+            _message = _(
+                "steamgifts module has been disabled because you don't\n"
+                "have steamgifts plugin installed. To enable it again,\n"
+                "install the steamgifts plugin.\n"
+            )
+
+            _steamgifts_disabled.set_markup(utils.markup(_message, color="hotpink"))
+            plugins_section.grid.attach(_steamgifts_disabled, 0, 20, 4, 4)
 
         plugins_section.show_all()
 

@@ -25,7 +25,7 @@ import sys
 from typing import Optional, Any, Callable
 
 import aiohttp
-from stlib import webapi
+from stlib import plugins, webapi
 
 from . import utils, login
 from .. import i18n, config, core
@@ -60,6 +60,15 @@ class SteamToolsNG:
                 "reinstall stlib with Steam API support"
             ).format(module_name))
             sys.exit(1)
+
+        if module_name in ['steamtrades', 'steamgifts']:
+            if not plugins.has_plugin(module_name):
+                log.critical(_(
+                    "{0} module has been disabled because you don't "
+                    "have {0} plugin installed. To enable it again, "
+                    "install the {0} plugin."
+                ).format(module_name))
+                sys.exit(1)
 
         try:
             if module_name == 'fakerun' and not module_options:
