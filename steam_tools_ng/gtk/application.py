@@ -26,7 +26,7 @@ from typing import Any, Optional, Dict, Callable, List
 
 import aiohttp
 from gi.repository import Gio, Gtk
-from stlib import webapi, client
+from stlib import webapi
 
 from . import about, settings, login, window, utils
 from .. import config, i18n, core
@@ -34,6 +34,10 @@ from .. import config, i18n, core
 _ = i18n.get_translation
 log = logging.getLogger(__name__)
 
+if config.client_enable:
+    from stlib import client
+else:
+    config.new("plugins", "cardfarming", False)
 
 def while_window_realized(function: Callable[..., Any]) -> Callable[..., Any]:
     @functools.wraps(function)

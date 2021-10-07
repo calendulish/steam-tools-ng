@@ -18,11 +18,14 @@
 
 __all__ = [
     'steamguard',
-    'cardfarming',
     'confirmations',
     'steamtrades',
     'steamgifts',
-    'fakerun',
 ]
 
 from . import *
+
+try:
+    from . import cardfarming, fakerun
+except ImportError:
+    pass

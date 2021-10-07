@@ -27,13 +27,21 @@ from collections import OrderedDict
 from typing import Any
 
 import aiohttp
-from stlib import webapi, client
+from stlib import webapi
 
 from . import i18n, logger_handlers
 
 parser = configparser.RawConfigParser()
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
+
+try:
+    from stlib import client
+except ImportError as exception:
+    log.error(str(exception))
+    client_enable=False
+else:
+    client_enable=True
 
 if os.path.isdir('steam_tools_ng'):
     # development mode
@@ -280,6 +288,9 @@ def login_cookies() -> http.cookies.SimpleCookie:
 
 async def time_offset(webapi_session: webapi.SteamWebAPI) -> int:
     try:
+        if not client_enable:
+            raise ProcessLookupError
+
         with client.SteamGameServer() as server:
             server_time = server.get_server_time()
     except ProcessLookupError:

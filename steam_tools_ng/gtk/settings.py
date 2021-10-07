@@ -193,6 +193,21 @@ class SettingsDialog(Gtk.Dialog):
             _confirmations_disabled.set_markup(utils.markup(_message, color="hotpink"))
             plugins_section.grid.attach(_confirmations_disabled, 0, 8, 4, 4)
 
+        if not config.client_enable:
+            cardfarming.set_sensitive(False)
+            cardfarming.label.set_sensitive(False)
+            _cardfarming_disabled = Gtk.Label()
+            _cardfarming_disabled.set_halign(Gtk.Align.CENTER)
+
+            _message = _(
+                "cardfarming module has been disabled because you have\n"
+                "a stlib built without steam_api support. To enable it again,\n"
+                "reinstall stlib with Steam API support\n"
+            )
+
+            _cardfarming_disabled.set_markup(utils.markup(_message, color="hotpink"))
+            plugins_section.grid.attach(_cardfarming_disabled, 0, 12, 4, 4)
+
         plugins_section.show_all()
 
         steamtrades_section = utils.Section('steamtrades', _('Steamtrades Settings'))
