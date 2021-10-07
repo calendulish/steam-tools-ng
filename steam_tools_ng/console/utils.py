@@ -360,3 +360,4 @@ def safe_task_callback(task: asyncio.Task) -> None:
         log.critical(f"Fatal Error: {str(exception)}")
         loop = asyncio.get_running_loop()
         loop.stop()
+        sys.exit(1)
