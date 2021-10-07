@@ -36,8 +36,7 @@ async def main() -> Generator[utils.ModuleData, None, None]:
     if plugins.has_plugin("steamgifts"):
         steamgifts = plugins.get_plugin("steamgifts")
     else:
-        yield utils.ModuleData(error=_("Unable to find Steamgifts plugin."))
-        return
+        raise ImportError(_("Unable to find Steamgifts plugin."))
 
     wait_min = config.parser.getint("steamgifts", "wait_min")
     wait_max = config.parser.getint("steamgifts", "wait_max")

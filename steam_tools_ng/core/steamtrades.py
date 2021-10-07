@@ -36,8 +36,7 @@ async def main() -> Generator[utils.ModuleData, None, None]:
     if plugins.has_plugin("steamtrades"):
         steamtrades = plugins.get_plugin("steamtrades")
     else:
-        yield utils.ModuleData(error=_("Unable to find Steamtrades plugin"))
-        return
+        raise ImportError(_("Unable to find Steamtrades plugin"))
 
     trade_ids = config.parser.get("steamtrades", "trade_ids")
     wait_min = config.parser.getint("steamtrades", "wait_min")
