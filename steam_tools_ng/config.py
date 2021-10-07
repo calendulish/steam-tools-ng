@@ -35,14 +35,6 @@ parser = configparser.RawConfigParser()
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
-try:
-    from stlib import client
-except ImportError as exception:
-    log.error(str(exception))
-    client_enable=False
-else:
-    client_enable=True
-
 if os.path.isdir('steam_tools_ng'):
     # development mode
     data_dir = 'config'
@@ -57,6 +49,15 @@ else:
 config_file_directory = os.path.join(data_dir, 'steam-tools-ng')
 config_file_name = 'steam-tools-ng.config'
 config_file = os.path.join(config_file_directory, config_file_name)
+
+try:
+    from stlib import client
+except ImportError as exception:
+    log.error(str(exception))
+    client_enable=False
+    new("plugins", "cardfarming", False)
+else:
+    client_enable=True
 
 gtk_themes = OrderedDict([
     ('light', _("Light")),

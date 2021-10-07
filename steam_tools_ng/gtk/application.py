@@ -36,8 +36,6 @@ log = logging.getLogger(__name__)
 
 if config.client_enable:
     from stlib import client
-else:
-    config.new("plugins", "cardfarming", False)
 
 def while_window_realized(function: Callable[..., Any]) -> Callable[..., Any]:
     @functools.wraps(function)
