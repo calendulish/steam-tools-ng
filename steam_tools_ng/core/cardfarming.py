@@ -123,14 +123,17 @@ async def main(steamid: int, custom_game_id: int = 0) -> Generator[utils.ModuleD
 
                 await asyncio.sleep(1)
 
-            try:
-                badge = await session.update_badge_drops(badge, steamid)
-            except aiohttp.ClientError:
-                yield utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
-                await asyncio.sleep(10)
-            except webapi.BadgeError:
-                yield utils.ModuleData(error=_("Steam Server is busy"), info=_("Waiting Changes"))
-                await asyncio.sleep(20)
+            while True:
+                try:
+                    badge = await session.update_badge_drops(badge, steamid)
+                except aiohttp.ClientError:
+                    yield utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
+                    await asyncio.sleep(10)
+                except webapi.BadgeError:
+                    yield utils.ModuleData(error=_("Steam Server is busy"), info=_("Waiting Changes"))
+                    await asyncio.sleep(20)
+                else:
+                    break
 
         utils.ModuleData(
             display=str(badge.game_id),
