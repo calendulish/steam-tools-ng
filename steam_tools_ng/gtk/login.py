@@ -276,7 +276,7 @@ class LoginDialog(Gtk.Dialog):
             self.username_item.set_sensitive(True)
             self.__password_item.set_sensitive(True)
             self.__password_item.grab_focus()
-        except aiohttp.ClientError:
+        except (aiohttp.ClientError, ValueError):
             self.status.error(_("Check your connection. (server down?)"))
             self.username_item.set_sensitive(True)
             self.__password_item.set_sensitive(True)

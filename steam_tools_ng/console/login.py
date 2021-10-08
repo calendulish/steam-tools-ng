@@ -176,7 +176,7 @@ class Login:
             config.remove('login', 'token_secure')
             config.remove('login', 'oauth_token')
             self.cli.on_quit()
-        except aiohttp.ClientError:
+        except (aiohttp.ClientError, ValueError):
             self.status.error(_("Check your connection. (server down?)"))
             self.cli.on_quit()
         except binascii.Error:
