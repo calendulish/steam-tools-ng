@@ -134,90 +134,94 @@ class Login:
 
         log.info(_("Logging in"))
 
-        try:
-            if not config.parser.get('steam', 'api_key'):
-                raise AttributeError
+        while True:
+            try:
+                if not config.parser.get('steam', 'api_key'):
+                    raise AttributeError
 
-            login_data = await self.login_session.do_login(**kwargs)
-        except login.MailCodeError:
-            user_input = utils.safe_input(_("Write code received by email"))
-            assert isinstance(user_input, str), "safe_input is returning bool when it should return str"
-            self._mail_code = user_input
-            await self.do_login(True)
-        except login.TwoFactorCodeError:
-            user_input = utils.safe_input(_("Write Steam Code"))
-            assert isinstance(user_input, str), "safe_input is returning bool when it should return str"
-            self._steam_code = user_input
-            await self.do_login(True)
-        except login.LoginBlockedError:
-            log.error(_(
-                "Your network is blocked!\n"
-                "It'll take some time until unblocked. Please, try again later\n"
-            ))
-            self.cli.on_quit()
-        except login.CaptchaError as exception:
-            self.captcha_gid = exception.captcha_gid
+                login_data = await self.login_session.do_login(**kwargs)
+            except login.MailCodeError:
+                user_input = utils.safe_input(_("Write code received by email"))
+                assert isinstance(user_input, str), "safe_input is returning bool when it should return str"
+                self._mail_code = user_input
+                await self.do_login(True)
+            except login.TwoFactorCodeError:
+                user_input = utils.safe_input(_("Write Steam Code"))
+                assert isinstance(user_input, str), "safe_input is returning bool when it should return str"
+                self._steam_code = user_input
+                await self.do_login(True)
+            except login.LoginBlockedError:
+                log.error(_(
+                    "Your network is blocked!\n"
+                    "It'll take some time until unblocked. Please, try again later\n"
+                ))
+                self.cli.on_quit()
+            except login.CaptchaError as exception:
+                self.captcha_gid = exception.captcha_gid
 
-            log.info(_("Steam server is requesting a captcha code."))
+                log.info(_("Steam server is requesting a captcha code."))
 
-            with tempfile.NamedTemporaryFile(buffering=0, prefix='stng_', suffix='.captcha') as temp_file:
-                temp_file.write(exception.captcha)
-                temp_file.flush()
+                with tempfile.NamedTemporaryFile(buffering=0, prefix='stng_', suffix='.captcha') as temp_file:
+                    temp_file.write(exception.captcha)
+                    temp_file.flush()
 
-                user_input = utils.safe_input(
-                    _("Open {} in an image view and write captcha code that it shows").format(temp_file.name),
+                    user_input = utils.safe_input(
+                        _("Open {} in an image view and write captcha code that it shows").format(temp_file.name),
+                    )
+
+                self._captcha_text = user_input
+                await self.do_login(True)
+            except login.LoginError as exception:
+                log.error(str(exception))
+                config.remove('login', 'token')
+                config.remove('login', 'token_secure')
+                config.remove('login', 'oauth_token')
+                self.cli.on_quit()
+            except (aiohttp.ClientError, ValueError):
+                self.status.error(_("Check your connection. (server down?)"))
+                await asyncio.sleep(15)
+                continue
+            except binascii.Error:
+                log.error(_("shared secret is invalid!"))
+                self.cli.on_quit()
+            except AttributeError:
+                log.info(
+                    _(
+                        "No api_key found on config file.\n"
+                        "Go to https://steamcommunity.com/dev/apikey\n"
+                        "and paste your Steam API key bellow\n"
+                    )
                 )
 
-            self._captcha_text = user_input
-            await self.do_login(True)
-        except login.LoginError as exception:
-            log.error(str(exception))
-            config.remove('login', 'token')
-            config.remove('login', 'token_secure')
-            config.remove('login', 'oauth_token')
-            self.cli.on_quit()
-        except (aiohttp.ClientError, ValueError):
-            self.status.error(_("Check your connection. (server down?)"))
-            self.cli.on_quit()
-        except binascii.Error:
-            log.error(_("shared secret is invalid!"))
-            self.cli.on_quit()
-        except AttributeError:
-            log.info(
-                _(
-                    "No api_key found on config file.\n"
-                    "Go to https://steamcommunity.com/dev/apikey\n"
-                    "and paste your Steam API key bellow\n"
-                )
-            )
-
-            user_input = utils.safe_input(_("Write Steam API Key"))
-            self._api_key = user_input
-            await self.do_login(True)
-        else:
-            new_configs = {}
-
-            if "shared_secret" in login_data.auth:
-                new_configs["shared_secret"] = login_data.auth["shared_secret"]
-            elif self.shared_secret:
-                new_configs["shared_secret"] = self.shared_secret
-
-            if "identity_secret" in login_data.auth:
-                new_configs['identity_secret'] = login_data.auth['identity_secret']
-            elif self.identity_secret:
-                new_configs["identity_secret"] = self.identity_secret
-
-            if login_data.oauth:
-                new_configs['steamid'] = login_data.oauth['steamid']
-                new_configs['token'] = login_data.oauth['wgtoken']
-                new_configs['token_secure'] = login_data.oauth['wgtoken_secure']
-                new_configs['oauth_token'] = login_data.oauth['oauth_token']
+                user_input = utils.safe_input(_("Write Steam API Key"))
+                self._api_key = user_input
+                await self.do_login(True)
             else:
-                new_configs['steamid'] = login_data.auth['transfer_parameters']['steamid']
-                new_configs['token'] = login_data.auth['transfer_parameters']['webcookie']
-                new_configs['token_secure'] = login_data.auth['transfer_parameters']['token_secure']
+                new_configs = {}
 
-            for key, value in new_configs.items():
-                config.new("login", key, value)
+                if "shared_secret" in login_data.auth:
+                    new_configs["shared_secret"] = login_data.auth["shared_secret"]
+                elif self.shared_secret:
+                    new_configs["shared_secret"] = self.shared_secret
 
-            self.has_user_data = True
+                if "identity_secret" in login_data.auth:
+                    new_configs['identity_secret'] = login_data.auth['identity_secret']
+                elif self.identity_secret:
+                    new_configs["identity_secret"] = self.identity_secret
+
+                if login_data.oauth:
+                    new_configs['steamid'] = login_data.oauth['steamid']
+                    new_configs['token'] = login_data.oauth['wgtoken']
+                    new_configs['token_secure'] = login_data.oauth['wgtoken_secure']
+                    new_configs['oauth_token'] = login_data.oauth['oauth_token']
+                else:
+                    new_configs['steamid'] = login_data.auth['transfer_parameters']['steamid']
+                    new_configs['token'] = login_data.auth['transfer_parameters']['webcookie']
+                    new_configs['token_secure'] = login_data.auth['transfer_parameters']['token_secure']
+
+                for key, value in new_configs.items():
+                    config.new("login", key, value)
+
+                self.has_user_data = True
+
+            break

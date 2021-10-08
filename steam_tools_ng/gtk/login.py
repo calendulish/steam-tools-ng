@@ -225,115 +225,118 @@ class LoginDialog(Gtk.Dialog):
         self.mail_code_item.hide()
         self.api_key_item.hide()
 
-        try:
-            if not config.parser.get('steam', 'api_key'):
-                raise AttributeError
+        while True:
+            try:
+                if not config.parser.get('steam', 'api_key'):
+                    raise AttributeError
 
-            login_data = await self.login_session.do_login(**kwargs)
-        except login.MailCodeError:
-            self.status.info(_("Write code received by email\nand click on 'Log-in' button"))
-            self.mail_code_item.set_text("")
-            self.mail_code_item.show_all()
-            self.mail_code_item.grab_focus()
-        except login.TwoFactorCodeError:
-            self.status.error(_("Write Steam Code bellow and click on 'Log-in'"))
-            self.steam_code_item.set_text("")
-            self.steam_code_item.show_all()
-            self.steam_code_item.grab_focus()
-        except login.LoginBlockedError:
-            self.status.error(_(
-                "Your network is blocked!\n"
-                "It'll take some time until unblocked. Please, try again later\n"
-            ))
-            self.user_details_section.hide()
-            self.advanced_login.hide()
-            self.advanced_login_section.hide()
-            self.login_button.hide()
-            self.set_deletable(True)
-        except login.CaptchaError as exception:
-            self.status.info(_("Write captcha code as shown bellow\nand click on 'Log-in' button"))
-            self.captcha_gid = exception.captcha_gid
+                login_data = await self.login_session.do_login(**kwargs)
+            except login.MailCodeError:
+                self.status.info(_("Write code received by email\nand click on 'Log-in' button"))
+                self.mail_code_item.set_text("")
+                self.mail_code_item.show_all()
+                self.mail_code_item.grab_focus()
+            except login.TwoFactorCodeError:
+                self.status.error(_("Write Steam Code bellow and click on 'Log-in'"))
+                self.steam_code_item.set_text("")
+                self.steam_code_item.show_all()
+                self.steam_code_item.grab_focus()
+            except login.LoginBlockedError:
+                self.status.error(_(
+                    "Your network is blocked!\n"
+                    "It'll take some time until unblocked. Please, try again later\n"
+                ))
+                self.user_details_section.hide()
+                self.advanced_login.hide()
+                self.advanced_login_section.hide()
+                self.login_button.hide()
+                self.set_deletable(True)
+            except login.CaptchaError as exception:
+                self.status.info(_("Write captcha code as shown bellow\nand click on 'Log-in' button"))
+                self.captcha_gid = exception.captcha_gid
 
-            pixbuf_loader = GdkPixbuf.PixbufLoader()
-            pixbuf_loader.write(exception.captcha)
-            pixbuf_loader.close()
-            self.captcha_item.set_from_pixbuf(pixbuf_loader.get_pixbuf())
+                pixbuf_loader = GdkPixbuf.PixbufLoader()
+                pixbuf_loader.write(exception.captcha)
+                pixbuf_loader.close()
+                self.captcha_item.set_from_pixbuf(pixbuf_loader.get_pixbuf())
 
-            self.captcha_item.show()
-            self.captcha_text_item.set_text("")
-            self.captcha_text_item.show()
-            self.captcha_text_item.grab_focus()
-        except login.LoginError as exception:
-            log.error(str(exception))
-            self.__password_item.set_text('')
-            self.__password_item.grab_focus()
-            config.remove('login', 'token')
-            config.remove('login', 'token_secure')
-            config.remove('login', 'oauth_token')
-            self.login_session.http.cookie_jar.clear()
+                self.captcha_item.show()
+                self.captcha_text_item.set_text("")
+                self.captcha_text_item.show()
+                self.captcha_text_item.grab_focus()
+            except login.LoginError as exception:
+                log.error(str(exception))
+                self.__password_item.set_text('')
+                self.__password_item.grab_focus()
+                config.remove('login', 'token')
+                config.remove('login', 'token_secure')
+                config.remove('login', 'oauth_token')
+                self.login_session.http.cookie_jar.clear()
 
-            self.status.error(':\n'.join(str(exception).split(': ')))
-            self.username_item.set_sensitive(True)
-            self.__password_item.set_sensitive(True)
-            self.__password_item.grab_focus()
-        except (aiohttp.ClientError, ValueError):
-            self.status.error(_("Check your connection. (server down?)"))
-            self.username_item.set_sensitive(True)
-            self.__password_item.set_sensitive(True)
-        except binascii.Error:
-            self.status.error(_("shared secret is invalid!"))
-            self.username_item.set_sensitive(True)
-            self.__password_item.set_sensitive(True)
-            self.shared_secret_item.grab_focus()
-        except AttributeError:
-            self.status.info(
-                _(
-                    "No api_key found on config file.\n"
-                    "Go to https://steamcommunity.com/dev/apikey\n"
-                    "and paste your Steam API key bellow\n"
+                self.status.error(':\n'.join(str(exception).split(': ')))
+                self.username_item.set_sensitive(True)
+                self.__password_item.set_sensitive(True)
+                self.__password_item.grab_focus()
+            except (aiohttp.ClientError, ValueError):
+                self.status.error(_("Check your connection. (server down?)"))
+                await asyncio.sleep(15)
+                continue
+            except binascii.Error:
+                self.status.error(_("shared secret is invalid!"))
+                self.username_item.set_sensitive(True)
+                self.__password_item.set_sensitive(True)
+                self.shared_secret_item.grab_focus()
+            except AttributeError:
+                self.status.info(
+                    _(
+                        "No api_key found on config file.\n"
+                        "Go to https://steamcommunity.com/dev/apikey\n"
+                        "and paste your Steam API key bellow\n"
+                    )
                 )
-            )
-            self.api_key_item.set_text("")
-            self.api_key_item.show_all()
-            self.api_key_item.grab_focus()
-        else:
-            new_configs = {"account_name": self.username}
-
-            if "shared_secret" in login_data.auth:
-                new_configs["shared_secret"] = login_data.auth["shared_secret"]
-            elif self.shared_secret:
-                new_configs["shared_secret"] = self.shared_secret
-
-            if "identity_secret" in login_data.auth:
-                new_configs['identity_secret'] = login_data.auth['identity_secret']
-            elif self.identity_secret:
-                new_configs["identity_secret"] = self.identity_secret
-
-            if self.save_password_item.get_active():
-                # Just for curious people. It's not even safe.
-                key = codecs.encode(self.__password.encode(), 'base64')
-                out = codecs.encode(key.decode(), 'rot13')
-                new_configs["password"] = out
-
-            if login_data.oauth:
-                new_configs['steamid'] = login_data.oauth['steamid']
-                new_configs['token'] = login_data.oauth['wgtoken']
-                new_configs['token_secure'] = login_data.oauth['wgtoken_secure']
-                new_configs['oauth_token'] = login_data.oauth['oauth_token']
+                self.api_key_item.set_text("")
+                self.api_key_item.show_all()
+                self.api_key_item.grab_focus()
             else:
-                new_configs['steamid'] = login_data.auth['transfer_parameters']['steamid']
-                new_configs['token'] = login_data.auth['transfer_parameters']['webcookie']
-                new_configs['token_secure'] = login_data.auth['transfer_parameters']['token_secure']
+                new_configs = {"account_name": self.username}
 
-            for key, value in new_configs.items():
-                config.new("login", key, value)
+                if "shared_secret" in login_data.auth:
+                    new_configs["shared_secret"] = login_data.auth["shared_secret"]
+                elif self.shared_secret:
+                    new_configs["shared_secret"] = self.shared_secret
 
-            self.has_user_data = True
-            self.destroy()
-        finally:
-            self.save_password_item.set_sensitive(True)
-            self.login_button.set_sensitive(True)
-            self.set_size_request(400, 100)
+                if "identity_secret" in login_data.auth:
+                    new_configs['identity_secret'] = login_data.auth['identity_secret']
+                elif self.identity_secret:
+                    new_configs["identity_secret"] = self.identity_secret
+
+                if self.save_password_item.get_active():
+                    # Just for curious people. It's not even safe.
+                    key = codecs.encode(self.__password.encode(), 'base64')
+                    out = codecs.encode(key.decode(), 'rot13')
+                    new_configs["password"] = out
+
+                if login_data.oauth:
+                    new_configs['steamid'] = login_data.oauth['steamid']
+                    new_configs['token'] = login_data.oauth['wgtoken']
+                    new_configs['token_secure'] = login_data.oauth['wgtoken_secure']
+                    new_configs['oauth_token'] = login_data.oauth['oauth_token']
+                else:
+                    new_configs['steamid'] = login_data.auth['transfer_parameters']['steamid']
+                    new_configs['token'] = login_data.auth['transfer_parameters']['webcookie']
+                    new_configs['token_secure'] = login_data.auth['transfer_parameters']['token_secure']
+
+                for key, value in new_configs.items():
+                    config.new("login", key, value)
+
+                self.has_user_data = True
+                self.destroy()
+            finally:
+                self.save_password_item.set_sensitive(True)
+                self.login_button.set_sensitive(True)
+                self.set_size_request(400, 100)
+
+            break
 
     def on_advanced_login_clicked(self, *args) -> None:
         if self.advanced_login_section.props.visible:
