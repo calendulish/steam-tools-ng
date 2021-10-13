@@ -194,7 +194,7 @@ class SettingsDialog(Gtk.Dialog):
             _confirmations_disabled.set_markup(utils.markup(_message, color="hotpink"))
             plugins_section.grid.attach(_confirmations_disabled, 0, 8, 4, 4)
 
-        if not config.client_enable:
+        if not config.client:
             cardfarming.set_sensitive(False)
             cardfarming.label.set_sensitive(False)
             _cardfarming_disabled = Gtk.Label()

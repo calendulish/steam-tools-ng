@@ -53,7 +53,7 @@ class SteamToolsNG:
         self.stop = False
         self.custom_gameid = 0
 
-        if module_name in ['cardfarming', 'fakerun'] and not config.client_enable:
+        if module_name in ['cardfarming', 'fakerun'] and not config.client:
             log.critical(_(
                 "{} module has been disabled because you have "
                 "a stlib built without steam_api support. To enable it again, "

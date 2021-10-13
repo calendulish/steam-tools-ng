@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import asyncio
 import binascii
 import codecs
 import getpass
@@ -178,7 +179,7 @@ class Login:
                 config.remove('login', 'oauth_token')
                 self.cli.on_quit()
             except (aiohttp.ClientError, ValueError):
-                self.status.error(_("Check your connection. (server down?)"))
+                log.error(_("Check your connection. (server down?)"))
                 await asyncio.sleep(15)
                 continue
             except binascii.Error:

@@ -244,6 +244,7 @@ async def check_login(
             if save_password:
                 args.append(__password.encode())
 
+        # FIXME
         config.save_login_data(*args)
 
         break

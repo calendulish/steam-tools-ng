@@ -21,7 +21,6 @@ import logging
 from typing import Any, Dict, List, Tuple, Union
 
 from gi.repository import Gtk
-from stlib import webapi
 
 from . import utils
 from .. import config, i18n

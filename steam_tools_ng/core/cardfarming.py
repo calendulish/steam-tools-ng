@@ -85,6 +85,7 @@ async def main(steamid: int, custom_game_id: int = 0) -> Generator[utils.ModuleD
                 await executor.init()
             except client.SteamAPIError:
                 yield utils.ModuleData(info=_("Invalid game id {}. Ignoring.").format(badge.game_id))
+                # noinspection PyProtectedMember
                 badge = badge._replace(cards=0)
                 break
             except ProcessLookupError:

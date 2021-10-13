@@ -34,8 +34,12 @@ from .. import config, i18n, core
 _ = i18n.get_translation
 log = logging.getLogger(__name__)
 
-if config.client_enable:
+try:
     from stlib import client
+except ImportError as exception:
+    log.error(str(exception))
+    client = None
+
 
 def while_window_realized(function: Callable[..., Any]) -> Callable[..., Any]:
     @functools.wraps(function)
@@ -170,6 +174,7 @@ class SteamToolsNG(Gtk.Application):
 
         self.session.cookie_jar.update_cookies(config.login_cookies())  # type: ignore
 
+        # noinspection PyShadowingNames
         try:
             if self.api_key and await self.webapi_session.is_logged_in(self.steamid):
                 log.info("Steam login Successful")

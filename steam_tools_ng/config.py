@@ -15,21 +15,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import sys
+import time
+
+import aiohttp
 import asyncio
 import configparser
 import http
 import locale
 import logging
 import os
-import sys
-import time
 from collections import OrderedDict
-from typing import Any
-
-import aiohttp
-from stlib import webapi
 from stlib import plugins as stlib_plugins
-
+from stlib import webapi
+from typing import Any
 from . import i18n, logger_handlers
 
 parser = configparser.RawConfigParser()
@@ -55,10 +54,7 @@ try:
     from stlib import client
 except ImportError as exception:
     log.error(str(exception))
-    client_enable=False
-    new("plugins", "cardfarming", False)
-else:
-    client_enable=True
+    client = None
 
 gtk_themes = OrderedDict([
     ('light', _("Light")),
@@ -296,7 +292,7 @@ def login_cookies() -> http.cookies.SimpleCookie:
 
 async def time_offset(webapi_session: webapi.SteamWebAPI) -> int:
     try:
-        if not client_enable:
+        if not client:
             raise ProcessLookupError
 
         with client.SteamGameServer() as server:
