@@ -421,14 +421,13 @@ class Section(Gtk.Frame):
                 current_option = list(items).index(value)
             except ValueError:
                 import sys
-                import traceback
 
                 error_message = _("Please, fix your config file. Accepted values for {} are:\n{}").format(
                     option,
                     ', '.join(items.keys()),
                 )
                 log.exception(error_message)
-                _, _, traceback_info = sys.exc_info()
+                traceback_info = sys.exc_info()[2]
                 fatal_error_dialog(ValueError(error_message), traceback.extract_tb(traceback_info))
                 # unset active item
                 current_option = -1

@@ -89,9 +89,6 @@ class NewAuthenticatorDialog(Gtk.Dialog):
             self.add_authenticator_button.clicked()
 
     async def on_add_authenticator_clicked(self, button: Gtk.Button) -> None:
-        # FIXME: I have no idea why translations is raising errors here
-        global _
-
         self.status.info(_("Retrieving user data"))
         button.set_sensitive(False)
         self.user_details_section.hide()
@@ -127,7 +124,7 @@ class NewAuthenticatorDialog(Gtk.Dialog):
             except NotImplementedError as exception:
                 import sys
                 import traceback
-                _, _, traceback_info = sys.exc_info()
+                traceback_info = sys.exc_info()[2]
                 utils.fatal_error_dialog(exception, traceback.extract_tb(traceback_info), self.parent_window)
                 self.application.on_exit_activate()
             else:
@@ -158,7 +155,7 @@ class NewAuthenticatorDialog(Gtk.Dialog):
         except Exception as exception:
             import sys
             import traceback
-            _, _, traceback_info = sys.exc_info()
+            traceback_info = sys.exc_info()[2]
             utils.fatal_error_dialog(exception, traceback.extract_tb(traceback_info), self.parent_window)
             self.application.on_exit_activate()
         else:
