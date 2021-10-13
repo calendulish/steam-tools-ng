@@ -27,7 +27,7 @@ from typing import Optional, Any, Callable
 import aiohttp
 from stlib import plugins, webapi
 
-from . import utils, login
+from . import authenticator, utils, login
 from .. import i18n, config, core
 
 log = logging.getLogger(__name__)
@@ -120,8 +120,7 @@ class SteamToolsNG:
 
     async def do_login(self, *, block: bool = True, auto: bool = False) -> None:
         login_session = login.Login(self)
-        future = login_session.do_login(auto)
-        await asyncio.gather(future)
+        await login_session.do_login(auto)
 
     async def async_activate(self) -> None:
         ssl_context = ssl.SSLContext()
@@ -168,6 +167,10 @@ class SteamToolsNG:
         task = asyncio.create_task(module())
         log.debug(_("Adding a new callback for %s"), task)
         task.add_done_callback(utils.safe_task_callback)
+
+    async def run_add_authenticator(self) -> None:
+        authenticator_config = authenticator.NewAuthenticator(self)
+        await authenticator_config.add_authenticator()
 
     @while_running
     async def run_steamguard(self) -> None:

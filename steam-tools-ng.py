@@ -93,6 +93,13 @@ if __name__ == "__main__":
     )
 
     command_parser.add_argument(
+        '--add-authenticator',
+        action='store_true',
+        help='Use STNG as your Steam Authenticator',
+        dest='add_authenticator',
+    )
+
+    command_parser.add_argument(
         'options',
         nargs='*',
         help=argparse.SUPPRESS
@@ -139,6 +146,13 @@ if __name__ == "__main__":
 
     log.info(f'Steam Tools NG version {version.__version__} (Made with Girl Power <33)')
     log.info('Copyright (C) 2015 ~ 2021 Lara Maia - <dev@lara.monster>')
+
+    if console_params.add_authenticator:
+        from steam_tools_ng.console import cli
+
+        app = cli.SteamToolsNG('add_authenticator', '')
+        app.run()
+        sys.exit(0)
 
     if console_params.module:
         module_name = console_params.module[0]
