@@ -99,7 +99,11 @@ class Main(Gtk.ApplicationWindow):
         self._warning_label = Gtk.Label()
         self.confirmations_grid.attach(self._warning_label, 0, 3, 4, 1)
 
-        self.text_tree = utils.SimpleTextTree((_('mode'), _('id'), _('key'), _('give'), _('to'), _('receive')), False)
+        self.text_tree = utils.SimpleTextTree(
+            _('mode'), _('id'), _('key'), _('give'), _('to'), _('receive'),
+            overlay_scrolling=False,
+        )
+
         self.confirmations_grid.attach(self.text_tree, 0, 4, 4, 1)
 
         self.text_tree_lock = False

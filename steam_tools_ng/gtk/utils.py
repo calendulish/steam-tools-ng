@@ -114,11 +114,11 @@ class AsyncButton(Gtk.Button):
 class SimpleTextTree(Gtk.ScrolledWindow):
     def __init__(
             self,
-            elements: Tuple[str, ...],
+            *elements,
             overlay_scrolling: bool = True,
             resizable: bool = True,
             fixed_width: int = 0,
-            model: Callable[..., Gtk.TreeModel] = Gtk.TreeStore,
+            model: Callable[..., Union[Gtk.TreeStore, Gtk.ListStore]] = Gtk.TreeStore,
     ) -> None:
         super().__init__()
         # noinspection PyUnusedLocal
@@ -134,9 +134,7 @@ class SimpleTextTree(Gtk.ScrolledWindow):
         renderer = Gtk.CellRendererText()
 
         for index, header in enumerate(elements):
-            column = Gtk.TreeViewColumn()
-            column.set_title(header)
-            column.set_attributes(renderer, text=index)
+            column = Gtk.TreeViewColumn(header, renderer, text=index)
             column.set_resizable(resizable)
 
             if fixed_width:
@@ -145,7 +143,7 @@ class SimpleTextTree(Gtk.ScrolledWindow):
             self._view.append_column(column)
 
     @property
-    def store(self) -> Gtk.TreeModel:
+    def store(self) -> Union[Gtk.TreeStore, Gtk.ListStore]:
         return self._store
 
     @property
@@ -463,7 +461,7 @@ def markup(text: str, **kwargs: Any) -> str:
     return ' '.join(markup_string)
 
 
-def copy_childrens(from_model: Gtk.TreeStore, to_model: Gtk.ListStore, iter_: Gtk.TreeIter, column: int) -> None:
+def copy_childrens(from_model: Gtk.TreeModel, to_model: Gtk.TreeModel, iter_: Gtk.TreeIter, column: int) -> None:
     childrens = from_model.iter_n_children(iter_)
 
     if childrens:
