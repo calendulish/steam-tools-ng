@@ -82,7 +82,7 @@ class FinalizeDialog(Gtk.Dialog):
         self.header_bar.pack_start(self.no_button)
 
         if self.iter is None or not model:
-            self.status.error(_("No items to accept or cancel"))
+            self.status.error(_("You must select something"))
             self.header_bar.set_show_close_button(True)
         elif self.iter is False:
             self.status.info(
