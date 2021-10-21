@@ -66,7 +66,7 @@ Source: "{#STNG_PATH}\plugins\steamtrades.pyc"; DestDir: "{app}\plugins"; Flags:
 
 [Icons]
 Name: "{group}\Steam Tools NG"; Filename: "{app}\steam-tools-ng.exe"; IconFilename: "{app}\share\icons\stng.ico"
-Name: "{group}\(console) authenticator"; Filename: "{app}\steam-tools-ng.exe"; Parameters: "--cli steamguard"; IconFilename: "{app}\share\icons\stng_console.ico"
+Name: "{group}\(console) steamguard"; Filename: "{app}\steam-tools-ng.exe"; Parameters: "--cli steamguard"; IconFilename: "{app}\share\icons\stng_console.ico"
 Name: "{group}\(console) steamtrades"; Filename: "{app}\steam-tools-ng.exe"; Parameters: "--cli steamtrades"; Components: plugins\steamtrades; IconFilename: "{app}\share\icons\stng_console.ico"
 Name: "{group}\(console) steamgifts"; Filename: "{app}\steam-tools-ng.exe"; Parameters: "--cli steamgifts"; Components: plugins\steamgifts; IconFilename: "{app}\share\icons\stng_console.ico"
 Name: "{group}\(console) cardfarming"; Filename: "{app}\steam-tools-ng.exe"; Parameters: "--cli cardfarming"; IconFilename: "{app}\share\icons\stng_console.ico"
