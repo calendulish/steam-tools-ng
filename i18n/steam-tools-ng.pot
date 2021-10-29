@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: steam-tools-ng 1.0.0\n"
 "Report-Msgid-Bugs-To: dev@lara.monster\n"
-"POT-Creation-Date: 2021-10-04 10:49-0300\n"
+"POT-Creation-Date: 2021-10-28 20:37-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -20,117 +20,117 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: steam-tools-ng.py:132 steam-tools-ng.py:137
+#: steam-tools-ng.py:139 steam-tools-ng.py:144
 msgid "Done!"
 msgstr ""
 
-#: steam_tools_ng/config.py:54 steam_tools_ng/gtk/advanced.py:33
+#: steam_tools_ng/config.py:60 steam_tools_ng/gtk/advanced.py:33
 msgid "Light"
 msgstr ""
 
-#: steam_tools_ng/config.py:55 steam_tools_ng/gtk/advanced.py:34
+#: steam_tools_ng/config.py:61 steam_tools_ng/gtk/advanced.py:34
 msgid "Dark"
 msgstr ""
 
-#: steam_tools_ng/config.py:59 steam_tools_ng/gtk/advanced.py:38
+#: steam_tools_ng/config.py:65 steam_tools_ng/gtk/advanced.py:38
 msgid "Critical"
 msgstr ""
 
-#: steam_tools_ng/config.py:60 steam_tools_ng/gtk/advanced.py:39
+#: steam_tools_ng/config.py:66 steam_tools_ng/gtk/advanced.py:39
 msgid "Error"
 msgstr ""
 
-#: steam_tools_ng/config.py:61 steam_tools_ng/gtk/advanced.py:40
+#: steam_tools_ng/config.py:67 steam_tools_ng/gtk/advanced.py:40
 msgid "Warning"
 msgstr ""
 
-#: steam_tools_ng/config.py:62 steam_tools_ng/gtk/advanced.py:41
+#: steam_tools_ng/config.py:68 steam_tools_ng/gtk/advanced.py:41
 msgid "Info"
 msgstr ""
 
-#: steam_tools_ng/config.py:63 steam_tools_ng/gtk/advanced.py:42
+#: steam_tools_ng/config.py:69 steam_tools_ng/gtk/advanced.py:42
 msgid "Debug"
 msgstr ""
 
-#: steam_tools_ng/config.py:67 steam_tools_ng/gtk/advanced.py:46
+#: steam_tools_ng/config.py:73 steam_tools_ng/gtk/advanced.py:46
 msgid "English"
 msgstr ""
 
-#: steam_tools_ng/config.py:68 steam_tools_ng/gtk/advanced.py:47
+#: steam_tools_ng/config.py:74 steam_tools_ng/gtk/advanced.py:47
 msgid "Portuguese (Brazil)"
 msgstr ""
 
-#: steam_tools_ng/config.py:69
+#: steam_tools_ng/config.py:75
 msgid "French"
 msgstr ""
 
-#: steam_tools_ng/config.py:73 steam_tools_ng/gtk/advanced.py:51
+#: steam_tools_ng/config.py:79 steam_tools_ng/gtk/advanced.py:51
 msgid "Main Giveaways"
 msgstr ""
 
-#: steam_tools_ng/config.py:74 steam_tools_ng/gtk/advanced.py:52
+#: steam_tools_ng/config.py:80 steam_tools_ng/gtk/advanced.py:52
 msgid "New Giveaways"
 msgstr ""
 
-#: steam_tools_ng/config.py:75 steam_tools_ng/gtk/advanced.py:53
+#: steam_tools_ng/config.py:81 steam_tools_ng/gtk/advanced.py:53
 msgid "Recommended"
 msgstr ""
 
-#: steam_tools_ng/config.py:76 steam_tools_ng/gtk/advanced.py:54
+#: steam_tools_ng/config.py:82 steam_tools_ng/gtk/advanced.py:54
 msgid "Wishlist Only"
 msgstr ""
 
-#: steam_tools_ng/config.py:77 steam_tools_ng/gtk/advanced.py:55
+#: steam_tools_ng/config.py:83 steam_tools_ng/gtk/advanced.py:55
 msgid "Group Only"
 msgstr ""
 
-#: steam_tools_ng/config.py:81 steam_tools_ng/gtk/advanced.py:59
+#: steam_tools_ng/config.py:87 steam_tools_ng/gtk/advanced.py:59
 msgid "Name"
 msgstr ""
 
-#: steam_tools_ng/config.py:82 steam_tools_ng/gtk/advanced.py:60
+#: steam_tools_ng/config.py:88 steam_tools_ng/gtk/advanced.py:60
 msgid "Copies"
 msgstr ""
 
-#: steam_tools_ng/config.py:83 steam_tools_ng/gtk/advanced.py:61
+#: steam_tools_ng/config.py:89 steam_tools_ng/gtk/advanced.py:61
 msgid "Points"
 msgstr ""
 
-#: steam_tools_ng/config.py:84 steam_tools_ng/gtk/advanced.py:62
+#: steam_tools_ng/config.py:90 steam_tools_ng/gtk/advanced.py:62
 msgid "Level"
 msgstr ""
 
-#: steam_tools_ng/config.py:88
+#: steam_tools_ng/config.py:94
 msgid "Confirmations"
 msgstr ""
 
-#: steam_tools_ng/config.py:89
+#: steam_tools_ng/config.py:95
 msgid "Steam Trades"
 msgstr ""
 
-#: steam_tools_ng/config.py:90
+#: steam_tools_ng/config.py:96
 msgid "Steam Gifts"
 msgstr ""
 
-#: steam_tools_ng/config.py:91
+#: steam_tools_ng/config.py:97
 msgid "Steam Guard"
 msgstr ""
 
-#: steam_tools_ng/config.py:92
+#: steam_tools_ng/config.py:98
 msgid "Card Farming"
 msgstr ""
 
-#: steam_tools_ng/config.py:175
+#: steam_tools_ng/config.py:181
 msgid "Unsupported language requested. Fallbacking to English."
 msgstr ""
 
-#: steam_tools_ng/config.py:179
+#: steam_tools_ng/config.py:185
 msgid ""
 "Please, fix your config file. Available values for {}:\n"
 "{}"
 msgstr ""
 
-#: steam_tools_ng/config.py:202
+#: steam_tools_ng/config.py:208
 msgid "Incorrect log directory. Fallbacking to default."
 msgstr ""
 
@@ -145,89 +145,94 @@ msgstr ""
 msgid "Not saving %s:%s because values are already updated"
 msgstr ""
 
-#: steam_tools_ng/config.py:270
+#: steam_tools_ng/config.py:282
 msgid "No login cookies"
 msgstr ""
 
-#: steam_tools_ng/config.py:286
+#: steam_tools_ng/config.py:301
 msgid "Steam is not running."
 msgstr ""
 
-#: steam_tools_ng/config.py:287
+#: steam_tools_ng/config.py:302
 msgid "Fallbacking time offset to WebAPI"
 msgstr ""
 
-#: steam_tools_ng/console/cli.py:145 steam_tools_ng/console/login.py:180
-#: steam_tools_ng/core/cardfarming.py:49 steam_tools_ng/core/cardfarming.py:124
-#: steam_tools_ng/core/confirmations.py:59 steam_tools_ng/core/steamgifts.py:52
-#: steam_tools_ng/core/steamtrades.py:56 steam_tools_ng/core/steamtrades.py:90
-#: steam_tools_ng/gtk/application.py:178
-#: steam_tools_ng/gtk/authenticator.py:116
-#: steam_tools_ng/gtk/authenticator.py:154 steam_tools_ng/gtk/login.py:280
+#: steam_tools_ng/console/authenticator.py:70
+#: steam_tools_ng/console/authenticator.py:101
+#: steam_tools_ng/console/cli.py:161 steam_tools_ng/console/login.py:182
+#: steam_tools_ng/core/cardfarming.py:49 steam_tools_ng/core/cardfarming.py:73
+#: steam_tools_ng/core/cardfarming.py:131
+#: steam_tools_ng/core/confirmations.py:59 steam_tools_ng/core/fakerun.py:37
+#: steam_tools_ng/core/steamgifts.py:51 steam_tools_ng/core/steamgifts.py:74
+#: steam_tools_ng/core/steamgifts.py:85 steam_tools_ng/core/steamgifts.py:126
+#: steam_tools_ng/core/steamtrades.py:55 steam_tools_ng/core/steamtrades.py:89
+#: steam_tools_ng/core/steamtrades.py:112 steam_tools_ng/gtk/application.py:185
+#: steam_tools_ng/gtk/authenticator.py:113
+#: steam_tools_ng/gtk/authenticator.py:151 steam_tools_ng/gtk/login.py:282
 msgid "Check your connection. (server down?)"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:349 steam_tools_ng/gtk/utils.py:533
+#: steam_tools_ng/console/utils.py:131 steam_tools_ng/gtk/utils.py:530
 #, python-format
 msgid "%s has been stopped due user request"
 msgstr ""
 
-#: steam_tools_ng/console/cli.py:128 steam_tools_ng/gtk/application.py:160
+#: steam_tools_ng/console/cli.py:144 steam_tools_ng/gtk/application.py:166
 msgid "Logging on Steam. Please wait!"
 msgstr ""
 
-#: steam_tools_ng/console/cli.py:149
+#: steam_tools_ng/console/cli.py:165
 #, python-format
 msgid "Initializing module %s"
 msgstr ""
 
-#: steam_tools_ng/console/cli.py:152 steam_tools_ng/gtk/application.py:212
+#: steam_tools_ng/console/cli.py:168 steam_tools_ng/gtk/application.py:219
 #, python-format
 msgid "Adding a new callback for %s"
 msgstr ""
 
-#: steam_tools_ng/console/login.py:89 steam_tools_ng/gtk/authenticator.py:95
-#: steam_tools_ng/gtk/login.py:187
+#: steam_tools_ng/console/authenticator.py:52
+#: steam_tools_ng/console/login.py:90 steam_tools_ng/gtk/authenticator.py:92
+#: steam_tools_ng/gtk/login.py:188
 msgid "Retrieving user data"
 msgstr ""
 
-#: steam_tools_ng/console/login.py:97 steam_tools_ng/console/utils.py:140
+#: steam_tools_ng/console/login.py:98
 msgid "Please, write your username"
 msgstr ""
 
-#: steam_tools_ng/console/login.py:102
+#: steam_tools_ng/console/login.py:103
 msgid "Please, write your password (IT'S HIDDEN, and will be encrypted)"
 msgstr ""
 
-#: steam_tools_ng/console/login.py:128 steam_tools_ng/console/utils.py:181
-#: steam_tools_ng/gtk/login.py:214
+#: steam_tools_ng/console/login.py:129 steam_tools_ng/gtk/login.py:215
 msgid ""
 "No shared secret found. Trying to log-in without two-factor authentication."
 msgstr ""
 
-#: steam_tools_ng/console/login.py:135 steam_tools_ng/gtk/login.py:221
+#: steam_tools_ng/console/login.py:136 steam_tools_ng/gtk/login.py:222
 msgid "Logging in"
 msgstr ""
 
-#: steam_tools_ng/console/login.py:143 steam_tools_ng/console/utils.py:191
+#: steam_tools_ng/console/login.py:145
 msgid "Write code received by email"
 msgstr ""
 
-#: steam_tools_ng/console/login.py:148
+#: steam_tools_ng/console/login.py:150
 msgid "Write Steam Code"
 msgstr ""
 
-#: steam_tools_ng/console/login.py:154 steam_tools_ng/gtk/login.py:245
+#: steam_tools_ng/console/login.py:156 steam_tools_ng/gtk/login.py:247
 msgid ""
 "Your network is blocked!\n"
 "It'll take some time until unblocked. Please, try again later\n"
 msgstr ""
 
-#: steam_tools_ng/console/login.py:161 steam_tools_ng/console/utils.py:209
+#: steam_tools_ng/console/login.py:163
 msgid "Steam server is requesting a captcha code."
 msgstr ""
 
-#: steam_tools_ng/console/login.py:168 steam_tools_ng/console/utils.py:215
+#: steam_tools_ng/console/login.py:170
 msgid "Open {} in an image view and write captcha code that it shows"
 msgstr ""
 
@@ -236,102 +241,81 @@ msgid ""
 "Please, check your username/password and try again.\n"
 msgstr ""
 
-#: steam_tools_ng/console/login.py:183 steam_tools_ng/gtk/login.py:284
+#: steam_tools_ng/console/login.py:186 steam_tools_ng/gtk/login.py:286
 msgid "shared secret is invalid!"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:51 steam_tools_ng/console/utils.py:63
-#: steam_tools_ng/console/utils.py:121
 msgid "No Connection. Please, check your connection and try again."
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:55
 msgid "Write code received by SMS"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:60
+#: steam_tools_ng/console/authenticator.py:98
 msgid "Invalid SMS Code. Please, check the code and try again."
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:70
 msgid "Success!"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:73
 msgid "Unable to add a new authenticator"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:95
 msgid "STNG is not configured."
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:100
 msgid ""
 "[1] Use STNG as Steam Authenticator\n"
 "[2] Use custom secrets (advanced users only!)\n"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:127
 msgid "User is not logged in."
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:145
 msgid "Please, write your password (it's hidden, and will be not saved)"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:148
 msgid ""
 "Unable to log-in!\n"
 "Username or password is blank."
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:161
 msgid "Write your shared secret"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:163
 msgid "Write your identity secret"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:166
 msgid ""
 "Unable to log-in!\n"
 "shared secret or identity secret is blank."
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:178
 msgid "Unable to relogin without a valid shared secret and identity secret"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:185
 msgid "Waiting Steam Server..."
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:198
 msgid ""
 "Unable to log-in! You already have a Steam Authenticator active on current "
 "account."
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:199
 msgid "¬ To log-in, remove authenticator from your account and try again."
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:200
 msgid "¬ (STNG will add itself as Steam Authenticator in your account)"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:202
 msgid "Unable to log-in! The secret keys are invalid!"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:206
 msgid ""
 "Your network is blocked! It'll take some time until unblocked. Please, try "
 "again later."
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:222
 msgid "Unable to log-in! Please, check your username/password and try again."
 msgstr ""
 
@@ -345,48 +329,44 @@ msgid ""
 "reset and try again.)"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:230
 msgid "No Connection"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:236
 #, python-format
 msgid "WRITE DOWN THE RECOVERY CODE: %s"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:237
 msgid "YOU WILL NOT ABLE TO VIEW IT AGAIN!"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:242
 msgid "Do you want to save the password?"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:263
+#: steam_tools_ng/console/utils.py:45
 msgid "[Y/n]"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:265
+#: steam_tools_ng/console/utils.py:47
 msgid "[y/N]"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:277 steam_tools_ng/console/utils.py:288
+#: steam_tools_ng/console/utils.py:59 steam_tools_ng/console/utils.py:70
 msgid "Invalid response from user"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:282 steam_tools_ng/console/utils.py:298
+#: steam_tools_ng/console/utils.py:64 steam_tools_ng/console/utils.py:80
 msgid "{} is not an accepted value"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:293
+#: steam_tools_ng/console/utils.py:75
 msgid "y"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:295
+#: steam_tools_ng/console/utils.py:77
 msgid "n"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:301
+#: steam_tools_ng/console/utils.py:83
 msgid "Please, try again."
 msgstr ""
 
@@ -397,38 +377,38 @@ msgstr ""
 msgid "Stopped"
 msgstr ""
 
-#: steam_tools_ng/core/cardfarming.py:65 steam_tools_ng/core/fakerun.py:41
+#: steam_tools_ng/core/cardfarming.py:65 steam_tools_ng/core/fakerun.py:46
 msgid "Loading {}"
 msgstr ""
 
-#: steam_tools_ng/core/cardfarming.py:82
+#: steam_tools_ng/core/cardfarming.py:87
 msgid "Invalid game id {}. Ignoring."
 msgstr ""
 
-#: steam_tools_ng/core/cardfarming.py:86 steam_tools_ng/core/fakerun.py:59
+#: steam_tools_ng/core/cardfarming.py:92 steam_tools_ng/core/fakerun.py:64
 msgid "Steam Client is not running."
 msgstr ""
 
 msgid "Waiting drops for {} minutes."
 msgstr ""
 
-#: steam_tools_ng/core/cardfarming.py:101 steam_tools_ng/core/fakerun.py:52
+#: steam_tools_ng/core/cardfarming.py:107 steam_tools_ng/core/fakerun.py:57
 msgid "Running {}"
 msgstr ""
 
-#: steam_tools_ng/core/cardfarming.py:114
+#: steam_tools_ng/core/cardfarming.py:120
 msgid "Updating drops"
 msgstr ""
 
-#: steam_tools_ng/core/cardfarming.py:132
+#: steam_tools_ng/core/cardfarming.py:141
 msgid "{} ({})"
 msgstr ""
 
-#: steam_tools_ng/core/cardfarming.py:127
+#: steam_tools_ng/core/cardfarming.py:134
 msgid "Steam Server is busy"
 msgstr ""
 
-#: steam_tools_ng/core/cardfarming.py:132
+#: steam_tools_ng/core/cardfarming.py:141
 msgid "Done"
 msgstr ""
 
@@ -453,7 +433,7 @@ msgid "User is not logged in"
 msgstr ""
 
 #: steam_tools_ng/core/steamgifts.py:34 steam_tools_ng/core/steamtrades.py:34
-#: steam_tools_ng/gtk/application.py:208
+#: steam_tools_ng/gtk/application.py:215
 msgid "Loading"
 msgstr ""
 
@@ -461,64 +441,64 @@ msgstr ""
 msgid "Unable to find Steamgifts plugin."
 msgstr ""
 
-#: steam_tools_ng/core/steamgifts.py:56 steam_tools_ng/core/steamtrades.py:60
+#: steam_tools_ng/core/steamgifts.py:55 steam_tools_ng/core/steamtrades.py:59
 msgid "Unable to login. Trying again in 15 seconds"
 msgstr ""
 
-#: steam_tools_ng/core/steamgifts.py:60 steam_tools_ng/core/steamtrades.py:64
+#: steam_tools_ng/core/steamgifts.py:59 steam_tools_ng/core/steamtrades.py:63
 msgid "User is suspended."
 msgstr ""
 
-#: steam_tools_ng/core/steamgifts.py:64
+#: steam_tools_ng/core/steamgifts.py:63
 msgid "Your profile must be public to use steamgifts."
 msgstr ""
 
-#: steam_tools_ng/core/steamgifts.py:68 steam_tools_ng/core/steamtrades.py:76
+#: steam_tools_ng/core/steamgifts.py:67 steam_tools_ng/core/steamtrades.py:75
 msgid "User is not logged in. Trying again in 30 seconds"
 msgstr ""
 
-#: steam_tools_ng/core/steamgifts.py:75
+#: steam_tools_ng/core/steamgifts.py:78
 msgid "Unable to configure steamgifts."
 msgstr ""
 
-#: steam_tools_ng/core/steamgifts.py:90
+#: steam_tools_ng/core/steamgifts.py:99
 msgid "No giveaways to join."
 msgstr ""
 
-#: steam_tools_ng/core/steamgifts.py:109
+#: steam_tools_ng/core/steamgifts.py:118
 msgid "Joined!"
 msgstr ""
 
-#: steam_tools_ng/core/steamgifts.py:113
+#: steam_tools_ng/core/steamgifts.py:122
 msgid "Unable to join {}."
 msgstr ""
 
-#: steam_tools_ng/core/steamgifts.py:117
+#: steam_tools_ng/core/steamgifts.py:131
 msgid "No giveaways available to join."
 msgstr ""
 
-#: steam_tools_ng/core/steamgifts.py:121
+#: steam_tools_ng/core/steamgifts.py:135
 msgid "Giveaway is already ended."
 msgstr ""
 
-#: steam_tools_ng/core/steamgifts.py:125 steam_tools_ng/core/steamtrades.py:125
+#: steam_tools_ng/core/steamgifts.py:139 steam_tools_ng/core/steamtrades.py:129
 msgid "Login is lost. Trying to relogin."
 msgstr ""
 
-#: steam_tools_ng/core/steamgifts.py:130
+#: steam_tools_ng/core/steamgifts.py:144
 msgid "User don't have required level to join."
 msgstr ""
 
-#: steam_tools_ng/core/steamgifts.py:134
+#: steam_tools_ng/core/steamgifts.py:148
 msgid "User don't have required points to join."
 msgstr ""
 
-#: steam_tools_ng/core/steamgifts.py:147
+#: steam_tools_ng/core/steamgifts.py:161
 #, python-format
 msgid "Setting wait_offset from steamgifts to %s."
 msgstr ""
 
-#: steam_tools_ng/core/steamgifts.py:150
+#: steam_tools_ng/core/steamgifts.py:164
 msgid "Waiting more {} minutes."
 msgstr ""
 
@@ -530,7 +510,7 @@ msgstr ""
 msgid "Steam Client is not running"
 msgstr ""
 
-#: steam_tools_ng/core/steamguard.py:48 steam_tools_ng/gtk/utils.py:229
+#: steam_tools_ng/core/steamguard.py:48 steam_tools_ng/gtk/utils.py:227
 msgid "Loading..."
 msgstr ""
 
@@ -546,57 +526,58 @@ msgstr ""
 msgid "Unable to find Steamtrades plugin"
 msgstr ""
 
-#: steam_tools_ng/core/steamtrades.py:47
+#: steam_tools_ng/core/steamtrades.py:46
 msgid "No trade ID found"
 msgstr ""
 
 #: steam_tools_ng/core/cardfarming.py:49 steam_tools_ng/core/cardfarming.py:54
-#: steam_tools_ng/core/cardfarming.py:86 steam_tools_ng/core/cardfarming.py:124
-#: steam_tools_ng/core/cardfarming.py:127
+#: steam_tools_ng/core/cardfarming.py:73 steam_tools_ng/core/cardfarming.py:92
+#: steam_tools_ng/core/cardfarming.py:131
+#: steam_tools_ng/core/cardfarming.py:134
 #: steam_tools_ng/core/confirmations.py:37
 #: steam_tools_ng/core/confirmations.py:53
 #: steam_tools_ng/core/confirmations.py:55
-#: steam_tools_ng/core/confirmations.py:59 steam_tools_ng/core/steamgifts.py:52
-#: steam_tools_ng/core/steamgifts.py:64 steam_tools_ng/core/steamguard.py:42
-#: steam_tools_ng/core/steamguard.py:45 steam_tools_ng/core/steamtrades.py:47
-#: steam_tools_ng/core/steamtrades.py:68
+#: steam_tools_ng/core/confirmations.py:59 steam_tools_ng/core/steamgifts.py:51
+#: steam_tools_ng/core/steamgifts.py:63 steam_tools_ng/core/steamguard.py:42
+#: steam_tools_ng/core/steamguard.py:45 steam_tools_ng/core/steamtrades.py:46
+#: steam_tools_ng/core/steamtrades.py:67
 msgid "Waiting Changes"
 msgstr ""
 
-#: steam_tools_ng/core/steamtrades.py:68
+#: steam_tools_ng/core/steamtrades.py:67
 msgid "Your profile must be public to use steamtrades."
 msgstr ""
 
-#: steam_tools_ng/core/steamtrades.py:72
+#: steam_tools_ng/core/steamtrades.py:71
 msgid "You must be level 1 or greater to use steamtrades."
 msgstr ""
 
-#: steam_tools_ng/core/steamtrades.py:86
+#: steam_tools_ng/core/steamtrades.py:85
 msgid "Unable to find trade id"
 msgstr ""
 
-#: steam_tools_ng/core/steamtrades.py:106
+#: steam_tools_ng/core/steamtrades.py:105
 msgid "Bumped!"
 msgstr ""
 
-#: steam_tools_ng/core/steamtrades.py:109
+#: steam_tools_ng/core/steamtrades.py:108
 msgid "Unable to bump"
 msgstr ""
 
-#: steam_tools_ng/core/steamtrades.py:113
+#: steam_tools_ng/core/steamtrades.py:117
 msgid "No trades available to bump"
 msgstr ""
 
-#: steam_tools_ng/core/steamtrades.py:121
+#: steam_tools_ng/core/steamtrades.py:125
 msgid "Trade {}({}) is closed"
 msgstr ""
 
-#: steam_tools_ng/core/steamtrades.py:135
+#: steam_tools_ng/core/steamtrades.py:139
 #, python-format
 msgid "Setting wait_offset from steamtrades to %s"
 msgstr ""
 
-#: steam_tools_ng/core/steamtrades.py:138
+#: steam_tools_ng/core/steamtrades.py:142
 msgid "Waiting more {} minutes"
 msgstr ""
 
@@ -612,11 +593,11 @@ msgstr ""
 msgid "Advanced Settings"
 msgstr ""
 
-#: steam_tools_ng/gtk/advanced.py:96 steam_tools_ng/gtk/settings.py:112
+#: steam_tools_ng/gtk/advanced.py:96 steam_tools_ng/gtk/settings.py:113
 msgid "Login Settings"
 msgstr ""
 
-#: steam_tools_ng/gtk/advanced.py:98 steam_tools_ng/gtk/login.py:111
+#: steam_tools_ng/gtk/advanced.py:98 steam_tools_ng/gtk/login.py:112
 msgid "Shared Secret:"
 msgstr ""
 
@@ -628,7 +609,7 @@ msgstr ""
 msgid "Token Secure:"
 msgstr ""
 
-#: steam_tools_ng/gtk/advanced.py:107 steam_tools_ng/gtk/login.py:104
+#: steam_tools_ng/gtk/advanced.py:107 steam_tools_ng/gtk/login.py:105
 msgid "Identity Secret:"
 msgstr ""
 
@@ -648,34 +629,34 @@ msgstr ""
 msgid "Reseting... Please wait!"
 msgstr ""
 
-#: steam_tools_ng/gtk/application.py:161
+#: steam_tools_ng/gtk/application.py:167
 msgid "Logging on Steam"
 msgstr ""
 
-#: steam_tools_ng/gtk/application.py:196
+#: steam_tools_ng/gtk/application.py:203
 #, python-format
 msgid "%s is requesting a reinitialization."
 msgstr ""
 
-#: steam_tools_ng/gtk/application.py:201
+#: steam_tools_ng/gtk/application.py:208
 #, python-format
 msgid "%s is enabled but not initialized. Initializing now."
 msgstr ""
 
-#: steam_tools_ng/gtk/application.py:219
+#: steam_tools_ng/gtk/application.py:226
 #, python-format
 msgid "%s is disabled but not cancelled. Cancelling now."
 msgstr ""
 
-#: steam_tools_ng/gtk/application.py:226
+#: steam_tools_ng/gtk/application.py:233
 msgid "Disabled"
 msgstr ""
 
-#: steam_tools_ng/gtk/application.py:267
+#: steam_tools_ng/gtk/application.py:275
 msgid "Waiting another confirmation process"
 msgstr ""
 
-#: steam_tools_ng/gtk/application.py:276
+#: steam_tools_ng/gtk/application.py:284
 msgid "Skipping confirmations update because data doesn't seem to have changed"
 msgstr ""
 
@@ -687,7 +668,7 @@ msgstr ""
 msgid "New Authenticator"
 msgstr ""
 
-#: steam_tools_ng/gtk/authenticator.py:63 steam_tools_ng/gtk/login.py:71
+#: steam_tools_ng/gtk/authenticator.py:63 steam_tools_ng/gtk/login.py:72
 msgid "User Details"
 msgstr ""
 
@@ -695,45 +676,50 @@ msgstr ""
 msgid "SMS Code:"
 msgstr ""
 
-#: steam_tools_ng/gtk/authenticator.py:102
+#: steam_tools_ng/gtk/authenticator.py:99
 msgid ""
 "Some login data is missing. If the problem persists, go to:\n"
 "Settings -> Login -> Advanced -> and click on RESET Everything."
 msgstr ""
 
-#: steam_tools_ng/gtk/authenticator.py:119
+#: steam_tools_ng/console/authenticator.py:74
+#: steam_tools_ng/gtk/authenticator.py:116
 msgid ""
 "There's already an authenticator active for that account.\n"
 "Remove your current steam authenticator and try again."
 msgstr ""
 
-#: steam_tools_ng/gtk/authenticator.py:124
+#: steam_tools_ng/console/authenticator.py:80
+#: steam_tools_ng/gtk/authenticator.py:121
 msgid ""
 "You must have a phone registered on your steam account to proceed.\n"
 "Go to your Steam Account Settings, add a Phone Number, and try again."
 msgstr ""
 
-#: steam_tools_ng/gtk/authenticator.py:134
+#: steam_tools_ng/gtk/authenticator.py:131
 msgid ""
 "Enter bellow the code received by SMS\n"
 "and click on 'Add Authenticator' button"
 msgstr ""
 
-#: steam_tools_ng/gtk/authenticator.py:142
+#: steam_tools_ng/console/authenticator.py:91
+#: steam_tools_ng/gtk/authenticator.py:139
 msgid "Adding authenticator"
 msgstr ""
 
-#: steam_tools_ng/gtk/authenticator.py:149
+#: steam_tools_ng/gtk/authenticator.py:146
 msgid ""
 "Invalid SMS Code. Please,\n"
 "check the code and try again."
 msgstr ""
 
-#: steam_tools_ng/gtk/authenticator.py:165
+#: steam_tools_ng/console/authenticator.py:107
+#: steam_tools_ng/gtk/authenticator.py:162
 msgid "Saving new secrets"
 msgstr ""
 
-#: steam_tools_ng/gtk/authenticator.py:172
+#: steam_tools_ng/console/authenticator.py:114
+#: steam_tools_ng/gtk/authenticator.py:169
 msgid ""
 "RECOVERY CODE\n"
 "\n"
@@ -743,200 +729,199 @@ msgid ""
 "YOU WILL NOT ABLE TO VIEW IT AGAIN!\n"
 msgstr ""
 
-#: steam_tools_ng/gtk/authenticator.py:183
+#: steam_tools_ng/gtk/authenticator.py:180
 msgid "Recovery Code"
 msgstr ""
 
-#: steam_tools_ng/gtk/confirmation.py:48
+#: steam_tools_ng/gtk/confirmation.py:47
 msgid "accept"
 msgstr ""
 
-#: steam_tools_ng/gtk/confirmation.py:50
+#: steam_tools_ng/gtk/confirmation.py:49
 msgid "cancel"
 msgstr ""
 
-#: steam_tools_ng/gtk/confirmation.py:60
+#: steam_tools_ng/gtk/confirmation.py:59
 msgid "Finalize Confirmation"
 msgstr ""
 
-#: steam_tools_ng/gtk/confirmation.py:76
+#: steam_tools_ng/gtk/confirmation.py:75
 msgid "Continue"
 msgstr ""
 
-#: steam_tools_ng/gtk/confirmation.py:81
+#: steam_tools_ng/gtk/confirmation.py:80
 msgid "Cancel"
 msgstr ""
 
-#: steam_tools_ng/gtk/confirmation.py:86
 msgid "No items to accept or cancel"
 msgstr ""
 
-#: steam_tools_ng/gtk/confirmation.py:90
+#: steam_tools_ng/gtk/confirmation.py:89
 msgid ""
 "Do you really want to {} ALL confirmations?\n"
 "It can't be undone!"
 msgstr ""
 
-#: steam_tools_ng/gtk/confirmation.py:104
+#: steam_tools_ng/gtk/confirmation.py:103
 msgid "You are trading the following items with {}:"
 msgstr ""
 
-#: steam_tools_ng/gtk/confirmation.py:109
+#: steam_tools_ng/gtk/confirmation.py:108
 msgid ""
 "Do you really want to {} that?\n"
 "It can't be undone!"
 msgstr ""
 
-#: steam_tools_ng/gtk/confirmation.py:114
+#: steam_tools_ng/gtk/confirmation.py:113
 msgid "You will give"
 msgstr ""
 
-#: steam_tools_ng/gtk/confirmation.py:121
+#: steam_tools_ng/gtk/confirmation.py:120
 msgid "You will receive"
 msgstr ""
 
-#: steam_tools_ng/gtk/confirmation.py:170
+#: steam_tools_ng/gtk/confirmation.py:169
 msgid "Steam Server is slow. Please, try again."
 msgstr ""
 
-#: steam_tools_ng/gtk/confirmation.py:184
+#: steam_tools_ng/gtk/confirmation.py:183
 msgid "Waiting Steam Server (OP: {})"
 msgstr ""
 
-#: steam_tools_ng/gtk/confirmation.py:201
+#: steam_tools_ng/gtk/confirmation.py:200
 #, python-format
 msgid "Unable to remove tree path %s (already removed?). Ignoring."
 msgstr ""
 
-#: steam_tools_ng/gtk/confirmation.py:211
+#: steam_tools_ng/gtk/confirmation.py:210
 msgid "Waiting Steam Server response"
 msgstr ""
 
-#: steam_tools_ng/gtk/confirmation.py:232
+#: steam_tools_ng/gtk/confirmation.py:231
 msgid "Updating tree"
 msgstr ""
 
-#: steam_tools_ng/gtk/login.py:50
+#: steam_tools_ng/gtk/login.py:51
 msgid "Log-in"
 msgstr ""
 
-#: steam_tools_ng/gtk/login.py:56
+#: steam_tools_ng/gtk/login.py:57
 msgid "Login"
 msgstr ""
 
-#: steam_tools_ng/gtk/login.py:74 steam_tools_ng/gtk/settings.py:114
+#: steam_tools_ng/gtk/login.py:75 steam_tools_ng/gtk/settings.py:115
 msgid "Username:"
 msgstr ""
 
-#: steam_tools_ng/gtk/login.py:76
+#: steam_tools_ng/gtk/login.py:77
 msgid "Password:"
 msgstr ""
 
-#: steam_tools_ng/gtk/login.py:80
+#: steam_tools_ng/gtk/login.py:81
 msgid "Steam Code:"
 msgstr ""
 
-#: steam_tools_ng/gtk/login.py:81
+#: steam_tools_ng/gtk/login.py:82
 msgid "Mail Code:"
 msgstr ""
 
-#: steam_tools_ng/gtk/login.py:85
+#: steam_tools_ng/gtk/login.py:86
 msgid "Code:"
 msgstr ""
 
-#: steam_tools_ng/gtk/login.py:87
+#: steam_tools_ng/gtk/login.py:88
 msgid "Captcha Text:"
 msgstr ""
 
-#: steam_tools_ng/gtk/login.py:90
+#: steam_tools_ng/gtk/login.py:91
 msgid "Save Password:"
 msgstr ""
 
-#: steam_tools_ng/gtk/login.py:94 steam_tools_ng/gtk/login.py:99
+#: steam_tools_ng/gtk/login.py:95 steam_tools_ng/gtk/login.py:100
 msgid "Advanced Login"
 msgstr ""
 
-#: steam_tools_ng/gtk/login.py:182
+#: steam_tools_ng/gtk/login.py:183
 msgid "Username or Password is blank!"
 msgstr ""
 
-#: steam_tools_ng/gtk/login.py:234
+#: steam_tools_ng/gtk/login.py:236
 msgid ""
 "Write code received by email\n"
 "and click on 'Log-in' button"
 msgstr ""
 
-#: steam_tools_ng/gtk/login.py:239
+#: steam_tools_ng/gtk/login.py:241
 msgid "Write Steam Code bellow and click on 'Log-in'"
 msgstr ""
 
-#: steam_tools_ng/gtk/login.py:254
+#: steam_tools_ng/gtk/login.py:256
 msgid ""
 "Write captcha code as shown bellow\n"
 "and click on 'Log-in' button"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:46 steam_tools_ng/gtk/window.py:47
+#: steam_tools_ng/gtk/settings.py:47 steam_tools_ng/gtk/window.py:47
 msgid "Settings"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:69
+#: steam_tools_ng/gtk/settings.py:70
 msgid "General Settings"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:72
+#: steam_tools_ng/gtk/settings.py:73
 msgid "Config File Directory"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:78
+#: steam_tools_ng/gtk/settings.py:79
 msgid "Config / Log file Directory"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:82
+#: steam_tools_ng/gtk/settings.py:83
 msgid "Log File Directory"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:88
+#: steam_tools_ng/gtk/settings.py:89
 msgid "Theme:"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:91
+#: steam_tools_ng/gtk/settings.py:92
 msgid "Show close button:"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:95
+#: steam_tools_ng/gtk/settings.py:96
 msgid "Language"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:101
+#: steam_tools_ng/gtk/settings.py:102
 msgid "Show debug console"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:107
+#: steam_tools_ng/gtk/settings.py:108
 msgid "Press the button again to close the debug console"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:118
+#: steam_tools_ng/gtk/settings.py:119
 msgid "Login with another account"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:124
+#: steam_tools_ng/gtk/settings.py:125
 msgid "Use STNG as your Steam Authenticator"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:130
+#: steam_tools_ng/gtk/settings.py:131
 msgid "Remove Saved Password"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:136
+#: steam_tools_ng/gtk/settings.py:137
 msgid "Advanced"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:143
+#: steam_tools_ng/gtk/settings.py:144
 msgid "Plugins Settings"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:171
+#: steam_tools_ng/gtk/settings.py:172
 msgid ""
 "authenticator module has been disabled because you have\n"
 "logged in but no shared secret is found. To enable it again,\n"
@@ -944,7 +929,7 @@ msgid ""
 "or use STNG as your Steam Authenticator\n"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:187
+#: steam_tools_ng/gtk/settings.py:188
 msgid ""
 "confirmations module has been disabled because you have\n"
 "logged in but no identity secret is found. To enable it again,\n"
@@ -952,63 +937,63 @@ msgid ""
 "or use STNG as your Steam Authenticator\n"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:198
+#: steam_tools_ng/gtk/settings.py:244
 msgid "Steamtrades Settings"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:200
+#: steam_tools_ng/gtk/settings.py:246
 msgid "Trade IDs:"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:204 steam_tools_ng/gtk/settings.py:243
+#: steam_tools_ng/gtk/settings.py:250 steam_tools_ng/gtk/settings.py:289
 msgid "Wait MIN:"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:207 steam_tools_ng/gtk/settings.py:246
+#: steam_tools_ng/gtk/settings.py:253 steam_tools_ng/gtk/settings.py:292
 msgid "Wait MAX:"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:212
+#: steam_tools_ng/gtk/settings.py:258
 msgid "Steamgifts Settings"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:216
+#: steam_tools_ng/gtk/settings.py:262
 msgid "Giveaway Type:"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:225
+#: steam_tools_ng/gtk/settings.py:271
 msgid "Sort Giveaways:"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:232
+#: steam_tools_ng/gtk/settings.py:278
 msgid "Reverse Sorting:"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:237
+#: steam_tools_ng/gtk/settings.py:283
 msgid "Developer Giveaways"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:251
+#: steam_tools_ng/gtk/settings.py:297
 msgid "Cardfarming settings"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:262
+#: steam_tools_ng/gtk/settings.py:308
 msgid "More cards First:"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:266
+#: steam_tools_ng/gtk/settings.py:312
 msgid "Logger settings"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:268
+#: steam_tools_ng/gtk/settings.py:314
 msgid "Level:"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:272
+#: steam_tools_ng/gtk/settings.py:318
 msgid "Console level:"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:357
+#: steam_tools_ng/gtk/settings.py:403
 msgid "Removing saved password..."
 msgstr ""
 
@@ -1098,15 +1083,15 @@ msgstr ""
 msgid "Previous"
 msgstr ""
 
-#: steam_tools_ng/gtk/utils.py:171
+#: steam_tools_ng/gtk/utils.py:169
 msgid "Waiting"
 msgstr ""
 
-#: steam_tools_ng/gtk/utils.py:260
+#: steam_tools_ng/gtk/utils.py:258
 msgid "Text Copied to Clipboard"
 msgstr ""
 
-#: steam_tools_ng/gtk/utils.py:426
+#: steam_tools_ng/gtk/utils.py:423
 msgid ""
 "Please, fix your config file. Accepted values for {} are:\n"
 "{}"
@@ -1116,15 +1101,15 @@ msgstr ""
 msgid "Ignoring value from %s on column %s item %s because value is empty"
 msgstr ""
 
-#: steam_tools_ng/gtk/utils.py:492
+#: steam_tools_ng/gtk/utils.py:489
 msgid "Nothing"
 msgstr ""
 
-#: steam_tools_ng/gtk/utils.py:496
+#: steam_tools_ng/gtk/utils.py:493
 msgid "Various"
 msgstr ""
 
-#: steam_tools_ng/gtk/utils.py:518
+#: steam_tools_ng/gtk/utils.py:515
 msgid "Fatal Error"
 msgstr ""
 
@@ -1140,43 +1125,43 @@ msgstr ""
 msgid "If you have confirmations, they will be shown here. (20 seconds delay)"
 msgstr ""
 
-#: steam_tools_ng/gtk/window.py:102
+#: steam_tools_ng/gtk/window.py:103
 msgid "give"
 msgstr ""
 
-#: steam_tools_ng/gtk/window.py:102
+#: steam_tools_ng/gtk/window.py:103
 msgid "id"
 msgstr ""
 
-#: steam_tools_ng/gtk/window.py:102
+#: steam_tools_ng/gtk/window.py:103
 msgid "key"
 msgstr ""
 
-#: steam_tools_ng/gtk/window.py:102
+#: steam_tools_ng/gtk/window.py:103
 msgid "mode"
 msgstr ""
 
-#: steam_tools_ng/gtk/window.py:102
+#: steam_tools_ng/gtk/window.py:103
 msgid "receive"
 msgstr ""
 
-#: steam_tools_ng/gtk/window.py:102
+#: steam_tools_ng/gtk/window.py:103
 msgid "to"
 msgstr ""
 
-#: steam_tools_ng/gtk/window.py:123
+#: steam_tools_ng/gtk/window.py:127
 msgid "Accept selected"
 msgstr ""
 
-#: steam_tools_ng/gtk/window.py:128
+#: steam_tools_ng/gtk/window.py:132
 msgid "Cancel selected"
 msgstr ""
 
-#: steam_tools_ng/gtk/window.py:133
+#: steam_tools_ng/gtk/window.py:137
 msgid "Accept all"
 msgstr ""
 
-#: steam_tools_ng/gtk/window.py:138
+#: steam_tools_ng/gtk/window.py:142
 msgid "Cancel all"
 msgstr ""
 
@@ -1184,31 +1169,31 @@ msgstr ""
 msgid "Skipping {}"
 msgstr ""
 
-#: steam_tools_ng/core/fakerun.py:36
+#: steam_tools_ng/core/fakerun.py:41
 msgid "Game {} doesn't exist"
 msgstr ""
 
-#: steam_tools_ng/core/fakerun.py:51
+#: steam_tools_ng/core/fakerun.py:56
 msgid "Running for {} minutes."
 msgstr ""
 
-#: steam_tools_ng/config.py:248
+#: steam_tools_ng/config.py:260
 msgid "Saving {}:{} on config file"
 msgstr ""
 
-#: steam_tools_ng/config.py:254
+#: steam_tools_ng/config.py:266
 msgid "Not saving {}:{} because values are already updated"
 msgstr ""
 
-#: steam_tools_ng/gtk/utils.py:479
+#: steam_tools_ng/gtk/utils.py:476
 msgid "Ignoring value from {} on column {} item {} because value is empty"
 msgstr ""
 
-#: steam_tools_ng/config.py:230
+#: steam_tools_ng/config.py:242
 msgid "Unable to open steam-tools-ng.log"
 msgstr ""
 
-#: steam_tools_ng/config.py:295
+#: steam_tools_ng/config.py:310
 msgid ""
 "Unable to Connect. You can try these things:\n"
 "1. Check your connection\n"
@@ -1216,61 +1201,107 @@ msgid ""
 "3. Check if api_url and api_key is correct on config file\n"
 msgstr ""
 
-#: steam_tools_ng/console/login.py:188 steam_tools_ng/gtk/login.py:291
+#: steam_tools_ng/console/login.py:191 steam_tools_ng/gtk/login.py:293
 msgid ""
 "No api_key found on config file.\n"
 "Go to https://steamcommunity.com/dev/apikey\n"
 "and paste your Steam API key bellow\n"
 msgstr ""
 
-#: steam_tools_ng/console/login.py:194
+#: steam_tools_ng/console/login.py:197
 msgid "Write Steam API Key"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:223
 msgid ""
 "(If you change your password, run steam-tools-ng --reset-password and try "
 "again.)"
 msgstr ""
 
-#: steam_tools_ng/console/utils.py:225
 msgid ""
 "(If you removed the authenticator from your account, run steam-tools-ng --"
 "reset and try again.)"
 msgstr ""
 
-#: steam_tools_ng/gtk/application.py:132
+#: steam_tools_ng/gtk/application.py:138
 msgid "Saved password is not usable"
 msgstr ""
 
-#: steam_tools_ng/gtk/login.py:82
+#: steam_tools_ng/gtk/login.py:83
 msgid "Steam API Key:"
 msgstr ""
 
-#: steam_tools_ng/core/cardfarming.py:92
+#: steam_tools_ng/core/cardfarming.py:98
 msgid "minutes"
 msgstr ""
 
-#: steam_tools_ng/core/cardfarming.py:96
+#: steam_tools_ng/core/cardfarming.py:102
 msgid "seconds"
 msgstr ""
 
-#: steam_tools_ng/core/cardfarming.py:100
+#: steam_tools_ng/core/cardfarming.py:106
 msgid "Waiting drops for {} {}."
 msgstr ""
 
-#: steam_tools_ng/core/cardfarming.py:115
+#: steam_tools_ng/core/cardfarming.py:121
 msgid "Game paused"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:253
+#: steam_tools_ng/gtk/settings.py:299
 msgid "First Wait:"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:256
+#: steam_tools_ng/gtk/settings.py:302
 msgid "Default Wait:"
 msgstr ""
 
-#: steam_tools_ng/gtk/settings.py:259
+#: steam_tools_ng/gtk/settings.py:305
 msgid "MIN Wait:"
+msgstr ""
+
+#: steam_tools_ng/console/authenticator.py:56
+msgid ""
+"Some login data is missing. If the problem persists, run:\n"
+"{} --reset"
+msgstr ""
+
+#: steam_tools_ng/console/authenticator.py:88
+msgid "Enter the code received by SMS"
+msgstr ""
+
+#: steam_tools_ng/console/cli.py:58
+msgid ""
+"{} module has been disabled because you have a stlib built without steam_api "
+"support. To enable it again, reinstall stlib with Steam API support"
+msgstr ""
+
+#: steam_tools_ng/console/cli.py:67
+#, python-brace-format
+msgid ""
+"{0} module has been disabled because you don't have {0} plugin installed. To "
+"enable it again, install the {0} plugin."
+msgstr ""
+
+#: steam_tools_ng/gtk/confirmation.py:85
+msgid "You must select something"
+msgstr ""
+
+#: steam_tools_ng/gtk/settings.py:204
+msgid ""
+"cardfarming module has been disabled because you have\n"
+"a stlib built without steam_api support. To enable it again,\n"
+"reinstall stlib with Steam API support\n"
+msgstr ""
+
+#: steam_tools_ng/gtk/settings.py:219
+msgid ""
+"steamtrades module has been disabled because you don't\n"
+"have steamtrades plugin installed. To enable it again,\n"
+"install the steamtrades plugin.\n"
+msgstr ""
+
+#: steam_tools_ng/gtk/settings.py:234
+msgid ""
+"steamgifts module has been disabled because you don't\n"
+"have steamgifts plugin installed. To enable it again,\n"
+"install the steamgifts plugin.\n"
 msgstr ""
