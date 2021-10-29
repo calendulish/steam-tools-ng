@@ -67,12 +67,16 @@ class BuildTranslations(build_py):
         for root, directories, files in os.walk('i18n'):
             for file in files:
                 if file.endswith(".po"):
+                    language = os.path.splitext(file)[0]
+                    output_directory = os.path.join(po_build_path, language, 'LC_MESSAGES')
+                    os.makedirs(output_directory, exist_ok=True)
+
                     subprocess.run(
                         [
                             'msgfmt',
                             os.path.join(root, file),
                             '-o',
-                            os.path.join(po_build_path, os.path.splitext(file)[0]+".mo")
+                            os.path.join(output_directory, 'steam-tools-ng.mo')
                         ], check=True
                     )
 
@@ -84,17 +88,16 @@ class InstallTranslations(install_data):
         locale_directory = os.path.join(self.install_dir, 'share', 'locale')
         self.mkpath(locale_directory)
 
-        for root, directories, files in os.walk(po_build_path):
-            for file in files:
-                language = os.path.splitext(file)[0]
-                output_directory = os.path.join(locale_directory, language, 'LC_MESSAGES')
-                self.mkpath(output_directory)
+        for directory in os.listdir(po_build_path):
+            language = directory
+            output_directory = os.path.join(locale_directory, language, 'LC_MESSAGES')
+            self.mkpath(output_directory)
 
-                output, _ = self.copy_file(
-                    os.path.join(root, file),
-                    os.path.join(output_directory, 'steam-tools-ng.mo'),
-                )
-                self.outfiles.append(output)
+            output, _ = self.copy_file(
+                os.path.join(po_build_path, language, 'LC_MESSAGES', 'steam-tools-ng.mo'),
+                os.path.join(output_directory, 'steam-tools-ng.mo'),
+            )
+            self.outfiles.append(output)
 
 
 class Install(install):
