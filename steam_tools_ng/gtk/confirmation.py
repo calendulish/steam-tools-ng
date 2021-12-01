@@ -182,16 +182,19 @@ class FinalizeDialog(Gtk.Dialog):
 
         self.status.info(_("Waiting Steam Server (OP: {})").format(self.model[self.iter][1]))
 
-        result = await self.application.webapi_session.finalize_confirmation(
-            identity_secret,
-            steamid,
-            deviceid,
-            self.model[self.iter][1],
-            self.model[self.iter][2],
-            self.raw_action,
-            time_offset=self.application.time_offset,
-        )
-        assert isinstance(result, dict), "finalize_confirmation return is not a dict"
+        # steam confirmation server isn't reliable
+        for i in range(2):
+            result = await self.application.webapi_session.finalize_confirmation(
+                identity_secret,
+                steamid,
+                deviceid,
+                self.model[self.iter][1],
+                self.model[self.iter][2],
+                self.raw_action,
+                time_offset=self.application.time_offset,
+            )
+            assert isinstance(result, dict), "finalize_confirmation return is not a dict"
+            await asyncio.sleep(0.5)
 
         if not keep_iter:
             try:
