@@ -1,5 +1,4 @@
-﻿#define STNG_VERSION "1.0"
-#define STNG_PATH "build\STNG-WIN64-" + STNG_VERSION + "-Python-3.9.6"
+﻿#define STNG_PATH "build\STNG-WIN64-Python-3.9.7"
 #include "environment.iss"
 
 [Setup]
@@ -7,8 +6,8 @@ ArchitecturesInstallIn64BitMode=x64
 ArchitecturesAllowed=x64
 AppId={{983543BE-2504-48BF-B6E7-308EA032DAB3}
 AppName=Steam Tools NG
-AppVersion={#STNG_VERSION}
-AppPublisherURL=https://lara.click
+AppVersion=1.01
+AppPublisherURL=https://lara.monster
 AppSupportURL=https://github.com/ShyPixie/steam-tools-ng/issues
 AppUpdatesURL=https://github.com/ShyPixie/steam-tools-ng/releases
 DefaultDirName={autopf}\STNG
@@ -76,6 +75,7 @@ Name: "{group}\Uninstaller"; Filename: "{uninstallexe}"; IconFilename: "{app}\ic
 Name: "{commondesktop}\Steam Tools NG"; Filename: "{app}\steam-tools-ng.exe"; Tasks: desktopicon; IconFilename: "{app}\share\icons\stng.ico"
 
 [InstallDelete]
+Type: files; Name: "{group}\(console) authenticator.lnk"
 Type: files; Name: "{app}\steam-tools-ng.exe"
 Type: files; Name: "{app}\share\icons\steam-tools-ng*"
 Type: filesandordirs; Name: "{app}\lib\src"

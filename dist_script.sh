@@ -18,7 +18,7 @@
 
 PYTHON_VERSION=$(python --version | sed 's/ /-/')
 MINGW_VERSION="3.9"
-STLIB_VERSION="0.13.5"
+STLIB_VERSION="0.13.6"
 STLIB_PLUGINS_VERSION="0.2"
 
 delayed_exit() {
@@ -27,11 +27,6 @@ delayed_exit() {
     read -p "Press any key to exit"
     exit $1
 }
-
-if test -z $1; then
-    echo "You must specify a version"
-    delayed_exit 1
-fi
 
 if ! grep -q "MSYS" <<<$(uname -s); then
     echo "Unsupported platform"
@@ -58,10 +53,10 @@ popd
 # build STNG
 ./setup.py build || delayed_exit 1
 pushd build
-mv "exe.mingw_x86_64-$MINGW_VERSION" "STNG-WIN64-$1-$PYTHON_VERSION" || delayed_exit 1
+mv "exe.mingw_x86_64-$MINGW_VERSION" "STNG-WIN64-$PYTHON_VERSION" || delayed_exit 1
 
 # plugins
-mkdir -p "STNG-WIN64-$1-$PYTHON_VERSION"/plugins || delayed_exit 1
+mkdir -p "STNG-WIN64-$PYTHON_VERSION"/plugins || delayed_exit 1
 popd
 # git clone https://github.com/ShyPixie/stlib-plugins || delayed_exit 1
 curl -o stlib-plugins.tar.gz -L https://github.com/ShyPixie/stlib-plugins/archive/refs/tags/v$STLIB_PLUGINS_VERSION.tar.gz || delayed_exit 1
@@ -70,10 +65,10 @@ pushd stlib-plugins-$STLIB_PLUGINS_VERSION
 mingw32-make || delayed_exit 1
 popd
 pushd build
-cp -fv ../stlib-plugins-$STLIB_PLUGINS_VERSION/src/__pycache__/steamtrades* "STNG-WIN64-$1-$PYTHON_VERSION"/plugins/steamtrades.pyc || delayed_exit 1
-cp -fv ../stlib-plugins-$STLIB_PLUGINS_VERSION/src/__pycache__/steamgifts* "STNG-WIN64-$1-$PYTHON_VERSION"/plugins/steamgifts.pyc || delayed_exit 1
+cp -fv ../stlib-plugins-$STLIB_PLUGINS_VERSION/src/__pycache__/steamtrades* "STNG-WIN64-$PYTHON_VERSION"/plugins/steamtrades.pyc || delayed_exit 1
+cp -fv ../stlib-plugins-$STLIB_PLUGINS_VERSION/src/__pycache__/steamgifts* "STNG-WIN64-$PYTHON_VERSION"/plugins/steamgifts.pyc || delayed_exit 1
 # Fix translations
-mv share/* "STNG-WIN64-$1-$PYTHON_VERSION"/share/ || delayed_exit 1
+mv share/* "STNG-WIN64-$PYTHON_VERSION"/share/ || delayed_exit 1
 popd
 
 # Creating installer
