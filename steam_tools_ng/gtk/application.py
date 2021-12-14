@@ -273,7 +273,7 @@ class SteamToolsNG(Gtk.Application):
 
             if self.main_window.text_tree_lock:
                 self.main_window.set_warning(_("Waiting another confirmation process"))
-                while self.main_windows.text_tree_lock: await asyncio.sleep(1)
+                while self.main_window.text_tree_lock: await asyncio.sleep(1)
                 self.main_window.unset_warning()
                 continue
 
