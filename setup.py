@@ -16,52 +16,32 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-import os
 import sys
-import subprocess
-from distutils.command.install_data import install_data
-from distutils.sysconfig import get_python_lib
-from importlib.machinery import SourceFileLoader
-from typing import Any, List, Mapping, Tuple
 
 import certifi
+import os
+import subprocess
+import sysconfig
+from importlib.machinery import SourceFileLoader
+from setuptools import find_packages
 from setuptools.command.build_py import build_py
-from setuptools.command.install import install
-from setuptools.command.install_scripts import install_scripts
+from typing import Any, List, Mapping, Tuple
 
-from steam_tools_ng import version
-
-po_build_path = os.path.join('build', 'share', 'locale')
+version_module_path = os.path.join('src', 'steam_tools_ng', 'version.py')
+version = SourceFileLoader('version', version_module_path).load_module()
 
 if os.name == 'nt':
     # noinspection PyPackageRequirements
     from cx_Freeze import setup, Executable
-
-    if sys.maxsize > 2 ** 32:
-        arch = 64
-    else:
-        arch = 32
-
-    icon_path = os.path.join(get_python_lib(), 'steam-tools-ng', 'share', 'icons')
 else:
     from setuptools import setup
-
-    icon_path = os.path.abspath(os.path.join(os.path.sep, 'usr', 'share', 'steam-tools-ng', 'icons'))
-
-
-class RemoveExtension(install_scripts):
-    def run(self) -> None:
-        install_scripts.run(self)
-
-        if os.name != 'nt':
-            for script in self.get_outputs():
-                os.rename(script, script[:-3])
 
 
 class BuildTranslations(build_py):
     def run(self) -> None:
-        build_py.run(self)
+        super().run()
 
+        po_build_path = os.path.join('build', 'lib', 'steam_tools_ng', 'locale')
         os.makedirs(po_build_path, exist_ok=True)
 
         for root, directories, files in os.walk('i18n'):
@@ -79,31 +59,6 @@ class BuildTranslations(build_py):
                             os.path.join(output_directory, 'steam-tools-ng.mo')
                         ], check=True
                     )
-
-
-class InstallTranslations(install_data):
-    def run(self) -> None:
-        install_data.run(self)
-
-        locale_directory = os.path.join(self.install_dir, 'share', 'locale')
-        self.mkpath(locale_directory)
-
-        for directory in os.listdir(po_build_path):
-            language = directory
-            output_directory = os.path.join(locale_directory, language, 'LC_MESSAGES')
-            self.mkpath(output_directory)
-
-            output, _ = self.copy_file(
-                os.path.join(po_build_path, language, 'LC_MESSAGES', 'steam-tools-ng.mo'),
-                os.path.join(output_directory, 'steam-tools-ng.mo'),
-            )
-            self.outfiles.append(output)
-
-
-class Install(install):
-    def run(self) -> None:
-        install.run(self)
-        self.run_command('install_data')
 
 
 def fix_gtk() -> List[Tuple[str, str]]:
@@ -137,8 +92,8 @@ def fix_gtk() -> List[Tuple[str, str]]:
 
     includes = []
 
-    lib_path = os.path.join(get_python_lib(), '..', '..')
-    bin_path = os.path.join(get_python_lib(), '..', '..', '..', 'bin')
+    lib_path = os.path.join(sysconfig.get_path('platlib'), '..', '..')
+    bin_path = os.path.join(sysconfig.get_path('platlib'), '..', '..', '..', 'bin')
 
     for package in namespace_packages:
         includes.append((
@@ -164,7 +119,7 @@ def fix_gtk() -> List[Tuple[str, str]]:
     ))
 
     includes.append((
-        os.path.join('icons', 'settings.ini'),
+        os.path.join('src', 'steam_tools_ng', 'icons', 'settings.ini'),
         os.path.join('etc', 'gtk-3.0', 'settings.ini'),
     ))
 
@@ -175,26 +130,31 @@ def freeze_options() -> Mapping[str, Any]:
     if os.name != 'nt':
         return {}
 
+    icons_path = os.path.join('src', 'steam_tools_ng', 'icons')
+
     executables = [
         Executable(
-            "steam-tools-ng.py",
+            os.path.join("src", "steam-tools-ng"),
             base=None,
-            icon=os.path.join('icons', 'stng.ico'),
-            shortcutName='Steam Tools NG',
+            icon=os.path.join(icons_path, 'stng.ico'),
+            shortcut_name='Steam Tools NG',
             copyright='Lara Maia (C) 2015 ~ 2021',
         )
     ]
 
-    packages = ['asyncio', 'steam_tools_ng', 'gi', 'idna', 'six', 'pkg_resources']  # idna for cx_freeze <= 5.1.1
+    packages = ['asyncio', 'steam_tools_ng', 'gi', 'six']
 
-    paths = ['.']
+    paths = ['src']
     paths.extend(sys.path)
 
     includes = [*fix_gtk(), (certifi.where(), os.path.join('etc', 'cacert.pem'))]
 
-    for file in os.listdir('icons'):
+    for file in os.listdir(os.path.join(icons_path, 'Default')):
         if file != 'settings.ini':
-            includes.append((os.path.join('icons', file), os.path.join('share', 'icons', file)))
+            includes.append((
+                os.path.join(icons_path, 'Default', file),
+                os.path.join('share', 'icons', 'Default', file)
+            ))
 
     excludes = [
         'tkinter',
@@ -209,6 +169,7 @@ def freeze_options() -> Mapping[str, Any]:
         'py_compile',
         'tarfile',
         'webbrowser',
+        'mypy',
     ]
 
     build_exe_options = {
@@ -229,43 +190,43 @@ def freeze_options() -> Mapping[str, Any]:
     }
 
 
-def data_files() -> Mapping[str, List[Tuple[str, List[str]]]]:
-    icons = [
-        os.path.join('icons', 'stng.png'),
-        os.path.join('icons', 'stng.ico'),
-        os.path.join('icons', 'stng_nc.ico'),
-        os.path.join('icons', 'stng_console.ico'),
-    ]
-
-    return {'data_files': [
-        (icon_path, icons),
-        ("share/applications", ["steam-tools-ng.desktop"]),
-    ]}
-
+classifiers = [
+    'Development Status :: 5 - Production/Stable',
+    'Intended Audience :: End Users/Desktop',
+    'Topic :: Games/Entertainment',
+    'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+    'Operating System :: POSIX :: Linux',
+    'Operating System :: Microsoft :: Windows :: Windows 10',
+    'Environment :: X11 Applications :: GTK',
+    'Programming Language :: Python :: 3 :: Only',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Typing :: Typed',
+]
 
 setup(
     name='steam-tools-ng',
     version=version.__version__,
-    description="Useful tools for Steam",
+    description="Some useful tools to use with steam client or compatible programs and websites.",
     author='Lara Maia',
-    author_email='dev@lara.click',
+    author_email='dev@lara.monster',
     url='http://github.com/ShyPixie/steam-tools-ng',
-    license='GPL',
-    packages=[
-        'steam_tools_ng',
-        'steam_tools_ng.core',
-        'steam_tools_ng.console',
-        'steam_tools_ng.gtk',
+    license='GPLv3',
+    classifiers=classifiers,
+    keywords='steam valve',
+    packages=find_packages('src'),
+    package_dir={'': 'src'},
+    include_package_data=True,
+    scripts=[os.path.join('src', 'steam-tools-ng')],
+    install_requires=[
+        'stlib>=0.13.6',
+        'aiohttp',
+        'certifi',
     ],
-    package_dir={'steam_tools_ng': 'steam_tools_ng'},
-    scripts=['steam-tools-ng.py'],
-    install_requires=['stlib>=0.13', 'aiohttp'],
-    cmdclass={
-        'build_py': BuildTranslations,
-        'install': Install,
-        'install_scripts': RemoveExtension,
-        'install_data': InstallTranslations,
-    },
-    **freeze_options(),
-    **data_files()
+    python_requires='>=3.7',
+    cmdclass={'build_py': BuildTranslations},
+    **freeze_options()
 )

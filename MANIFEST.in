@@ -1,0 +1,7 @@
+include LICENSE
+include steam-tools-ng.desktop
+recursive-include i18n *.po
+graft src
+prune src/steam_tools_ng/icons/Default
+exclude src/steam_tools_ng/icons/settings.ini
+exclude src/steam_tools_ng/icons/*.bmp

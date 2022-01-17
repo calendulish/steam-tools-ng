@@ -17,6 +17,7 @@
 #
 
 import os
+from importlib import resources
 
 from gi.repository import GdkPixbuf, Gtk
 
@@ -47,7 +48,8 @@ class AboutDialog(Gtk.AboutDialog):
         self.set_comments(_("Made with Love <3"))
         self.set_license_type(Gtk.License.GPL_3_0)
 
-        logo = GdkPixbuf.Pixbuf.new_from_file_at_size(os.path.join(config.icons_dir, 'stng.png'), 96, 96)
+        with resources.as_file(resources.files('steam_tools_ng')) as path:
+            logo = GdkPixbuf.Pixbuf.new_from_file_at_size(str(path / 'icons' / 'stng.png'), 96, 96)
         self.set_logo(logo)
 
         self.connect("response", lambda dialog, response_id: self.destroy())

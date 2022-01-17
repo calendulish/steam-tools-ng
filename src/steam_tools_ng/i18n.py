@@ -21,6 +21,7 @@
 import configparser
 import gettext
 import hashlib
+from importlib import resources
 from typing import Dict
 
 from . import config
@@ -41,8 +42,9 @@ def get_translation(text: str) -> str:
         # assume that config is not fully load yet
         return text
 
-    translation = gettext.translation("steam-tools-ng", languages=[language], fallback=True)
-    translated_text = translation.gettext(text)
-    cache[new_hash(translated_text)] = text
+    with resources.as_file(resources.files('steam_tools_ng')) as path:
+        translation = gettext.translation("steam-tools-ng", path / 'locale', languages=[language], fallback=True)
+        translated_text = translation.gettext(text)
+        cache[new_hash(translated_text)] = text
 
     return translated_text

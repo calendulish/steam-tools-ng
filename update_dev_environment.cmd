@@ -50,12 +50,12 @@ msys64\\usr\\bin\\mintty.exe -d -e /bin/sh -c "pacman -Syyuu --noconfirm"
 :: normal system update
 msys64\\usr\\bin\\mintty.exe -d -e /bin/sh -c "pacman -Syu --noconfirm"
 
-echo Installing Python 3
-msys64\\usr\\bin\\mintty.exe -d -e /bin/sh -c "pacman -S --needed --noconfirm %ARCH%-python3 %ARCH%-python3-pip"
+echo Installing Python
+msys64\\usr\\bin\\mintty.exe -d -e /bin/sh -c "pacman -S --needed --noconfirm %ARCH%-python %ARCH%-python-pip"
 ::msys64\\usr\\bin\\mintty.exe -d -e /bin/sh -c "python3 -m pip install setuptools --ignore-installed"
 
 echo Installing Gtk+
-msys64\\usr\\bin\\mintty.exe -d -e /bin/sh -c "pacman -S --needed --noconfirm %ARCH%-gtk3 %ARCH%-python3-gobject"
+msys64\\usr\\bin\\mintty.exe -d -e /bin/sh -c "pacman -S --needed --noconfirm %ARCH%-gtk3 %ARCH%-python-gobject"
 
 echo Installing dev tools
 msys64\\usr\\bin\\mintty.exe -d -e /bin/sh -c "pacman -S --needed --noconfirm git tar unzip %ARCH%-gcc %ARCH%-make"

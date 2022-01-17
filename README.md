@@ -35,8 +35,8 @@ Just run and follow on-screen instructions
 Console Interface
 -----------------
 ```
-usage: steam-tools-ng.py [-h] [-c module [options]] [--config-dir] [--log-dir]
-                         [--reset] [--reset-password]
+usage: steam-tools-ng [-h] [-c module [options]] [--config-dir] [--log-dir]
+                      [--reset] [--reset-password]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -47,11 +47,12 @@ optional arguments:
   --reset               Clean up settings and log files
   --reset-password      Clean up saved password
 
-Available modules for console mode:
-    - authenticator
-    - steamtrades
-    - steamgifts
-    - cardfarming
+Available modules | available options
+ steamguard       | [oneshot]
+ steamtrades      | [oneshot]
+ steamgifts       | [oneshot]
+ cardfarming      | [oneshot],[gameid]
+ fakerun          | <gameid>
 ```
 ___________________________________________________________________________________________
 

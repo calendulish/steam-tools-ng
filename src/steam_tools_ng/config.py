@@ -38,13 +38,10 @@ _ = i18n.get_translation
 if os.path.isdir('steam_tools_ng'):
     # development mode
     data_dir = 'config'
-    icons_dir = 'icons'
 elif hasattr(sys, 'frozen') or sys.platform == 'win32':
     data_dir = os.environ['LOCALAPPDATA']
-    icons_dir = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'share', 'icons')
 else:
     data_dir = os.getenv('XDG_CONFIG_HOME', os.path.join(os.path.expanduser('~'), '.config'))
-    icons_dir = os.path.abspath(os.path.join(os.path.sep, 'usr', 'share', 'steam-tools-ng', 'icons'))
 
 config_file_directory = os.path.join(data_dir, 'steam-tools-ng')
 config_file_name = 'steam-tools-ng.config'
