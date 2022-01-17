@@ -1,4 +1,4 @@
-﻿#define STNG_PATH "build\STNG-WIN64-Python-3.9.7"
+﻿#define STNG_PATH "..\build\STNG-WIN64-Python-3.9.7"
 #include "environment.iss"
 
 [Setup]
@@ -15,15 +15,15 @@ UsePreviousAppDir=no
 DisableDirPage=yes
 DefaultGroupName=Steam Tools NG
 AllowNoIcons=yes
-LicenseFile=LICENSE
+LicenseFile=../LICENSE
 OutputDir=installer_build
 OutputBaseFilename=stng_setup
-SetupIconFile=icons\stng.ico
+SetupIconFile=stng.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
-WizardImageFile=icons\stng_left.bmp
-WizardSmallImageFile=icons\stng.bmp
+WizardImageFile=stng_left.bmp
+WizardSmallImageFile=stng.bmp
 ChangesEnvironment=true
 
 [Code]

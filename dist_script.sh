@@ -24,6 +24,13 @@ STLIB_PLUGINS_VERSION="0.2"
 delayed_exit() {
     echo "Cleaning"
     rm -rfv build stlib*
+
+    if test $1 -eq 0; then
+        echo "Success!"
+    else
+        echo "Failed!"
+    fi
+
     read -p "Press any key to exit"
     exit $1
 }
@@ -37,17 +44,16 @@ fi
 rm -rfv build dist stlib*
 
 # build stlib and install stlib
-# git clone https://github.com/ShyPixie/stlib || delayed_exit 1
-curl -o stlib.tar.gz -L https://github.com/ShyPixie/stlib/archive/refs/tags/v$STLIB_VERSION.tar.gz || delayed_exit 1
-tar xfv stlib.tar.gz || delayed_exit 1
+git clone https://github.com/ShyPixie/stlib stlib-$STLIB_VERSION || delayed_exit 1
+#curl -o stlib.tar.gz -L https://github.com/ShyPixie/stlib/archive/refs/tags/v$STLIB_VERSION.tar.gz || delayed_exit 1
+#tar xfv stlib.tar.gz || delayed_exit 1
 pushd stlib-$STLIB_VERSION/src/steam_api/steamworks_sdk
 curl -o steamworks-sdk.zip -L https://github.com/ShyPixie/Overlays/blob/master/dev-util/steamworks-sdk/files/steamworks_sdk_151.zip?raw=true || delayed_exit 1
 unzip -o steamworks-sdk.zip || delayed_exit 1
 mv sdk/* . || delayed_exit 1
 popd
 pushd stlib-$STLIB_VERSION
-./setup.py build || delayed_exit 1
-./setup.py install || delayed_exit 1
+python -m pip install --upgrade --no-build-isolation . || delayed_exit 1
 popd
 
 # build STNG
@@ -67,11 +73,9 @@ popd
 pushd build
 cp -fv ../stlib-plugins-$STLIB_PLUGINS_VERSION/src/__pycache__/steamtrades* "STNG-WIN64-$PYTHON_VERSION"/plugins/steamtrades.pyc || delayed_exit 1
 cp -fv ../stlib-plugins-$STLIB_PLUGINS_VERSION/src/__pycache__/steamgifts* "STNG-WIN64-$PYTHON_VERSION"/plugins/steamgifts.pyc || delayed_exit 1
-# Fix translations
-mv share/* "STNG-WIN64-$PYTHON_VERSION"/share/ || delayed_exit 1
 popd
 
 # Creating installer
-/c/Program\ Files\ \(x86\)/Inno\ Setup\ 6/ISCC.exe installer.iss || delayed_exit 1
+/c/Program\ Files\ \(x86\)/Inno\ Setup\ 6/ISCC.exe installer/setup.iss || delayed_exit 1
 
 delayed_exit 0
