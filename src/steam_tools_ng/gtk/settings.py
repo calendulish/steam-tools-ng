@@ -49,16 +49,14 @@ class SettingsDialog(Gtk.Dialog):
         self.set_modal(True)
         self.set_destroy_with_parent(True)
         self.set_resizable(False)
-        self.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
 
         self.gtk_settings_class = Gtk.Settings.get_default()
 
         content_area = self.get_content_area()
         content_grid = Gtk.Grid()
-        content_grid.set_border_width(10)
         content_grid.set_row_spacing(10)
         content_grid.set_column_spacing(10)
-        content_area.add(content_grid)
+        content_area.append(content_grid)
 
         stack = Gtk.Stack()
         content_grid.attach(stack, 1, 0, 1, 1)
@@ -108,7 +106,7 @@ class SettingsDialog(Gtk.Dialog):
             console_warning.set_text(_("Press the button again to close the debug console"))
             general_section.grid.attach(console_warning, 0, 7, 2, 1)
 
-        general_section.show_all()
+        general_section.show()
 
         login_section = utils.Section("login", _("Login Settings"))
 
@@ -139,7 +137,7 @@ class SettingsDialog(Gtk.Dialog):
         advanced_button.connect("toggled", self.on_advanced_button_toggled)
         login_section.grid.attach(advanced_button, 0, 4, 2, 1)
 
-        login_section.show_all()
+        login_section.show()
 
         plugins_section = utils.Section('plugins', _('Plugins Settings'))
 
@@ -239,7 +237,7 @@ class SettingsDialog(Gtk.Dialog):
             _steamgifts_disabled.set_markup(utils.markup(_message, color="hotpink"))
             plugins_section.grid.attach(_steamgifts_disabled, 0, 20, 4, 4)
 
-        plugins_section.show_all()
+        plugins_section.show()
 
         steamtrades_section = utils.Section('steamtrades', _('Steamtrades Settings'))
 
@@ -253,7 +251,7 @@ class SettingsDialog(Gtk.Dialog):
         wait_max = steamtrades_section.new("wait_max", _("Wait MAX:"), Gtk.Entry, 0, 2)
         wait_max.connect("changed", on_digit_only_setting_changed)
 
-        steamtrades_section.show_all()
+        steamtrades_section.show()
 
         steamgifts_section = utils.Section("steamgifts", _("Steamgifts Settings"))
 
@@ -292,7 +290,7 @@ class SettingsDialog(Gtk.Dialog):
         wait_max = steamgifts_section.new("wait_max", _("Wait MAX:"), Gtk.Entry, 0, 5)
         wait_max.connect("changed", on_digit_only_setting_changed)
 
-        steamgifts_section.show_all()
+        steamgifts_section.show()
 
         cardfarming_section = utils.Section("cardfarming", _("Cardfarming settings"))
 
@@ -307,7 +305,7 @@ class SettingsDialog(Gtk.Dialog):
 
         reverse_sorting = cardfarming_section.new("reverse_sorting", _("More cards First:"), Gtk.CheckButton, 0, 3)
 
-        cardfarming_section.show_all()
+        cardfarming_section.show()
 
         logger_section = utils.Section("logger", _('Logger settings'))
 
@@ -324,7 +322,7 @@ class SettingsDialog(Gtk.Dialog):
         log_level_item.connect("changed", on_combo_setting_changed, config.log_levels)
         log_console_level_item.connect("changed", on_combo_setting_changed, config.log_levels)
 
-        logger_section.show_all()
+        logger_section.show()
 
         self.connect('response', lambda dialog, response_id: self.destroy())
 
@@ -366,7 +364,7 @@ class SettingsDialog(Gtk.Dialog):
     def on_advanced_button_toggled(self, button: Gtk.Button) -> None:
         if button.get_active():
             advanced_settings = advanced.AdvancedSettingsDialog(self, self.application, button)
-            advanced_settings.show_all()
+            advanced_settings.show()
 
     def on_show_close_button_toggled(self, button: Gtk.Button) -> None:
         current_value = button.get_active()

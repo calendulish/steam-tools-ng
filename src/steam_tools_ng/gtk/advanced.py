@@ -82,13 +82,11 @@ class AdvancedSettingsDialog(Gtk.Dialog):
         self.set_modal(True)
         self.set_destroy_with_parent(True)
         self.set_resizable(False)
-        self.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
 
         self.gtk_settings_class = Gtk.Settings.get_default()
 
         content_area = self.get_content_area()
         content_grid = Gtk.Grid()
-        content_grid.set_border_width(10)
         content_grid.set_row_spacing(10)
         content_grid.set_column_spacing(10)
         content_area.add(content_grid)
@@ -120,7 +118,7 @@ class AdvancedSettingsDialog(Gtk.Dialog):
         login_section.grid.attach(reset_button, 0, 9, 4, 1)
         reset_button.show()
 
-        login_section.show_all()
+        login_section.show()
 
         self.connect('response', lambda dialog, response_id: self._exit())
 

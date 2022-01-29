@@ -55,7 +55,7 @@ msys64\\usr\\bin\\mintty.exe -d -e /bin/sh -c "pacman -S --needed --noconfirm %A
 ::msys64\\usr\\bin\\mintty.exe -d -e /bin/sh -c "python3 -m pip install setuptools --ignore-installed"
 
 echo Installing Gtk+
-msys64\\usr\\bin\\mintty.exe -d -e /bin/sh -c "pacman -S --needed --noconfirm %ARCH%-gtk3 %ARCH%-python-gobject"
+msys64\\usr\\bin\\mintty.exe -d -e /bin/sh -c "pacman -S --needed --noconfirm %ARCH%-gtk4 %ARCH%-python-gobject"
 
 echo Installing dev tools
 msys64\\usr\\bin\\mintty.exe -d -e /bin/sh -c "pacman -S --needed --noconfirm git tar unzip %ARCH%-gcc %ARCH%-make"
@@ -66,7 +66,7 @@ msys64\\usr\\bin\\mintty.exe -d -e /bin/sh -c "pacman -S --needed --noconfirm %A
 
 echo Installing freezing tools
 ::msys64\\usr\\bin\\mintty.exe -d -e /bin/sh -c "python3 -m pip install cx_Freeze"
-msys64\\usr\\bin\\mintty.exe -d -e /bin/sh -c "pacman -S --needed --noconfirm %ARCH%-python-cx-freeze"
+msys64\\usr\\bin\\mintty.exe -d -e /bin/sh -c "pacman -S --needed --noconfirm %ARCH%-python-cx-freeze %ARCH%-python-cx-pywin32"
 
 echo Installing STNG dependencies
 ::msys64\\usr\\bin\\mintty.exe -d -e /bin/sh -c "python3 -m pip install aiohttp certifi rsa beautifulsoup4 cchardet"

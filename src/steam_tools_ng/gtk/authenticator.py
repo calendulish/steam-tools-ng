@@ -37,7 +37,6 @@ class NewAuthenticatorDialog(Gtk.Dialog):
         self._login_data = None
 
         self.header_bar = self.get_header_bar()
-        self.header_bar.set_show_close_button(True)
 
         self.add_authenticator_button = utils.AsyncButton(_("Add Authenticator"))
         self.add_authenticator_button.connect("clicked", self.on_add_authenticator_clicked)
@@ -50,18 +49,16 @@ class NewAuthenticatorDialog(Gtk.Dialog):
         self.set_modal(True)
         self.set_destroy_with_parent(True)
         self.set_resizable(False)
-        self.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
 
         self.content_area = self.get_content_area()
         self.content_area.set_orientation(Gtk.Orientation.VERTICAL)
-        self.content_area.set_border_width(10)
         self.content_area.set_spacing(10)
 
         self.status = utils.SimpleStatus()
-        self.content_area.add(self.status)
+        self.content_area.append(self.status)
 
         self.user_details_section = utils.Section("Login", _("User Details"))
-        self.content_area.add(self.user_details_section)
+        self.content_area.append(self.user_details_section)
 
         self.sms_code_item = self.user_details_section.new("_sms_code", _("SMS Code:"), Gtk.Entry, 0, 1)
 
@@ -129,7 +126,7 @@ class NewAuthenticatorDialog(Gtk.Dialog):
                 self.application.on_exit_activate()
             else:
                 self.status.info(_("Enter bellow the code received by SMS\nand click on 'Add Authenticator' button"))
-                self.user_details_section.show_all()
+                self.user_details_section.show()
                 self.sms_code_item.set_text('')
                 self.sms_code_item.grab_focus()
             finally:
@@ -144,12 +141,12 @@ class NewAuthenticatorDialog(Gtk.Dialog):
             )
         except webapi.SMSCodeError:
             self.status.info(_("Invalid SMS Code. Please,\ncheck the code and try again."))
-            self.user_details_section.show_all()
+            self.user_details_section.show()
             self.sms_code_item.set_text('')
             self.sms_code_item.grab_focus()
         except aiohttp.ClientError:
             self.status.error(_("Check your connection. (server down?)"))
-            self.user_details_section.show_all()
+            self.user_details_section.show()
             self.sms_code_item.set_text('')
             self.sms_code_item.grab_focus()
         except Exception as exception:
@@ -181,9 +178,9 @@ class NewAuthenticatorDialog(Gtk.Dialog):
             revocation_status.set_pausable(False)
             revocation_status.set_display(revocation_code)
             revocation_status.set_status('')
-            self.content_area.add(revocation_status)
+            self.content_area.append(revocation_status)
 
-            revocation_status.show_all()
+            revocation_status.show()
 
             self.set_deletable(False)
 

@@ -53,7 +53,7 @@ class FinalizeDialog(Gtk.Dialog):
         self.iter = iter_
 
         self.header_bar = self.get_header_bar()
-        self.header_bar.set_show_close_button(False)
+        self.header_bar.set_show_title_buttons(False)
 
         self.set_default_size(300, 60)
         self.set_title(_('Finalize Confirmation'))
@@ -61,15 +61,13 @@ class FinalizeDialog(Gtk.Dialog):
         self.set_modal(True)
         self.set_destroy_with_parent(True)
         self.set_resizable(False)
-        self.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
 
         self.content_area = self.get_content_area()
         self.content_area.set_orientation(Gtk.Orientation.VERTICAL)
-        self.content_area.set_border_width(10)
         self.content_area.set_spacing(10)
 
         self.status = utils.SimpleStatus()
-        self.content_area.add(self.status)
+        self.content_area.append(self.status)
 
         self.yes_button = Gtk.Button()
         self.yes_button.set_label(_("Continue"))
@@ -83,20 +81,20 @@ class FinalizeDialog(Gtk.Dialog):
 
         if self.iter is None or not model:
             self.status.error(_("You must select something"))
-            self.header_bar.set_show_close_button(True)
+            self.header_bar.set_show_title_buttons(True)
         elif self.iter is False:
             self.status.info(
                 _("Do you really want to {} ALL confirmations?\nIt can't be undone!").format(self.action.upper())
             )
-            self.header_bar.show_all()
+            self.header_bar.show()
         else:
             self.set_size_request(600, 400)
 
             self.give_label = Gtk.Label()
-            self.content_area.add(self.give_label)
+            self.content_area.append(self.give_label)
 
             self.receive_label = Gtk.Label()
-            self.content_area.add(self.receive_label)
+            self.content_area.append(self.receive_label)
 
             self.give_label.set_markup(
                 utils.markup(
@@ -108,7 +106,7 @@ class FinalizeDialog(Gtk.Dialog):
             self.status.info(_("Do you really want to {} that?\nIt can't be undone!").format(self.action.upper()))
 
             self.grid = Gtk.Grid()
-            self.content_area.add(self.grid)
+            self.content_area.append(self.grid)
 
             self.give_tree = utils.SimpleTextTree(_("You will give"), fixed_width=300, model=Gtk.ListStore)
             self.grid.attach(self.give_tree, 0, 0, 1, 1)
@@ -123,9 +121,9 @@ class FinalizeDialog(Gtk.Dialog):
             utils.copy_childrens(self.model, self.give_tree.store, self.iter, 3)
             utils.copy_childrens(self.model, self.receive_tree.store, self.iter, 5)
 
-            self.header_bar.show_all()
+            self.header_bar.show()
 
-        self.content_area.show_all()
+        self.content_area.show()
 
         self.connect('response', lambda dialog, response_id: self.destroy())
 
@@ -140,7 +138,7 @@ class FinalizeDialog(Gtk.Dialog):
             self.receive_tree.hide()
 
         self.set_size_request(0, 0)
-        self.header_bar.set_show_close_button(False)
+        self.header_bar.set_show_title_buttons(False)
         self.parent_window.text_tree_lock = True
         loop = asyncio.get_event_loop()
 
@@ -169,7 +167,7 @@ class FinalizeDialog(Gtk.Dialog):
                     _("Steam Server is slow. Please, try again.")
                 )
 
-                self.header_bar.set_show_close_button(True)
+                self.header_bar.set_show_title_buttons(True)
                 self.yes_button.hide()
         else:
             self.parent_window.text_tree_lock = False
@@ -208,10 +206,10 @@ class FinalizeDialog(Gtk.Dialog):
         results = []
         batch_status = utils.Status(20, "")
         batch_status.set_pausable(False)
-        self.content_area.add(batch_status)
+        self.content_area.append(batch_status)
         batch_status.get_label_widget().hide()
         batch_status.set_info(_("Waiting Steam Server response"))
-        batch_status.show_all()
+        batch_status.show()
         self.status.hide()
 
         confirmation_count = len(self.model)

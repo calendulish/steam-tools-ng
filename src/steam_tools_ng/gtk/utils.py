@@ -33,21 +33,23 @@ _ = i18n.get_translation
 
 
 # noinspection PyUnusedLocal
-class ClickableLabel(Gtk.EventBox):
+class ClickableLabel(Gtk.Label):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__()
-        # noinspection PyArgumentList
-        self._label = Gtk.Label(*args, **kwargs)
-        self._label.set_hexpand(True)
+        self.set_hexpand(True)
+        #self.connect("enter-notify-event", self._on_enter_notify_event)
+        #self.connect("leave-notify-event", self._on_leave_notify_event)
 
-        super().connect("enter-notify-event", self._on_enter_notify_event)
-        super().connect("leave-notify-event", self._on_leave_notify_event)
+        self.gesture = Gtk.GestureClick.new()
+        self.add_controller(self.gesture)
 
-        self.add(self._label)
-        self._label.show()
+        self.show()
 
-    def __getattr__(self, item: Any) -> Any:
-        return getattr(self._label, item)
+    def connect(self, signal: str, callback: Callable[..., Any]) -> None:
+        if signal == 'clicked':
+            self.gesture.connect('pressed', callback)
+        else:
+            raise NotImplementedError
 
     def _on_enter_notify_event(self, *args, **kwargs) -> None:
         hand_cursor = Gdk.Cursor.new(Gdk.CursorType.HAND2)
@@ -55,12 +57,6 @@ class ClickableLabel(Gtk.EventBox):
 
     def _on_leave_notify_event(self, *args, **kwargs) -> None:
         self.get_window().set_cursor(None)
-
-    def connect(self, signal: str, callback: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
-        if signal != "clicked":
-            raise NotImplementedError
-
-        super().connect("button-press-event", callback)
 
 
 class VariableButton(Gtk.Button):
@@ -88,7 +84,7 @@ class VariableButton(Gtk.Button):
 
 class AsyncButton(Gtk.Button):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__()
         super().connect('clicked', self.__callback)
         self._user_callback: Optional[Callable[..., Any]] = None
         self._user_args: Any = None
@@ -125,7 +121,7 @@ class SimpleTextTree(Gtk.ScrolledWindow):
         self._store = model(*[str for number in range(len(elements))])
         self._view = Gtk.TreeView()
         self._view.set_model(self._store)
-        self.add(self._view)
+        self.set_child(self._view)
 
         self.set_hexpand(True)
         self.set_vexpand(True)
@@ -154,12 +150,11 @@ class SimpleTextTree(Gtk.ScrolledWindow):
 class SimpleStatus(Gtk.Frame):
     def __init__(self) -> None:
         super().__init__()
-        self.connect('draw', self.__do_status_draw)
+        #self.connect('draw', self.__do_status_draw) # Gtk.Snapshot.append_cairo()
 
         self._grid = Gtk.Grid()
         self._grid.show()
-        self._grid.set_border_width(10)
-        self.add(self._grid)
+        self.set_child(self._grid)
 
         self._label = Gtk.Label()
         self._label.set_halign(Gtk.Align.START)
@@ -200,17 +195,15 @@ class Status(Gtk.Frame):
         self._gtk_settings = Gtk.Settings.get_default()
 
         self.set_label(label_text)
-        self.set_label_align(0.05, 0.5)
-        self.set_border_width(5)
+        self.set_label_align(0.05)
 
         self._grid = Gtk.Grid()
-        self._grid.set_border_width(5)
         self._grid.set_row_spacing(5)
-        self.add(self._grid)
+        self.set_child(self._grid)
 
         self._display = ClickableLabel()
         self._display.set_markup(markup(self._default_display_text, font_size='large', font_weight='bold'))
-        self._display.connect("clicked", self.__on_display_event_changed)
+        #self._display.connect("clicked", self.__on_display_event_changed)
         self._display.set_has_tooltip(True)
         self._grid.attach(self._display, 0, 0, 1, 1)
 
@@ -221,7 +214,8 @@ class Status(Gtk.Frame):
         self._grid.attach(self._play_pause_button, 1, 0, 1, 1)
 
         self._play_event = asyncio.Event()
-        self._play_pause_button.clicked()
+        #self._play_pause_button.clicked()
+        self._play_pause_button.emit("clicked")
 
         self._status = Gtk.Label()
         self._status.set_markup(markup(_("Loading..."), color='green', font_size='small'))
@@ -233,7 +227,7 @@ class Status(Gtk.Frame):
         self._level_bar = Gtk.LevelBar()
         self._grid.attach(self._level_bar, 0, 3, 2, 1)
 
-        self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+        self.clipboard = Gdk.Clipboard()
 
     @property
     def play_event(self) -> asyncio.Event:
@@ -246,34 +240,33 @@ class Status(Gtk.Frame):
         else:
             self._play_event.clear()
 
-    def __disable_tooltip(self, event_box: Gtk.EventBox, event_status: Gtk.Label) -> None:
-        event_box.set_has_tooltip(False)
+    def __disable_tooltip(self, label: Gtk.Label, event_status: Gtk.Label) -> None:
+        label.set_has_tooltip(False)
         self._grid.remove(event_status)
         self._grid.attach(self._status, 0, 1, 1, 1)
         self._status.show()
         self._display.set_sensitive(True)
 
-    def __on_display_event_changed(self, event_box: Gtk.EventBox, event_button: Gdk.EventButton) -> None:
-        if event_button.type == Gdk.EventType.BUTTON_PRESS:
-            message = _("Text Copied to Clipboard")
+    def __on_display_event_changed(self, label: Gtk.Label) -> None:
+        message = _("Text Copied to Clipboard")
 
-            if self._gtk_settings.props.gtk_application_prefer_dark_theme:
-                color = 'lightblue'
-            else:
-                color = 'blue'
+        if self._gtk_settings.props.gtk_application_prefer_dark_theme:
+            color = 'lightblue'
+        else:
+            color = 'blue'
 
-            event_box.set_tooltip_text(message)
+        label.set_tooltip_text(message)
 
-            event_status = Gtk.Label()
-            self._grid.remove(self._status)
-            self._grid.attach(event_status, 0, 1, 1, 1)
-            event_status.show()
+        event_status = Gtk.Label()
+        self._grid.remove(self._status)
+        self._grid.attach(event_status, 0, 1, 1, 1)
+        event_status.show()
 
-            event_status.set_markup(markup(message, font_size='small', color=color))
-            self.clipboard.set_text(self._display.get_text(), -1)
-            asyncio.get_event_loop().call_later(5, self.__disable_tooltip, event_box, event_status)
+        event_status.set_markup(markup(message, font_size='small', color=color))
+        self.clipboard.set_value(self._display.get_text())
+        asyncio.get_event_loop().call_later(5, self.__disable_tooltip, label, event_status)
 
-            self._display.set_sensitive(False)
+        self._display.set_sensitive(False)
 
     def __on_play_pause_button_toggled(self, button: Gtk.ToggleButton) -> None:
         if button.get_active():
@@ -336,15 +329,14 @@ class Status(Gtk.Frame):
 class Section(Gtk.Frame):
     def __init__(self, name: str, label: str) -> None:
         super().__init__(label=label)
-        self.set_label_align(0.03, 0.5)
+        self.set_label_align(0.03)
         self.set_name(name)
 
         self.grid = Gtk.Grid()
         self.grid.set_name(name)
         self.grid.set_row_spacing(10)
         self.grid.set_column_spacing(10)
-        self.grid.set_border_width(10)
-        self.add(self.grid)
+        self.set_child(self.grid)
 
     # noinspection PyProtectedMember
     @staticmethod
@@ -363,7 +355,8 @@ class Section(Gtk.Frame):
         super(item.__class__, item).hide()
 
     def show_all(self) -> None:
-        self.grid.show_all()
+        #self.grid.show_all()
+        self.grid.show()
         self.show()
 
     def new(
@@ -510,19 +503,22 @@ def fatal_error_dialog(
         stack: Optional[List[traceback.FrameSummary]] = None,
         transient: Optional[Gtk.Window] = None,
 ) -> None:
+    print("\n".join([str(frame) for frame in stack]))
+    print(str(exception))
     error_dialog = Gtk.MessageDialog()
-    error_dialog.set_transient_for = transient
+    #error_dialog.set_transient_for = transient
     error_dialog.set_title(_("Fatal Error"))
     error_dialog.set_markup(str(exception))
 
-    if stack:
-        error_dialog.format_secondary_text("\n".join([str(frame) for frame in stack]))
+    #if stack:
+    #    error_dialog.format_secondary_text("\n".join([str(frame) for frame in stack]))
 
-    error_dialog.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
-    error_dialog.add_buttons(Gtk.STOCK_OK, Gtk.ResponseType.OK)
-    error_dialog.connect("response", lambda dialog, _action: dialog.destroy())
-    error_dialog.set_urgency_hint(True)
-    error_dialog.run()
+    #error_dialog.add_buttons(Gtk.STOCK_OK, Gtk.ResponseType.OK)
+    #error_dialog.connect("response", lambda dialog, _action: dialog.destroy())
+    #error_dialog.set_urgency_hint(True)
+    #error_dialog.run()
+    error_dialog.set_modal(True)
+    error_dialog.show()
 
 
 def safe_task_callback(task: asyncio.Task) -> None:

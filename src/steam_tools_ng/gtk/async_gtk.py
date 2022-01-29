@@ -19,17 +19,21 @@
 import asyncio
 import contextlib
 
-from gi.repository import Gtk
+from gi.repository import Gtk, GLib
 
 
-async def async_iterator(application: Gtk.Application, loop: asyncio.AbstractEventLoop) -> None:
-    while Gtk.events_pending():
-        Gtk.main_iteration_do(False)
+async def async_iterator(
+    application: Gtk.Application,
+    main_context: GLib.MainContext,
+    loop: asyncio.AbstractEventLoop,
+) -> None:
+    while main_context.pending():
+        main_context.iteration(False)
 
     await asyncio.sleep(0.01)
 
     if application.main_window and application.main_window.get_realized():
-        loop.create_task(async_iterator(application, loop))
+        loop.create_task(async_iterator(application, main_context, loop))
     else:
         application.quit()
         loop.stop()
@@ -39,7 +43,8 @@ async def async_iterator(application: Gtk.Application, loop: asyncio.AbstractEve
 def run(application: Gtk.Application) -> None:
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.create_task(async_iterator(application, loop))
+    main_context = GLib.MainContext.default()
+    loop.create_task(async_iterator(application, main_context, loop))
     application.register()
     application.activate()
 

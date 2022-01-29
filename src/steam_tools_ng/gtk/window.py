@@ -35,10 +35,7 @@ class Main(Gtk.ApplicationWindow):
     def __init__(self, application: Gtk.Application, title: str) -> None:
         super().__init__(application=application, title=title)
         self.application = application
-
         header_bar = Gtk.HeaderBar()
-        header_bar.set_show_close_button(True)
-
         icon = Gtk.Image()
 
         with resources.as_file(resources.files('steam_tools_ng')) as path:
@@ -53,9 +50,9 @@ class Main(Gtk.ApplicationWindow):
         menu.append(_("Exit"), "app.exit")
 
         menu_button = Gtk.MenuButton()
-        menu_button.set_label("☰")
-        menu_button.set_relief(Gtk.ReliefStyle.NONE)
-        menu_button.set_use_popover(True)
+        #menu_button.set_label("☰")
+        #menu_button.set_has_frame(False)
+        #menu_button.set_use_popover(True)
         menu_button.set_menu_model(menu)
         header_bar.pack_end(menu_button)
 
@@ -67,14 +64,12 @@ class Main(Gtk.ApplicationWindow):
         else:
             self.set_deletable(False)
 
-        self.set_position(Gtk.WindowPosition.CENTER)
         self.set_titlebar(header_bar)
         self.set_title('Steam Tools NG')
 
         main_grid = Gtk.Grid()
-        main_grid.set_border_width(10)
         main_grid.set_row_spacing(10)
-        self.add(main_grid)
+        self.set_child(main_grid)
 
         self.status_grid = Gtk.Grid()
         self.status_grid.set_column_homogeneous(True)
@@ -147,9 +142,10 @@ class Main(Gtk.ApplicationWindow):
         cancel_all_button.connect('clicked', self.on_validate_confirmations, "cancel", self.text_tree.store)
         self.confirmations_grid.attach(cancel_all_button, 3, 5, 1, 1)
 
-        main_grid.show_all()
-        self.confirmations_grid.show_all()
-        self.show_all()
+        #main_grid.show_all()
+        #self.confirmations_grid.show_all()
+        #self.show_all()
+        self.show()
 
         self.connect("destroy", self.application.on_exit_activate)
 
@@ -168,7 +164,7 @@ class Main(Gtk.ApplicationWindow):
 
                 if plugin_name == "confirmations":
                     if plugin_config:
-                        self.confirmations_grid.show_all()
+                        self.confirmations_grid.show()
                         self.set_size_request(655, 560)
                     else:
                         self.confirmations_grid.hide()
@@ -185,8 +181,14 @@ class Main(Gtk.ApplicationWindow):
             else:
                 plugins = plugins_enabled
 
-            for widget in self.status_grid.get_children():
-                self.status_grid.remove(widget)
+            #for widget in self.status_grid.get_children():
+            #    self.status_grid.remove(widget)
+            #c = self.status_grid.get_first_child()
+            #while True:
+            #    if not c:
+            #        break
+            #    self.status_grid.remove(c)
+            #    c = c.get_next_sibling()
 
             if not plugins_enabled:
                 self.status_grid.show()

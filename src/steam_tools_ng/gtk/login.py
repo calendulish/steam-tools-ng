@@ -46,7 +46,6 @@ class LoginDialog(Gtk.Dialog):
         self.has_user_data = False
 
         self.header_bar = self.get_header_bar()
-        self.header_bar.set_show_close_button(True)
 
         self.login_button = utils.AsyncButton(_("Log-in"))
         self.login_button.connect("clicked", self.on_login_button_clicked)
@@ -59,18 +58,16 @@ class LoginDialog(Gtk.Dialog):
         self.set_modal(True)
         self.set_destroy_with_parent(True)
         self.set_resizable(False)
-        self.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
 
         self.content_area = self.get_content_area()
         self.content_area.set_orientation(Gtk.Orientation.VERTICAL)
-        self.content_area.set_border_width(10)
         self.content_area.set_spacing(10)
 
         self.status = utils.SimpleStatus()
-        self.content_area.add(self.status)
+        self.content_area.append(self.status)
 
         self.user_details_section = utils.Section("login", _("User Details"))
-        self.content_area.add(self.user_details_section)
+        self.content_area.append(self.user_details_section)
 
         self.username_item = self.user_details_section.new("account_name", _("Username:"), Gtk.Entry, 0, 0)
 
@@ -95,10 +92,10 @@ class LoginDialog(Gtk.Dialog):
         self.advanced_login.set_markup(utils.markup(_("Advanced Login"), font_size='x-small', color='blue'))
         self.advanced_login.set_halign(Gtk.Align.END)
         self.advanced_login.connect("clicked", self.on_advanced_login_clicked)
-        self.content_area.add(self.advanced_login)
+        self.content_area.append(self.advanced_login)
 
         self.advanced_login_section = utils.Section("login", _("Advanced Login"))
-        self.content_area.add(self.advanced_login_section)
+        self.content_area.append(self.advanced_login_section)
 
         self.identity_secret_item = self.advanced_login_section.new(
             'identity_secret',
@@ -115,9 +112,9 @@ class LoginDialog(Gtk.Dialog):
         )
 
         self.connect('response', lambda dialog, _action: dialog.destroy())
-        self.connect('key-release-event', self.on_key_release_event)
+        #self.connect('key-release-event', self.on_key_release_event)
 
-        self.content_area.show_all()
+        self.content_area.show()
         self.steam_code_item.hide()
         self.mail_code_item.hide()
         self.api_key_item.hide()
@@ -235,12 +232,12 @@ class LoginDialog(Gtk.Dialog):
             except login.MailCodeError:
                 self.status.info(_("Write code received by email\nand click on 'Log-in' button"))
                 self.mail_code_item.set_text("")
-                self.mail_code_item.show_all()
+                self.mail_code_item.show()
                 self.mail_code_item.grab_focus()
             except login.TwoFactorCodeError:
                 self.status.error(_("Write Steam Code bellow and click on 'Log-in'"))
                 self.steam_code_item.set_text("")
-                self.steam_code_item.show_all()
+                self.steam_code_item.show()
                 self.steam_code_item.grab_focus()
             except login.LoginBlockedError:
                 self.status.error(_(
@@ -296,7 +293,7 @@ class LoginDialog(Gtk.Dialog):
                     )
                 )
                 self.api_key_item.set_text("")
-                self.api_key_item.show_all()
+                self.api_key_item.show()
                 self.api_key_item.grab_focus()
             else:
                 new_configs = {"account_name": self.username}
@@ -347,3 +344,5 @@ class LoginDialog(Gtk.Dialog):
             self.set_size_request(400, 100)
         else:
             self.advanced_login_section.show()
+            self.set_size_request(400, 100)
+            self.queue_resize()

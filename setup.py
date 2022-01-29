@@ -63,26 +63,28 @@ class BuildTranslations(build_py):
 
 def fix_gtk() -> List[Tuple[str, str]]:
     namespace_packages = [
-        'Gtk-3.0',
-        'Gdk-3.0',
+        'Gtk-4.0',
+        'Gdk-4.0',
+        'Gsk-4.0',
         'GObject-2.0',
         'GLib-2.0',
         'Gio-2.0',
         'Pango-1.0',
+        'PangoCairo-1.0',
         'cairo-1.0',
         'GdkPixbuf-2.0',
         'GModule-2.0',
-        'Atk-1.0',
         'HarfBuzz-0.0',
+        'Graphene-1.0',
     ]
 
     required_dlls = [
-        'libgtk-3-0',
-        'libgdk-3-0',
+        'libgtk-4-1',
         'libpango-1.0-0',
+        'libpangocairo-1.0-0',
         'libpangowin32-1.0-0',
-        'libatk-1.0-0',
         'librsvg-2-2',
+        'libgraphene-1.0-0',
     ]
 
     pixbuf_loaders = [
