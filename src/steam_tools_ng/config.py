@@ -221,6 +221,8 @@ def init() -> None:
     if not stlib_plugins.has_plugin("steamgifts"):
         new("plugins", "steamgifts", False)
 
+    if not client:
+        new("plugins", "cardfarming", False)
 
 def init_logger() -> None:
     log_directory = parser.get("logger", "log_directory")
