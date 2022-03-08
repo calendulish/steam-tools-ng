@@ -22,8 +22,8 @@ import logging
 
 import aiohttp
 from gi.repository import Gtk, Gdk, GdkPixbuf
-from stlib import login
 
+from stlib import login
 from . import utils
 from .. import i18n, config
 
@@ -47,7 +47,8 @@ class LoginDialog(Gtk.Dialog):
 
         self.header_bar = self.get_header_bar()
 
-        self.login_button = utils.AsyncButton(_("Log-in"))
+        self.login_button = utils.AsyncButton()
+        self.login_button.set_label(_("Log-in"))
         self.login_button.connect("clicked", self.on_login_button_clicked)
         self.header_bar.pack_end(self.login_button)
 
@@ -62,6 +63,10 @@ class LoginDialog(Gtk.Dialog):
         self.content_area = self.get_content_area()
         self.content_area.set_orientation(Gtk.Orientation.VERTICAL)
         self.content_area.set_spacing(10)
+        self.content_area.set_margin_start(10)
+        self.content_area.set_margin_end(10)
+        self.content_area.set_margin_top(10)
+        self.content_area.set_margin_bottom(10)
 
         self.status = utils.SimpleStatus()
         self.content_area.append(self.status)
@@ -112,7 +117,10 @@ class LoginDialog(Gtk.Dialog):
         )
 
         self.connect('response', lambda dialog, _action: dialog.destroy())
-        #self.connect('key-release-event', self.on_key_release_event)
+        key_event = Gtk.EventControllerKey()
+        key_event.connect('key-released', self.on_key_release_event)
+        self.add_controller(key_event)
+        # self.connect('key-release-event', self.on_key_release_event)
 
         self.content_area.show()
         self.steam_code_item.hide()
@@ -172,10 +180,16 @@ class LoginDialog(Gtk.Dialog):
         else:
             self.login_button.set_sensitive(True)
 
-    def on_key_release_event(self, _dialog: Gtk.Dialog, event: Gdk.Event) -> None:
+    def on_key_release_event(
+            self,
+            controller: Gtk.EventControllerKey,
+            keyval: int,
+            keycode: int,
+            state: Gdk.ModifierType
+    ) -> None:
         self.check_login_availability()
 
-        if event.keyval == Gdk.KEY_Return:
+        if keyval == Gdk.KEY_Return:
             if not self.username or not self.__password:
                 self.status.error(_("Username or Password is blank!"))
             else:
@@ -344,5 +358,5 @@ class LoginDialog(Gtk.Dialog):
             self.set_size_request(400, 100)
         else:
             self.advanced_login_section.show()
-            self.set_size_request(400, 100)
-            self.queue_resize()
+            # self.set_size_request(400, 100)
+            # self.queue_resize()

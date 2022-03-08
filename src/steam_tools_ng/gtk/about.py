@@ -16,12 +16,11 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-import os
 from importlib import resources
 
-from gi.repository import GdkPixbuf, Gtk
+from gi.repository import Gdk, Gtk
 
-from .. import config, version, i18n
+from .. import version, i18n
 
 _ = i18n.get_translation
 
@@ -29,7 +28,8 @@ _ = i18n.get_translation
 # noinspection PyUnusedLocal
 class AboutDialog(Gtk.AboutDialog):
     def __init__(self, parent_window: Gtk.Window) -> None:
-        super().__init__(self, transient_for=parent_window, modal=True)
+        super().__init__()
+        self.set_transient_for = parent_window
         self.set_program_name("Steam Tools NG")
 
         self.set_authors([
@@ -49,9 +49,7 @@ class AboutDialog(Gtk.AboutDialog):
         self.set_license_type(Gtk.License.GPL_3_0)
 
         with resources.as_file(resources.files('steam_tools_ng')) as path:
-            logo = GdkPixbuf.Pixbuf.new_from_file_at_size(str(path / 'icons' / 'stng.png'), 96, 96)
+            logo = Gdk.Texture.new_from_filename(str(path / 'icons' / 'stng.png'))
+
         self.set_logo(logo)
-
-        self.connect("response", lambda dialog, response_id: self.destroy())
-
         self.present()

@@ -17,7 +17,6 @@
 #
 import asyncio
 import logging
-import os
 from importlib import resources
 from typing import Union, Optional, Tuple
 
@@ -50,9 +49,10 @@ class Main(Gtk.ApplicationWindow):
         menu.append(_("Exit"), "app.exit")
 
         menu_button = Gtk.MenuButton()
-        #menu_button.set_label("☰")
-        #menu_button.set_has_frame(False)
-        #menu_button.set_use_popover(True)
+        # menu_button.set_label("☰")
+        menu_button.set_icon_name("open-menu")
+        # menu_button.set_has_frame(False)
+        # menu_button.set_use_popover(True)
         menu_button.set_menu_model(menu)
         header_bar.pack_end(menu_button)
 
@@ -68,10 +68,15 @@ class Main(Gtk.ApplicationWindow):
         self.set_title('Steam Tools NG')
 
         main_grid = Gtk.Grid()
-        main_grid.set_row_spacing(10)
+        main_grid.set_margin_start(10)
+        main_grid.set_margin_end(10)
+        main_grid.set_margin_top(10)
+        main_grid.set_margin_bottom(10)
         self.set_child(main_grid)
 
         self.status_grid = Gtk.Grid()
+        self.status_grid.set_row_spacing(10)
+        self.status_grid.set_column_spacing(10)
         self.status_grid.set_column_homogeneous(True)
         main_grid.attach(self.status_grid, 0, 0, 4, 1)
 
@@ -92,10 +97,17 @@ class Main(Gtk.ApplicationWindow):
         main_grid.attach(self.confirmations_grid, 0, 1, 1, 1)
 
         self._info_label = Gtk.Label()
-        self._info_label.set_text(_("If you have confirmations, they will be shown here. (20 seconds delay)"))
-        self.confirmations_grid.attach(self._info_label, 0, 2, 4, 1)
+        self._info_label.set_margin_top(20)
+        self._info_label.set_text(_("If you have confirmations, they will be shown here (updated every 20 seconds)"))
+        self.confirmations_grid.attach(self._info_label, 0, 3, 4, 1)
 
         self._warning_label = Gtk.Label()
+        self._style_context = self._warning_label.get_style_context()
+        self._style_provider = Gtk.CssProvider()
+        self._style_provider.load_from_data(b"label { background-color: red; }")
+        self._style_context.add_provider(self._style_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        self._warning_label.set_margin_top(20)
+        self._warning_label.set_hexpand(True)
         self.confirmations_grid.attach(self._warning_label, 0, 3, 4, 1)
 
         self.text_tree = utils.SimpleTextTree(
@@ -123,28 +135,36 @@ class Main(Gtk.ApplicationWindow):
         tree_selection.connect("changed", self.on_tree_selection_changed)
 
         accept_button = Gtk.Button()
+        accept_button.set_margin_start(5)
+        accept_button.set_margin_end(5)
         accept_button.set_label(_('Accept selected'))
         accept_button.connect('clicked', self.on_validate_confirmations, "allow", tree_selection)
         self.confirmations_grid.attach(accept_button, 0, 5, 1, 1)
 
         cancel_button = Gtk.Button()
+        cancel_button.set_margin_start(5)
+        cancel_button.set_margin_end(5)
         cancel_button.set_label(_('Cancel selected'))
         cancel_button.connect('clicked', self.on_validate_confirmations, "cancel", tree_selection)
         self.confirmations_grid.attach(cancel_button, 1, 5, 1, 1)
 
         accept_all_button = Gtk.Button()
+        accept_all_button.set_margin_start(5)
+        accept_all_button.set_margin_end(5)
         accept_all_button.set_label(_('Accept all'))
         accept_all_button.connect('clicked', self.on_validate_confirmations, "allow", self.text_tree.store)
         self.confirmations_grid.attach(accept_all_button, 2, 5, 1, 1)
 
         cancel_all_button = Gtk.Button()
+        cancel_all_button.set_margin_start(5)
+        cancel_all_button.set_margin_end(5)
         cancel_all_button.set_label(_('Cancel all'))
         cancel_all_button.connect('clicked', self.on_validate_confirmations, "cancel", self.text_tree.store)
         self.confirmations_grid.attach(cancel_all_button, 3, 5, 1, 1)
 
-        #main_grid.show_all()
-        #self.confirmations_grid.show_all()
-        #self.show_all()
+        # main_grid.show_all()
+        # self.confirmations_grid.show_all()
+        # self.show_all()
         self.show()
 
         self.connect("destroy", self.application.on_exit_activate)
@@ -154,16 +174,23 @@ class Main(Gtk.ApplicationWindow):
         task.add_done_callback(utils.safe_task_callback)
 
     async def plugin_switch(self) -> None:
-        plugins = []
+        plugins_enabled = []
+        plugins_status = []
+
+        for plugin_name in config.plugins.keys():
+            if plugin_name == "confirmations":
+                continue
+
+            plugins_status.append(getattr(self, f'{plugin_name}_status'))
 
         while self.get_realized():
-            plugins_enabled = []
+            plugins = []
 
             for plugin_name in config.plugins.keys():
-                plugin_config = config.parser.getboolean("plugins", plugin_name)
+                enabled = config.parser.getboolean("plugins", plugin_name)
 
                 if plugin_name == "confirmations":
-                    if plugin_config:
+                    if enabled:
                         self.confirmations_grid.show()
                         self.set_size_request(655, 560)
                     else:
@@ -172,51 +199,42 @@ class Main(Gtk.ApplicationWindow):
 
                     continue
 
-                if plugin_config:
-                    plugins_enabled.append(plugin_name)
+                if enabled:
+                    plugins.append(plugin_name)
 
-            if plugins_enabled and plugins_enabled == plugins:
-                await asyncio.sleep(1)
-                continue
-            else:
-                plugins = plugins_enabled
-
-            #for widget in self.status_grid.get_children():
-            #    self.status_grid.remove(widget)
-            #c = self.status_grid.get_first_child()
-            #while True:
-            #    if not c:
-            #        break
-            #    self.status_grid.remove(c)
-            #    c = c.get_next_sibling()
-
-            if not plugins_enabled:
+            if plugins == plugins_enabled:
                 self.status_grid.show()
                 await asyncio.sleep(1)
                 continue
 
+            plugins_enabled = plugins
+
+            for status in plugins_status:
+                self.status_grid.remove(status)
+
             for index, plugin_name in enumerate(plugins_enabled):
-                plugin = getattr(self, f'{plugin_name}_status')
+                status = getattr(self, f'{plugin_name}_status')
 
                 if index == 0:
                     if len(plugins_enabled) >= 2:
-                        self.status_grid.attach(plugin, 0, 0, 1, 1)
+                        self.status_grid.attach(status, 0, 0, 1, 1)
                     else:
-                        self.status_grid.attach(plugin, 0, 0, 2, 1)
+                        self.status_grid.attach(status, 0, 0, 2, 1)
 
                 if index == 1 and len(plugins_enabled) >= 2:
-                    self.status_grid.attach(plugin, 1, 0, 1, 1)
+                    self.status_grid.attach(status, 1, 0, 1, 1)
 
                 if index == 2:
                     if len(plugins_enabled) == 3:
-                        self.status_grid.attach(plugin, 0, 1, 2, 1)
+                        self.status_grid.attach(status, 0, 1, 2, 1)
                     else:
-                        self.status_grid.attach(plugin, 0, 1, 1, 1)
+                        self.status_grid.attach(status, 0, 1, 1, 1)
 
                 if index == 3 and len(plugins_enabled) == 4:
-                    self.status_grid.attach(plugin, 1, 1, 1, 1)
+                    self.status_grid.attach(status, 1, 1, 1, 1)
 
-                plugin.show()
+                status.set_status(_("Loading"))
+                status.show()
 
     @staticmethod
     def on_query_confirmations_tooltip(
@@ -313,9 +331,10 @@ class Main(Gtk.ApplicationWindow):
 
     def set_warning(self, message: str) -> None:
         self._warning_label.set_markup(utils.markup(message, color='white', background='red'))
+        self._warning_label.show()
 
     def unset_warning(self) -> None:
-        self._warning_label.set_text("")
+        self._warning_label.hide()
 
     def get_play_event(self, module: str) -> asyncio.Event:
         _status = getattr(self, f'{module}_status')

@@ -106,6 +106,9 @@ class AsyncButton(Gtk.Button):
         self._user_args = args
         self._user_kwargs = kwargs
 
+    # FIXME: How is supposed to manually emit signals in Gtk4?
+    def clicked(self) -> None:
+        self.__callback(self)
 
 class SimpleTextTree(Gtk.ScrolledWindow):
     def __init__(
@@ -150,9 +153,16 @@ class SimpleTextTree(Gtk.ScrolledWindow):
 class SimpleStatus(Gtk.Frame):
     def __init__(self) -> None:
         super().__init__()
-        #self.connect('draw', self.__do_status_draw) # Gtk.Snapshot.append_cairo()
+        self._style_context = self.get_style_context()
+        self._style_provider = Gtk.CssProvider()
+        self._style_provider.load_from_data(b"frame { background-color: black; }")
+        self._style_context.add_provider(self._style_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
         self._grid = Gtk.Grid()
+        self._grid.set_margin_start(10)
+        self._grid.set_margin_end(10)
+        self._grid.set_margin_top(10)
+        self._grid.set_margin_bottom(10)
         self._grid.show()
         self.set_child(self._grid)
 
@@ -163,13 +173,6 @@ class SimpleStatus(Gtk.Frame):
 
         self.info(_("Waiting"))
         self.set_size_request(100, 60)
-
-    @staticmethod
-    def __do_status_draw(frame: Gtk.Frame, cairo_context: cairo.Context) -> None:
-        allocation = frame.get_allocation()
-        cairo_context.set_source_rgb(0.2, 0.2, 0.2)
-        cairo_context.rectangle(0, 0, allocation.width, allocation.height)
-        cairo_context.fill()
 
     def error(self, text: str) -> None:
         self._label.set_markup(markup(text, color='hotpink', face='monospace'))
@@ -195,20 +198,20 @@ class Status(Gtk.Frame):
         self._gtk_settings = Gtk.Settings.get_default()
 
         self.set_label(label_text)
-        self.set_label_align(0.05)
+        self.set_label_align(0.03)
 
         self._grid = Gtk.Grid()
-        self._grid.set_row_spacing(5)
         self.set_child(self._grid)
 
         self._display = ClickableLabel()
         self._display.set_markup(markup(self._default_display_text, font_size='large', font_weight='bold'))
-        #self._display.connect("clicked", self.__on_display_event_changed)
+        self._display.connect("clicked", self.__on_display_event_changed)
         self._display.set_has_tooltip(True)
         self._grid.attach(self._display, 0, 0, 1, 1)
 
         self._play_pause_button = Gtk.ToggleButton()
-        self._play_pause_button.set_label("⏵/⏸")
+        self._play_pause_button.set_margin_end(10)
+        self._play_pause_button.set_icon_name("media-playback-start")
         self._play_pause_button.set_can_focus(False)
         self._play_pause_button.connect("toggled", self.__on_play_pause_button_toggled)
         self._grid.attach(self._play_pause_button, 1, 0, 1, 1)
@@ -270,10 +273,10 @@ class Status(Gtk.Frame):
 
     def __on_play_pause_button_toggled(self, button: Gtk.ToggleButton) -> None:
         if button.get_active():
-            button.set_label("⏸")
+            button.set_icon_name("media-playback-pause")
             self.play_event.set()
         else:
-            button.set_label("⏵")
+            button.set_icon_name("media-playback-start")
             self.play_event.clear()
 
     def set_pausable(self, value: bool = True) -> None:
@@ -331,11 +334,19 @@ class Section(Gtk.Frame):
         super().__init__(label=label)
         self.set_label_align(0.03)
         self.set_name(name)
+        self.set_margin_start(10)
+        self.set_margin_end(10)
+        self.set_margin_top(10)
+        self.set_margin_bottom(10)
 
         self.grid = Gtk.Grid()
         self.grid.set_name(name)
         self.grid.set_row_spacing(10)
         self.grid.set_column_spacing(10)
+        self.grid.set_margin_start(10)
+        self.grid.set_margin_end(10)
+        self.grid.set_margin_top(10)
+        self.grid.set_margin_bottom(10)
         self.set_child(self.grid)
 
     # noinspection PyProtectedMember
@@ -541,17 +552,3 @@ def safe_task_callback(task: asyncio.Task) -> None:
         loop = asyncio.get_running_loop()
         loop.stop()
         application.quit()
-
-
-def reset_dialog(dialog: Gtk.Dialog, *args, **kwargs) -> None:
-    content_area = dialog.get_content_area()
-    header_bar = dialog.get_header_bar()
-
-    for widget in content_area.get_children():
-        widget.destroy()
-
-    for widget in header_bar.get_children():
-        widget.destroy()
-
-    # noinspection PyArgumentList
-    dialog.__init__(*args, **kwargs)

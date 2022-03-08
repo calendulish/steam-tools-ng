@@ -76,7 +76,7 @@ class AdvancedSettingsDialog(Gtk.Dialog):
         self.application = application
         self.toggle_button = toggle_button
 
-        self.set_default_size(300, 150)
+        self.set_default_size(600, 150)
         self.set_title(_('Advanced Settings'))
         self.set_transient_for(parent_window)
         self.set_modal(True)
@@ -89,9 +89,9 @@ class AdvancedSettingsDialog(Gtk.Dialog):
         content_grid = Gtk.Grid()
         content_grid.set_row_spacing(10)
         content_grid.set_column_spacing(10)
-        content_area.add(content_grid)
+        content_area.append(content_grid)
 
-        login_section = utils.Section("login", _("Login Settings"))
+        login_section = utils.Section("login", _("Advanced Login Settings"))
 
         shared_secret = login_section.new('shared_secret', _("Shared Secret:"), Gtk.Entry, 0, 0)
         shared_secret.connect('changed', settings.on_setting_changed)
@@ -112,7 +112,8 @@ class AdvancedSettingsDialog(Gtk.Dialog):
         steamid_item.set_input_purpose(Gtk.InputPurpose.DIGITS)
         steamid_item.connect("changed", settings.on_digit_only_setting_changed)
 
-        reset_button = utils.AsyncButton(_("Reset Everything (USE WITH CAUTION!!!)"))
+        reset_button = utils.AsyncButton()
+        reset_button.set_label(_("Reset Everything (USE WITH CAUTION!!!)"))
         reset_button.set_name("reset_button")
         reset_button.connect("clicked", self.on_reset_clicked)
         login_section.grid.attach(reset_button, 0, 9, 4, 1)
@@ -127,8 +128,9 @@ class AdvancedSettingsDialog(Gtk.Dialog):
         self.show()
 
     def _exit(self) -> None:
-        self.toggle_button.set_active(False)
-        utils.reset_dialog(self.parent_window, self.application.main_window, self.application)
+        #self.toggle_button.set_active(False)
+        # FIXME: enabled plugins must be updated
+        self.parent_window.destroy()
         self.destroy()
 
     async def on_reset_clicked(self, button: Gtk.Button) -> None:
@@ -145,5 +147,8 @@ class AdvancedSettingsDialog(Gtk.Dialog):
 
         config.parser.clear()
         config.init()
-        utils.reset_dialog(login_dialog, self.application.main_window, self.application)
         self.parent_window.destroy()
+        self.destroy()
+        login_dialog.status.info(_("Waiting"))
+        login_dialog.user_details_section.show()
+        login_dialog.advanced_login.show()

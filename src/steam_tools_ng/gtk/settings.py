@@ -164,6 +164,7 @@ class SettingsDialog(Gtk.Dialog):
             steamguard.set_sensitive(False)
             steamguard.label.set_sensitive(False)
             _steamguard_disabled = Gtk.Label()
+            _steamguard_disabled.set_justify(Gtk.Justification.CENTER)
             _steamguard_disabled.set_halign(Gtk.Align.CENTER)
 
             _message = _(
@@ -180,6 +181,7 @@ class SettingsDialog(Gtk.Dialog):
             confirmations.set_sensitive(False)
             confirmations.label.set_sensitive(False)
             _confirmations_disabled = Gtk.Label()
+            _confirmations_disabled.set_justify(Gtk.Justification.CENTER)
             _confirmations_disabled.set_halign(Gtk.Align.CENTER)
 
             _message = _(
@@ -196,6 +198,7 @@ class SettingsDialog(Gtk.Dialog):
             cardfarming.set_sensitive(False)
             cardfarming.label.set_sensitive(False)
             _cardfarming_disabled = Gtk.Label()
+            _cardfarming_disabled.set_justify(Gtk.Justification.CENTER)
             _cardfarming_disabled.set_halign(Gtk.Align.CENTER)
 
             _message = _(
@@ -211,6 +214,7 @@ class SettingsDialog(Gtk.Dialog):
             steamtrades.set_sensitive(False)
             steamtrades.label.set_sensitive(False)
             _steamtrades_disabled = Gtk.Label()
+            _steamtrades_disabled.set_justify(Gtk.Justification.CENTER)
             _steamtrades_disabled.set_halign(Gtk.Align.CENTER)
 
             _message = _(
@@ -226,6 +230,7 @@ class SettingsDialog(Gtk.Dialog):
             steamgifts.set_sensitive(False)
             steamgifts.label.set_sensitive(False)
             _steamgifts_disabled = Gtk.Label()
+            _steamgifts_disabled.set_justify(Gtk.Justification.CENTER)
             _steamgifts_disabled.set_halign(Gtk.Align.CENTER)
 
             _message = _(
