@@ -21,7 +21,7 @@ from importlib import resources
 
 from gi.repository import GdkPixbuf, Gtk
 
-from .. import config, version, i18n
+from .. import config, __version__, i18n
 
 _ = i18n.get_translation
 
@@ -43,7 +43,7 @@ class AboutDialog(Gtk.AboutDialog):
 
         self.set_website("http://github.com/ShyPixie/steam-tools-ng")
         self.set_website_label(_("Git Repository"))
-        self.set_version(version.__version__)
+        self.set_version(__version__)
         self.set_copyright("Lara Maia (C) 2015 ~ 2021 - dev@lara.monster")
         self.set_comments(_("Made with Love <3"))
         self.set_license_type(Gtk.License.GPL_3_0)
