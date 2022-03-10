@@ -1,43 +1,36 @@
-﻿#define STNG_PATH "..\build\STNG-WIN64-Python-3.9.7"
+﻿#define AppName 'steam-tools-ng'
+#define FancyAppName 'Steam Tools NG'
+
 #include "environment.iss"
 
 [Setup]
-ArchitecturesInstallIn64BitMode=x64
-ArchitecturesAllowed=x64
-AppId={{983543BE-2504-48BF-B6E7-308EA032DAB3}
-AppName=Steam Tools NG
-AppVersion=1.01
+AppId={983543BE-2504-48BF-B6E7-308EA032DAB3}
+AppName={#FancyAppName}
+AppVersion={#AppVersion}
+AppCopyright=Lara Maia <dev@lara.monster> 2022
 AppPublisherURL=https://lara.monster
-AppSupportURL=https://github.com/ShyPixie/steam-tools-ng/issues
-AppUpdatesURL=https://github.com/ShyPixie/steam-tools-ng/releases
-DefaultDirName={autopf}\STNG
-UsePreviousAppDir=no
-DisableDirPage=yes
-DefaultGroupName=Steam Tools NG
-AllowNoIcons=yes
-LicenseFile=../LICENSE
-OutputDir=installer_build
-OutputBaseFilename=stng_setup
-SetupIconFile=stng.ico
-Compression=lzma
-SolidCompression=yes
+AppSupportURL=https://github.com/ShyPixie/{#AppName}/issues
+AppUpdatesURL=https://github.com/ShyPixie/{#AppName}/releases
 WizardStyle=modern
-WizardImageFile=stng_left.bmp
-WizardSmallImageFile=stng.bmp
+WizardSmallImageFile=logo.bmp
+SetupIconFile={#AppName}.ico
+DefaultDirName={autopf}\{#FancyAppName}
+;DefaultDirName={autopf}\STNG
+;UsePreviousAppDir=no
+;DisableDirPage=yes
+AllowNoIcons=yes
+DefaultGroupName={#FancyAppName}
+OutputDir=build
+OutputBaseFileName={#AppName}-setup
+Uninstallable=True
+Compression=lzma2/ultra64
+ArchitecturesAllowed=x64 arm64
+ArchitecturesInstallIn64BitMode=x64 arm64
+DisableDirPage=False
+SolidCompression=True
+ChangesEnvironment=False
+LicenseFile=../LICENSE
 ChangesEnvironment=true
-
-[Code]
-procedure CurStepChanged(CurStep: TSetupStep);
-begin
-    if (CurStep = ssPostInstall) and WizardIsTaskSelected('envPath')
-    then EnvAddPath(ExpandConstant('{app}'));
-end;
-
-procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
-begin
-    if CurUninstallStep = usPostUninstall
-    then EnvRemovePath(ExpandConstant('{app}'));
-end;
 
 [Types]
 Name: "full"; Description: "Full installation"
@@ -55,13 +48,13 @@ Name: "envpath"; Description: "Add STNG to PATH"; GroupDescription: "Additional 
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "{#STNG_PATH}\steam-tools-ng.exe"; DestDir: "{app}"; Flags: ignoreversion; Components: main
-Source: "{#STNG_PATH}\*.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: main
-Source: "{#STNG_PATH}\share\*"; DestDir: "{app}\share"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: main
-Source: "{#STNG_PATH}\etc\*"; DestDir: "{app}\etc"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: main
-Source: "{#STNG_PATH}\lib\*"; DestDir: "{app}\lib"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: main
-Source: "{#STNG_PATH}\plugins\steamgifts.pyc"; DestDir: "{app}\plugins"; Flags: ignoreversion; Components: plugins\steamgifts
-Source: "{#STNG_PATH}\plugins\steamtrades.pyc"; DestDir: "{app}\plugins"; Flags: ignoreversion; Components: plugins\steamtrades
+Source: "..\build\{#ReleaseName}\steam-tools-ng.exe"; DestDir: "{app}"; Flags: ignoreversion; Components: main
+Source: "..\build\{#ReleaseName}\*.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: main
+Source: "..\build\{#ReleaseName}\share\*"; DestDir: "{app}\share"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: main
+Source: "..\build\{#ReleaseName}\etc\*"; DestDir: "{app}\etc"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: main
+Source: "..\build\{#ReleaseName}\lib\*"; DestDir: "{app}\lib"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: main
+Source: "..\build\{#ReleaseName}\plugins\steamgifts.pyc"; DestDir: "{app}\plugins"; Flags: ignoreversion; Components: plugins\steamgifts
+Source: "..\build\{#ReleaseName}\plugins\steamtrades.pyc"; DestDir: "{app}\plugins"; Flags: ignoreversion; Components: plugins\steamtrades
 
 [Icons]
 Name: "{group}\Steam Tools NG"; Filename: "{app}\steam-tools-ng.exe"; IconFilename: "{app}\share\icons\stng.ico"
