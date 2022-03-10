@@ -133,7 +133,7 @@ def freeze_options() -> Mapping[str, Any]:
             os.path.join("src", "steam_tools_ng", "__main__.py"),
             target_name='steam-tools-ng',
             base=None,
-            icon=os.path.join('installer', 'stng.ico'),
+            icon=os.path.join('installer', 'steam-tools-ng.ico'),
             shortcut_name='Steam Tools NG',
             copyright='Lara Maia (C) 2015 ~ 2022',
         )
