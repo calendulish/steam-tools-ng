@@ -33,5 +33,5 @@ except PackageNotFoundError:  # Freezed
     from win32com.client import Dispatch
 
     parser = Dispatch('Scripting.FileSystemObject')
-    working_directory = Path(sys.argv[0]).parent.resolve()
-    __version__ = parser.GetFileVersion(working_directory / Path(sys.argv[0]).name)
+    working_directory = Path(sys.executable).parent.resolve()
+    __version__ = parser.GetFileVersion(working_directory / Path(sys.executable).name)
