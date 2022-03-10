@@ -1,4 +1,4 @@
-#define DownloadPage 'https://github.com/ShyPixie/python-template/releases/latest/download/python-template-setup.exe'
+#define DownloadPage 'https://github.com/ShyPixie/steam-tools-ng/releases/latest/download/steam-tools-ng-setup.exe'
 #define AppName 'steam-tools-ng'
 #define FancyAppName 'Steam Tools NG'
 
