@@ -4,7 +4,7 @@
 #include "environment.iss"
 
 [Setup]
-AppId={983543BE-2504-48BF-B6E7-308EA032DAB3}
+AppId={{983543BE-2504-48BF-B6E7-308EA032DAB3}
 AppName={#FancyAppName}
 AppVersion={#AppVersion}
 AppCopyright=Lara Maia <dev@lara.monster> 2022
@@ -28,9 +28,8 @@ ArchitecturesAllowed=x64 arm64
 ArchitecturesInstallIn64BitMode=x64 arm64
 DisableDirPage=False
 SolidCompression=True
-ChangesEnvironment=False
+ChangesEnvironment=True
 LicenseFile=../LICENSE
-ChangesEnvironment=true
 
 [Types]
 Name: "full"; Description: "Full installation"
