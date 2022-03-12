@@ -25,12 +25,13 @@ import sys
 import textwrap
 from multiprocessing import freeze_support
 
-from steam_tools_ng import config, i18n, version
+from steam_tools_ng import config, i18n, __version__
 
 _ = i18n.get_translation
 log = logging.getLogger(__name__)
 
-if __name__ == "__main__":
+
+def main() -> None:
     freeze_support()
     try:
         config.init()
@@ -144,7 +145,7 @@ if __name__ == "__main__":
         log.info(_('Done!'))
         sys.exit(0)
 
-    log.info(f'Steam Tools NG version {version.__version__} (Made with Girl Power <33)')
+    log.info('Steam Tools NG version %s (Made with Girl Power <33)', __version__)
     log.info('Copyright (C) 2015 ~ 2021 Lara Maia - <dev@lara.monster>')
 
     if console_params.add_authenticator:
@@ -180,3 +181,7 @@ if __name__ == "__main__":
 
         app = application.SteamToolsNG()
         async_gtk.run(app)
+
+
+if __name__ == "__main__":
+    main()

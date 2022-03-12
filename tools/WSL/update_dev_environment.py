@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 #
-# Lara Maia <dev@lara.monster> 2025~2021
+# Lara Maia <dev@lara.monster> <YEAR>
 #
-# The steam-tools-ng is free software: you can redistribute it and/or
+# The <program> is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
 # published by the Free Software Foundation, either version 3 of
 # the License, or (at your option) any later version.
@@ -16,21 +16,8 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-import logging
-import os
-import platform
-import subprocess
-import sys
-
-log = logging.Logger(__name__)
+import common
 
 if __name__ == "__main__":
-    if 'WSL' not in platform.release():
-        log.error("Unsupported")
-        sys.exit(1)
-
-    current_directory = subprocess.run(['wslpath', '-w', os.getcwd()], check=True,
-                                       stdout=subprocess.PIPE).stdout.decode()
-
-    subprocess.run(['powershell.exe', '-Command', f"pushd {current_directory}; .\\update_dev_environment.cmd"],
-                   check=True)
+    common.check_wsl()
+    common.run_cmd(["I:\\msys64\\tools\\Windows\\update_dev_environment.cmd"])

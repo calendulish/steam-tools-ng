@@ -18,7 +18,20 @@
 
 import sys
 
+from importlib.metadata import version, PackageNotFoundError
+from pathlib import Path
+
 if len(sys.argv) == 1:
     import gi
 
     gi.require_version('Gtk', '4.0')
+
+try:
+    __version__ = version(__package__)
+except PackageNotFoundError:  # Freezed
+    # noinspection PyPackageRequirements
+    from win32com.client import Dispatch
+
+    parser = Dispatch('Scripting.FileSystemObject')
+    working_directory = Path(sys.executable).parent.resolve()
+    __version__ = parser.GetFileVersion(working_directory / Path(sys.executable).name)

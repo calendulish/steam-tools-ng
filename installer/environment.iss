@@ -43,3 +43,15 @@ begin
     then Log(Format('The [%s] removed from PATH: [%s]', [Path, Paths]))
     else Log(Format('Error while removing the [%s] from PATH: [%s]', [Path, Paths]));
 end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+    if (CurStep = ssPostInstall) and WizardIsTaskSelected('envPath')
+    then EnvAddPath(ExpandConstant('{app}'));
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+    if CurUninstallStep = usPostUninstall
+    then EnvRemovePath(ExpandConstant('{app}'));
+end;

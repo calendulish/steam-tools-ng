@@ -22,13 +22,9 @@ import certifi
 import os
 import subprocess
 import sysconfig
-from importlib.machinery import SourceFileLoader
 from setuptools import find_packages
 from setuptools.command.build_py import build_py
 from typing import Any, List, Mapping, Tuple
-
-version_module_path = os.path.join('src', 'steam_tools_ng', 'version.py')
-version = SourceFileLoader('version', version_module_path).load_module()
 
 if os.name == 'nt':
     # noinspection PyPackageRequirements
@@ -136,15 +132,16 @@ def freeze_options() -> Mapping[str, Any]:
 
     executables = [
         Executable(
-            os.path.join("src", "steam-tools-ng"),
+            os.path.join("src", "steam_tools_ng", "__main__.py"),
+            target_name='steam-tools-ng',
             base=None,
-            icon=os.path.join('installer', 'stng.ico'),
+            icon=os.path.join('installer', 'steam-tools-ng.ico'),
             shortcut_name='Steam Tools NG',
-            copyright='Lara Maia (C) 2015 ~ 2021',
+            copyright='Lara Maia (C) 2015 ~ 2022',
         )
     ]
 
-    packages = ['asyncio', 'steam_tools_ng', 'gi', 'six']
+    packages = ['asyncio', 'steam_tools_ng', 'gi', 'six', 'win32com']
 
     paths = ['src']
     paths.extend(sys.path)
@@ -211,7 +208,7 @@ classifiers = [
 
 setup(
     name='steam-tools-ng',
-    version=version.__version__,
+    version='1.0.2',
     description="Some useful tools to use with steam client or compatible programs and websites.",
     author='Lara Maia',
     author_email='dev@lara.monster',
@@ -222,8 +219,9 @@ setup(
     packages=find_packages('src'),
     package_dir={'': 'src'},
     include_package_data=True,
-    scripts=[os.path.join('src', 'steam-tools-ng')],
+    entry_points={'console_scripts': ['steam-tools-ng=steam_tools_ng.__main__:main']},
     install_requires=[
+        "pywin32; sys_platform == 'win32'",
         'stlib>=0.13.6',
         'aiohttp',
         'certifi',
