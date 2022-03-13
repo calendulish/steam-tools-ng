@@ -116,20 +116,19 @@ class LoginDialog(Gtk.Dialog):
             0, 1,
         )
 
-        self.connect('response', lambda dialog, _action: dialog.destroy())
+        self.connect('response', self.on_quit)
+
         key_event = Gtk.EventControllerKey()
         key_event.connect('key-released', self.on_key_release_event)
         self.add_controller(key_event)
-        # self.connect('key-release-event', self.on_key_release_event)
 
-        self.content_area.show()
         self.steam_code_item.hide()
         self.mail_code_item.hide()
         self.api_key_item.hide()
         self.captcha_item.hide()
         self.captcha_text_item.hide()
         self.advanced_login_section.hide()
-        self.login_button.show()
+
         self.check_login_availability()
 
     @property
@@ -180,6 +179,10 @@ class LoginDialog(Gtk.Dialog):
         else:
             self.login_button.set_sensitive(True)
 
+    def on_quit(self, *args, **kwargs) -> None:
+        self.application.main_window.set_critical(_("Login cancelled! Modules will not work correctly!"))
+        self.destroy()
+
     def on_key_release_event(
             self,
             controller: Gtk.EventControllerKey,
@@ -193,7 +196,7 @@ class LoginDialog(Gtk.Dialog):
             if not self.username or not self.__password:
                 self.status.error(_("Username or Password is blank!"))
             else:
-                self.login_button.clicked()
+                self.login_button.emit('clicked')
 
     async def on_login_button_clicked(self, *args) -> None:
         self.status.info(_("Retrieving user data"))
@@ -358,5 +361,3 @@ class LoginDialog(Gtk.Dialog):
             self.set_size_request(400, 100)
         else:
             self.advanced_login_section.show()
-            # self.set_size_request(400, 100)
-            # self.queue_resize()

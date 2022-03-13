@@ -49,14 +49,11 @@ class Main(Gtk.ApplicationWindow):
         menu.append(_("Exit"), "app.exit")
 
         menu_button = Gtk.MenuButton()
-        # menu_button.set_label("☰")
         menu_button.set_icon_name("open-menu")
-        # menu_button.set_has_frame(False)
-        # menu_button.set_use_popover(True)
         menu_button.set_menu_model(menu)
         header_bar.pack_end(menu_button)
 
-        self.set_default_size(650, 450)
+        self.set_default_size(650, 100)
         self.set_resizable(False)
 
         if config.parser.getboolean("general", "show_close_button"):
@@ -104,11 +101,20 @@ class Main(Gtk.ApplicationWindow):
         self._warning_label = Gtk.Label()
         self._style_context = self._warning_label.get_style_context()
         self._style_provider = Gtk.CssProvider()
-        self._style_provider.load_from_data(b"label { background-color: red; }")
+        self._style_provider.load_from_data(b"label { background-color: blue; }")
         self._style_context.add_provider(self._style_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         self._warning_label.set_margin_top(20)
         self._warning_label.set_hexpand(True)
         self.confirmations_grid.attach(self._warning_label, 0, 3, 4, 1)
+
+        self._critical_label = Gtk.Label()
+        self._style_context = self._critical_label.get_style_context()
+        self._style_provider = Gtk.CssProvider()
+        self._style_provider.load_from_data(b"label { background-color: red; }")
+        self._style_context.add_provider(self._style_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        self._critical_label.set_margin_top(20)
+        self._critical_label.set_hexpand(True)
+        self.confirmations_grid.attach(self._critical_label, 0, 3, 4, 1)
 
         self.text_tree = utils.SimpleTextTree(
             _('mode'), _('id'), _('key'), _('give'), _('to'), _('receive'),
@@ -161,11 +167,6 @@ class Main(Gtk.ApplicationWindow):
         cancel_all_button.set_label(_('Cancel all'))
         cancel_all_button.connect('clicked', self.on_validate_confirmations, "cancel", self.text_tree.store)
         self.confirmations_grid.attach(cancel_all_button, 3, 5, 1, 1)
-
-        # main_grid.show_all()
-        # self.confirmations_grid.show_all()
-        # self.show_all()
-        self.show()
 
         self.connect("destroy", self.application.on_exit_activate)
 
@@ -330,11 +331,20 @@ class Main(Gtk.ApplicationWindow):
             _status.set_level(*module_data.level)
 
     def set_warning(self, message: str) -> None:
-        self._warning_label.set_markup(utils.markup(message, color='white', background='red'))
+        self._critical_label.hide()
+        self._warning_label.set_markup(utils.markup(message, color='white'))
         self._warning_label.show()
+
+    def set_critical(self, message: str) -> None:
+        self._warning_label.hide()
+        self._critical_label.set_markup(utils.markup(message, color='white'))
+        self._critical_label.show()
 
     def unset_warning(self) -> None:
         self._warning_label.hide()
+
+    def unset_critical(self) -> None:
+        self._critical_label.hide()
 
     def get_play_event(self, module: str) -> asyncio.Event:
         _status = getattr(self, f'{module}_status')

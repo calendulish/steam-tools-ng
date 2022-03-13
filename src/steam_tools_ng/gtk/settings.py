@@ -23,8 +23,8 @@ import sys
 from collections import OrderedDict
 
 from gi.repository import Gtk, Pango
-from stlib import plugins
 
+from stlib import plugins
 from . import utils, advanced, authenticator, login
 from .. import config, i18n
 
@@ -106,8 +106,6 @@ class SettingsDialog(Gtk.Dialog):
             console_warning.set_text(_("Press the button again to close the debug console"))
             general_section.grid.attach(console_warning, 0, 7, 2, 1)
 
-        general_section.show()
-
         login_section = utils.Section("login", _("Login Settings"))
 
         account_name = login_section.new('account_name', _("Username:"), Gtk.Entry, 0, 0)
@@ -136,8 +134,6 @@ class SettingsDialog(Gtk.Dialog):
         advanced_button.set_name("advanced_button")
         advanced_button.connect("toggled", self.on_advanced_button_toggled)
         login_section.grid.attach(advanced_button, 0, 4, 2, 1)
-
-        login_section.show()
 
         plugins_section = utils.Section('plugins', _('Plugins Settings'))
 
@@ -242,8 +238,6 @@ class SettingsDialog(Gtk.Dialog):
             _steamgifts_disabled.set_markup(utils.markup(_message, color="hotpink"))
             plugins_section.grid.attach(_steamgifts_disabled, 0, 20, 4, 4)
 
-        plugins_section.show()
-
         steamtrades_section = utils.Section('steamtrades', _('Steamtrades Settings'))
 
         trade_ids = steamtrades_section.new("trade_ids", _("Trade IDs:"), Gtk.Entry, 0, 0)
@@ -255,8 +249,6 @@ class SettingsDialog(Gtk.Dialog):
 
         wait_max = steamtrades_section.new("wait_max", _("Wait MAX:"), Gtk.Entry, 0, 2)
         wait_max.connect("changed", on_digit_only_setting_changed)
-
-        steamtrades_section.show()
 
         steamgifts_section = utils.Section("steamgifts", _("Steamgifts Settings"))
 
@@ -295,8 +287,6 @@ class SettingsDialog(Gtk.Dialog):
         wait_max = steamgifts_section.new("wait_max", _("Wait MAX:"), Gtk.Entry, 0, 5)
         wait_max.connect("changed", on_digit_only_setting_changed)
 
-        steamgifts_section.show()
-
         cardfarming_section = utils.Section("cardfarming", _("Cardfarming settings"))
 
         first_wait = cardfarming_section.new("first_wait", _("First Wait:"), Gtk.Entry, 0, 0)
@@ -309,8 +299,6 @@ class SettingsDialog(Gtk.Dialog):
         min_wait.connect("changed", on_digit_only_setting_changed)
 
         reverse_sorting = cardfarming_section.new("reverse_sorting", _("More cards First:"), Gtk.CheckButton, 0, 3)
-
-        cardfarming_section.show()
 
         logger_section = utils.Section("logger", _('Logger settings'))
 
@@ -327,8 +315,6 @@ class SettingsDialog(Gtk.Dialog):
         log_level_item.connect("changed", on_combo_setting_changed, config.log_levels)
         log_console_level_item.connect("changed", on_combo_setting_changed, config.log_levels)
 
-        logger_section.show()
-
         self.connect('response', lambda dialog, response_id: self.destroy())
 
         for section in [
@@ -341,11 +327,6 @@ class SettingsDialog(Gtk.Dialog):
             plugins_section,
         ]:
             section.stackup_section(stack)
-
-        stack.show()
-        sidebar.show()
-        content_grid.show()
-        self.show()
 
     @staticmethod
     def on_log_button_clicked(button: Gtk.Button) -> None:
@@ -404,20 +385,24 @@ class SettingsDialog(Gtk.Dialog):
     def on_reset_password_clicked(self, button: Gtk.Button) -> None:
         login_dialog = login.LoginDialog(self.parent_window, self.application)
         login_dialog.status.info(_("Removing saved password..."))
-        login_dialog.status.show()
         login_dialog.user_details_section.hide()
         login_dialog.advanced_login.hide()
         login_dialog.set_deletable(False)
         login_dialog.show()
 
         config.new("login", "password", "")
-        asyncio.get_event_loop().call_later(2, login_dialog.destroy)
+
+        def reset_password_callback() -> None:
+            self.destroy()
+            login_dialog.destroy()
+
+        asyncio.get_event_loop().call_later(2, reset_password_callback)
 
     def update_language(self, combo: Gtk.ComboBoxText) -> None:
         language = list(config.translations)[combo.get_active()]
         config.new('general', 'language', language)
-        Gtk.Container.foreach(self, refresh_widget_text)
-        Gtk.Container.foreach(self.parent_window, refresh_widget_text)
+        refresh_widget_childrens(self)
+        refresh_widget_childrens(self.parent_window)
 
 
 def on_setting_toggled(checkbutton: Gtk.CheckButton) -> None:
@@ -455,39 +440,36 @@ def on_combo_setting_changed(combo: Gtk.ComboBoxText, items: 'OrderedDict[str, s
     config.new(section, option, current_value)
 
 
-def refresh_widget_text(widget: Gtk.Widget) -> None:
+def refresh_widget_childrens(widget: Gtk.Widget) -> None:
+    next_child = widget.get_first_child()
+    while next_child:
+        refresh_widget(next_child)
+        next_child = next_child.get_next_sibling()
+
+
+def refresh_widget(widget: Gtk.Widget) -> None:
     if isinstance(widget, Gtk.MenuButton):
-        if widget.get_use_popover():
-            refresh_widget_text(widget.get_popover())
-        else:
-            refresh_widget_text(widget.get_popup())
-
+        refresh_widget(widget.get_popover())
         return
 
-    if isinstance(widget, Gtk.Container):
-        childrens = Gtk.Container.get_children(widget)
-    else:
-        if isinstance(widget, Gtk.Label):
-            try:
-                cached_text = i18n.cache[i18n.new_hash(widget.get_text())]
-            except KeyError:
-                log.debug("it's not an i18n string: %s", widget.get_text())
-                return
+    if isinstance(widget, Gtk.Label):
+        try:
+            cached_text = i18n.cache[i18n.new_hash(widget.get_text())]
+        except KeyError:
+            log.debug("it's not an i18n string: %s", widget.get_text())
+            return
 
-            c_ = _
+        c_ = _
 
-            if widget.get_use_markup():
-                old_attributes = Pango.Layout.get_attributes(widget.get_layout())
-                widget.set_text(c_(cached_text))
-                widget.set_attributes(old_attributes)
-            else:
-                widget.set_text(c_(cached_text))
-
-            log.debug('widget refreshed: %s', widget)
+        if widget.get_use_markup():
+            old_attributes = Pango.Layout.get_attributes(widget.get_layout())
+            widget.set_text(c_(cached_text))
+            widget.set_attributes(old_attributes)
         else:
-            log.debug('widget not refresh: %s', widget)
+            widget.set_text(c_(cached_text))
 
+        log.debug('widget refreshed: %s', widget)
         return
 
-    for children in childrens:
-        refresh_widget_text(children)
+    log.debug('widget not refresh: %s', widget)
+    refresh_widget_childrens(widget)

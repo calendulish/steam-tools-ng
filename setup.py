@@ -16,15 +16,15 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-import sys
-
-import certifi
 import os
 import subprocess
+import sys
 import sysconfig
+from typing import Any, List, Mapping, Tuple
+
+import certifi
 from setuptools import find_packages
 from setuptools.command.build_py import build_py
-from typing import Any, List, Mapping, Tuple
 
 if os.name == 'nt':
     # noinspection PyPackageRequirements
@@ -141,7 +141,7 @@ def freeze_options() -> Mapping[str, Any]:
         )
     ]
 
-    packages = ['asyncio', 'steam_tools_ng', 'gi', 'six', 'win32com']
+    packages = ['asyncio', 'steam_tools_ng', 'gi', 'six', 'win32com.client']
 
     paths = ['src']
     paths.extend(sys.path)
@@ -154,6 +154,13 @@ def freeze_options() -> Mapping[str, Any]:
                 os.path.join(icons_path, 'Default', file),
                 os.path.join('share', 'icons', 'Default', file)
             ))
+
+    for language in ['fr', 'pt_BR']:
+        language_directory = os.path.join('lib', 'steam_tools_ng', 'locale', language, 'LC_MESSAGES')
+        includes.append((
+            os.path.join('build', language_directory, 'steam-tools-ng.mo'),
+            os.path.join(language_directory, 'steam-tools-ng.mo')
+        ))
 
     excludes = [
         'tkinter',
@@ -169,6 +176,7 @@ def freeze_options() -> Mapping[str, Any]:
         'tarfile',
         'webbrowser',
         'mypy',
+        'pytest',
     ]
 
     build_exe_options = {
@@ -208,7 +216,7 @@ classifiers = [
 
 setup(
     name='steam-tools-ng',
-    version='1.0.2',
+    version='1.1',
     description="Some useful tools to use with steam client or compatible programs and websites.",
     author='Lara Maia',
     author_email='dev@lara.monster',
@@ -222,7 +230,7 @@ setup(
     entry_points={'console_scripts': ['steam-tools-ng=steam_tools_ng.__main__:main']},
     install_requires=[
         "pywin32; sys_platform == 'win32'",
-        'stlib>=0.13.6',
+        'stlib>=0.14',
         'aiohttp',
         'certifi',
     ],

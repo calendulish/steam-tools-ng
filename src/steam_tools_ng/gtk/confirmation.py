@@ -65,6 +65,10 @@ class FinalizeDialog(Gtk.Dialog):
         self.content_area = self.get_content_area()
         self.content_area.set_orientation(Gtk.Orientation.VERTICAL)
         self.content_area.set_spacing(10)
+        self.content_area.set_margin_start(10)
+        self.content_area.set_margin_end(10)
+        self.content_area.set_margin_top(10)
+        self.content_area.set_margin_bottom(10)
 
         self.status = utils.SimpleStatus()
         self.content_area.append(self.status)
@@ -82,11 +86,12 @@ class FinalizeDialog(Gtk.Dialog):
         if self.iter is None or not model:
             self.status.error(_("You must select something"))
             self.header_bar.set_show_title_buttons(True)
+            self.yes_button.hide()
+            self.no_button.hide()
         elif self.iter is False:
             self.status.info(
                 _("Do you really want to {} ALL confirmations?\nIt can't be undone!").format(self.action.upper())
             )
-            self.header_bar.show()
         else:
             self.set_size_request(600, 400)
 
@@ -120,10 +125,6 @@ class FinalizeDialog(Gtk.Dialog):
 
             utils.copy_childrens(self.model, self.give_tree.store, self.iter, 3)
             utils.copy_childrens(self.model, self.receive_tree.store, self.iter, 5)
-
-            self.header_bar.show()
-
-        self.content_area.show()
 
         self.connect('response', lambda dialog, response_id: self.destroy())
 

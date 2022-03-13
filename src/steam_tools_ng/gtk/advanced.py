@@ -92,6 +92,7 @@ class AdvancedSettingsDialog(Gtk.Dialog):
         content_area.append(content_grid)
 
         login_section = utils.Section("login", _("Advanced Login Settings"))
+        content_grid.attach(login_section, 0, 0, 1, 2)
 
         shared_secret = login_section.new('shared_secret', _("Shared Secret:"), Gtk.Entry, 0, 0)
         shared_secret.connect('changed', settings.on_setting_changed)
@@ -117,18 +118,11 @@ class AdvancedSettingsDialog(Gtk.Dialog):
         reset_button.set_name("reset_button")
         reset_button.connect("clicked", self.on_reset_clicked)
         login_section.grid.attach(reset_button, 0, 9, 4, 1)
-        reset_button.show()
-
-        login_section.show()
 
         self.connect('response', lambda dialog, response_id: self._exit())
 
-        content_grid.attach(login_section, 0, 0, 1, 2)
-        content_grid.show()
-        self.show()
-
     def _exit(self) -> None:
-        #self.toggle_button.set_active(False)
+        # self.toggle_button.set_active(False)
         # FIXME: enabled plugins must be updated
         self.parent_window.destroy()
         self.destroy()

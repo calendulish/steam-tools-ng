@@ -29,7 +29,8 @@ _ = i18n.get_translation
 class AboutDialog(Gtk.AboutDialog):
     def __init__(self, parent_window: Gtk.Window) -> None:
         super().__init__()
-        self.set_transient_for = parent_window
+        self.set_transient_for(parent_window)
+        self.set_modal(True)
         self.set_program_name("Steam Tools NG")
 
         self.set_authors([

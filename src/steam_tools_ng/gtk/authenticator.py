@@ -20,8 +20,8 @@ import logging
 
 import aiohttp
 from gi.repository import Gtk, Gdk
-from stlib import universe, webapi, login
 
+from stlib import universe, webapi, login
 from . import utils
 from .. import i18n, config
 
@@ -38,7 +38,8 @@ class NewAuthenticatorDialog(Gtk.Dialog):
 
         self.header_bar = self.get_header_bar()
 
-        self.add_authenticator_button = utils.AsyncButton(_("Add Authenticator"))
+        self.add_authenticator_button = utils.AsyncButton()
+        self.add_authenticator_button.set_label(_("Add Authenticator"))
         self.add_authenticator_button.connect("clicked", self.on_add_authenticator_clicked)
         self.header_bar.pack_end(self.add_authenticator_button)
 
@@ -53,6 +54,10 @@ class NewAuthenticatorDialog(Gtk.Dialog):
         self.content_area = self.get_content_area()
         self.content_area.set_orientation(Gtk.Orientation.VERTICAL)
         self.content_area.set_spacing(10)
+        self.content_area.set_margin_start(10)
+        self.content_area.set_margin_end(10)
+        self.content_area.set_margin_top(10)
+        self.content_area.set_margin_bottom(10)
 
         self.status = utils.SimpleStatus()
         self.content_area.append(self.status)
@@ -63,11 +68,12 @@ class NewAuthenticatorDialog(Gtk.Dialog):
         self.sms_code_item = self.user_details_section.new("_sms_code", _("SMS Code:"), Gtk.Entry, 0, 1)
 
         self.connect('response', lambda dialog, _action: dialog.destroy())
-        self.connect('key-release-event', self.on_key_release_event)
 
-        self.status.show()
-        self.add_authenticator_button.show()
-        self.add_authenticator_button.clicked()
+        key_event = Gtk.EventControllerKey()
+        key_event.connect('key-released', self.on_key_release_event)
+        self.add_controller(key_event)
+
+        self.add_authenticator_button.emit('clicked')
 
     @property
     def sms_code(self) -> str:
@@ -81,9 +87,15 @@ class NewAuthenticatorDialog(Gtk.Dialog):
     def steamid(self) -> None:
         return config.parser.get("login", "steamid")
 
-    def on_key_release_event(self, _dialog: Gtk.Dialog, event: Gdk.Event) -> None:
-        if event.keyval == Gdk.KEY_Return:
-            self.add_authenticator_button.clicked()
+    def on_key_release_event(
+            self,
+            controller: Gtk.EventControllerKey,
+            keyval: int,
+            keycode: int,
+            state: Gdk.ModifierType,
+    ) -> None:
+        if keyval == Gdk.KEY_Return:
+            self.add_authenticator_button.emit('clicked')
 
     async def on_add_authenticator_clicked(self, button: Gtk.Button) -> None:
         self.status.info(_("Retrieving user data"))

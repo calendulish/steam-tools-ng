@@ -26,8 +26,8 @@ from typing import Any, Optional, Dict, Callable, List
 
 import aiohttp
 from gi.repository import Gio, Gtk
-from stlib import webapi
 
+from stlib import webapi
 from . import about, settings, login, window, utils
 from .. import config, i18n, core
 
@@ -133,7 +133,7 @@ class SteamToolsNG(Gtk.Application):
             encrypted_password = config.parser.get("login", "password")
             try:
                 login_dialog.set_password(encrypted_password)
-                login_dialog.login_button.clicked()
+                login_dialog.login_button.emit('clicked')
             except ValueError:
                 log.error(_("Saved password is not usable"))
 
@@ -182,10 +182,11 @@ class SteamToolsNG(Gtk.Application):
                 await self.do_login(auto=True)
         except aiohttp.ClientError as exception:
             log.exception(str(exception))
-            self.main_window.set_warning(_("Check your connection. (server down?)"))
+            self.main_window.set_critical(_("Check your connection. (server down?)"))
             await asyncio.sleep(10)
             return  # FIXME: RETRY ###
 
+        self.main_window.unset_critical()
         self.main_window.unset_warning()
 
         modules: Dict = {}
@@ -267,9 +268,9 @@ class SteamToolsNG(Gtk.Application):
 
         async for module_data in confirmations:
             if module_data.error:
-                self.main_window.set_warning(module_data.error)
+                self.main_window.set_critical(module_data.error)
             else:
-                self.main_window.unset_warning()
+                self.main_window.unset_critical()
 
             if self.main_window.text_tree_lock:
                 self.main_window.set_warning(_("Waiting another confirmation process"))

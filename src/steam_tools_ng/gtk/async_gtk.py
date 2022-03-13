@@ -23,9 +23,9 @@ from gi.repository import Gtk, GLib
 
 
 async def async_iterator(
-    application: Gtk.Application,
-    main_context: GLib.MainContext,
-    loop: asyncio.AbstractEventLoop,
+        application: Gtk.Application,
+        main_context: GLib.MainContext,
+        loop: asyncio.AbstractEventLoop,
 ) -> None:
     while main_context.pending():
         main_context.iteration(False)
