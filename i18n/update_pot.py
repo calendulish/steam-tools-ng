@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Lara Maia <dev@lara.monster> 2015 ~ 2021
+# Lara Maia <dev@lara.monster> 2015 ~ 2022
 #
 # The Steam Tools NG is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -16,48 +16,42 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-import importlib
 import logging
 import os
 import subprocess
 import sys
 
-sys.path.append('..')
-version = importlib.import_module('.version', 'steam_tools_ng')
-script_path = os.path.dirname(__file__)
-log = logging.getLogger(__name__)
+from fileinput import FileInput
+from pathlib import Path
 
-if script_path:
-    os.chdir(os.path.join(script_path, '..'))
-else:
-    os.chdir('..')
+sys.path.append('..')
+os.chdir(Path(__file__).parent.parent.resolve())
+log = logging.getLogger(__name__)
 
 copyright_ = '''
 Steam Tools NG - Useful tools for Steam
-Lara Maia <dev@lara.monster> (C) 2015 ~ 2021
+Lara Maia <dev@lara.monster> (C) 2015 ~ 2022
 '''
 
 if __name__ == "__main__":
-    output_file = os.path.join('i18n', 'steam-tools-ng.pot')
+    output_file = Path('i18n', 'steam-tools-ng.pot')
+    output_file.write_text("")
     translatable_files = []
 
-    for root, dirs, files in os.walk('steam_tools_ng'):
+    for root, dirs, files in os.walk('src'):
         for file in files:
             if file.endswith(".py"):
-                translatable_files.append(os.path.join(root, file))
-
-    translatable_files.append('steam-tools-ng.py')
+                translatable_files.append(Path(root, file))
 
     for file in translatable_files:
         process_info = subprocess.run(
             [
                 'xgettext',
                 '-jo',
-                os.path.join('i18n', 'steam-tools-ng.pot'),
+                output_file,
                 file,
                 '--copyright-holder=' + copyright_,
                 '--package-name=steam-tools-ng',
-                '--package-version=' + version.__version__,
                 '--msgid-bugs-address=dev@lara.monster',
             ]
         )
@@ -66,4 +60,11 @@ if __name__ == "__main__":
 
         if process_info.returncode == 1:
             log.error(f"This error occurs when processing {file}")
-            break
+            sys.exit(1)
+
+    with FileInput(output_file, inplace=True) as pot:
+        for line in pot:
+            if '# SOME DESCRIPTIVE TITLE' in line or '# Copyright (C) YEAR' in line:
+                continue
+
+            print(line.replace('CHARSET', 'UTF-8'), end='')
