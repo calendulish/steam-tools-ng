@@ -145,8 +145,8 @@ def main() -> None:
         log.info(_('Done!'))
         sys.exit(0)
 
-    log.info('Steam Tools NG version %s (Made with Girl Power <33)', __version__)
-    log.info('Copyright (C) 2015 ~ 2021 Lara Maia - <dev@lara.monster>')
+    print(f'Steam Tools NG version {__version__} (Made with Girl Power <33)')
+    print('Copyright (C) 2015 ~ 2021 Lara Maia - <dev@lara.monster>')
 
     if console_params.add_authenticator:
         from steam_tools_ng.console import cli
