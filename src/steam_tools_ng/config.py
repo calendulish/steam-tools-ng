@@ -15,27 +15,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import sys
-import time
-
-import aiohttp
 import asyncio
 import configparser
 import http
 import locale
 import logging
 import os
+import sys
+import time
 from collections import OrderedDict
+from typing import Any
+
+import aiohttp
 from stlib import plugins as stlib_plugins
 from stlib import webapi
-from typing import Any
+
 from . import i18n, logger_handlers
 
 parser = configparser.RawConfigParser()
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
-if os.path.isdir('steam_tools_ng'):
+if os.path.isdir('src'):
     # development mode
     data_dir = 'config'
 elif hasattr(sys, 'frozen') or sys.platform == 'win32':
@@ -224,6 +225,7 @@ def init() -> None:
     if not client:
         new("plugins", "cardfarming", False)
 
+
 def init_logger() -> None:
     log_directory = parser.get("logger", "log_directory")
     log_level = parser.get("logger", "log_level")
@@ -268,9 +270,9 @@ def new(section: str, option: str, value: Any) -> None:
 def remove(section: str, option: str) -> None:
     # Some GUI checks will fail if option doesn't exists
     new(section, option, '')
-    #parser.remove_option(section, option)
+    # parser.remove_option(section, option)
 
-    #with open(config_file, 'w', encoding="utf8") as config_file_object:
+    # with open(config_file, 'w', encoding="utf8") as config_file_object:
     #    parser.write(config_file_object)
 
 
