@@ -41,7 +41,7 @@ def main() -> None:
         else:
             from steam_tools_ng.gtk import utils
 
-            utils.fatal_error_dialog(str(exception), [])
+            utils.fatal_error_dialog(exception, [])
             sys.exit(1)
 
     command_parser = argparse.ArgumentParser(
@@ -124,7 +124,7 @@ def main() -> None:
         else:
             from steam_tools_ng.gtk import utils
 
-            utils.fatal_error_dialog(str(exception), [])
+            utils.fatal_error_dialog(exception, [])
             sys.exit(1)
 
     if console_params.reset:
