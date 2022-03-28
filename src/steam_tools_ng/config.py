@@ -24,6 +24,7 @@ import os
 import sys
 import time
 from collections import OrderedDict
+from pathlib import Path
 from typing import Any
 
 import aiohttp
@@ -36,17 +37,17 @@ parser = configparser.RawConfigParser()
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
-if os.path.isdir('src'):
+if Path('src').is_dir():
     # development mode
-    data_dir = 'config'
+    data_dir = Path('config')
 elif hasattr(sys, 'frozen') or sys.platform == 'win32':
-    data_dir = os.environ['LOCALAPPDATA']
+    data_dir = Path(os.environ['LOCALAPPDATA'])
 else:
-    data_dir = os.getenv('XDG_CONFIG_HOME', os.path.join(os.path.expanduser('~'), '.config'))
+    data_dir = Path(os.getenv('XDG_CONFIG_HOME', Path.home() / '.config'))
 
-config_file_directory = os.path.join(data_dir, 'steam-tools-ng')
+config_file_directory = data_dir / 'steam-tools-ng'
 config_file_name = 'steam-tools-ng.config'
-config_file = os.path.join(config_file_directory, config_file_name)
+config_file = config_file_directory / config_file_name
 
 try:
     from stlib import client
@@ -107,7 +108,7 @@ asyncio.set_event_loop(event_loop)
 
 default_config = {
     'logger': {
-        'log_directory': os.path.join(data_dir, 'steam-tools-ng'),
+        'log_directory': data_dir / 'steam-tools-ng',
         'log_level': 'debug',
         'log_console_level': 'info',
         'log_color': True,
@@ -187,11 +188,10 @@ def validate_config(section: str, option: str, defaults: OrderedDict) -> None:
 
 
 def init() -> None:
-    os.makedirs(config_file_directory, exist_ok=True)
-
+    config_file_directory.mkdir(parents=True, exist_ok=True)
     parser.read_dict(default_config)
 
-    if os.path.isfile(config_file):
+    if config_file.is_file():
         parser.read(config_file)
 
     # fallback deprecated values
@@ -200,11 +200,11 @@ def init() -> None:
     ]):
         new('steam', 'api_url', default_config['steam']['api_url'])
 
-    log_directory = parser.get("logger", "log_directory")
+    log_directory = Path(parser.get("logger", "log_directory"))
 
-    if not os.path.isdir(log_directory):
+    if not log_directory.is_dir():
         log.error(_("Incorrect log directory. Fallbacking to default."))
-        log_directory = os.path.join(data_dir, 'steam-tools-ng')
+        log_directory = data_dir / 'steam-tools-ng'
         new("logger", "log_directory", log_directory)
 
     validate_config("logger", "log_level", log_levels)
@@ -214,7 +214,7 @@ def init() -> None:
     validate_config("steamgifts", "giveaway_type", giveaway_types)
     validate_config("steamgifts", "sort", giveaway_sort_types)
 
-    os.makedirs(log_directory, exist_ok=True)
+    log_directory.mkdir(parents=True, exist_ok=True)
 
     if not stlib_plugins.has_plugin("steamtrades"):
         new("plugins", "steamtrades", False)
@@ -227,11 +227,11 @@ def init() -> None:
 
 
 def init_logger() -> None:
-    log_directory = parser.get("logger", "log_directory")
+    log_directory = Path(parser.get("logger", "log_directory"))
     log_level = parser.get("logger", "log_level")
     log_console_level = parser.get("logger", "log_console_level")
 
-    log_file_handler = logger_handlers.RotatingFileHandler(os.path.join(log_directory, 'steam-tools-ng.log'),
+    log_file_handler = logger_handlers.RotatingFileHandler(log_directory / 'steam-tools-ng.log',
                                                            backupCount=1,
                                                            encoding='utf-8')
     log_file_handler.setFormatter(logging.Formatter('%(module)s:%(levelname)s (%(funcName)s) => %(message)s'))

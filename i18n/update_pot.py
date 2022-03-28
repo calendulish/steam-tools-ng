@@ -38,10 +38,8 @@ if __name__ == "__main__":
     output_file.write_text("")
     translatable_files = []
 
-    for root, dirs, files in os.walk('src'):
-        for file in files:
-            if file.endswith(".py"):
-                translatable_files.append(Path(root, file))
+    for file in Path('src').glob('**/*.py'):
+        translatable_files.append(file)
 
     for file in translatable_files:
         process_info = subprocess.run(

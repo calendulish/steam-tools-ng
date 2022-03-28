@@ -19,15 +19,15 @@ import asyncio
 import functools
 import itertools
 import logging
-import os
 import ssl
 import sys
+from pathlib import Path
 from typing import Any, Optional, Dict, Callable, List
 
 import aiohttp
 from gi.repository import Gio, Gtk
-
 from stlib import webapi
+
 from . import about, settings, login, window, utils
 from .. import config, i18n, core
 
@@ -148,8 +148,8 @@ class SteamToolsNG(Gtk.Application):
         ssl_context = ssl.SSLContext()
 
         if hasattr(sys, 'frozen'):
-            _executable_path = os.path.dirname(sys.executable)
-            ssl_context.load_verify_locations(cafile=os.path.join(_executable_path, 'etc', 'cacert.pem'))
+            _executable_path = Path(sys.executable).parent
+            ssl_context.load_verify_locations(cafile=_executable_path / 'etc' / 'cacert.pem')
 
         tcp_connector = aiohttp.TCPConnector(ssl=ssl_context)
         self._session = aiohttp.ClientSession(raise_for_status=True, connector=tcp_connector)

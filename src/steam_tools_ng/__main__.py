@@ -18,12 +18,12 @@
 
 import argparse
 import configparser
-import contextlib
 import logging
 import os
 import sys
 import textwrap
 from multiprocessing import freeze_support
+from pathlib import Path
 
 from steam_tools_ng import config, i18n, __version__
 
@@ -128,14 +128,12 @@ def main() -> None:
             sys.exit(1)
 
     if console_params.reset:
-        with contextlib.suppress(FileNotFoundError):
-            os.remove(config.config_file)
-
+        config.config_file.unlink(missing_ok=True)
         logging.root.removeHandler(logging.root.handlers[0])
 
         log_directory = config.parser.get("logger", "log_directory")
-        os.remove(os.path.join(log_directory, 'steam-tools-ng.log'))
-        os.remove(os.path.join(log_directory, 'steam-tools-ng.log.1'))
+        Path(log_directory, 'steam-tools-ng.log').unlink()
+        Path(log_directory, 'steam-tools-ng.log.1').unlink()
 
         log.info(_('Done!'))
         sys.exit(0)

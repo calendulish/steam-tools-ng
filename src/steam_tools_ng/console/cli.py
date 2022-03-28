@@ -19,9 +19,9 @@ import asyncio
 import contextlib
 import functools
 import logging
-import os
 import ssl
 import sys
+from pathlib import Path
 from typing import Optional, Any, Callable
 
 import aiohttp
@@ -126,8 +126,8 @@ class SteamToolsNG:
         ssl_context = ssl.SSLContext()
 
         if hasattr(sys, 'frozen'):
-            _executable_path = os.path.dirname(sys.executable)
-            ssl_context.load_verify_locations(cafile=os.path.join(_executable_path, 'etc', 'cacert.pem'))
+            _executable_path = Path(sys.executable).parent
+            ssl_context.load_verify_locations(cafile=_executable_path / 'etc' / 'cacert.pem')
 
         tcp_connector = aiohttp.TCPConnector(ssl=ssl_context)
         self._session = aiohttp.ClientSession(raise_for_status=True, connector=tcp_connector)
