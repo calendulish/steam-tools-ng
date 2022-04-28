@@ -117,12 +117,20 @@ default_config = {
         'api_url': 'https://api.steampowered.com',
         'api_key': '',
     },
+    'confirmations': {
+        'enable': True,
+    },
+    'steamguard': {
+        'enable': True,
+    },
     'steamtrades': {
+        'enable': True,
         'wait_min': 3700,
         'wait_max': 4100,
         'trade_ids': '',
     },
     'steamgifts': {
+        'enable': True,
         'wait_min': 3700,
         'wait_max': 4100,
         'giveaway_type': 'main',
@@ -131,6 +139,7 @@ default_config = {
         'reverse_sorting': False,
     },
     'cardfarming': {
+        'enable': True,
         'reverse_sorting': False,
         'first_wait': 7200,
         'default_wait': 600,
@@ -140,13 +149,6 @@ default_config = {
         'theme': 'light',
         'show_close_button': True,
         'language': str(locale.getdefaultlocale()[0]),
-    },
-    'plugins': {
-        'steamtrades': True,
-        'steamgifts': True,
-        'cardfarming': True,
-        'steamguard': True,
-        'confirmations': True,
     },
     'login': {
         'steamid': 0,
