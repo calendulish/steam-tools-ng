@@ -17,7 +17,7 @@ call %~dp0common.cmd
 :: along with this program. If not, see http://www.gnu.org/licenses/.
 ::
 
-%BINPATH%\\bash.exe -c "/i/msys64/tools/MSYS/dist_script.sh" || exit 1
+%BINPATH%\\bash.exe -c "./tools/MSYS/dist_script.sh" || exit 1
 
 echo Done.
 exit 0

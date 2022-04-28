@@ -2,6 +2,9 @@ __pycache__
 .idea
 .mypy_cache
 venv
-*build*
+build/
+dist/
 msys64/
 stlib*
+*.egg-info/
+config/

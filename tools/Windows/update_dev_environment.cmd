@@ -18,11 +18,27 @@ call %~dp0common.cmd
 ::
 
 echo Checking current environment...
+set MSYS_LATEST=https://github.com/msys2/msys2-installer/releases/download/nightly-x86_64/msys2-base-x86_64-latest.sfx.exe
 
-if not exist I:\\msys64 (
-	echo System msys not installed.
-	exit 1
+setlocal enabledelayedexpansion
+if not exist msys64 (
+
+    if not exist msys2.exe (
+        echo Downloading msys2...
+        set system32=%comspec%
+        set system32=!system32:cmd.exe=!
+        set curl="!system32!curl.exe"
+        set certutil="!system32!certutil.exe"
+        !curl! -o msys2.exe -L !MSYS_LATEST! || !certutil! -urlcache -split -f !MSYS_LATEST! msys2.exe || exit 1
+    )
+
+    if not exist msys64 (
+        echo Extracting msys2...
+        msys2.exe -y || exit 1
+    )
+
 )
+endlocal
 
 echo Fixing GPG
 :: gpg is unable to work when msys2 is running from a WSL path
@@ -38,8 +54,17 @@ call :install pip
 :: Reset python version
 call %~dp0common.cmd
 
-echo Updating setuptools to latest
-call :install setuptools --ignore-installed
+echo Updating project dependencies
+call :shell python setup.py egg_info
+set requires="src\\%project_name%.egg-info\\requires.txt"
+
+if exist %requires% (
+    echo Installing project dependencies
+
+    for /f "usebackq EOL=[ delims=" %%i in (%requires%) do (
+        call :install %%i
+    )
+)
 
 echo Installing dev tools
 call :install git tar unzip
@@ -49,17 +74,6 @@ call :install mypy pylint pytest
 echo Installing freezing tools
 call :install cx-freeze pywin32
 
-echo Updating project dependencies
-call :shell python setup.py egg_info
-set requires="src\\%project_name%.egg-info\\requires.txt"
-
-if exist %requires% (
-    echo Installing project dependencies
-
-    for /f "usebackq delims=" %%i in (%requires%) do (
-        call :install %%i
-    )
-)
 
 echo Cleaning...
 del /f /q /s msys2.exe >nul 2>&1 || exit 1

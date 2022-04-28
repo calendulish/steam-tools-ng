@@ -1,4 +1,5 @@
 @echo off
+pushd %~dp0..\\.. || exit 1
 ::
 :: Lara Maia <dev@lara.monster> <YEAR>
 ::
@@ -16,11 +17,12 @@
 :: along with this program. If not, see http://www.gnu.org/licenses/.
 ::
 
-set BINPATH=I:\\msys64\\usr\\bin
+set BINPATH=msys64\\usr\\bin
 set ARCH=mingw-w64-x86_64
 set PATH=/mingw64/bin:/usr/local/bin:/usr/bin:/bin:/opt/bin
 
-set PS1=\[\e]0;\w\a\]\n[system_msys] \[\e[32m\]\u@\h \[\e[35m\]$MSYSTEM\[\e[0m\] \[\e[33m\]\w\[\e[0m\]\n\$
+for /d %%i in (%cd%) do (set project_name=%%~ni)
+set PS1=\[\e]0;\w\a\]\n[%project_name%] \[\e[32m\]\u@\h \[\e[35m\]$MSYSTEM\[\e[0m\] \[\e[33m\]\w\[\e[0m\]\n\$
 
 setlocal enabledelayedexpansion
 for /f "skip=1 tokens=2 delims=: " %%i in (

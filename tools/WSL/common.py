@@ -23,6 +23,7 @@ import subprocess
 import sys
 from typing import List
 
+os.chdir(os.path.abspath(os.path.dirname(__file__)) + "/../..")
 log = logging.getLogger(__name__)
 
 
