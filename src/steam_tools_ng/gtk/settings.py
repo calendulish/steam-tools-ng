@@ -337,14 +337,14 @@ class SettingsDialog(Gtk.Dialog):
 
     @staticmethod
     def on_console_button_toggled(button: Gtk.Button) -> None:
+        console = ctypes.windll.kernel32.GetConsoleWindow()
+
         if button.get_active():
-            console = ctypes.windll.kernel32.GetConsoleWindow()
-            ctypes.windll.user32.ShowWindow(console, 1)
-            ctypes.windll.kernel32.CloseHandle(console)
+            ctypes.windll.user32.ShowWindow(console, True)
         else:
-            console = ctypes.windll.kernel32.GetConsoleWindow()
-            ctypes.windll.user32.ShowWindow(console, 0)
-            ctypes.windll.kernel32.CloseHandle(console)
+            ctypes.windll.user32.ShowWindow(console, False)
+
+        ctypes.windll.kernel32.CloseHandle(console)
 
     def on_advanced_button_toggled(self, button: Gtk.Button) -> None:
         if button.get_active():

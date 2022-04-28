@@ -166,7 +166,9 @@ def main() -> None:
             import ctypes
 
             console = ctypes.windll.kernel32.GetConsoleWindow()
-            ctypes.windll.user32.ShowWindow(console, 0)
+            menu = ctypes.windll.user32.GetSystemMenu(console, False)
+            ctypes.windll.user32.ShowWindow(console, False)
+            ctypes.windll.user32.EnableMenuItem(menu, 0xF060, 0 | 2 | 1)
             ctypes.windll.kernel32.CloseHandle(console)
 
         from steam_tools_ng.gtk import async_gtk
