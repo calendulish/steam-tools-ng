@@ -44,7 +44,7 @@ class BuildTranslations(build_py):
         for path in Path('i18n').glob('*.po'):
             language = path.stem
             output_directory = po_build_path / language / 'LC_MESSAGES'
-            output_directory.mkdir(exist_ok=True)
+            output_directory.mkdir(exist_ok=True, parents=True)
 
             subprocess.run(
                 [
@@ -117,7 +117,7 @@ def fix_gtk() -> List[Tuple[str, str]]:
 
     includes.append((
         Path('src', 'steam_tools_ng', 'icons', 'settings.ini'),
-        Path('etc', 'gtk-3.0', 'settings.ini'),
+        Path('etc', 'gtk-4.0', 'settings.ini'),
     ))
 
     return includes
@@ -149,10 +149,7 @@ def freeze_options() -> Mapping[str, Any]:
 
     for file in Path(icons_path, 'Default').iterdir():
         if file != 'settings.ini':
-            includes.append((
-                icons_path / 'Default' / file,
-                Path('share', 'icons', 'Default', file),
-            ))
+            includes.append((file, Path('share', 'icons', 'Default', file.name)))
 
     for language in ['fr', 'pt_BR']:
         language_directory = Path('lib', 'steam_tools_ng', 'locale', language, 'LC_MESSAGES')
