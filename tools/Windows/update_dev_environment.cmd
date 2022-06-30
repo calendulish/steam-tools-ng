@@ -55,6 +55,11 @@ call :install pip
 call %~dp0common.cmd
 
 echo Updating project dependencies
+
+:: currently we can't install build dependencies without installing the package
+:: https://github.com/pypa/pip/issues/8049
+call :install certifi cx-freeze pywin32 setuptools wheel
+
 call :shell python setup.py egg_info
 set requires="src\\%project_name%.egg-info\\requires.txt"
 
@@ -70,10 +75,6 @@ echo Installing dev tools
 call :install git tar unzip
 call :install gcc make
 call :install mypy pylint pytest
-
-echo Installing freezing tools
-call :install cx-freeze pywin32
-
 
 echo Cleaning...
 del /f /q /s msys2.exe >nul 2>&1 || exit 1
