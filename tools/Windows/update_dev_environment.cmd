@@ -59,8 +59,6 @@ echo Updating project dependencies
 :: currently we can't install build dependencies without installing the package
 :: https://github.com/pypa/pip/issues/8049
 call :install certifi cx-freeze pywin32 setuptools wheel
-:: currently we can't upload mingw builds to pypi (FIXME: version check)
-call :install https://github.com/ShyPixie/stlib/releases/download/v0.14.1/stlib-0.14.1-cp39-cp39-mingw_x86_64.whl
 
 call :shell python setup.py egg_info
 set requires="src\\%project_name%.egg-info\\requires.txt"
@@ -72,6 +70,10 @@ if exist %requires% (
         call :install %%i
     )
 )
+
+:: reinstall stlib without prebuilt library
+:: currently we can't upload mingw builds to pypi (FIXME: version check)
+call :install --force-reinstall --no-deps https://github.com/ShyPixie/stlib/releases/download/v0.14.1.1/stlib-0.14.1-cp310-cp310-mingw_x86_64.whl
 
 echo Installing dev tools
 call :install git tar unzip
