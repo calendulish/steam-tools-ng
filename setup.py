@@ -71,6 +71,7 @@ def fix_gtk() -> List[Tuple[str, str]]:
         'GModule-2.0',
         'HarfBuzz-0.0',
         'Graphene-1.0',
+        'freetype2-2.0',
     ]
 
     required_dlls = [
@@ -80,6 +81,7 @@ def fix_gtk() -> List[Tuple[str, str]]:
         'libpangowin32-1.0-0',
         'librsvg-2-2',
         'libgraphene-1.0-0',
+        'libfreetype-6',
     ]
 
     pixbuf_loaders = [
@@ -140,7 +142,7 @@ def freeze_options() -> Mapping[str, Any]:
         )
     ]
 
-    packages = ['asyncio', 'steam_tools_ng', 'gi', 'six', 'win32com.client']
+    packages = ['asyncio', 'steam_tools_ng', 'gi', 'win32com.client']
 
     paths = ['src']
     paths.extend(sys.path)
