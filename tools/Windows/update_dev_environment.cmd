@@ -75,6 +75,9 @@ if exist %requires% (
 :: currently we can't upload mingw builds to pypi (FIXME: version check)
 call :install --force-reinstall --no-deps https://github.com/ShyPixie/stlib/releases/download/v0.14.1.1/stlib-0.14.1-cp310-cp310-mingw_x86_64.whl
 
+echo Installing optional dependencies
+call :install gtk4 python-gobject
+
 echo Installing dev tools
 call :install git tar unzip
 call :install gcc make
