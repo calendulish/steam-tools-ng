@@ -67,7 +67,7 @@ jobs:
           LABEL: 'Linux build'
           STATUS: ${{ needs.linux-build.result }}
           COLOR: ${{ env.linux-badge-color }}
-          GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPOSITORY: ShyPixie/badge-metadata
           ACTOR: ShyPixie
       - uses: RubbaBoy/BYOB@v1.3.0
@@ -76,6 +76,6 @@ jobs:
           LABEL: 'Windows build'
           STATUS: ${{ needs.windows-build.result }}
           COLOR: ${{ env.windows-badge-color }}
-          GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPOSITORY: ShyPixie/badge-metadata
           ACTOR: ShyPixie
