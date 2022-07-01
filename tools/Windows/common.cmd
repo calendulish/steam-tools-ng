@@ -22,6 +22,7 @@ set ARCH=mingw-w64-x86_64
 set PATH=/mingw64/bin:/usr/local/bin:/usr/bin:/bin:/opt/bin
 
 for /d %%i in (%cd%) do (set project_name=%%~ni)
+call set project_name=%%project_name:-=_%%
 set PS1=\[\e]0;\w\a\]\n[%project_name%] \[\e[32m\]\u@\h \[\e[35m\]$MSYSTEM\[\e[0m\] \[\e[33m\]\w\[\e[0m\]\n\$
 
 setlocal enabledelayedexpansion
