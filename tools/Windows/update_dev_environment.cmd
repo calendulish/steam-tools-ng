@@ -66,7 +66,7 @@ set requires="src\\%project_name%.egg-info\\requires.txt"
 if exist %requires% (
     echo Installing project dependencies
 
-    for /f "usebackq EOL=[ delims=" %%i in (%requires%) do (
+    for /f "usebackq EOL=[ delims==" %%i in (%requires%) do (
         call :install %%i
     )
 )
