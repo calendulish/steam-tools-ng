@@ -21,6 +21,7 @@ import logging
 import os
 import sys
 from collections import OrderedDict
+from subprocess import call
 
 from gi.repository import Gtk, Pango
 from stlib import plugins
@@ -329,11 +330,11 @@ class SettingsDialog(Gtk.Dialog):
 
     @staticmethod
     def on_log_button_clicked(button: Gtk.Button) -> None:
-        os.system(f'{config.file_manager} {config.parser.get("logger", "log_directory")}')
+        call(f'{config.file_manager} {config.parser.get("logger", "log_directory")}')
 
     @staticmethod
     def on_config_button_clicked(button: Gtk.Button) -> None:
-        os.system(f'{config.file_manager} {str(config.config_file_directory)}')
+        call(f'{config.file_manager} {str(config.config_file_directory)}')
 
     @staticmethod
     def on_console_button_toggled(button: Gtk.Button) -> None:

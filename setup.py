@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Lara Maia <dev@lara.monster> 2015 ~ 2021
+# Lara Maia <dev@lara.monster> 2015 ~ 2022
 #
 # The Steam Tools NG is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -130,15 +130,24 @@ def freeze_options() -> Mapping[str, Any]:
         return {}
 
     icons_path = Path('src', 'steam_tools_ng', 'icons')
+    copyright = 'Lara Maia (C) 2015 ~ 2022'
 
     executables = [
         Executable(
-            Path("src", "steam_tools_ng", "__main__.py"),
+            Path("src", "steam_tools_ng", "cli.py"),
             target_name='steam-tools-ng',
             base=None,
             icon=Path('installer', 'steam-tools-ng.ico'),
-            shortcut_name='Steam Tools NG',
-            copyright='Lara Maia (C) 2015 ~ 2022',
+            shortcut_name='Steam Tools NG CLI',
+            copyright=copyright,
+        ),
+        Executable(
+            Path("src", "steam_tools_ng", "gui.py"),
+            target_name='steam-tools-ng-gui',
+            base='Win32GUI',
+            icon=Path('installer', 'steam-tools-ng.ico'),
+            shortcut_name='Steam Tools NG GUI',
+            copyright=copyright,
         )
     ]
 
@@ -225,7 +234,10 @@ setup(
     packages=find_packages('src'),
     package_dir={'': 'src'},
     include_package_data=True,
-    entry_points={'console_scripts': ['steam-tools-ng=steam_tools_ng.__main__:main']},
+    entry_points={'console_scripts': [
+        'steam-tools-ng-gui=steam_tools_ng.gui:main',
+        'steam-tools-ng=steam_tools_ng.cli:main',
+    ]},
     install_requires=[
         "pywin32; sys_platform == 'win32'",
         'stlib>=0.14',
