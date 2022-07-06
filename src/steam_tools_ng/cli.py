@@ -50,7 +50,7 @@ def main() -> None:
         choices=['steamguard', 'steamtrades', 'steamgifts', 'cardfarming', 'fakerun'],
         metavar='<module>',
         action='store',
-        nargs=1,
+        nargs='?',
         help='Start a module',
     )
 
@@ -125,7 +125,7 @@ def main() -> None:
         log.critical("Use 'steam-tools-ng-gui' for the graphical user interface.")
         sys.exit(1)
 
-    module_name = console_params.module[0]
+    module_name = console_params.module
     module_options = console_params.options
 
     app = cli.SteamToolsNG(module_name, module_options)
