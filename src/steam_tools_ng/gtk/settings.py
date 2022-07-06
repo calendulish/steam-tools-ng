@@ -16,10 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
-import ctypes
 import logging
-import os
-import sys
 from collections import OrderedDict
 from subprocess import call
 
@@ -95,17 +92,6 @@ class SettingsDialog(Gtk.Dialog):
             "language", _("Language"), Gtk.ComboBoxText, 0, 5, items=config.translations
         )
         language_item.connect("changed", self.update_language)
-
-        if os.name == 'nt' and hasattr(sys, 'frozen'):
-            console_button = Gtk.ToggleButton()
-            console_button.set_label(_("Show debug console"))
-            console_button.set_name("console_button")
-            console_button.connect("toggled", self.on_console_button_toggled)
-            general_section.grid.attach(console_button, 0, 6, 2, 1)
-
-            console_warning = Gtk.Label()
-            console_warning.set_text(_("Press the button again to close the debug console"))
-            general_section.grid.attach(console_warning, 0, 7, 2, 1)
 
         login_section = utils.Section("login", _("Login Settings"))
 
@@ -335,17 +321,6 @@ class SettingsDialog(Gtk.Dialog):
     @staticmethod
     def on_config_button_clicked(button: Gtk.Button) -> None:
         call(f'{config.file_manager} {str(config.config_file_directory)}')
-
-    @staticmethod
-    def on_console_button_toggled(button: Gtk.Button) -> None:
-        console = ctypes.windll.kernel32.GetConsoleWindow()
-
-        if button.get_active():
-            ctypes.windll.user32.ShowWindow(console, True)
-        else:
-            ctypes.windll.user32.ShowWindow(console, False)
-
-        ctypes.windll.kernel32.CloseHandle(console)
 
     def on_advanced_button_toggled(self, button: Gtk.Button) -> None:
         if button.get_active():
