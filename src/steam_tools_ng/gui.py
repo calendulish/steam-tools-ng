@@ -33,6 +33,12 @@ _ = i18n.get_translation
 log = logging.getLogger(__name__)
 
 
+class GraphicalArgParser(argparse.ArgumentParser):
+    def _print_message(self, message, file=None) -> None:
+        if message:
+            utils.fatal_error_dialog(Exception(message), [])
+
+
 def main() -> None:
     freeze_support()
     try:
@@ -41,7 +47,7 @@ def main() -> None:
         utils.fatal_error_dialog(exception, [])
         sys.exit(1)
 
-    command_parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
+    command_parser = GraphicalArgParser(formatter_class=argparse.RawDescriptionHelpFormatter)
 
     command_parser.add_argument(
         '--config-dir',
