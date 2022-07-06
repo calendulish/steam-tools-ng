@@ -66,10 +66,16 @@ set requires="src\\%project_name%.egg-info\\requires.txt"
 if exist %requires% (
     echo Installing project dependencies
 
+    :: FIXME: It'll ignore stlib dependency. super ugly, but will do for now.
+    :: We must stop trying to get dependency info from package.
     for /f "usebackq EOL=[ delims==" %%i in (%requires%) do (
         call :install %%i
     )
 )
+
+:: FIXME: due #dde2d6b stlib actually isn't being installed.
+:: Let's manually install dependencies for this one.
+call :install aiohttp beautifulsoup4 rsa
 
 :: reinstall stlib with prebuilt library included
 :: currently we can't upload mingw builds to pypi (FIXME: version check)
