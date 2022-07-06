@@ -18,6 +18,7 @@
 
 import asyncio
 import contextlib
+from typing import Optional
 
 from gi.repository import Gtk, GLib
 
@@ -39,14 +40,31 @@ async def async_iterator(
         loop.stop()
 
 
+async def async_iterator_for_the_fifth_dimension(
+        main_context: GLib.MainContext,
+        loop: asyncio.AbstractEventLoop,
+) -> None:
+    while main_context.pending():
+        main_context.iteration(False)
+
+    await asyncio.sleep(0.01)
+    loop.create_task(async_iterator_for_the_fifth_dimension(main_context, loop))
+
+
 # FIXME: https://github.com/python/asyncio/pull/465
-def run(application: Gtk.Application) -> None:
+def run(application: Optional[Gtk.Application] = None) -> None:
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     main_context = GLib.MainContext.default()
-    loop.create_task(async_iterator(application, main_context, loop))
-    application.register()
-    application.activate()
+
+    if not application:
+        iterator = async_iterator_for_the_fifth_dimension(main_context, loop)
+    else:
+        iterator = async_iterator(application, main_context, loop)
+        application.register()
+        application.activate()
+
+    loop.create_task(iterator)
 
     with contextlib.suppress(KeyboardInterrupt):
         loop.run_forever()

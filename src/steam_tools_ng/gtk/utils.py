@@ -26,6 +26,7 @@ from typing import Any, Callable, List, Optional, Union
 
 from gi.repository import Gtk, Gdk
 
+from . import async_gtk
 from .. import i18n, config
 
 log = logging.getLogger(__name__)
@@ -526,6 +527,10 @@ def fatal_error_dialog(
     error_dialog.connect("response", callback)
 
     error_dialog.show()
+
+    # main application can be not available (like on initialization process)
+    if not Gtk.Application.get_default():
+        async_gtk.run()
 
 
 def safe_task_callback(task: asyncio.Task) -> None:
