@@ -76,6 +76,13 @@ def main() -> None:
     )
 
     command_parser.add_argument(
+        '-v', '--version',
+        action='store_true',
+        help='Show version',
+        dest='version',
+    )
+
+    command_parser.add_argument(
         'options',
         metavar='<options>',
         nargs='*',
@@ -84,6 +91,10 @@ def main() -> None:
 
     console_params = command_parser.parse_args()
     config.init_logger()
+
+    if console_params.version:
+        print(__version__)
+        sys.exit(0)
 
     if console_params.reset:
         config.config_file.unlink(missing_ok=True)
