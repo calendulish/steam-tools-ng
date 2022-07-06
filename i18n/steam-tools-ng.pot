@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: steam-tools-ng\n"
 "Report-Msgid-Bugs-To: dev@lara.monster\n"
-"POT-Creation-Date: 2022-03-26 19:44-0300\n"
+"POT-Creation-Date: 2022-07-05 21:43-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,141 +18,141 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/steam_tools_ng/config.py:57 src/steam_tools_ng/gtk/advanced.py:33
+#: src/steam_tools_ng/config.py:59 src/steam_tools_ng/gtk/advanced.py:31
 msgid "Light"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:58 src/steam_tools_ng/gtk/advanced.py:34
+#: src/steam_tools_ng/config.py:60 src/steam_tools_ng/gtk/advanced.py:32
 msgid "Dark"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:62 src/steam_tools_ng/gtk/advanced.py:38
+#: src/steam_tools_ng/config.py:64 src/steam_tools_ng/gtk/advanced.py:36
 msgid "Critical"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:63 src/steam_tools_ng/gtk/advanced.py:39
+#: src/steam_tools_ng/config.py:65 src/steam_tools_ng/gtk/advanced.py:37
 msgid "Error"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:64 src/steam_tools_ng/gtk/advanced.py:40
+#: src/steam_tools_ng/config.py:66 src/steam_tools_ng/gtk/advanced.py:38
 msgid "Warning"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:65 src/steam_tools_ng/gtk/advanced.py:41
+#: src/steam_tools_ng/config.py:67 src/steam_tools_ng/gtk/advanced.py:39
 msgid "Info"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:66 src/steam_tools_ng/gtk/advanced.py:42
+#: src/steam_tools_ng/config.py:68 src/steam_tools_ng/gtk/advanced.py:40
 msgid "Debug"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:70 src/steam_tools_ng/gtk/advanced.py:46
+#: src/steam_tools_ng/config.py:72 src/steam_tools_ng/gtk/advanced.py:44
 msgid "English"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:71 src/steam_tools_ng/gtk/advanced.py:47
+#: src/steam_tools_ng/config.py:73 src/steam_tools_ng/gtk/advanced.py:45
 msgid "Portuguese (Brazil)"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:72
+#: src/steam_tools_ng/config.py:74
 msgid "French"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:76 src/steam_tools_ng/gtk/advanced.py:51
+#: src/steam_tools_ng/config.py:78 src/steam_tools_ng/gtk/advanced.py:49
 msgid "Main Giveaways"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:77 src/steam_tools_ng/gtk/advanced.py:52
+#: src/steam_tools_ng/config.py:79 src/steam_tools_ng/gtk/advanced.py:50
 msgid "New Giveaways"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:78 src/steam_tools_ng/gtk/advanced.py:53
+#: src/steam_tools_ng/config.py:80 src/steam_tools_ng/gtk/advanced.py:51
 msgid "Recommended"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:79 src/steam_tools_ng/gtk/advanced.py:54
+#: src/steam_tools_ng/config.py:81 src/steam_tools_ng/gtk/advanced.py:52
 msgid "Wishlist Only"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:80 src/steam_tools_ng/gtk/advanced.py:55
+#: src/steam_tools_ng/config.py:82 src/steam_tools_ng/gtk/advanced.py:53
 msgid "Group Only"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:84 src/steam_tools_ng/gtk/advanced.py:59
+#: src/steam_tools_ng/config.py:86 src/steam_tools_ng/gtk/advanced.py:57
 msgid "Name"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:85 src/steam_tools_ng/gtk/advanced.py:60
+#: src/steam_tools_ng/config.py:87 src/steam_tools_ng/gtk/advanced.py:58
 msgid "Copies"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:86 src/steam_tools_ng/gtk/advanced.py:61
+#: src/steam_tools_ng/config.py:88 src/steam_tools_ng/gtk/advanced.py:59
 msgid "Points"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:87 src/steam_tools_ng/gtk/advanced.py:62
+#: src/steam_tools_ng/config.py:89 src/steam_tools_ng/gtk/advanced.py:60
 msgid "Level"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:91
+#: src/steam_tools_ng/config.py:93
 msgid "Confirmations"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:92
+#: src/steam_tools_ng/config.py:94
 msgid "Steam Trades"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:93
+#: src/steam_tools_ng/config.py:95
 msgid "Steam Gifts"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:94
+#: src/steam_tools_ng/config.py:96
 msgid "Steam Guard"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:95
+#: src/steam_tools_ng/config.py:97
 msgid "Card Farming"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:178
+#: src/steam_tools_ng/config.py:182
 msgid "Unsupported language requested. Fallbacking to English."
 msgstr ""
 
-#: src/steam_tools_ng/config.py:182
+#: src/steam_tools_ng/config.py:186
 msgid ""
 "Please, fix your config file. Available values for {}:\n"
 "{}"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:205
+#: src/steam_tools_ng/config.py:208
 msgid "Incorrect log directory. Fallbacking to default."
 msgstr ""
 
-#: src/steam_tools_ng/config.py:241
+#: src/steam_tools_ng/config.py:245
 msgid "Unable to open steam-tools-ng.log"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:259
+#: src/steam_tools_ng/config.py:263
 msgid "Saving {}:{} on config file"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:265
+#: src/steam_tools_ng/config.py:269
 msgid "Not saving {}:{} because values are already updated"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:283
+#: src/steam_tools_ng/config.py:287
 msgid "No login cookies"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:302
+#: src/steam_tools_ng/config.py:306
 msgid "Steam is not running."
 msgstr ""
 
-#: src/steam_tools_ng/config.py:303
+#: src/steam_tools_ng/config.py:307
 msgid "Fallbacking time offset to WebAPI"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:311
+#: src/steam_tools_ng/config.py:315
 msgid ""
 "Unable to Connect. You can try these things:\n"
 "1. Check your connection\n"
@@ -160,7 +160,7 @@ msgid ""
 "3. Check if api_url and api_key is correct on config file\n"
 msgstr ""
 
-#: src/steam_tools_ng/__main__.py:140 src/steam_tools_ng/__main__.py:145
+#: src/steam_tools_ng/__main__.py:138 src/steam_tools_ng/__main__.py:143
 msgid "Done!"
 msgstr ""
 
@@ -616,47 +616,47 @@ msgstr ""
 msgid "Made with Love <3"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/advanced.py:80
+#: src/steam_tools_ng/gtk/advanced.py:78
 msgid "Advanced Settings"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/advanced.py:94
+#: src/steam_tools_ng/gtk/advanced.py:92
 msgid "Advanced Login Settings"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/advanced.py:97 src/steam_tools_ng/gtk/login.py:114
+#: src/steam_tools_ng/gtk/advanced.py:95 src/steam_tools_ng/gtk/login.py:114
 msgid "Shared Secret:"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/advanced.py:100
+#: src/steam_tools_ng/gtk/advanced.py:98
 msgid "Token:"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/advanced.py:103
+#: src/steam_tools_ng/gtk/advanced.py:101
 msgid "Token Secure:"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/advanced.py:106 src/steam_tools_ng/gtk/login.py:107
+#: src/steam_tools_ng/gtk/advanced.py:104 src/steam_tools_ng/gtk/login.py:107
 msgid "Identity Secret:"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/advanced.py:109
+#: src/steam_tools_ng/gtk/advanced.py:107
 msgid "Device ID:"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/advanced.py:112
+#: src/steam_tools_ng/gtk/advanced.py:110
 msgid "Steam ID:"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/advanced.py:117
+#: src/steam_tools_ng/gtk/advanced.py:115
 msgid "Reset Everything (USE WITH CAUTION!!!)"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/advanced.py:132
+#: src/steam_tools_ng/gtk/advanced.py:130
 msgid "Reseting... Please wait!"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/advanced.py:146 src/steam_tools_ng/gtk/utils.py:167
+#: src/steam_tools_ng/gtk/advanced.py:143 src/steam_tools_ng/gtk/utils.py:167
 msgid "Waiting"
 msgstr ""
 
@@ -932,18 +932,18 @@ msgid "Advanced"
 msgstr ""
 
 #: src/steam_tools_ng/gtk/settings.py:138
-msgid "Plugins Settings"
+msgid "Confirmations Settings"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/settings.py:167
-msgid ""
-"authenticator module has been disabled because you have\n"
-"logged in but no shared secret is found. To enable it again,\n"
-"go to login -> advanced and add a valid shared secret\n"
-"or use STNG as your Steam Authenticator\n"
-msgstr ""
-
+#: src/steam_tools_ng/gtk/settings.py:140
+#: src/steam_tools_ng/gtk/settings.py:162
 #: src/steam_tools_ng/gtk/settings.py:184
+#: src/steam_tools_ng/gtk/settings.py:215
+#: src/steam_tools_ng/gtk/settings.py:271
+msgid "Enable"
+msgstr ""
+
+#: src/steam_tools_ng/gtk/settings.py:151
 msgid ""
 "confirmations module has been disabled because you have\n"
 "logged in but no identity secret is found. To enable it again,\n"
@@ -951,98 +951,110 @@ msgid ""
 "or use STNG as your Steam Authenticator\n"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/settings.py:201
-msgid ""
-"cardfarming module has been disabled because you have\n"
-"a stlib built without steam_api support. To enable it again,\n"
-"reinstall stlib with Steam API support\n"
+#: src/steam_tools_ng/gtk/settings.py:160
+msgid "SteamGuard Settings"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/settings.py:217
+#: src/steam_tools_ng/gtk/settings.py:173
+msgid ""
+"steamguard module has been disabled because you have\n"
+"logged in but no shared secret is found. To enable it again,\n"
+"go to login -> advanced and add a valid shared secret\n"
+"or use STNG as your Steam Authenticator\n"
+msgstr ""
+
+#: src/steam_tools_ng/gtk/settings.py:182
+msgid "Steamtrades Settings"
+msgstr ""
+
+#: src/steam_tools_ng/gtk/settings.py:187
+msgid "Trade IDs:"
+msgstr ""
+
+#: src/steam_tools_ng/gtk/settings.py:191
+#: src/steam_tools_ng/gtk/settings.py:247
+msgid "Wait MIN:"
+msgstr ""
+
+#: src/steam_tools_ng/gtk/settings.py:194
+#: src/steam_tools_ng/gtk/settings.py:250
+msgid "Wait MAX:"
+msgstr ""
+
+#: src/steam_tools_ng/gtk/settings.py:205
 msgid ""
 "steamtrades module has been disabled because you don't\n"
 "have steamtrades plugin installed. To enable it again,\n"
 "install the steamtrades plugin.\n"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/settings.py:233
+#: src/steam_tools_ng/gtk/settings.py:213
+msgid "Steamgifts Settings"
+msgstr ""
+
+#: src/steam_tools_ng/gtk/settings.py:220
+msgid "Giveaway Type:"
+msgstr ""
+
+#: src/steam_tools_ng/gtk/settings.py:229
+msgid "Sort Giveaways:"
+msgstr ""
+
+#: src/steam_tools_ng/gtk/settings.py:236
+msgid "Reverse Sorting:"
+msgstr ""
+
+#: src/steam_tools_ng/gtk/settings.py:241
+msgid "Developer Giveaways"
+msgstr ""
+
+#: src/steam_tools_ng/gtk/settings.py:261
 msgid ""
 "steamgifts module has been disabled because you don't\n"
 "have steamgifts plugin installed. To enable it again,\n"
 "install the steamgifts plugin.\n"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/settings.py:241
-msgid "Steamtrades Settings"
-msgstr ""
-
-#: src/steam_tools_ng/gtk/settings.py:243
-msgid "Trade IDs:"
-msgstr ""
-
-#: src/steam_tools_ng/gtk/settings.py:247
-#: src/steam_tools_ng/gtk/settings.py:284
-msgid "Wait MIN:"
-msgstr ""
-
-#: src/steam_tools_ng/gtk/settings.py:250
-#: src/steam_tools_ng/gtk/settings.py:287
-msgid "Wait MAX:"
-msgstr ""
-
-#: src/steam_tools_ng/gtk/settings.py:253
-msgid "Steamgifts Settings"
-msgstr ""
-
-#: src/steam_tools_ng/gtk/settings.py:257
-msgid "Giveaway Type:"
-msgstr ""
-
-#: src/steam_tools_ng/gtk/settings.py:266
-msgid "Sort Giveaways:"
-msgstr ""
-
-#: src/steam_tools_ng/gtk/settings.py:273
-msgid "Reverse Sorting:"
-msgstr ""
-
-#: src/steam_tools_ng/gtk/settings.py:278
-msgid "Developer Giveaways"
-msgstr ""
-
-#: src/steam_tools_ng/gtk/settings.py:290
+#: src/steam_tools_ng/gtk/settings.py:269
 msgid "Cardfarming settings"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/settings.py:292
+#: src/steam_tools_ng/gtk/settings.py:274
 msgid "First Wait:"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/settings.py:295
+#: src/steam_tools_ng/gtk/settings.py:277
 msgid "Default Wait:"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/settings.py:298
+#: src/steam_tools_ng/gtk/settings.py:280
 msgid "MIN Wait:"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/settings.py:301
+#: src/steam_tools_ng/gtk/settings.py:283
 msgid "More cards First:"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/settings.py:303
+#: src/steam_tools_ng/gtk/settings.py:293
+msgid ""
+"cardfarming module has been disabled because you have\n"
+"a stlib built without steam_api support. To enable it again,\n"
+"reinstall stlib with Steam API support\n"
+msgstr ""
+
+#: src/steam_tools_ng/gtk/settings.py:301
 msgid "Logger settings"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/settings.py:305
+#: src/steam_tools_ng/gtk/settings.py:303
 msgid "Level:"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/settings.py:309
+#: src/steam_tools_ng/gtk/settings.py:307
 msgid "Console level:"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/settings.py:387
+#: src/steam_tools_ng/gtk/settings.py:386
 msgid "Removing saved password..."
 msgstr ""
 
