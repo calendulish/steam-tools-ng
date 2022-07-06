@@ -73,7 +73,7 @@ class SettingsDialog(Gtk.Dialog):
         config_button.set_hexpand(True)
         config_button.connect("clicked", self.on_config_button_clicked)
 
-        if config.parser.get("logger", "log_directory") == config.config_file_directory:
+        if config.parser.get("logger", "log_directory") == str(config.config_file_directory):
             config_button.set_label(_("Config / Log file Directory"))
             general_section.grid.attach(config_button, 0, 1, 2, 1)
         else:
@@ -333,7 +333,7 @@ class SettingsDialog(Gtk.Dialog):
 
     @staticmethod
     def on_config_button_clicked(button: Gtk.Button) -> None:
-        os.system(f'{config.file_manager} {config.config_file_directory}')
+        os.system(f'{config.file_manager} {str(config.config_file_directory)}')
 
     @staticmethod
     def on_console_button_toggled(button: Gtk.Button) -> None:
