@@ -137,7 +137,7 @@ def freeze_options() -> Mapping[str, Any]:
             Path("src", "steam_tools_ng", "cli.py"),
             target_name='steam-tools-ng',
             base=None,
-            icon=Path('installer', 'steam-tools-ng.ico'),
+            icon=Path(icons_path, 'stng_console.ico'),
             shortcut_name='Steam Tools NG CLI',
             copyright=copyright,
         ),
@@ -145,7 +145,7 @@ def freeze_options() -> Mapping[str, Any]:
             Path("src", "steam_tools_ng", "gui.py"),
             target_name='steam-tools-ng-gui',
             base='Win32GUI',
-            icon=Path('installer', 'steam-tools-ng.ico'),
+            icon=Path(icons_path, 'stng.ico'),
             shortcut_name='Steam Tools NG GUI',
             copyright=copyright,
         )
