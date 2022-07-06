@@ -1,5 +1,5 @@
 # Steam Tools NG - Useful tools for Steam
-# Lara Maia <dev@lara.monster> (C) 2015 ~ 2021
+# Lara Maia <dev@lara.monster> (C) 2015 ~ 2022
 #
 # This file is distributed under the same license as the steam-tools-ng package.
 #

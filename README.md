@@ -16,8 +16,6 @@ You can run the follow modules from steam-tools:
 
 * Steam Guard: Will provide codes for login on steam (mobile authenticator clone)
 
-* Trade Card (**Coming Soon**): Accept/decline trades from steam
-
 * Confirmations: Confirm trades and/or market listing
 
 * SteamTrades: Bump trades at steamtrades.com
@@ -28,27 +26,27 @@ You can run the follow modules from steam-tools:
 
 * More (**Coming Soon**)
 
-Gtk Interface
+Graphical User Interface
 -------------
 
 ```
 Just run and follow on-screen instructions
 ```
 
-Console Interface
+Command Line Interface
 -----------------
 ```
-usage: steam-tools-ng [-h] [-c module [options]] [--config-dir] [--log-dir]
-                      [--reset] [--reset-password]
+usage: steam-tools-ng [-h] [--reset] [--reset-password] [--add-authenticator] [-v] [<module>]
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -c module [options], --cli module [options]
-                        Start module without GUI (console mode)
-  --config-dir          Shows directory used to save config files
-  --log-dir             Shows directory used to save log files
-  --reset               Clean up settings and log files
-  --reset-password      Clean up saved password
+positional arguments:
+  <module>             Start a module
+
+options:
+  -h, --help           show this help message and exit
+  --reset              Clean up settings and log files
+  --reset-password     Clean up saved password
+  --add-authenticator  Use STNG as your Steam Authenticator
+  -v, --version        Show version
 
 Available modules | available options
  steamguard       | [oneshot]
