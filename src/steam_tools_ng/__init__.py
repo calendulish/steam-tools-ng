@@ -34,4 +34,5 @@ except PackageNotFoundError:  # Freezed
 
     parser = Dispatch('Scripting.FileSystemObject')
     working_directory = Path(sys.executable).parent.resolve()
-    __version__ = parser.GetFileVersion(working_directory / Path(sys.executable).name)
+    version_raw = parser.GetFileVersion(working_directory / Path(sys.executable).name)
+    __version__ = str(version_raw).rpartition('.')[0]

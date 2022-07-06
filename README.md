@@ -2,10 +2,13 @@
 ========================================
 [![STNG](https://lara.monster/archive/stng_last.png)](https://github.com/ShyPixie/steam-tools-ng)  
   
-[![transifex](https://img.shields.io/badge/transifex-contribute%20now-blue.svg)](https://www.transifex.com/steam-tools-ng)
-[![GitHub license](https://img.shields.io/badge/license-GPLv3-green.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
-[![GitHub release](https://img.shields.io/github/release/ShyPixie/steam-tools-ng.svg)](https://github.com/ShyPixie/steam-tools-ng/releases)
-
+[![transifex](https://img.shields.io/badge/transifex-contribute%20now-blue.svg?style=flat)](https://www.transifex.com/steam-tools-ng)
+[![windows build status](https://badges.lara.monster/ShyPixie/badge-metadata/steam-tools-ng-windows-build)](https://github.com/ShyPixie/steam-tools-ng/actions/workflows/build.yml)
+[![linux build status](https://badges.lara.monster/ShyPixie/badge-metadata/steam-tools-ng-linux-build)](https://github.com/ShyPixie/steam-tools-ng/actions/workflows/build.yml)
+[![codecov](https://codecov.io/gh/ShyPixie/steam-tools-ng/branch/master/graph/badge.svg?token=RTNIQZDZ69)](https://codecov.io/gh/ShyPixie/steam-tools-ng)
+[![Quality](https://api.codiga.io/project/33951/score/svg)](https://app.codiga.io/project/33951/dashboard)
+[![GitHub license](https://img.shields.io/badge/license-GPLv3-brightgreen.svg?style=flat)](https://www.gnu.org/licenses/gpl-3.0.html)
+[![GitHub release](https://img.shields.io/github/release/ShyPixie/steam-tools-ng.svg?style=flat)](https://github.com/ShyPixie/steam-tools-ng/releases)
 
 Some useful tools to use with steam client or compatible programs and websites.
 

@@ -16,15 +16,13 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
-import ctypes
 import logging
-import os
-import sys
 from collections import OrderedDict
+from subprocess import call
 
 from gi.repository import Gtk, Pango
-
 from stlib import plugins
+
 from . import utils, advanced, authenticator, login
 from .. import config, i18n
 
@@ -73,7 +71,7 @@ class SettingsDialog(Gtk.Dialog):
         config_button.set_hexpand(True)
         config_button.connect("clicked", self.on_config_button_clicked)
 
-        if config.parser.get("logger", "log_directory") == config.config_file_directory:
+        if config.parser.get("logger", "log_directory") == str(config.config_file_directory):
             config_button.set_label(_("Config / Log file Directory"))
             general_section.grid.attach(config_button, 0, 1, 2, 1)
         else:
@@ -94,17 +92,6 @@ class SettingsDialog(Gtk.Dialog):
             "language", _("Language"), Gtk.ComboBoxText, 0, 5, items=config.translations
         )
         language_item.connect("changed", self.update_language)
-
-        if os.name == 'nt' and hasattr(sys, 'frozen'):
-            console_button = Gtk.ToggleButton()
-            console_button.set_label(_("Show debug console"))
-            console_button.set_name("console_button")
-            console_button.connect("toggled", self.on_console_button_toggled)
-            general_section.grid.attach(console_button, 0, 6, 2, 1)
-
-            console_warning = Gtk.Label()
-            console_warning.set_text(_("Press the button again to close the debug console"))
-            general_section.grid.attach(console_warning, 0, 7, 2, 1)
 
         login_section = utils.Section("login", _("Login Settings"))
 
@@ -135,47 +122,14 @@ class SettingsDialog(Gtk.Dialog):
         advanced_button.connect("toggled", self.on_advanced_button_toggled)
         login_section.grid.attach(advanced_button, 0, 4, 2, 1)
 
-        plugins_section = utils.Section('plugins', _('Plugins Settings'))
+        confirmations_section = utils.Section('confirmations', _('Confirmations Settings'))
 
-        steamguard = plugins_section.new("steamguard", config.plugins['steamguard'], Gtk.CheckButton, 0, 1)
-        steamguard.connect('toggled', on_setting_toggled)
-
-        confirmations = plugins_section.new("confirmations", config.plugins['confirmations'], Gtk.CheckButton, 0, 2)
-        confirmations.connect('toggled', on_setting_toggled)
-
-        __disabled = plugins_section.new("___", "IndieGala", Gtk.CheckButton, 2, 3)
-        __disabled.set_sensitive(False)
-        __disabled.label.set_sensitive(False)
-
-        steamtrades = plugins_section.new("steamtrades", config.plugins['steamtrades'], Gtk.CheckButton, 2, 1)
-        steamtrades.connect('toggled', on_setting_toggled)
-
-        steamgifts = plugins_section.new("steamgifts", config.plugins['steamgifts'], Gtk.CheckButton, 2, 2)
-        steamgifts.connect('toggled', on_setting_toggled)
-
-        cardfarming = plugins_section.new("cardfarming", config.plugins['cardfarming'], Gtk.CheckButton, 0, 3)
-        cardfarming.connect("toggled", on_setting_toggled)
-
-        if not config.parser.get("login", "shared_secret"):
-            steamguard.set_sensitive(False)
-            steamguard.label.set_sensitive(False)
-            _steamguard_disabled = Gtk.Label()
-            _steamguard_disabled.set_justify(Gtk.Justification.CENTER)
-            _steamguard_disabled.set_halign(Gtk.Align.CENTER)
-
-            _message = _(
-                "authenticator module has been disabled because you have\n"
-                "logged in but no shared secret is found. To enable it again,\n"
-                "go to login -> advanced and add a valid shared secret\n"
-                "or use STNG as your Steam Authenticator\n"
-            )
-
-            _steamguard_disabled.set_markup(utils.markup(_message, color="hotpink"))
-            plugins_section.grid.attach(_steamguard_disabled, 0, 4, 4, 4)
+        confirmations_enable = confirmations_section.new("enable", _("Enable"), Gtk.CheckButton, 0, 0)
+        confirmations_enable.connect('toggled', on_setting_toggled)
 
         if not config.parser.get("login", "identity_secret"):
-            confirmations.set_sensitive(False)
-            confirmations.label.set_sensitive(False)
+            confirmations_section.set_sensitive(False)
+            confirmations_enable.set_active(False)
             _confirmations_disabled = Gtk.Label()
             _confirmations_disabled.set_justify(Gtk.Justification.CENTER)
             _confirmations_disabled.set_halign(Gtk.Align.CENTER)
@@ -187,28 +141,49 @@ class SettingsDialog(Gtk.Dialog):
                 "or use STNG as your Steam Authenticator\n"
             )
 
-            _confirmations_disabled.set_markup(utils.markup(_message, color="hotpink"))
-            plugins_section.grid.attach(_confirmations_disabled, 0, 8, 4, 4)
+            _confirmations_disabled.set_markup(utils.markup(_message, color="hotpink", background="black"))
+            confirmations_section.grid.attach(_confirmations_disabled, 0, 1, 4, 4)
 
-        if not config.client:
-            cardfarming.set_sensitive(False)
-            cardfarming.label.set_sensitive(False)
-            _cardfarming_disabled = Gtk.Label()
-            _cardfarming_disabled.set_justify(Gtk.Justification.CENTER)
-            _cardfarming_disabled.set_halign(Gtk.Align.CENTER)
+        steamguard_section = utils.Section('steamguard', _('SteamGuard Settings'))
+
+        steamguard_enable = steamguard_section.new("enable", _("Enable"), Gtk.CheckButton, 0, 0)
+        steamguard_enable.connect('toggled', on_setting_toggled)
+
+        if not config.parser.get("login", "shared_secret"):
+            steamguard_section.set_sensitive(False)
+            steamguard_enable.set_active(False)
+            _steamguard_disabled = Gtk.Label()
+            _steamguard_disabled.set_justify(Gtk.Justification.CENTER)
+            _steamguard_disabled.set_halign(Gtk.Align.CENTER)
 
             _message = _(
-                "cardfarming module has been disabled because you have\n"
-                "a stlib built without steam_api support. To enable it again,\n"
-                "reinstall stlib with Steam API support\n"
+                "steamguard module has been disabled because you have\n"
+                "logged in but no shared secret is found. To enable it again,\n"
+                "go to login -> advanced and add a valid shared secret\n"
+                "or use STNG as your Steam Authenticator\n"
             )
 
-            _cardfarming_disabled.set_markup(utils.markup(_message, color="hotpink"))
-            plugins_section.grid.attach(_cardfarming_disabled, 0, 12, 4, 4)
+            _steamguard_disabled.set_markup(utils.markup(_message, color="hotpink", background="black"))
+            steamguard_section.grid.attach(_steamguard_disabled, 0, 1, 4, 4)
+
+        steamtrades_section = utils.Section('steamtrades', _('Steamtrades Settings'))
+
+        steamtrades_enable = steamtrades_section.new("enable", _("Enable"), Gtk.CheckButton, 0, 0)
+        steamtrades_enable.connect('toggled', on_setting_toggled)
+
+        trade_ids = steamtrades_section.new("trade_ids", _("Trade IDs:"), Gtk.Entry, 0, 1)
+        trade_ids.set_placeholder_text('12345, asdfg, ...')
+        trade_ids.connect("changed", on_setting_changed)
+
+        wait_min = steamtrades_section.new("wait_min", _("Wait MIN:"), Gtk.Entry, 0, 2)
+        wait_min.connect("changed", on_digit_only_setting_changed)
+
+        wait_max = steamtrades_section.new("wait_max", _("Wait MAX:"), Gtk.Entry, 0, 3)
+        wait_max.connect("changed", on_digit_only_setting_changed)
 
         if not plugins.has_plugin("steamtrades"):
-            steamtrades.set_sensitive(False)
-            steamtrades.label.set_sensitive(False)
+            steamtrades_section.set_sensitive(False)
+            steamtrades_enable.set_active(False)
             _steamtrades_disabled = Gtk.Label()
             _steamtrades_disabled.set_justify(Gtk.Justification.CENTER)
             _steamtrades_disabled.set_halign(Gtk.Align.CENTER)
@@ -219,12 +194,52 @@ class SettingsDialog(Gtk.Dialog):
                 "install the steamtrades plugin.\n"
             )
 
-            _steamtrades_disabled.set_markup(utils.markup(_message, color="hotpink"))
-            plugins_section.grid.attach(_steamtrades_disabled, 0, 16, 4, 4)
+            _steamtrades_disabled.set_markup(utils.markup(_message, color="hotpink", background="black"))
+            steamtrades_section.grid.attach(_steamtrades_disabled, 0, 1, 4, 4)
+
+        steamgifts_section = utils.Section("steamgifts", _("Steamgifts Settings"))
+
+        steamgifts_enable = steamgifts_section.new("enable", _("Enable"), Gtk.CheckButton, 0, 0)
+        steamgifts_enable.connect('toggled', on_setting_toggled)
+
+        giveaway_type = steamgifts_section.new(
+            "giveaway_type",
+            _("Giveaway Type:"),
+            Gtk.ComboBoxText,
+            0, 1,
+            items=config.giveaway_types,
+        )
+        giveaway_type.connect("changed", on_combo_setting_changed, config.giveaway_types)
+
+        sort_giveaways = steamgifts_section.new(
+            "sort",
+            _("Sort Giveaways:"),
+            Gtk.ComboBoxText,
+            0, 2,
+            items=config.giveaway_sort_types,
+        )
+        sort_giveaways.connect("changed", on_combo_setting_changed, config.giveaway_sort_types)
+
+        reverse_sorting = steamgifts_section.new("reverse_sorting", _("Reverse Sorting:"), Gtk.CheckButton, 0, 3)
+        reverse_sorting.connect("toggled", on_setting_toggled)
+
+        developer_giveaways = steamgifts_section.new(
+            "developer_giveaways",
+            _("Developer Giveaways"),
+            Gtk.CheckButton,
+            0, 4,
+        )
+        developer_giveaways.connect("toggled", on_setting_toggled)
+
+        wait_min = steamgifts_section.new("wait_min", _("Wait MIN:"), Gtk.Entry, 0, 5)
+        wait_min.connect("changed", on_digit_only_setting_changed)
+
+        wait_max = steamgifts_section.new("wait_max", _("Wait MAX:"), Gtk.Entry, 0, 6)
+        wait_max.connect("changed", on_digit_only_setting_changed)
 
         if not plugins.has_plugin("steamgifts"):
-            steamgifts.set_sensitive(False)
-            steamgifts.label.set_sensitive(False)
+            steamgifts_section.set_sensitive(False)
+            steamgifts_enable.set_active(False)
             _steamgifts_disabled = Gtk.Label()
             _steamgifts_disabled.set_justify(Gtk.Justification.CENTER)
             _steamgifts_disabled.set_halign(Gtk.Align.CENTER)
@@ -235,70 +250,40 @@ class SettingsDialog(Gtk.Dialog):
                 "install the steamgifts plugin.\n"
             )
 
-            _steamgifts_disabled.set_markup(utils.markup(_message, color="hotpink"))
-            plugins_section.grid.attach(_steamgifts_disabled, 0, 20, 4, 4)
-
-        steamtrades_section = utils.Section('steamtrades', _('Steamtrades Settings'))
-
-        trade_ids = steamtrades_section.new("trade_ids", _("Trade IDs:"), Gtk.Entry, 0, 0)
-        trade_ids.set_placeholder_text('12345, asdfg, ...')
-        trade_ids.connect("changed", on_setting_changed)
-
-        wait_min = steamtrades_section.new("wait_min", _("Wait MIN:"), Gtk.Entry, 0, 1)
-        wait_min.connect("changed", on_digit_only_setting_changed)
-
-        wait_max = steamtrades_section.new("wait_max", _("Wait MAX:"), Gtk.Entry, 0, 2)
-        wait_max.connect("changed", on_digit_only_setting_changed)
-
-        steamgifts_section = utils.Section("steamgifts", _("Steamgifts Settings"))
-
-        giveaway_type = steamgifts_section.new(
-            "giveaway_type",
-            _("Giveaway Type:"),
-            Gtk.ComboBoxText,
-            0, 0,
-            items=config.giveaway_types,
-        )
-        giveaway_type.connect("changed", on_combo_setting_changed, config.giveaway_types)
-
-        sort_giveaways = steamgifts_section.new(
-            "sort",
-            _("Sort Giveaways:"),
-            Gtk.ComboBoxText,
-            0, 1,
-            items=config.giveaway_sort_types,
-        )
-        sort_giveaways.connect("changed", on_combo_setting_changed, config.giveaway_sort_types)
-
-        reverse_sorting = steamgifts_section.new("reverse_sorting", _("Reverse Sorting:"), Gtk.CheckButton, 0, 2)
-        reverse_sorting.connect("toggled", on_setting_toggled)
-
-        developer_giveaways = steamgifts_section.new(
-            "developer_giveaways",
-            _("Developer Giveaways"),
-            Gtk.CheckButton,
-            0, 3,
-        )
-        developer_giveaways.connect("toggled", on_setting_toggled)
-
-        wait_min = steamgifts_section.new("wait_min", _("Wait MIN:"), Gtk.Entry, 0, 4)
-        wait_min.connect("changed", on_digit_only_setting_changed)
-
-        wait_max = steamgifts_section.new("wait_max", _("Wait MAX:"), Gtk.Entry, 0, 5)
-        wait_max.connect("changed", on_digit_only_setting_changed)
+            _steamgifts_disabled.set_markup(utils.markup(_message, color="hotpink", background="black"))
+            steamgifts_section.grid.attach(_steamgifts_disabled, 0, 1, 4, 4)
 
         cardfarming_section = utils.Section("cardfarming", _("Cardfarming settings"))
 
-        first_wait = cardfarming_section.new("first_wait", _("First Wait:"), Gtk.Entry, 0, 0)
+        cardfarming_enable = cardfarming_section.new("enable", _("Enable"), Gtk.CheckButton, 0, 0)
+        cardfarming_enable.connect("toggled", on_setting_toggled)
+
+        first_wait = cardfarming_section.new("first_wait", _("First Wait:"), Gtk.Entry, 0, 1)
         first_wait.connect("changed", on_digit_only_setting_changed)
 
-        default_wait = cardfarming_section.new("default_wait", _("Default Wait:"), Gtk.Entry, 0, 1)
+        default_wait = cardfarming_section.new("default_wait", _("Default Wait:"), Gtk.Entry, 0, 2)
         default_wait.connect("changed", on_digit_only_setting_changed)
 
-        min_wait = cardfarming_section.new("min_wait", _("MIN Wait:"), Gtk.Entry, 0, 2)
+        min_wait = cardfarming_section.new("min_wait", _("MIN Wait:"), Gtk.Entry, 0, 3)
         min_wait.connect("changed", on_digit_only_setting_changed)
 
-        reverse_sorting = cardfarming_section.new("reverse_sorting", _("More cards First:"), Gtk.CheckButton, 0, 3)
+        reverse_sorting = cardfarming_section.new("reverse_sorting", _("More cards First:"), Gtk.CheckButton, 0, 4)
+
+        if not config.client:
+            cardfarming_section.set_sensitive(False)
+            cardfarming_enable.set_active(False)
+            _cardfarming_disabled = Gtk.Label()
+            _cardfarming_disabled.set_justify(Gtk.Justification.CENTER)
+            _cardfarming_disabled.set_halign(Gtk.Align.CENTER)
+
+            _message = _(
+                "cardfarming module has been disabled because you have\n"
+                "a stlib built without steam_api support. To enable it again,\n"
+                "reinstall stlib with Steam API support\n"
+            )
+
+            _cardfarming_disabled.set_markup(utils.markup(_message, color="hotpink", background="black"))
+            cardfarming_section.grid.attach(_cardfarming_disabled, 0, 1, 4, 4)
 
         logger_section = utils.Section("logger", _('Logger settings'))
 
@@ -324,28 +309,18 @@ class SettingsDialog(Gtk.Dialog):
             steamtrades_section,
             cardfarming_section,
             steamgifts_section,
-            plugins_section,
+            steamguard_section,
+            confirmations_section,
         ]:
             section.stackup_section(stack)
 
     @staticmethod
     def on_log_button_clicked(button: Gtk.Button) -> None:
-        os.system(f'{config.file_manager} {config.parser.get("logger", "log_directory")}')
+        call(f'{config.file_manager} {config.parser.get("logger", "log_directory")}')
 
     @staticmethod
     def on_config_button_clicked(button: Gtk.Button) -> None:
-        os.system(f'{config.file_manager} {config.config_file_directory}')
-
-    @staticmethod
-    def on_console_button_toggled(button: Gtk.Button) -> None:
-        if button.get_active():
-            console = ctypes.windll.kernel32.GetConsoleWindow()
-            ctypes.windll.user32.ShowWindow(console, 1)
-            ctypes.windll.kernel32.CloseHandle(console)
-        else:
-            console = ctypes.windll.kernel32.GetConsoleWindow()
-            ctypes.windll.user32.ShowWindow(console, 0)
-            ctypes.windll.kernel32.CloseHandle(console)
+        call(f'{config.file_manager} {str(config.config_file_directory)}')
 
     def on_advanced_button_toggled(self, button: Gtk.Button) -> None:
         if button.get_active():

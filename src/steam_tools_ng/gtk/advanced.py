@@ -16,9 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
-import contextlib
 import logging
-import os
 from collections import OrderedDict
 
 from gi.repository import Gtk
@@ -136,8 +134,7 @@ class AdvancedSettingsDialog(Gtk.Dialog):
         login_dialog.show()
         await asyncio.sleep(3)
 
-        with contextlib.suppress(FileNotFoundError):
-            os.remove(config.config_file)
+        config.config_file.unlink(missing_ok=True)
 
         config.parser.clear()
         config.init()

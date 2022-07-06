@@ -23,27 +23,12 @@ check_msys
 #clean
 rm -rfv build dist
 
-# build stlib
-mkdir -p build || exit 1
-pushd build || exit 1
-curl -o stlib.tar.gz -L https://github.com/ShyPixie/stlib/archive/refs/tags/v"$STLIB_VERSION".tar.gz || exit 1
-tar xfv stlib.tar.gz || exit 1
-pushd stlib-"$STLIB_VERSION"/src/steam_api/steamworks_sdk || exit 1
-curl -o steamworks-sdk.zip -L https://github.com/ShyPixie/Overlays/blob/master/dev-util/steamworks-sdk/files/steamworks_sdk_151.zip?raw=true || exit 1
-unzip -o steamworks-sdk.zip || exit 1
-popd || exit 1
-pushd "stlib-$STLIB_VERSION" || exit 1
-./setup.py bdist_wheel
-python -m pip install --upgrade . || exit 1
-popd || exit 1
-
-# build stng
-popd || exit 1
+# build
 ./setup.py -v build || exit 1
 pushd build || exit 1
 mv "exe.mingw_x86_64-$PYTHON_VERSION" "$RELEASE_NAME" || exit 1
 
-# build plugins
+# build plugins (FIXME)
 mkdir -p "$RELEASE_NAME"/plugins || exit 1
 curl -o stlib-plugins.tar.gz -L "https://github.com/ShyPixie/stlib-plugins/archive/refs/tags/v$STLIB_PLUGINS_VERSION.tar.gz" || exit 1
 tar xfv stlib-plugins.tar.gz || exit 1

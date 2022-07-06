@@ -20,4 +20,4 @@ import common
 
 if __name__ == "__main__":
     common.check_wsl()
-    common.run_cmd(["I:\\msys64\\tools\\Windows\\dist_script.cmd"])
+    common.run_cmd([".\\tools\\Windows\\dist_script.cmd"])

@@ -1,0 +1,81 @@
+name: Build
+on: [push, workflow_dispatch]
+
+jobs:
+  delete-old-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: kolpav/purge-artifacts-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          expire-in: 0
+  linux-build:
+    if: ${{ always() }}
+    needs: delete-old-artifacts
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.7', '3.8', '3.9', '3.10']
+    name: Python ${{ matrix.python-version }} linux build
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: sudo apt-fast -y install gettext
+      - run: python -m pip install build
+      - run: python -m build
+      - uses: actions/upload-artifact@v3
+        with:
+          name: linux
+          path: |
+            build/*.zip
+            dist/
+          if-no-files-found: error
+          retention-days: 90
+  windows-build:
+    if: ${{ always() }}
+    needs: delete-old-artifacts
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: cmd
+        working-directory: .\\tools\Windows
+    steps:
+      - uses: actions/checkout@v3
+      - run: update_dev_environment.cmd
+      - run: dist_script.cmd
+      - uses: actions/upload-artifact@v3
+        with:
+          name: windows
+          path: |
+            build/*.zip
+            installer/build/*.exe
+          if-no-files-found: error
+          retention-days: 90
+  generate-badges:
+    if: ${{ always() }}
+    needs: [linux-build, windows-build]
+    runs-on: ubuntu-latest
+    env:
+      linux-badge-color: ${{ needs.linux-build.result == 'success' && 'green' || 'red' }}
+      windows-badge-color: ${{ needs.windows-build.result == 'success' && 'green' || 'red' }}
+    steps:
+      - uses: RubbaBoy/BYOB@v1.3.0
+        with:
+          NAME: steam-tools-ng-linux-build
+          LABEL: 'Linux build'
+          STATUS: ${{ needs.linux-build.result }}
+          COLOR: ${{ env.linux-badge-color }}
+          GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
+          REPOSITORY: ShyPixie/badge-metadata
+          ACTOR: ShyPixie
+      - uses: RubbaBoy/BYOB@v1.3.0
+        with:
+          NAME: steam-tools-ng-windows-build
+          LABEL: 'Windows build'
+          STATUS: ${{ needs.windows-build.result }}
+          COLOR: ${{ env.windows-badge-color }}
+          GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
+          REPOSITORY: ShyPixie/badge-metadata
+          ACTOR: ShyPixie

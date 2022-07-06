@@ -15,37 +15,39 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import sys
-import time
-
-import aiohttp
 import asyncio
 import configparser
 import http
 import locale
 import logging
 import os
+import sys
+import time
 from collections import OrderedDict
+from pathlib import Path
+from typing import Any
+
+import aiohttp
 from stlib import plugins as stlib_plugins
 from stlib import webapi
-from typing import Any
+
 from . import i18n, logger_handlers
 
 parser = configparser.RawConfigParser()
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
-if os.path.isdir('steam_tools_ng'):
+if Path('src').is_dir():
     # development mode
-    data_dir = 'config'
+    data_dir = Path('config')
 elif hasattr(sys, 'frozen') or sys.platform == 'win32':
-    data_dir = os.environ['LOCALAPPDATA']
+    data_dir = Path(os.environ['LOCALAPPDATA'])
 else:
-    data_dir = os.getenv('XDG_CONFIG_HOME', os.path.join(os.path.expanduser('~'), '.config'))
+    data_dir = Path(os.getenv('XDG_CONFIG_HOME', Path.home() / '.config'))
 
-config_file_directory = os.path.join(data_dir, 'steam-tools-ng')
+config_file_directory = data_dir / 'steam-tools-ng'
 config_file_name = 'steam-tools-ng.config'
-config_file = os.path.join(config_file_directory, config_file_name)
+config_file = config_file_directory / config_file_name
 
 try:
     from stlib import client
@@ -106,7 +108,7 @@ asyncio.set_event_loop(event_loop)
 
 default_config = {
     'logger': {
-        'log_directory': os.path.join(data_dir, 'steam-tools-ng'),
+        'log_directory': data_dir / 'steam-tools-ng',
         'log_level': 'debug',
         'log_console_level': 'info',
         'log_color': True,
@@ -115,12 +117,20 @@ default_config = {
         'api_url': 'https://api.steampowered.com',
         'api_key': '',
     },
+    'confirmations': {
+        'enable': True,
+    },
+    'steamguard': {
+        'enable': True,
+    },
     'steamtrades': {
+        'enable': True,
         'wait_min': 3700,
         'wait_max': 4100,
         'trade_ids': '',
     },
     'steamgifts': {
+        'enable': True,
         'wait_min': 3700,
         'wait_max': 4100,
         'giveaway_type': 'main',
@@ -129,6 +139,7 @@ default_config = {
         'reverse_sorting': False,
     },
     'cardfarming': {
+        'enable': True,
         'reverse_sorting': False,
         'first_wait': 7200,
         'default_wait': 600,
@@ -138,13 +149,6 @@ default_config = {
         'theme': 'light',
         'show_close_button': True,
         'language': str(locale.getdefaultlocale()[0]),
-    },
-    'plugins': {
-        'steamtrades': True,
-        'steamgifts': True,
-        'cardfarming': True,
-        'steamguard': True,
-        'confirmations': True,
     },
     'login': {
         'steamid': 0,
@@ -186,11 +190,10 @@ def validate_config(section: str, option: str, defaults: OrderedDict) -> None:
 
 
 def init() -> None:
-    os.makedirs(config_file_directory, exist_ok=True)
-
+    config_file_directory.mkdir(parents=True, exist_ok=True)
     parser.read_dict(default_config)
 
-    if os.path.isfile(config_file):
+    if config_file.is_file():
         parser.read(config_file)
 
     # fallback deprecated values
@@ -199,11 +202,11 @@ def init() -> None:
     ]):
         new('steam', 'api_url', default_config['steam']['api_url'])
 
-    log_directory = parser.get("logger", "log_directory")
+    log_directory = Path(parser.get("logger", "log_directory"))
 
-    if not os.path.isdir(log_directory):
+    if not log_directory.is_dir():
         log.error(_("Incorrect log directory. Fallbacking to default."))
-        log_directory = os.path.join(data_dir, 'steam-tools-ng')
+        log_directory = data_dir / 'steam-tools-ng'
         new("logger", "log_directory", log_directory)
 
     validate_config("logger", "log_level", log_levels)
@@ -213,7 +216,7 @@ def init() -> None:
     validate_config("steamgifts", "giveaway_type", giveaway_types)
     validate_config("steamgifts", "sort", giveaway_sort_types)
 
-    os.makedirs(log_directory, exist_ok=True)
+    log_directory.mkdir(parents=True, exist_ok=True)
 
     if not stlib_plugins.has_plugin("steamtrades"):
         new("plugins", "steamtrades", False)
@@ -224,12 +227,13 @@ def init() -> None:
     if not client:
         new("plugins", "cardfarming", False)
 
+
 def init_logger() -> None:
-    log_directory = parser.get("logger", "log_directory")
+    log_directory = Path(parser.get("logger", "log_directory"))
     log_level = parser.get("logger", "log_level")
     log_console_level = parser.get("logger", "log_console_level")
 
-    log_file_handler = logger_handlers.RotatingFileHandler(os.path.join(log_directory, 'steam-tools-ng.log'),
+    log_file_handler = logger_handlers.RotatingFileHandler(log_directory / 'steam-tools-ng.log',
                                                            backupCount=1,
                                                            encoding='utf-8')
     log_file_handler.setFormatter(logging.Formatter('%(module)s:%(levelname)s (%(funcName)s) => %(message)s'))
@@ -268,9 +272,9 @@ def new(section: str, option: str, value: Any) -> None:
 def remove(section: str, option: str) -> None:
     # Some GUI checks will fail if option doesn't exists
     new(section, option, '')
-    #parser.remove_option(section, option)
+    # parser.remove_option(section, option)
 
-    #with open(config_file, 'w', encoding="utf8") as config_file_object:
+    # with open(config_file, 'w', encoding="utf8") as config_file_object:
     #    parser.write(config_file_object)
 
 

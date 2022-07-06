@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Lara Maia <dev@lara.monster> 2015 ~ 2021
+# Lara Maia <dev@lara.monster> 2015 ~ 2022
 #
 # The Steam Tools NG is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -20,6 +20,7 @@ import os
 import subprocess
 import sys
 import sysconfig
+from pathlib import Path
 from typing import Any, List, Mapping, Tuple
 
 import certifi
@@ -37,24 +38,22 @@ class BuildTranslations(build_py):
     def run(self) -> None:
         super().run()
 
-        po_build_path = os.path.join('build', 'lib', 'steam_tools_ng', 'locale')
-        os.makedirs(po_build_path, exist_ok=True)
+        po_build_path = Path('build', 'lib', 'steam_tools_ng', 'locale')
+        po_build_path.mkdir(exist_ok=True)
 
-        for root, directories, files in os.walk('i18n'):
-            for file in files:
-                if file.endswith(".po"):
-                    language = os.path.splitext(file)[0]
-                    output_directory = os.path.join(po_build_path, language, 'LC_MESSAGES')
-                    os.makedirs(output_directory, exist_ok=True)
+        for path in Path('i18n').glob('*.po'):
+            language = path.stem
+            output_directory = po_build_path / language / 'LC_MESSAGES'
+            output_directory.mkdir(exist_ok=True, parents=True)
 
-                    subprocess.run(
-                        [
-                            'msgfmt',
-                            os.path.join(root, file),
-                            '-o',
-                            os.path.join(output_directory, 'steam-tools-ng.mo')
-                        ], check=True
-                    )
+            subprocess.run(
+                [
+                    'msgfmt',
+                    path,
+                    '-o',
+                    output_directory / 'steam-tools-ng.mo',
+                ], check=True
+            )
 
 
 def fix_gtk() -> List[Tuple[str, str]]:
@@ -72,6 +71,7 @@ def fix_gtk() -> List[Tuple[str, str]]:
         'GModule-2.0',
         'HarfBuzz-0.0',
         'Graphene-1.0',
+        'freetype2-2.0',
     ]
 
     required_dlls = [
@@ -81,6 +81,7 @@ def fix_gtk() -> List[Tuple[str, str]]:
         'libpangowin32-1.0-0',
         'librsvg-2-2',
         'libgraphene-1.0-0',
+        'libfreetype-6',
     ]
 
     pixbuf_loaders = [
@@ -90,35 +91,35 @@ def fix_gtk() -> List[Tuple[str, str]]:
 
     includes = []
 
-    lib_path = os.path.join(sysconfig.get_path('platlib'), '..', '..')
-    bin_path = os.path.join(sysconfig.get_path('platlib'), '..', '..', '..', 'bin')
+    lib_path = Path(sysconfig.get_path('platlib')).parent.parent.resolve()
+    bin_path = Path(sysconfig.get_path('platlib')).parent.parent.parent.resolve() / 'bin'
 
     for package in namespace_packages:
         includes.append((
-            os.path.join(lib_path, 'girepository-1.0', f'{package}.typelib'),
-            os.path.join('lib', 'girepository-1.0', f'{package}.typelib')
+            lib_path / 'girepository-1.0' / f'{package}.typelib',
+            Path('lib', 'girepository-1.0', f'{package}.typelib'),
         ))
 
     for dll in required_dlls:
         includes.append((
-            os.path.join(bin_path, f'{dll}.dll'),
+            bin_path / f'{dll}.dll',
             f'{dll}.dll',
         ))
 
     for loader in pixbuf_loaders:
         includes.append((
-            os.path.join(lib_path, 'gdk-pixbuf-2.0', '2.10.0', 'loaders', f'{loader}.dll'),
-            os.path.join('lib', 'gdk-pixbuf-2.0', '2.10.0', 'loaders', f'{loader}.dll'),
+            lib_path / 'gdk-pixbuf-2.0' / '2.10.0' / 'loaders' / f'{loader}.dll',
+            Path('lib', 'gdk-pixbuf-2.0', '2.10.0', 'loaders', f'{loader}.dll'),
         ))
 
     includes.append((
-        os.path.join(lib_path, 'gdk-pixbuf-2.0', '2.10.0', 'loaders.cache'),
-        os.path.join('lib', 'gdk-pixbuf-2.0', '2.10.0', 'loaders.cache'),
+        lib_path / 'gdk-pixbuf-2.0' / '2.10.0' / 'loaders.cache',
+        Path('lib', 'gdk-pixbuf-2.0', '2.10.0', 'loaders.cache'),
     ))
 
     includes.append((
-        os.path.join('src', 'steam_tools_ng', 'icons', 'settings.ini'),
-        os.path.join('etc', 'gtk-3.0', 'settings.ini'),
+        Path('src', 'steam_tools_ng', 'icons', 'settings.ini'),
+        Path('etc', 'gtk-4.0', 'settings.ini'),
     ))
 
     return includes
@@ -128,38 +129,44 @@ def freeze_options() -> Mapping[str, Any]:
     if os.name != 'nt':
         return {}
 
-    icons_path = os.path.join('src', 'steam_tools_ng', 'icons')
+    icons_path = Path('src', 'steam_tools_ng', 'icons')
+    copyright = 'Lara Maia (C) 2015 ~ 2022'
 
     executables = [
         Executable(
-            os.path.join("src", "steam_tools_ng", "__main__.py"),
+            Path("src", "steam_tools_ng", "cli.py"),
             target_name='steam-tools-ng',
             base=None,
-            icon=os.path.join('installer', 'steam-tools-ng.ico'),
-            shortcut_name='Steam Tools NG',
-            copyright='Lara Maia (C) 2015 ~ 2022',
+            icon=Path(icons_path, 'stng_console.ico'),
+            shortcut_name='Steam Tools NG CLI',
+            copyright=copyright,
+        ),
+        Executable(
+            Path("src", "steam_tools_ng", "gui.py"),
+            target_name='steam-tools-ng-gui',
+            base='Win32GUI',
+            icon=Path(icons_path, 'stng.ico'),
+            shortcut_name='Steam Tools NG GUI',
+            copyright=copyright,
         )
     ]
 
-    packages = ['asyncio', 'steam_tools_ng', 'gi', 'six', 'win32com.client']
+    packages = ['asyncio', 'steam_tools_ng', 'gi', 'win32com.client']
 
     paths = ['src']
     paths.extend(sys.path)
 
-    includes = [*fix_gtk(), (certifi.where(), os.path.join('etc', 'cacert.pem'))]
+    includes = [*fix_gtk(), (certifi.where(), Path('etc', 'cacert.pem'))]
 
-    for file in os.listdir(os.path.join(icons_path, 'Default')):
+    for file in Path(icons_path, 'Default').iterdir():
         if file != 'settings.ini':
-            includes.append((
-                os.path.join(icons_path, 'Default', file),
-                os.path.join('share', 'icons', 'Default', file)
-            ))
+            includes.append((file, Path('share', 'icons', 'Default', file.name)))
 
     for language in ['fr', 'pt_BR']:
-        language_directory = os.path.join('lib', 'steam_tools_ng', 'locale', language, 'LC_MESSAGES')
+        language_directory = Path('lib', 'steam_tools_ng', 'locale', language, 'LC_MESSAGES')
         includes.append((
-            os.path.join('build', language_directory, 'steam-tools-ng.mo'),
-            os.path.join(language_directory, 'steam-tools-ng.mo')
+            Path('build', language_directory, 'steam-tools-ng.mo'),
+            language_directory / 'steam-tools-ng.mo',
         ))
 
     excludes = [
@@ -227,7 +234,10 @@ setup(
     packages=find_packages('src'),
     package_dir={'': 'src'},
     include_package_data=True,
-    entry_points={'console_scripts': ['steam-tools-ng=steam_tools_ng.__main__:main']},
+    entry_points={'console_scripts': [
+        'steam-tools-ng-gui=steam_tools_ng.gui:main',
+        'steam-tools-ng=steam_tools_ng.cli:main',
+    ]},
     install_requires=[
         "pywin32; sys_platform == 'win32'",
         'stlib>=0.14',
