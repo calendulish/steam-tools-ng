@@ -223,7 +223,7 @@ classifiers = [
 
 setup(
     name='steam-tools-ng',
-    version='1.1',
+    version='1.1.1',
     description="Some useful tools to use with steam client or compatible programs and websites.",
     author='Lara Maia',
     author_email='dev@lara.monster',
