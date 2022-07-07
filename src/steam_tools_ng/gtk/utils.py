@@ -364,9 +364,6 @@ class Section(Gtk.Frame):
             *grid_position: int,
             items: 'OrderedDict[str, str]' = None,
     ) -> Gtk.Widget:
-        # FIXME: Translations raising errors
-        global _
-
         bases = (widget,)
 
         body = {
@@ -402,8 +399,8 @@ class Section(Gtk.Frame):
         if isinstance(item, Gtk.ComboBoxText):
             value = config.parser.get(section, option)
 
-            for value_ in items.values():
-                item.append_text(value_)
+            for option_label in items.values():
+                item.append_text(_(option_label))
 
             try:
                 current_option = list(items).index(value)

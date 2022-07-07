@@ -18,7 +18,6 @@
 import asyncio
 import logging
 from collections import OrderedDict
-
 from gi.repository import Gtk
 
 from . import utils, settings, login
@@ -26,39 +25,6 @@ from .. import i18n, config
 
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
-
-gtk_themes = OrderedDict([
-    ('light', _("Light")),
-    ('dark', _("Dark")),
-])
-
-log_levels = OrderedDict([
-    ('critical', _("Critical")),
-    ('error', _("Error")),
-    ('warning', _("Warning")),
-    ('info', _("Info")),
-    ('debug', _("Debug")),
-])
-
-translations = OrderedDict([
-    ('en', _("English")),
-    ('pt_BR', _("Portuguese (Brazil)")),
-])
-
-giveaway_types = OrderedDict([
-    ('main', _("Main Giveaways")),
-    ('new', _("New Giveaways")),
-    ('recommended', _("Recommended")),
-    ('wishlist', _("Wishlist Only")),
-    ('group', _('Group Only')),
-])
-
-giveaway_sort_types = OrderedDict([
-    ('name', _("Name")),
-    ('copies', _("Copies")),
-    ('points', _("Points")),
-    ('level', _("Level")),
-])
 
 
 # noinspection PyUnusedLocal

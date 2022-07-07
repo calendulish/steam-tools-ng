@@ -56,45 +56,45 @@ except ImportError as exception:
     client = None
 
 gtk_themes = OrderedDict([
-    ('light', _("Light")),
-    ('dark', _("Dark")),
+    ('light', "Light"),
+    ('dark', "Dark"),
 ])
 
 log_levels = OrderedDict([
-    ('critical', _("Critical")),
-    ('error', _("Error")),
-    ('warning', _("Warning")),
-    ('info', _("Info")),
-    ('debug', _("Debug")),
+    ('critical', "Critical"),
+    ('error', "Error"),
+    ('warning', "Warning"),
+    ('info', "Info"),
+    ('debug', "Debug"),
 ])
 
 translations = OrderedDict([
-    ('en', _("English")),
-    ('pt_BR', _("Portuguese (Brazil)")),
-    ('fr', _("French")),
+    ('en', "English"),
+    ('pt_BR', "Portuguese (Brazil)"),
+    ('fr', "French"),
 ])
 
 giveaway_types = OrderedDict([
-    ('main', _("Main Giveaways")),
-    ('new', _("New Giveaways")),
-    ('recommended', _("Recommended")),
-    ('wishlist', _("Wishlist Only")),
-    ('group', _('Group Only')),
+    ('main', "Main Giveaways"),
+    ('new', "New Giveaways"),
+    ('recommended', "Recommended"),
+    ('wishlist', "Wishlist Only"),
+    ('group', 'Group Only'),
 ])
 
 giveaway_sort_types = OrderedDict([
-    ('name', _("Name")),
-    ('copies', _("Copies")),
-    ('points', _("Points")),
-    ('level', _("Level")),
+    ('name', "Name"),
+    ('copies', "Copies"),
+    ('points', "Points"),
+    ('level', "Level"),
 ])
 
 plugins = OrderedDict([
-    ("confirmations", _("Confirmations")),
-    ("steamtrades", _("Steam Trades")),
-    ("steamgifts", _("Steam Gifts")),
-    ("steamguard", _("Steam Guard")),
-    ("cardfarming", _("Card Farming")),
+    ("confirmations", "Confirmations"),
+    ("steamtrades", "Steam Trades"),
+    ("steamgifts", "Steam Gifts"),
+    ("steamguard", "Steam Guard"),
+    ("cardfarming", "Card Farming"),
 ])
 
 if sys.platform == 'win32':
