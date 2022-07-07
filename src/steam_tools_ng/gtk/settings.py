@@ -427,6 +427,23 @@ def refresh_widget(widget: Gtk.Widget) -> None:
         refresh_widget(widget.get_popover())
         return
 
+    if isinstance(widget, Gtk.ComboBoxText):
+        model = widget.get_model()
+
+        for index in range(len(model)):
+            iter = model[index].iter
+            combo_item_label = model.get_value(iter, 0)
+
+            try:
+                cached_text = i18n.cache[i18n.new_hash(combo_item_label)]
+            except KeyError:
+                log.debug("it's not an i18n string: %s", combo_item_label)
+                return
+
+            model.set_value(iter, 0, _(cached_text))
+
+        log.debug('ComboBox refreshed: %s', widget)
+
     if isinstance(widget, Gtk.Label):
         try:
             cached_text = i18n.cache[i18n.new_hash(widget.get_text())]
@@ -434,14 +451,12 @@ def refresh_widget(widget: Gtk.Widget) -> None:
             log.debug("it's not an i18n string: %s", widget.get_text())
             return
 
-        c_ = _
-
         if widget.get_use_markup():
             old_attributes = Pango.Layout.get_attributes(widget.get_layout())
-            widget.set_text(c_(cached_text))
+            widget.set_text(_(cached_text))
             widget.set_attributes(old_attributes)
         else:
-            widget.set_text(c_(cached_text))
+            widget.set_text(_(cached_text))
 
         log.debug('widget refreshed: %s', widget)
         return
