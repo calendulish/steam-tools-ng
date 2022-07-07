@@ -38,7 +38,7 @@ class AboutDialog(Gtk.AboutDialog):
         ])
 
         self.set_translator_credits(
-            "Fernando Manfredi (pt_BR)\n"
+            "Lara Maia (pt_BR)\n"
             "®omano (fr)"
         )
 
