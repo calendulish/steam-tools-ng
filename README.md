@@ -2,7 +2,7 @@
 ========================================
 [![STNG](https://lara.monster/archive/stng_last.png)](https://github.com/ShyPixie/steam-tools-ng)  
   
-[![transifex](https://img.shields.io/badge/transifex-contribute%20now-blue.svg?style=flat)](https://www.transifex.com/steam-tools-ng)
+[![transifex](https://img.shields.io/badge/transifex-contribute%20now-blue.svg?style=flat)](https://www.transifex.com/shypixie/steam-tools-ng)
 [![windows build status](https://badges.lara.monster/ShyPixie/badge-metadata/steam-tools-ng-windows-build)](https://github.com/ShyPixie/steam-tools-ng/actions/workflows/build.yml)
 [![linux build status](https://badges.lara.monster/ShyPixie/badge-metadata/steam-tools-ng-linux-build)](https://github.com/ShyPixie/steam-tools-ng/actions/workflows/build.yml)
 [![codecov](https://codecov.io/gh/ShyPixie/steam-tools-ng/branch/master/graph/badge.svg?token=RTNIQZDZ69)](https://codecov.io/gh/ShyPixie/steam-tools-ng)
