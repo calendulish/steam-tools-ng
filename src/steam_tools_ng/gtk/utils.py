@@ -223,7 +223,8 @@ class Status(Gtk.Frame):
         self._level_bar = Gtk.LevelBar()
         self._grid.attach(self._level_bar, 0, 3, 2, 1)
 
-        self.clipboard = Gdk.Clipboard()
+        self.display = Gdk.Display.get_default()
+        self.clipboard = self.display.get_clipboard()
 
     @property
     def play_event(self) -> asyncio.Event:
@@ -257,7 +258,8 @@ class Status(Gtk.Frame):
         self._grid.attach(event_status, 0, 1, 1, 1)
 
         event_status.set_markup(markup(message, font_size='small', color=color))
-        self.clipboard.set(self._display.get_text())
+        content = Gdk.ContentProvider.new_for_value(self._display.get_text())
+        self.clipboard.set_content(content)
         asyncio.get_event_loop().call_later(5, self.__disable_tooltip, event_status)
 
         self._display.set_sensitive(False)
