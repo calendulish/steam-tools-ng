@@ -198,7 +198,7 @@ class SteamToolsNG(Gtk.Application):
                 if module_name in modules:
                     task = modules[module_name]
 
-                if config.parser.getboolean("plugins", module_name):
+                if config.parser.getboolean(module_name, "enable"):
                     if task:
                         if task.cancelled() and not task._exception:  # why task.exception() is raising?
                             log.debug(_("%s is requesting a reinitialization."), module_name)

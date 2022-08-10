@@ -219,13 +219,13 @@ def init() -> None:
     log_directory.mkdir(parents=True, exist_ok=True)
 
     if not stlib_plugins.has_plugin("steamtrades"):
-        new("plugins", "steamtrades", False)
+        new("steamtrades", "enable", False)
 
     if not stlib_plugins.has_plugin("steamgifts"):
-        new("plugins", "steamgifts", False)
+        new("steamgifts", "enable", False)
 
     if not client:
-        new("plugins", "cardfarming", False)
+        new("cardfarming", "enable", False)
 
 
 def init_logger() -> None:

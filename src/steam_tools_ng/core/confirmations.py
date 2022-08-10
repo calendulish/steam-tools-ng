@@ -33,7 +33,7 @@ async def main(steamid: int, time_offset: int) -> Generator[utils.ModuleData, No
     identity_secret = config.parser.get("login", "identity_secret")
 
     if not identity_secret:
-        config.new("plugins", "confirmations", "false")
+        config.new("confirmations", "enable", "false")
         yield utils.ModuleData(error=_("The current identity secret is invalid."), info=_("Waiting Changes"))
         await asyncio.sleep(10)
         return

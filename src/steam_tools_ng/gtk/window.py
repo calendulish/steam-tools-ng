@@ -188,7 +188,7 @@ class Main(Gtk.ApplicationWindow):
             plugins = []
 
             for plugin_name in config.plugins.keys():
-                enabled = config.parser.getboolean("plugins", plugin_name)
+                enabled = config.parser.getboolean(plugin_name, "enable")
 
                 if plugin_name == "confirmations":
                     if enabled:

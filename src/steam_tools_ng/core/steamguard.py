@@ -33,7 +33,7 @@ async def main(time_offset: int) -> Generator[utils.ModuleData, None, None]:
 
     try:
         if not shared_secret:
-            config.new("plugins", "steamguard", "false")
+            config.new("steamguard", "enable", "false")
             raise ValueError
 
         server_time = int(time.time()) - time_offset
