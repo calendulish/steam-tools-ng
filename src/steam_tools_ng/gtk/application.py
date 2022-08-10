@@ -70,9 +70,8 @@ class SteamToolsNG(Gtk.Application):
         self.old_confirmations: List[webapi.Confirmation] = []
 
     @property
-    def main_window(self) -> Gtk.ApplicationWindow:
+    def main_window(self) -> Optional[Gtk.ApplicationWindow]:
         current_window = self.get_window_by_id(self._main_window_id)
-        assert isinstance(current_window, Gtk.ApplicationWindow), "main window has not been created"
         return self.get_window_by_id(self._main_window_id)
 
     @property
