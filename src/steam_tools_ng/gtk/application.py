@@ -26,8 +26,8 @@ from typing import Any, Optional, Dict, Callable, List
 
 import aiohttp
 from gi.repository import Gio, Gtk
-from stlib import webapi
 
+from stlib import webapi
 from . import about, settings, login, window, utils
 from .. import config, i18n, core
 
@@ -234,6 +234,12 @@ class SteamToolsNG(Gtk.Application):
                 else:
                     await asyncio.sleep(1)
 
+            module = getattr(self, f"run_coupons")
+            task = asyncio.create_task(module())
+            log.debug(_("Adding a new callback for %s"), task)
+            task.add_done_callback(utils.safe_task_callback)
+            modules[module_name] = task
+
     @while_window_realized
     async def run_steamguard(self, play_event) -> None:
         await play_event.wait()
@@ -286,14 +292,14 @@ class SteamToolsNG(Gtk.Application):
                     log.info(_("Skipping confirmations update because data doesn't seem to have changed"))
                     continue
 
-                self.main_window.text_tree.store.clear()
+                self.main_window.confirmation_tree.store.clear()
 
                 for confirmation_ in module_data.raw_data:
                     # translatable strings
                     t_give = utils.sanitize_confirmation(confirmation_.give)
                     t_receive = utils.sanitize_confirmation(confirmation_.receive)
 
-                    iter_ = self.main_window.text_tree.store.append(None, [
+                    iter_ = self.main_window.confirmation_tree.store.append(None, [
                         confirmation_.mode,
                         str(confirmation_.id),
                         str(confirmation_.key),
@@ -306,6 +312,31 @@ class SteamToolsNG(Gtk.Application):
                         self.main_window.text_tree.store.append(iter_, ['', '', '', item[0], '', item[1]])
 
                 self.old_confirmations = module_data.raw_data
+
+    @while_window_realized
+    async def run_coupons(self) -> None:
+        self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
+
+        botid = config.parser.getint('coupons', 'botid')
+        appid = config.parser.getint('coupons', 'appid')
+        contextid = config.parser.getint('coupons', 'contextid')
+
+        coupons = core.coupons.main(botid, appid, contextid)
+
+        async for module_data in coupons:
+            if module_data.error:
+                self.main_window.set_critical(module_data.error)
+            else:
+                self.main_window.unset_critical()
+
+            if module_data.action == "update":
+                self.main_window.coupon_tree.store.clear()
+
+                for coupon_ in module_data.raw_data:
+                    iter_ = self.main_window.coupon_tree.store.append([
+                        utils.markup(coupon_.name, foreground='blue', underline='single'),
+                        coupon_.actions[0]['link'],
+                    ])
 
     @while_window_realized
     async def run_steamtrades(self, play_event) -> None:

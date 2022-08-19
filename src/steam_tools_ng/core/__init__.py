@@ -21,6 +21,7 @@ __all__ = [
     'confirmations',
     'steamtrades',
     'steamgifts',
+    'coupons',
     'utils',
 ]
 

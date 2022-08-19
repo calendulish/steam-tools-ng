@@ -117,6 +117,11 @@ default_config = {
         'api_url': 'https://api.steampowered.com',
         'api_key': '',
     },
+    'coupons': {
+        'botid': '76561198018370992',
+        'appid': '753',
+        'contextid': '3',
+    },
     'confirmations': {
         'enable': True,
     },

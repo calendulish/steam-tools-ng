@@ -129,7 +129,7 @@ class SimpleTextTree(Gtk.ScrolledWindow):
         renderer = Gtk.CellRendererText()
 
         for index, header in enumerate(elements):
-            column = Gtk.TreeViewColumn(header, renderer, text=index)
+            column = Gtk.TreeViewColumn(header, renderer, markup=index)
             column.set_resizable(resizable)
 
             if fixed_width:

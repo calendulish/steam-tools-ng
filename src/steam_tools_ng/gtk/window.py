@@ -71,11 +71,24 @@ class Main(Gtk.ApplicationWindow):
         main_grid.set_margin_bottom(10)
         self.set_child(main_grid)
 
+        stack = Gtk.Stack()
+        main_grid.attach(stack, 0, 1, 1, 1)
+
+        switcher = Gtk.StackSwitcher()
+        switcher.set_stack(stack)
+        main_grid.attach(switcher, 0, 0, 1, 1)
+
+        general_section = utils.Section("general", _("General"))
+        general_section.stackup_section(stack)
+
+        coupons_section = utils.Section("coupons", _("Coupons"))
+        coupons_section.stackup_section(stack)
+
         self.status_grid = Gtk.Grid()
         self.status_grid.set_row_spacing(10)
         self.status_grid.set_column_spacing(10)
         self.status_grid.set_column_homogeneous(True)
-        main_grid.attach(self.status_grid, 0, 0, 4, 1)
+        general_section.grid.attach(self.status_grid, 0, 0, 4, 1)
 
         self.steamtrades_status = utils.Status(5, config.plugins['steamtrades'])
         self.status_grid.attach(self.steamtrades_status, 0, 0, 1, 1)
@@ -91,7 +104,7 @@ class Main(Gtk.ApplicationWindow):
 
         self.confirmations_grid = Gtk.Grid()
         self.confirmations_grid.set_row_spacing(10)
-        main_grid.attach(self.confirmations_grid, 0, 1, 1, 1)
+        general_section.grid.attach(self.confirmations_grid, 0, 1, 1, 1)
 
         self._info_label = Gtk.Label()
         self._info_label.set_margin_top(20)
@@ -116,16 +129,16 @@ class Main(Gtk.ApplicationWindow):
         self._critical_label.set_hexpand(True)
         self.confirmations_grid.attach(self._critical_label, 0, 3, 4, 1)
 
-        self.text_tree = utils.SimpleTextTree(
+        self.confirmation_tree = utils.SimpleTextTree(
             _('mode'), _('id'), _('key'), _('give'), _('to'), _('receive'),
             overlay_scrolling=False,
         )
 
-        self.confirmations_grid.attach(self.text_tree, 0, 4, 4, 1)
+        self.confirmations_grid.attach(self.confirmation_tree, 0, 4, 4, 1)
 
         self.text_tree_lock = False
 
-        for index, column in enumerate(self.text_tree.view.get_columns()):
+        for index, column in enumerate(self.confirmation_tree.view.get_columns()):
             if index in (0, 1, 2):
                 column.set_visible(False)
 
@@ -134,10 +147,10 @@ class Main(Gtk.ApplicationWindow):
             else:
                 column.set_fixed_width(220)
 
-        self.text_tree.view.set_has_tooltip(True)
-        self.text_tree.view.connect('query-tooltip', self.on_query_confirmations_tooltip)
+        self.confirmation_tree.view.set_has_tooltip(True)
+        self.confirmation_tree.view.connect('query-tooltip', self.on_query_confirmations_tooltip)
 
-        tree_selection = self.text_tree.view.get_selection()
+        tree_selection = self.confirmation_tree.view.get_selection()
         tree_selection.connect("changed", self.on_tree_selection_changed)
 
         accept_button = Gtk.Button()
@@ -158,15 +171,44 @@ class Main(Gtk.ApplicationWindow):
         accept_all_button.set_margin_start(5)
         accept_all_button.set_margin_end(5)
         accept_all_button.set_label(_('Accept all'))
-        accept_all_button.connect('clicked', self.on_validate_confirmations, "allow", self.text_tree.store)
+        accept_all_button.connect('clicked', self.on_validate_confirmations, "allow", self.confirmation_tree.store)
         self.confirmations_grid.attach(accept_all_button, 2, 5, 1, 1)
 
         cancel_all_button = Gtk.Button()
         cancel_all_button.set_margin_start(5)
         cancel_all_button.set_margin_end(5)
         cancel_all_button.set_label(_('Cancel all'))
-        cancel_all_button.connect('clicked', self.on_validate_confirmations, "cancel", self.text_tree.store)
+        cancel_all_button.connect('clicked', self.on_validate_confirmations, "cancel", self.confirmation_tree.store)
         self.confirmations_grid.attach(cancel_all_button, 3, 5, 1, 1)
+
+        self.coupon_grid = Gtk.Grid()
+        self.coupon_grid.set_row_spacing(10)
+        coupons_section.grid.attach(self.coupon_grid, 0, 0, 1, 1)
+
+        self.coupon_tree = utils.SimpleTextTree(
+            _('title'), _('sub_link'),
+            overlay_scrolling=False,
+            model=Gtk.ListStore,
+        )
+
+        self.coupon_grid.attach(self.coupon_tree, 0, 2, 2, 1)
+
+        for index, column in enumerate(self.coupon_tree.view.get_columns()):
+            # if index in (0, 1, 2):
+            #    column.set_visible(False)
+
+            # if index == 4:
+            #    column.set_fixed_width(140)
+            # else:
+            #    column.set_fixed_width(220)
+            pass
+
+        # self.coupon_tree.view.set_has_tooltip(True)
+        # self.coupon_tree.view.connect('query-tooltip', self.on_query_confirmations_tooltip)
+        self.coupon_tree.view.connect('row-activated', self.on_coupon_double_clicked)
+
+        coupon_tree_selection = self.coupon_tree.view.get_selection()
+        coupon_tree_selection.connect("changed", self.on_tree_selection_changed)
 
         self.connect("destroy", self.application.on_exit_activate)
 
@@ -282,6 +324,13 @@ class Main(Gtk.ApplicationWindow):
             )
 
         finalize_dialog.show()
+
+    @staticmethod
+    def on_coupon_double_clicked(view: Gtk.TreeView, path: Gtk.TreePath, column: Gtk.TreeViewColumn):
+        model = view.get_model()
+        url = model[path][1]
+        # TODO
+        log.debug(f'oppening {url}')
 
     @staticmethod
     def on_tree_selection_changed(selection: Gtk.TreeSelection) -> None:
