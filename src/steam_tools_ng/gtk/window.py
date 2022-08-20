@@ -106,37 +106,12 @@ class Main(Gtk.ApplicationWindow):
         self.confirmations_grid.set_row_spacing(10)
         general_section.grid.attach(self.confirmations_grid, 0, 1, 1, 1)
 
-        self._info_label = Gtk.Label()
-        self._info_label.set_margin_top(20)
-        self._info_label.set_text(_("If you have confirmations, they will be shown here (updated every 20 seconds)"))
-        self.confirmations_grid.attach(self._info_label, 0, 3, 4, 1)
-
-        self._warning_label = Gtk.Label()
-        self._style_context = self._warning_label.get_style_context()
-        self._style_provider = Gtk.CssProvider()
-        self._style_provider.load_from_data(b"label { background-color: blue; }")
-        self._style_context.add_provider(self._style_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-        self._warning_label.set_margin_top(20)
-        self._warning_label.set_hexpand(True)
-        self.confirmations_grid.attach(self._warning_label, 0, 3, 4, 1)
-
-        self._critical_label = Gtk.Label()
-        self._style_context = self._critical_label.get_style_context()
-        self._style_provider = Gtk.CssProvider()
-        self._style_provider.load_from_data(b"label { background-color: red; }")
-        self._style_context.add_provider(self._style_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-        self._critical_label.set_margin_top(20)
-        self._critical_label.set_hexpand(True)
-        self.confirmations_grid.attach(self._critical_label, 0, 3, 4, 1)
-
         self.confirmation_tree = utils.SimpleTextTree(
             _('mode'), _('id'), _('key'), _('give'), _('to'), _('receive'),
             overlay_scrolling=False,
         )
 
         self.confirmations_grid.attach(self.confirmation_tree, 0, 4, 4, 1)
-
-        self.text_tree_lock = False
 
         for index, column in enumerate(self.confirmation_tree.view.get_columns()):
             if index in (0, 1, 2):
@@ -210,6 +185,9 @@ class Main(Gtk.ApplicationWindow):
         coupon_tree_selection = self.coupon_tree.view.get_selection()
         coupon_tree_selection.connect("changed", self.on_tree_selection_changed)
 
+        self.statusbar = utils.StatusBar()
+        main_grid.attach(self.statusbar, 0, 2, 1, 1)
+
         self.connect("destroy", self.application.on_exit_activate)
 
         loop = asyncio.get_event_loop()
@@ -221,7 +199,7 @@ class Main(Gtk.ApplicationWindow):
         plugins_status = []
 
         for plugin_name in config.plugins.keys():
-            if plugin_name == "confirmations":
+            if plugin_name in ["confirmations", "coupons"]:
                 continue
 
             plugins_status.append(getattr(self, f'{plugin_name}_status'))
@@ -240,6 +218,10 @@ class Main(Gtk.ApplicationWindow):
                         self.confirmations_grid.hide()
                         self.set_size_request(655, 0)
 
+                    continue
+
+                if plugin_name == "coupons":
+                    # TODO
                     continue
 
                 if enabled:
@@ -378,22 +360,6 @@ class Main(Gtk.ApplicationWindow):
 
         if module_data.level:
             _status.set_level(*module_data.level)
-
-    def set_warning(self, message: str) -> None:
-        self._critical_label.hide()
-        self._warning_label.set_markup(utils.markup(message, color='white'))
-        self._warning_label.show()
-
-    def set_critical(self, message: str) -> None:
-        self._warning_label.hide()
-        self._critical_label.set_markup(utils.markup(message, color='white'))
-        self._critical_label.show()
-
-    def unset_warning(self) -> None:
-        self._warning_label.hide()
-
-    def unset_critical(self) -> None:
-        self._critical_label.hide()
 
     def get_play_event(self, module: str) -> asyncio.Event:
         _status = getattr(self, f'{module}_status')

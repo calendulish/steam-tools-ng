@@ -140,7 +140,7 @@ class FinalizeDialog(Gtk.Dialog):
 
         self.set_size_request(0, 0)
         self.header_bar.set_show_title_buttons(False)
-        self.parent_window.text_tree_lock = True
+        self.parent_window.confirmation_tree.lock = True
         loop = asyncio.get_event_loop()
 
         if self.iter:
@@ -171,7 +171,7 @@ class FinalizeDialog(Gtk.Dialog):
                 self.header_bar.set_show_title_buttons(True)
                 self.yes_button.hide()
         else:
-            self.parent_window.text_tree_lock = False
+            self.parent_window.confirmation_tree.lock = False
             self.destroy()
 
     async def finalize(self, keep_iter: bool = False) -> Dict[str, Any]:

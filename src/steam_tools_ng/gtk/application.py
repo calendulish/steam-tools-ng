@@ -162,7 +162,7 @@ class SteamToolsNG(Gtk.Application):
 
         self._time_offset = await config.time_offset(self.webapi_session)
 
-        self.main_window.set_warning(_("Logging on Steam. Please wait!"))
+        self.main_window.statusbar.set_warning("steamguard", _("Logging on Steam. Please wait!"))
         log.info(_("Logging on Steam"))
 
         token = config.parser.get("login", "token")
@@ -181,12 +181,11 @@ class SteamToolsNG(Gtk.Application):
                 await self.do_login(auto=True)
         except aiohttp.ClientError as exception:
             log.exception(str(exception))
-            self.main_window.set_critical(_("Check your connection. (server down?)"))
+            self.main_window.statusbar.set_critical("steamguard", _("Check your connection. (server down?)"))
             await asyncio.sleep(10)
             return  # FIXME: RETRY ###
 
-        self.main_window.unset_critical()
-        self.main_window.unset_warning()
+        self.main_window.statusbar.clear("steamguard")
 
         modules: Dict = {}
 
@@ -209,7 +208,7 @@ class SteamToolsNG(Gtk.Application):
 
                         module = getattr(self, f"run_{module_name}")
 
-                        if module_name == "confirmations":
+                        if module_name in ["confirmations", "coupons"]:
                             task = asyncio.create_task(module())
                         else:
                             self.main_window.set_status(module_name, status=_("Loading"))
@@ -229,16 +228,10 @@ class SteamToolsNG(Gtk.Application):
                     try:
                         await task
                     except asyncio.CancelledError:
-                        if module_name != "confirmations":
+                        if module_name not in  ["confirmations", "coupons"]:
                             self.main_window.set_status(module_name, status=_("Disabled"))
                 else:
                     await asyncio.sleep(1)
-
-            module = getattr(self, f"run_coupons")
-            task = asyncio.create_task(module())
-            log.debug(_("Adding a new callback for %s"), task)
-            task.add_done_callback(utils.safe_task_callback)
-            modules[module_name] = task
 
     @while_window_realized
     async def run_steamguard(self, play_event) -> None:
@@ -273,14 +266,12 @@ class SteamToolsNG(Gtk.Application):
 
         async for module_data in confirmations:
             if module_data.error:
-                self.main_window.set_critical(module_data.error)
+                self.main_window.statusbar.set_critical('confirmations', module_data.error)
             else:
-                self.main_window.unset_critical()
+                self.main_window.statusbar.clear('confirmations')
 
-            if self.main_window.text_tree_lock:
-                self.main_window.set_warning(_("Waiting another confirmation process"))
-                while self.main_window.text_tree_lock: await asyncio.sleep(1)
-                self.main_window.unset_warning()
+            if self.main_window.confirmation_tree.lock:
+                await self.main_window.confirmation_tree.wait_available()
                 continue
 
             if module_data.action == "login":
@@ -288,8 +279,10 @@ class SteamToolsNG(Gtk.Application):
                 continue
 
             if module_data.action == "update":
+                self.main_window.statusbar.set_warning("confirmations", "Updating now!")
                 if module_data.raw_data == self.old_confirmations:
                     log.info(_("Skipping confirmations update because data doesn't seem to have changed"))
+                    self.main_window.statusbar.clear('confirmations')
                     continue
 
                 self.main_window.confirmation_tree.store.clear()
@@ -309,25 +302,21 @@ class SteamToolsNG(Gtk.Application):
                     ])
 
                     for item in itertools.zip_longest(confirmation_.give, confirmation_.receive):
-                        self.main_window.text_tree.store.append(iter_, ['', '', '', item[0], '', item[1]])
+                        self.main_window.confirmation_tree.store.append(iter_, ['', '', '', item[0], '', item[1]])
 
                 self.old_confirmations = module_data.raw_data
+                self.main_window.statusbar.clear('confirmations')
 
     @while_window_realized
     async def run_coupons(self) -> None:
         self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
-
-        botid = config.parser.getint('coupons', 'botid')
-        appid = config.parser.getint('coupons', 'appid')
-        contextid = config.parser.getint('coupons', 'contextid')
-
-        coupons = core.coupons.main(botid, appid, contextid)
+        coupons = core.coupons.main()
 
         async for module_data in coupons:
             if module_data.error:
-                self.main_window.set_critical(module_data.error)
+                self.main_window.statusbar.set_critical("coupons", module_data.error)
             else:
-                self.main_window.unset_critical()
+                self.main_window.statusbar.clear("coupons")
 
             if module_data.action == "update":
                 self.main_window.coupon_tree.store.clear()

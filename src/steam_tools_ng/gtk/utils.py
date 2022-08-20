@@ -22,7 +22,7 @@ import logging
 import traceback
 from collections import OrderedDict
 from types import FrameType
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union, Dict
 
 from gi.repository import Gtk, Gdk
 
@@ -106,6 +106,59 @@ class AsyncButton(Gtk.Button):
             self.__callback(self)
 
 
+class StatusBar(Gtk.Grid):
+    def __init__(self) -> None:
+        super().__init__()
+        self.display = Gdk.Display.get_default()
+        self._style_provider = Gtk.CssProvider()
+        self._style_provider.load_from_data(
+            b"label.warning { background-color: darkblue; color: white; }"
+            b"label.critical {background-color: darkred; color: white; }"
+        )
+        self._style_context = self.get_style_context()
+        self._style_context.add_provider_for_display(self.display, self._style_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+        _separator = Gtk.Separator()
+        self.attach(_separator, 0, 0, 1, 1)
+
+        self._status = Gtk.Label()
+        self._status.set_hexpand(True)
+        self.attach(self._status, 0, 1, 1, 1)
+
+        self.messages = {}
+        for module in config.plugins.keys():
+            self.messages[module] = {"warning": "", "critical": ""}
+
+        loop = asyncio.get_event_loop()
+        task = loop.create_task(self.__loop_messages())
+        task.add_done_callback(safe_task_callback)
+
+    async def __loop_messages(self) -> None:
+        while True:
+            # when query is empty
+            if all([all(value == '' for value in messages.values()) for messages in self.messages.values()]):
+                self._status.set_css_classes([])
+                self._status.set_text('')
+                await asyncio.sleep(1)
+                continue
+
+            for module in self.messages.keys():
+                for level in ["warning", "critical"]:
+                    if self.messages[module][level]:
+                        self._status.set_css_classes([level])
+                        self._status.set_text(f"{module}: {self.messages[module][level]}")
+                        await asyncio.sleep(3)
+
+    def set_warning(self, module: str, message: str) -> None:
+        self.messages[module]["warning"] = message
+
+    def set_critical(self, module: str, message: str) -> None:
+        self.messages[module]["critical"] = message
+
+    def clear(self, module: str) -> None:
+        self.messages[module] = {"warning": "", "critical": ""}
+
+
 class SimpleTextTree(Gtk.ScrolledWindow):
     def __init__(
             self,
@@ -116,15 +169,26 @@ class SimpleTextTree(Gtk.ScrolledWindow):
             model: Callable[..., Union[Gtk.TreeStore, Gtk.ListStore]] = Gtk.TreeStore,
     ) -> None:
         super().__init__()
+        self._main_grid = Gtk.Grid()
+        self.set_child(self._main_grid)
+
         # noinspection PyUnusedLocal
         self._store = model(*[str for number in range(len(elements))])
         self._view = Gtk.TreeView()
         self._view.set_model(self._store)
-        self.set_child(self._view)
+        self._main_grid.attach(self._view, 0, 0, 1, 1)
 
         self.set_hexpand(True)
         self.set_vexpand(True)
         self.set_overlay_scrolling(overlay_scrolling)
+
+        self._lock = False
+        self._lock_label = Gtk.Label()
+        self._lock_label.hide()
+        self._lock_label.set_vexpand(True)
+        self._lock_label.set_hexpand(True)
+        self._lock_label.set_markup(markup(_("Waiting another process"), background="#0000FF77", color="white", font_size="xx-large"))
+        self._main_grid.attach(self._lock_label, 0, 0, 1, 1)
 
         renderer = Gtk.CellRendererText()
 
@@ -136,6 +200,28 @@ class SimpleTextTree(Gtk.ScrolledWindow):
                 column.set_fixed_width(fixed_width)
 
             self._view.append_column(column)
+
+    async def wait_available(self) -> None:
+        while self.lock:
+            await asyncio.sleep(1)
+
+    @property
+    def lock(self) -> bool:
+        return self._lock
+
+    @lock.setter
+    def lock(self, enable_lock: bool) -> None:
+        if enable_lock:
+            log.debug(_("Waiting another process"))
+            self.set_focusable(False)
+            self.set_sensitive(False)
+            self._lock_label.show()
+            self._lock = True
+        else:
+            self.set_focusable(True)
+            self.set_sensitive(True)
+            self._lock_label.hide()
+            self._lock = False
 
     @property
     def store(self) -> Union[Gtk.TreeStore, Gtk.ListStore]:

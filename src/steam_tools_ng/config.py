@@ -90,6 +90,7 @@ giveaway_sort_types = OrderedDict([
 ])
 
 plugins = OrderedDict([
+    ("coupons", "Coupons"),
     ("confirmations", "Confirmations"),
     ("steamtrades", "Steam Trades"),
     ("steamgifts", "Steam Gifts"),
@@ -118,6 +119,7 @@ default_config = {
         'api_key': '',
     },
     'coupons': {
+        'enable': True,
         'botid': '76561198018370992',
         'appid': '753',
         'contextid': '3',
