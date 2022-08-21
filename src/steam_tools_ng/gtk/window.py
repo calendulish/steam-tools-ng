@@ -18,6 +18,7 @@
 import asyncio
 import logging
 from importlib import resources
+from subprocess import call
 from typing import Union, Optional, Tuple
 
 from gi.repository import GdkPixbuf, Gio, Gtk
@@ -104,16 +105,17 @@ class Main(Gtk.ApplicationWindow):
 
         self.confirmations_grid = Gtk.Grid()
         self.confirmations_grid.set_row_spacing(10)
-        general_section.grid.attach(self.confirmations_grid, 0, 1, 1, 1)
+        general_section.grid.attach(self.confirmations_grid, 0, 1, 4, 1)
 
         self.confirmation_tree = utils.SimpleTextTree(
             _('mode'), _('id'), _('key'), _('give'), _('to'), _('receive'),
             overlay_scrolling=False,
         )
 
-        self.confirmations_grid.attach(self.confirmation_tree, 0, 4, 4, 1)
+        self.confirmations_grid.attach(self.confirmation_tree, 0, 0, 4, 1)
 
         for index, column in enumerate(self.confirmation_tree.view.get_columns()):
+            pass
             if index in (0, 1, 2):
                 column.set_visible(False)
 
@@ -133,39 +135,39 @@ class Main(Gtk.ApplicationWindow):
         accept_button.set_margin_end(5)
         accept_button.set_label(_('Accept selected'))
         accept_button.connect('clicked', self.on_validate_confirmations, "allow", tree_selection)
-        self.confirmations_grid.attach(accept_button, 0, 5, 1, 1)
+        self.confirmations_grid.attach(accept_button, 0, 1, 1, 1)
 
         cancel_button = Gtk.Button()
         cancel_button.set_margin_start(5)
         cancel_button.set_margin_end(5)
         cancel_button.set_label(_('Cancel selected'))
         cancel_button.connect('clicked', self.on_validate_confirmations, "cancel", tree_selection)
-        self.confirmations_grid.attach(cancel_button, 1, 5, 1, 1)
+        self.confirmations_grid.attach(cancel_button, 1, 1, 1, 1)
 
         accept_all_button = Gtk.Button()
         accept_all_button.set_margin_start(5)
         accept_all_button.set_margin_end(5)
         accept_all_button.set_label(_('Accept all'))
         accept_all_button.connect('clicked', self.on_validate_confirmations, "allow", self.confirmation_tree.store)
-        self.confirmations_grid.attach(accept_all_button, 2, 5, 1, 1)
+        self.confirmations_grid.attach(accept_all_button, 2, 1, 1, 1)
 
         cancel_all_button = Gtk.Button()
         cancel_all_button.set_margin_start(5)
         cancel_all_button.set_margin_end(5)
         cancel_all_button.set_label(_('Cancel all'))
         cancel_all_button.connect('clicked', self.on_validate_confirmations, "cancel", self.confirmation_tree.store)
-        self.confirmations_grid.attach(cancel_all_button, 3, 5, 1, 1)
+        self.confirmations_grid.attach(cancel_all_button, 3, 1, 1, 1)
 
         self.coupon_grid = Gtk.Grid()
         self.coupon_grid.set_row_spacing(10)
         coupons_section.grid.attach(self.coupon_grid, 0, 0, 1, 1)
 
         self.coupon_tree = utils.SimpleTextTree(
-            _('title'), _('sub_link'),
+            'CD', 'SD', _('price'), _('real price'), _('name'), _('appids'),
             overlay_scrolling=False,
             model=Gtk.ListStore,
         )
-
+        self.coupon_tree.store.set_sort_column_id(3, Gtk.SortType.ASCENDING)
         self.coupon_grid.attach(self.coupon_tree, 0, 2, 2, 1)
 
         for index, column in enumerate(self.coupon_tree.view.get_columns()):
@@ -310,9 +312,8 @@ class Main(Gtk.ApplicationWindow):
     @staticmethod
     def on_coupon_double_clicked(view: Gtk.TreeView, path: Gtk.TreePath, column: Gtk.TreeViewColumn):
         model = view.get_model()
-        url = model[path][1]
-        # TODO
-        log.debug(f'oppening {url}')
+        appids = model[path][5]
+        call(f'{config.file_manager} "https://store.steampowered.com/app/{appids}"')
 
     @staticmethod
     def on_tree_selection_changed(selection: Gtk.TreeSelection) -> None:

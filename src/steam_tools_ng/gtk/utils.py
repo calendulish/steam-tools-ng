@@ -25,6 +25,7 @@ from types import FrameType
 from typing import Any, Callable, List, Optional, Union, Dict
 
 from gi.repository import Gtk, Gdk
+from stlib import webapi
 
 from . import async_gtk
 from .. import i18n, config
@@ -176,10 +177,10 @@ class SimpleTextTree(Gtk.ScrolledWindow):
         self._store = model(*[str for number in range(len(elements))])
         self._view = Gtk.TreeView()
         self._view.set_model(self._store)
+        self._view.set_hexpand(True)
+        self._view.set_vexpand(True)
         self._main_grid.attach(self._view, 0, 0, 1, 1)
 
-        self.set_hexpand(True)
-        self.set_vexpand(True)
         self.set_overlay_scrolling(overlay_scrolling)
 
         self._lock = False
@@ -408,25 +409,17 @@ class Status(Gtk.Frame):
         self._level_bar.set_max_value(0)
 
 
-class Section(Gtk.Frame):
+class Section(Gtk.Grid):
     def __init__(self, name: str, label: str) -> None:
-        super().__init__(label=label)
-        self.set_label_align(0.03)
+        super().__init__()
+        # for backward compatibility
+        self.grid = self
+
         self.set_name(name)
-        self.set_margin_start(10)
-        self.set_margin_end(10)
+        self.set_row_spacing(10)
+        self.set_column_spacing(10)
         self.set_margin_top(10)
         self.set_margin_bottom(10)
-
-        self.grid = Gtk.Grid()
-        self.grid.set_name(name)
-        self.grid.set_row_spacing(10)
-        self.grid.set_column_spacing(10)
-        self.grid.set_margin_start(10)
-        self.grid.set_margin_end(10)
-        self.grid.set_margin_top(10)
-        self.grid.set_margin_bottom(10)
-        self.set_child(self.grid)
 
     # noinspection PyProtectedMember
     @staticmethod
@@ -568,6 +561,37 @@ def sanitize_confirmation(value: Optional[List[str]]) -> str:
         result = _("Various")
 
     return result
+
+
+def sanitize_package_details(package_details: List[webapi.Package]) -> List[webapi.Package]:
+    previous = ()
+
+    for package in package_details:
+        for index, app in enumerate(package.apps):
+            if not previous:
+                previous = (package, index, app)
+                continue
+
+            if previous[2] != app:
+                return package_details
+
+    return [previous[0]]
+
+
+def package_details_to_text(package_details: List[webapi.Package], parameter: str) -> str:
+    values = []
+
+    for package in package_details:
+        param = getattr(package, parameter)
+
+        if not isinstance(param, list):
+            values.append(str(param))
+            continue
+
+        for sub in param:
+            values.append(str(sub))
+
+    return ':'.join(list(dict.fromkeys(values)))
 
 
 def remove_letters(text: str) -> str:

@@ -321,11 +321,57 @@ class SteamToolsNG(Gtk.Application):
             if module_data.action == "update":
                 self.main_window.coupon_tree.store.clear()
 
-                for coupon_ in module_data.raw_data:
+                for index, coupon_ in enumerate(module_data.raw_data):
+                    package_link = coupon_.actions[0]['link']
+                    packageids = [int(id_) for id_ in package_link.split('=')[1].split(',')]
+
+                    try:
+                        package_details = await self.webapi_session.get_package_details(packageids)
+
+                        if not package_details:
+                            raise aiohttp.ClientError
+
+                    except aiohttp.ClientError:
+                        log.error(_("Failed to get details for coupon %s"), coupon_.name)
+                        await asyncio.sleep(10)
+                        continue
+
+                    package_details = utils.sanitize_package_details(package_details)
+
+                    games_prices = []
+                    for package in package_details:
+                        try:
+                            games_prices.append(await self.webapi_session.get_games_prices(package.apps))
+                        except aiohttp.ClientError:
+                            log.error(_("Failed to get game prices."))
+                            await asyncio.sleep(10)
+                            continue
+                        else:
+                            await asyncio.sleep(.5)
+
+                    discount = coupon_.name.split('%')[0]
+                    current_price = ','.join([''.join([str(price[1]) for price in prices]) for prices in games_prices])
+
+                    if current_price:
+                        real_price = float(current_price) - (float(current_price) * float(discount) / 100)
+                    else:
+                        real_price = 0
+
                     iter_ = self.main_window.coupon_tree.store.append([
+                        discount,
+                        utils.package_details_to_text(package_details, 'discount'),
+                        current_price,
+                        str(round(real_price, 2)),
                         utils.markup(coupon_.name, foreground='blue', underline='single'),
-                        coupon_.actions[0]['link'],
+                        utils.package_details_to_text(package_details, 'apps'),
                     ])
+
+                    if index and not index % 100:
+                        self.main_window.statusbar.set_warning("coupons", _("Api rate limit reached. Waiting."))
+                        await asyncio.sleep(2 * 60)
+                        self.main_window.statusbar.clear("coupons")
+
+                    await asyncio.sleep(.5)
 
     @while_window_realized
     async def run_steamtrades(self, play_event) -> None:

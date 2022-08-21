@@ -44,4 +44,4 @@ async def main() -> Generator[utils.ModuleData, None, None]:
     else:
         yield utils.ModuleData(action="update", raw_data=inventory)
 
-    await asyncio.sleep(60)
+    await asyncio.sleep(30 * 60)

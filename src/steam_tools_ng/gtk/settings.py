@@ -57,6 +57,7 @@ class SettingsDialog(Gtk.Dialog):
         content_area.append(content_grid)
 
         stack = Gtk.Stack()
+        stack.set_margin_end(10)
         content_grid.attach(stack, 1, 0, 1, 1)
 
         sidebar = Gtk.StackSidebar()
