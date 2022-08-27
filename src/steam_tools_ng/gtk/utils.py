@@ -22,11 +22,12 @@ import logging
 import traceback
 from collections import OrderedDict
 from types import FrameType
-from typing import Any, Callable, List, Optional, Union, Dict
+from typing import Any, Callable, List, Optional, Union
+from xml.etree import ElementTree
 
 from gi.repository import Gtk, Gdk
-from stlib import webapi
 
+from stlib import webapi
 from . import async_gtk
 from .. import i18n, config
 
@@ -117,7 +118,11 @@ class StatusBar(Gtk.Grid):
             b"label.critical {background-color: darkred; color: white; }"
         )
         self._style_context = self.get_style_context()
-        self._style_context.add_provider_for_display(self.display, self._style_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        self._style_context.add_provider_for_display(
+            self.display,
+            self._style_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+        )
 
         _separator = Gtk.Separator()
         self.attach(_separator, 0, 0, 1, 1)
@@ -188,7 +193,16 @@ class SimpleTextTree(Gtk.ScrolledWindow):
         self._lock_label.hide()
         self._lock_label.set_vexpand(True)
         self._lock_label.set_hexpand(True)
-        self._lock_label.set_markup(markup(_("Waiting another process"), background="#0000FF77", color="white", font_size="xx-large"))
+
+        self._lock_label.set_markup(
+            markup(
+                _("Waiting another process"),
+                background="#0000FF77",
+                color="white",
+                font_size="xx-large",
+            )
+        )
+
         self._main_grid.attach(self._lock_label, 0, 0, 1, 1)
 
         renderer = Gtk.CellRendererText()
@@ -529,6 +543,11 @@ def markup(text: str, **kwargs: Any) -> str:
     return ' '.join(markup_string)
 
 
+def unmarkup(text: str) -> str:
+    tree = ElementTree.fromstring(text)
+    return tree.text
+
+
 def copy_childrens(from_model: Gtk.TreeModel, to_model: Gtk.TreeModel, iter_: Gtk.TreeIter, column: int) -> None:
     childrens = from_model.iter_n_children(iter_)
 
@@ -576,22 +595,6 @@ def sanitize_package_details(package_details: List[webapi.Package]) -> List[weba
                 return package_details
 
     return [previous[0]]
-
-
-def package_details_to_text(package_details: List[webapi.Package], parameter: str) -> str:
-    values = []
-
-    for package in package_details:
-        param = getattr(package, parameter)
-
-        if not isinstance(param, list):
-            values.append(str(param))
-            continue
-
-        for sub in param:
-            values.append(str(sub))
-
-    return ':'.join(list(dict.fromkeys(values)))
 
 
 def remove_letters(text: str) -> str:

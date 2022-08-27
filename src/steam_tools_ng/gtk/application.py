@@ -228,7 +228,7 @@ class SteamToolsNG(Gtk.Application):
                     try:
                         await task
                     except asyncio.CancelledError:
-                        if module_name not in  ["confirmations", "coupons"]:
+                        if module_name not in ["confirmations", "coupons"]:
                             self.main_window.set_status(module_name, status=_("Disabled"))
                 else:
                     await asyncio.sleep(1)
@@ -310,68 +310,31 @@ class SteamToolsNG(Gtk.Application):
     @while_window_realized
     async def run_coupons(self) -> None:
         self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
-        coupons = core.coupons.main()
+        coupons = core.coupons.main(self.main_window.fetch_coupon_event)
 
         async for module_data in coupons:
             if module_data.error:
                 self.main_window.statusbar.set_critical("coupons", module_data.error)
-            else:
+
+            if module_data.info:
+                self.main_window.statusbar.set_warning("coupons", module_data.info)
+
+            if not any([module_data.info, module_data.error]):
                 self.main_window.statusbar.clear("coupons")
 
             if module_data.action == "update":
+                iter_ = self.main_window.coupon_tree.store.append([
+                    str(module_data.raw_data['price']),
+                    utils.markup(module_data.raw_data['name'], foreground='blue', underline='single'),
+                    str(module_data.raw_data['assetid']),
+                ])
+
+            if module_data.action == "clear":
                 self.main_window.coupon_tree.store.clear()
 
-                for index, coupon_ in enumerate(module_data.raw_data):
-                    package_link = coupon_.actions[0]['link']
-                    packageids = [int(id_) for id_ in package_link.split('=')[1].split(',')]
-
-                    try:
-                        package_details = await self.webapi_session.get_package_details(packageids)
-
-                        if not package_details:
-                            raise aiohttp.ClientError
-
-                    except aiohttp.ClientError:
-                        log.error(_("Failed to get details for coupon %s"), coupon_.name)
-                        await asyncio.sleep(10)
-                        continue
-
-                    package_details = utils.sanitize_package_details(package_details)
-
-                    games_prices = []
-                    for package in package_details:
-                        try:
-                            games_prices.append(await self.webapi_session.get_games_prices(package.apps))
-                        except aiohttp.ClientError:
-                            log.error(_("Failed to get game prices."))
-                            await asyncio.sleep(10)
-                            continue
-                        else:
-                            await asyncio.sleep(.5)
-
-                    discount = coupon_.name.split('%')[0]
-                    current_price = ','.join([''.join([str(price[1]) for price in prices]) for prices in games_prices])
-
-                    if current_price:
-                        real_price = float(current_price) - (float(current_price) * float(discount) / 100)
-                    else:
-                        real_price = 0
-
-                    iter_ = self.main_window.coupon_tree.store.append([
-                        discount,
-                        utils.package_details_to_text(package_details, 'discount'),
-                        current_price,
-                        str(round(real_price, 2)),
-                        utils.markup(coupon_.name, foreground='blue', underline='single'),
-                        utils.package_details_to_text(package_details, 'apps'),
-                    ])
-
-                    if index and not index % 100:
-                        self.main_window.statusbar.set_warning("coupons", _("Api rate limit reached. Waiting."))
-                        await asyncio.sleep(2 * 60)
-                        self.main_window.statusbar.clear("coupons")
-
-                    await asyncio.sleep(.5)
+            if module_data.action == "update_level":
+                self.main_window.coupon_progress.set_value(module_data.raw_data[0])
+                self.main_window.coupon_progress.set_max_value(module_data.raw_data[1])
 
     @while_window_realized
     async def run_steamtrades(self, play_event) -> None:

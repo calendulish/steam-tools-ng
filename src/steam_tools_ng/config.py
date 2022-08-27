@@ -123,6 +123,9 @@ default_config = {
         'botid': '76561198018370992',
         'appid': '753',
         'contextid': '3',
+        'partnerid': '58105264',
+        'token': '6Z6Xn5NM',
+        'last_trade_time': 0,
     },
     'confirmations': {
         'enable': True,

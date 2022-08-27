@@ -23,7 +23,7 @@ from typing import Union, Optional, Tuple
 
 from gi.repository import GdkPixbuf, Gio, Gtk
 
-from . import confirmation, utils
+from . import confirmation, utils, coupon
 from .. import config, i18n, core
 
 _ = i18n.get_translation
@@ -82,7 +82,7 @@ class Main(Gtk.ApplicationWindow):
         general_section = utils.Section("general", _("General"))
         general_section.stackup_section(stack)
 
-        coupons_section = utils.Section("coupons", _("Coupons"))
+        coupons_section = utils.Section("coupons", _("Free Coupons"))
         coupons_section.stackup_section(stack)
 
         self.status_grid = Gtk.Grid()
@@ -115,7 +115,6 @@ class Main(Gtk.ApplicationWindow):
         self.confirmations_grid.attach(self.confirmation_tree, 0, 0, 4, 1)
 
         for index, column in enumerate(self.confirmation_tree.view.get_columns()):
-            pass
             if index in (0, 1, 2):
                 column.set_visible(False)
 
@@ -127,21 +126,21 @@ class Main(Gtk.ApplicationWindow):
         self.confirmation_tree.view.set_has_tooltip(True)
         self.confirmation_tree.view.connect('query-tooltip', self.on_query_confirmations_tooltip)
 
-        tree_selection = self.confirmation_tree.view.get_selection()
-        tree_selection.connect("changed", self.on_tree_selection_changed)
+        confirmation_tree_selection = self.confirmation_tree.view.get_selection()
+        confirmation_tree_selection.connect("changed", self.on_tree_selection_changed)
 
         accept_button = Gtk.Button()
         accept_button.set_margin_start(5)
         accept_button.set_margin_end(5)
         accept_button.set_label(_('Accept selected'))
-        accept_button.connect('clicked', self.on_validate_confirmations, "allow", tree_selection)
+        accept_button.connect('clicked', self.on_validate_confirmations, "allow", confirmation_tree_selection)
         self.confirmations_grid.attach(accept_button, 0, 1, 1, 1)
 
         cancel_button = Gtk.Button()
         cancel_button.set_margin_start(5)
         cancel_button.set_margin_end(5)
         cancel_button.set_label(_('Cancel selected'))
-        cancel_button.connect('clicked', self.on_validate_confirmations, "cancel", tree_selection)
+        cancel_button.connect('clicked', self.on_validate_confirmations, "cancel", confirmation_tree_selection)
         self.confirmations_grid.attach(cancel_button, 1, 1, 1, 1)
 
         accept_all_button = Gtk.Button()
@@ -163,29 +162,47 @@ class Main(Gtk.ApplicationWindow):
         coupons_section.grid.attach(self.coupon_grid, 0, 0, 1, 1)
 
         self.coupon_tree = utils.SimpleTextTree(
-            'CD', 'SD', _('price'), _('real price'), _('name'), _('appids'),
+            _('price'), _('name'), 'assetid',
             overlay_scrolling=False,
             model=Gtk.ListStore,
         )
-        self.coupon_tree.store.set_sort_column_id(3, Gtk.SortType.ASCENDING)
-        self.coupon_grid.attach(self.coupon_tree, 0, 2, 2, 1)
 
-        for index, column in enumerate(self.coupon_tree.view.get_columns()):
-            # if index in (0, 1, 2):
-            #    column.set_visible(False)
+        self.coupon_tree.store.set_sort_column_id(0, Gtk.SortType.ASCENDING)
+        self.coupon_grid.attach(self.coupon_tree, 0, 0, 3, 2)
 
-            # if index == 4:
-            #    column.set_fixed_width(140)
-            # else:
-            #    column.set_fixed_width(220)
-            pass
+        coupon_classid_column = self.coupon_tree.view.get_column(2)
+        coupon_classid_column.set_visible(False)
 
-        # self.coupon_tree.view.set_has_tooltip(True)
-        # self.coupon_tree.view.connect('query-tooltip', self.on_query_confirmations_tooltip)
         self.coupon_tree.view.connect('row-activated', self.on_coupon_double_clicked)
 
         coupon_tree_selection = self.coupon_tree.view.get_selection()
         coupon_tree_selection.connect("changed", self.on_tree_selection_changed)
+
+        self.coupon_progress = Gtk.LevelBar()
+        self.coupon_grid.attach(self.coupon_progress, 0, 3, 3, 1)
+
+        get_coupon_button = Gtk.Button()
+        get_coupon_button.set_margin_start(5)
+        get_coupon_button.set_margin_end(5)
+        get_coupon_button.set_label(_('Get selected coupon'))
+        get_coupon_button.connect('clicked', self.on_get_coupon, coupon_tree_selection)
+        self.coupon_grid.attach(get_coupon_button, 2, 4, 1, 1)
+
+        fetch_coupons_button = Gtk.Button()
+        fetch_coupons_button.set_margin_start(5)
+        fetch_coupons_button.set_margin_end(5)
+        fetch_coupons_button.set_label(_('Fetch coupons'))
+        fetch_coupons_button.connect('clicked', self.on_fetch_coupons)
+        self.coupon_grid.attach(fetch_coupons_button, 0, 4, 1, 1)
+
+        self.fetch_coupon_event = asyncio.Event()
+
+        stop_fetching_coupons_button = Gtk.Button()
+        stop_fetching_coupons_button.set_margin_start(5)
+        stop_fetching_coupons_button.set_margin_end(5)
+        stop_fetching_coupons_button.set_label(_('Stop fetching coupons'))
+        stop_fetching_coupons_button.connect('clicked', self.on_stop_fetching_coupons)
+        self.coupon_grid.attach(stop_fetching_coupons_button, 1, 4, 1, 1)
 
         self.statusbar = utils.StatusBar()
         main_grid.attach(self.statusbar, 0, 2, 1, 1)
@@ -286,6 +303,16 @@ class Main(Gtk.ApplicationWindow):
 
         return False
 
+    def on_fetch_coupons(self, button: Gtk.Button) -> None:
+        self.fetch_coupon_event.set()
+
+    def on_stop_fetching_coupons(self, button: Gtk.Button):
+        self.fetch_coupon_event.clear()
+
+    def on_get_coupon(self, button: Gtk.Button, model: Union[Gtk.TreeModel, Gtk.TreeSelection]) -> None:
+        get_coupon_dialog = coupon.GetCouponDialog(self, self.application, *model.get_selected())
+        get_coupon_dialog.show()
+
     def on_validate_confirmations(
             self,
             button: Gtk.Button,
@@ -312,7 +339,7 @@ class Main(Gtk.ApplicationWindow):
     @staticmethod
     def on_coupon_double_clicked(view: Gtk.TreeView, path: Gtk.TreePath, column: Gtk.TreeViewColumn):
         model = view.get_model()
-        appids = model[path][5]
+        appids = model[path][2]
         call(f'{config.file_manager} "https://store.steampowered.com/app/{appids}"')
 
     @staticmethod
