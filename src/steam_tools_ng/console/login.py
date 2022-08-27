@@ -49,11 +49,6 @@ class Login:
         self._api_key = ''
 
     @property
-    def login_session(self) -> login.Login:
-        assert isinstance(self._login_session, login.Login)
-        return self._login_session
-
-    @property
     def username(self) -> str:
         return self._username
 
@@ -105,12 +100,9 @@ class Login:
             encrypted_password = codecs.encode(password_key.decode(), 'rot13')
             config.new("login", "password", encrypted_password)
 
-        self._login_session = login.get_session(
-            0,
-            self.username,
-            self.__password,
-            http_session=self.cli.session,
-        )
+        self._login_session = login.Login.get_session(0)
+        self._login_session.username = self.username
+        self._login_session.password = self.__password
 
         kwargs = {'emailauth': self.mail_code, 'mobile_login': self.mobile_login}
 
@@ -130,7 +122,6 @@ class Login:
             # self.code_item.show()
 
         kwargs['shared_secret'] = self.shared_secret
-        kwargs['time_offset'] = self.cli.time_offset
         kwargs['authenticator_code'] = self.steam_code
 
         log.info(_("Logging in"))
@@ -140,7 +131,7 @@ class Login:
                 if not config.parser.get('steam', 'api_key'):
                     raise AttributeError
 
-                login_data = await self.login_session.do_login(**kwargs)
+                login_data = await self._login_session.do_login(**kwargs)
             except login.MailCodeError:
                 user_input = utils.safe_input(_("Write code received by email"))
                 assert isinstance(user_input, str), "safe_input is returning bool when it should return str"

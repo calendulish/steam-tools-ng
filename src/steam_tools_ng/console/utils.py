@@ -16,18 +16,12 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
-import codecs
-import getpass
 import logging
 import os
 import sys
-import tempfile
 from typing import Optional, Union, List, Tuple
 
-import aiohttp
-from stlib import webapi, universe, login
-
-from .. import i18n, config, core
+from .. import i18n, core
 
 log = logging.getLogger(__name__)
 _ = i18n.get_translation

@@ -205,12 +205,9 @@ class LoginDialog(Gtk.Dialog):
         self.save_password_item.set_sensitive(False)
         self.login_button.set_sensitive(False)
 
-        self._login_session = login.get_session(
-            0,
-            self.username,
-            self.__password,
-            http_session=self.application.session,
-        )
+        self._login_session = login.Login.get_session(0)
+        self._login_session.username = self.username
+        self._login_session.password = self.__password
 
         kwargs = {'emailauth': self.mail_code, 'mobile_login': self.mobile_login}
 
@@ -230,7 +227,6 @@ class LoginDialog(Gtk.Dialog):
             # self.code_item.show()
 
         kwargs['shared_secret'] = self.shared_secret
-        kwargs['time_offset'] = self.application.time_offset
         kwargs['authenticator_code'] = self.steam_code
 
         self.status.info(_("Logging in"))

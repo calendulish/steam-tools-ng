@@ -18,6 +18,7 @@
 import asyncio
 import logging
 import sys
+from typing import Optional
 
 import aiohttp
 from stlib import universe, webapi, login
@@ -41,12 +42,17 @@ class NewAuthenticator:
         return self._sms_code
 
     @property
-    def oauth_token(self) -> None:
+    def oauth_token(self) -> str:
         return config.parser.get("login", "oauth_token")
 
     @property
-    def steamid(self) -> None:
-        return config.parser.get("login", "steamid")
+    def steamid(self) -> Optional[universe.SteamId]:
+        steamid = config.parser.getint("login", "steamid")
+
+        if steamid:
+            return universe.generate_steamid(steamid)
+        else:
+            return None
 
     async def add_authenticator(self) -> None:
         log.info(_("Retrieving user data"))
@@ -59,13 +65,13 @@ class NewAuthenticator:
 
             self.cli.on_quit(1)
 
-        deviceid = universe.generate_device_id(token=self.oauth_token)
-        oauth = {'steamid': self.steamid, 'oauth_token': self.oauth_token}
+        deviceid = universe.generate_device_id(self.oauth_token)
+        oauth = {'steamid': self.steamid.id64, 'oauth_token': self.oauth_token}
         login_data = login.LoginData(auth={}, oauth=oauth)
 
         if not self._login_data or not self.sms_code:
             try:
-                self._login_data = await self.cli.webapi_session.add_authenticator(login_data, deviceid)
+                self._login_data = await self.cli.webapi_session.new_authenticator(login_data, deviceid)
             except aiohttp.ClientError:
                 log.error(_("Check your connection. (server down?)"))
                 self.cli.on_quit(1)
@@ -91,7 +97,7 @@ class NewAuthenticator:
         log.info(_("Adding authenticator"))
 
         try:
-            await self.cli.webapi_session.finalize_add_authenticator(
+            await self.cli.webapi_session.add_authenticator(
                 self._login_data, self.sms_code, time_offset=self.cli.time_offset,
             )
         except webapi.SMSCodeError:

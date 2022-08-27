@@ -18,11 +18,13 @@
 import asyncio
 import logging
 import time
-from typing import Any, Dict, Union
+from typing import Union
 
 from gi.repository import Gtk
 
-from . import utils
+from stlib import community
+from stlib import universe
+from . import utils, confirmation
 from .. import config, i18n
 
 log = logging.getLogger(__name__)
@@ -41,6 +43,7 @@ class GetCouponDialog(Gtk.Dialog):
         super().__init__(use_header_bar=True)
         self.parent_window = parent_window
         self.application = application
+        self.community_session = community.Community.get_session(0)
         self.model = model
         self.iter = iter_
 
@@ -132,17 +135,52 @@ class GetCouponDialog(Gtk.Dialog):
         else:
             self.destroy()
 
-    async def get_coupon(self) -> Dict[str, Any]:
+    async def get_coupon(self) -> None:
         self.status.info(_("Waiting Steam Server"))
         botid = config.parser.getint('coupons', 'botid')
-        partnerid = config.parser.getint('coupons', 'partnerid')
         token = config.parser.get('coupons', 'token')
         contextid = config.parser.getint('coupons', 'contextid')
         appid = config.parser.getint('coupons', 'appid')
         assetid = int(self.model.get_value(self.iter, 2))
         receive = [(appid, assetid, 1)]
 
-        result = await self.application.webapi_session.send_trade_offer(botid, partnerid, token, contextid, [], receive)
+        steamid = universe.generate_steamid(botid)
+        json_data = await self.community_session.send_trade_offer(steamid, token, contextid, [], receive)
         config.new("coupons", "last_trade_time", int(time.time()))
 
-        return result
+        if 'needs_email_confirmation' in json_data and json_data['needs_email_confirmation']:
+            self.status.info(_('You will need to manually confirm the trade offer. Check your email.'))
+            self.header_bar.set_show_title_buttons(True)
+            self.yes_button.hide()
+            return
+
+        if 'needs_mobile_confirmation' in json_data and json_data['needs_mobile_confirmation']:
+            confirmation_store = self.parent_window.confirmation_tree.store
+            confirmation_count = len(confirmation_store)
+
+            while True:
+                target = None
+
+                for index in range(confirmation_count):
+                    iter_ = confirmation_store[index].iter
+                    if confirmation_store.get_value(iter_, 1) == json_data['tradeofferid']:
+                        target = iter_
+                        break
+
+                if target:
+                    break
+                else:
+                    self.status.info(_('Waiting trade confirmation'))
+                    await asyncio.sleep(5)
+
+            finalize_dialog = confirmation.FinalizeDialog(
+                self.parent_window,
+                self.application,
+                'allow',
+                confirmation_store, target,
+            )
+
+            finalize_dialog.show()
+            finalize_dialog.yes_button.emit('clicked')
+            config.new("coupons", "last_trade_time", int(time.time()))
+            self.destroy()

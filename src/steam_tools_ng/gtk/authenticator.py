@@ -17,6 +17,7 @@
 #
 import asyncio
 import logging
+from typing import Optional
 
 import aiohttp
 from gi.repository import Gtk, Gdk
@@ -35,6 +36,7 @@ class NewAuthenticatorDialog(Gtk.Dialog):
         super().__init__(use_header_bar=True)
         self.application = application
         self._login_data = None
+        self.webapi_session = webapi.SteamWebAPI.get_session(0)
 
         self.header_bar = self.get_header_bar()
 
@@ -80,12 +82,17 @@ class NewAuthenticatorDialog(Gtk.Dialog):
         return self.sms_code_item.get_text()
 
     @property
-    def oauth_token(self) -> None:
+    def oauth_token(self) -> str:
         return config.parser.get("login", "oauth_token")
 
     @property
-    def steamid(self) -> None:
-        return config.parser.get("login", "steamid")
+    def steamid(self) -> Optional[universe.SteamId]:
+        steamid = config.parser.getint("login", "steamid")
+
+        if steamid:
+            return universe.generate_steamid(steamid)
+        else:
+            return None
 
     def on_key_release_event(
             self,
@@ -111,13 +118,9 @@ class NewAuthenticatorDialog(Gtk.Dialog):
 
             return
 
-        deviceid = universe.generate_device_id(token=self.oauth_token)
-        oauth = {'steamid': self.steamid, 'oauth_token': self.oauth_token}
-        login_data = login.LoginData(auth={}, oauth=oauth)
-
         if not self._login_data or not self.sms_code:
             try:
-                self._login_data = await self.application.webapi_session.add_authenticator(login_data, deviceid)
+                self._login_data = await self.webapi_session.new_authenticator(self.steamid, self.oauth_token)
             except aiohttp.ClientError:
                 self.status.error(_("Check your connection. (server down?)"))
             except webapi.AuthenticatorExists:
@@ -148,9 +151,7 @@ class NewAuthenticatorDialog(Gtk.Dialog):
         self.status.info(_("Adding authenticator"))
 
         try:
-            await self.application.webapi_session.finalize_add_authenticator(
-                self._login_data, self.sms_code, time_offset=self.application.time_offset,
-            )
+            await self.webapi_session.add_authenticator(self._login_data, self.sms_code)
         except webapi.SMSCodeError:
             self.status.info(_("Invalid SMS Code. Please,\ncheck the code and try again."))
             self.user_details_section.show()

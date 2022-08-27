@@ -25,9 +25,10 @@ from pathlib import Path
 from typing import Optional, Any, Callable
 
 import aiohttp
-from stlib import plugins, webapi
 
-from . import authenticator, utils, login
+from stlib import plugins, universe, login, community, webapi, internals
+from . import authenticator, utils
+from . import login as cli_login
 from .. import i18n, config, core
 
 log = logging.getLogger(__name__)
@@ -82,31 +83,17 @@ class SteamToolsNG:
             logging.critical("Wrong command line params!")
             sys.exit(1)
 
-        self._session = None
-        self._webapi_session = None
-
-        self.api_login: Optional[webapi.Login] = None
-        self._time_offset = 0
         self.api_url = config.parser.get("steam", "api_url")
         self.api_key = config.parser.get("steam", "api_key")
 
     @property
-    def time_offset(self) -> int:
-        return self._time_offset
+    def steamid(self) -> Optional[universe.SteamId]:
+        steamid = config.parser.getint("login", "steamid")
 
-    @property
-    def session(self) -> aiohttp.ClientSession:
-        assert isinstance(self._session, aiohttp.ClientSession), "session has not been created"
-        return self._session
-
-    @property
-    def webapi_session(self) -> webapi.SteamWebAPI:
-        assert isinstance(self._webapi_session, webapi.SteamWebAPI), "webapi session has not been created"
-        return self._webapi_session
-
-    @property
-    def steamid(self) -> Optional[int]:
-        return config.parser.getint("login", "steamid")
+        if steamid:
+            return universe.generate_steamid(steamid)
+        else:
+            return None
 
     # FIXME: https://github.com/python/asyncio/pull/465
     def run(self) -> None:
@@ -119,7 +106,7 @@ class SteamToolsNG:
             loop.run_forever()
 
     async def do_login(self, *, block: bool = True, auto: bool = False) -> None:
-        login_session = login.Login(self)
+        login_session = cli_login.Login(self)
         await login_session.do_login(auto)
 
     async def async_activate(self) -> None:
@@ -130,16 +117,11 @@ class SteamToolsNG:
             ssl_context.load_verify_locations(cafile=_executable_path / 'etc' / 'cacert.pem')
 
         tcp_connector = aiohttp.TCPConnector(ssl=ssl_context)
-        self._session = aiohttp.ClientSession(raise_for_status=True, connector=tcp_connector)
-
-        self._webapi_session = webapi.get_session(
-            0,
-            api_url=self.api_url,
-            key=self.api_key,
-            http_session=self._session
-        )
-
-        self._time_offset = await config.time_offset(self.webapi_session)
+        http_session = aiohttp.ClientSession(raise_for_status=True, connector=tcp_connector)
+        login_session = await login.Login.new_session(0, api_url=self.api_url, http_session=http_session)
+        community_session = await community.Community.new_session(0, api_url=self.api_url)
+        webapi_session = await webapi.SteamWebAPI.new_session(0, api_key=self.api_key, api_url=self.api_url)
+        internals_session = await internals.Internals.new_session(0)
 
         log.info(_("Logging on Steam. Please wait!"))
 
@@ -149,10 +131,10 @@ class SteamToolsNG:
         if not token or not token_secure or not self.steamid:
             await self.do_login()
 
-        self.session.cookie_jar.update_cookies(config.login_cookies())  # type: ignore
+        login_session.restore_login(self.steamid, token, token_secure)
 
         try:
-            if self.api_key and await self.webapi_session.is_logged_in(self.steamid):
+            if self.api_key and await login_session.is_logged_in(self.steamid):
                 log.info("Steam login Successful")
             else:
                 await self.do_login(auto=True)
@@ -174,14 +156,13 @@ class SteamToolsNG:
 
     @while_running
     async def run_steamguard(self) -> None:
-        steamguard = core.steamguard.main(self.time_offset)
+        steamguard = core.steamguard.main()
 
         async for module_data in steamguard:
             utils.set_console(module_data)
 
     @while_running
     async def run_cardfarming(self) -> None:
-        self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
         cardfarming = core.cardfarming.main(self.steamid, self.custom_gameid)
 
         async for module_data in cardfarming:
@@ -189,7 +170,6 @@ class SteamToolsNG:
 
     @while_running
     async def run_fakerun(self) -> None:
-        self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
         fakerun = core.fakerun.main(self.steamid, self.custom_gameid)
 
         async for module_data in fakerun:
@@ -197,7 +177,6 @@ class SteamToolsNG:
 
     @while_running
     async def run_steamtrades(self) -> None:
-        self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
         steamtrades = core.steamtrades.main()
 
         async for module_data in steamtrades:
@@ -209,7 +188,6 @@ class SteamToolsNG:
 
     @while_running
     async def run_steamgifts(self) -> None:
-        self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
         steamgifts = core.steamgifts.main()
 
         async for module_data in steamgifts:

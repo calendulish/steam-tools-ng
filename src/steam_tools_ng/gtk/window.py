@@ -162,7 +162,7 @@ class Main(Gtk.ApplicationWindow):
         coupons_section.grid.attach(self.coupon_grid, 0, 0, 1, 1)
 
         self.coupon_tree = utils.SimpleTextTree(
-            _('price'), _('name'), 'assetid',
+            _('price'), _('name'), 'assetid', 'link',
             overlay_scrolling=False,
             model=Gtk.ListStore,
         )
@@ -172,6 +172,8 @@ class Main(Gtk.ApplicationWindow):
 
         coupon_classid_column = self.coupon_tree.view.get_column(2)
         coupon_classid_column.set_visible(False)
+        coupon_link_column = self.coupon_tree.view.get_column(3)
+        coupon_link_column.set_visible(False)
 
         self.coupon_tree.view.connect('row-activated', self.on_coupon_double_clicked)
 
@@ -339,8 +341,11 @@ class Main(Gtk.ApplicationWindow):
     @staticmethod
     def on_coupon_double_clicked(view: Gtk.TreeView, path: Gtk.TreePath, column: Gtk.TreeViewColumn):
         model = view.get_model()
-        appids = model[path][2]
-        call(f'{config.file_manager} "https://store.steampowered.com/app/{appids}"')
+        #appids = model[path][2]
+        #call(f'{config.file_manager} "https://store.steampowered.com/app/{appids}"')
+        link = model[path][3]
+        call(f'{config.file_manager} "{link}"')
+
 
     @staticmethod
     def on_tree_selection_changed(selection: Gtk.TreeSelection) -> None:

@@ -20,8 +20,8 @@ import logging
 from typing import Generator
 
 import aiohttp
-from stlib import webapi, login, universe
 
+from stlib import login, universe, community
 from . import utils
 from .. import i18n, config
 
@@ -29,8 +29,9 @@ _ = i18n.get_translation
 log = logging.getLogger(__name__)
 
 
-async def main(steamid: int, time_offset: int) -> Generator[utils.ModuleData, None, None]:
+async def main(steamid: universe.SteamId) -> Generator[utils.ModuleData, None, None]:
     identity_secret = config.parser.get("login", "identity_secret")
+    session = community.Community.get_session(0)
 
     if not identity_secret:
         config.new("confirmations", "enable", "false")
@@ -45,10 +46,8 @@ async def main(steamid: int, time_offset: int) -> Generator[utils.ModuleData, No
         deviceid = universe.generate_device_id(identity_secret)
         config.new("login", "deviceid", deviceid)
 
-    session = webapi.get_session(0)
-
     try:
-        confirmations = await session.get_confirmations(identity_secret, steamid, deviceid, time_offset=time_offset)
+        confirmations = await session.get_confirmations(identity_secret, steamid, deviceid)
     except AttributeError:
         yield utils.ModuleData(error=_("Error when fetch confirmations"), info=_("Waiting Changes"))
     except ProcessLookupError:

@@ -21,7 +21,7 @@ from typing import Generator
 
 import aiohttp
 
-from stlib import webapi
+from stlib import universe, community, internals
 from . import utils
 from .. import i18n, config
 
@@ -30,7 +30,8 @@ log = logging.getLogger(__name__)
 
 
 async def main(fetch_coupon_event: asyncio.Event) -> Generator[utils.ModuleData, None, None]:
-    session = webapi.get_session(0)
+    community_session = community.Community.get_session(0)
+    internals_session = internals.Internals.get_session(0)
     botid = config.parser.getint('coupons', 'botid')
     appid = config.parser.getint('coupons', 'appid')
     contextid = config.parser.getint('coupons', 'contextid')
@@ -38,7 +39,8 @@ async def main(fetch_coupon_event: asyncio.Event) -> Generator[utils.ModuleData,
     await fetch_coupon_event.wait()
 
     try:
-        inventory = await session.get_inventory(botid, appid, contextid)
+        steamid = universe.generate_steamid(botid)
+        inventory = await community_session.get_inventory(steamid, appid, contextid)
     except AttributeError:
         yield utils.ModuleData(error=_("Error when fetch inventory"), info=_("Waiting Changes"))
         await asyncio.sleep(15)
@@ -51,59 +53,52 @@ async def main(fetch_coupon_event: asyncio.Event) -> Generator[utils.ModuleData,
     yield utils.ModuleData(action="clear")
 
     for index, coupon_ in enumerate(inventory):
-        if not fetch_coupon_event.is_set():
-            log.warning(_("Stopping fetching coupons (requested by user)"))
-            yield utils.ModuleData(action="update_level", raw_data=(0, 0))
-            return
-
         yield utils.ModuleData(action="update_level", raw_data=(index, len(inventory)))
         package_link = coupon_.actions[0]['link']
         packageids = [int(id_) for id_ in package_link.split('=')[1].split(',')]
 
-        try:
-            package_details = await session.get_package_details(packageids)
+        for package_id in packageids:
+            if not fetch_coupon_event.is_set():
+                log.warning(_("Stopping fetching coupons (requested by user)"))
+                yield utils.ModuleData(action="update_level", raw_data=(0, 0))
+                return
 
-            if not package_details:
-                raise ValueError
-        except aiohttp.ClientError:
-            yield utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
-            await asyncio.sleep(60)
-            continue
-        except ValueError:
-            yield utils.ModuleData(error=_("Failed to get package details"), info=_("Waiting Changes"))
-            await asyncio.sleep(15)
-            continue
-        else:
-            await asyncio.sleep(.3)
+            coupon_discount = int(coupon_.name.split('%')[0])
 
-        games_prices = []
-        for package in package_details:
+            if coupon_discount < 75:
+                log.info(_('Ignoring coupon %s due low discount value'), coupon_.name)
+                continue
+
             try:
-                games_prices.extend(await session.get_games_prices(package.apps))
+                package_details = await internals_session.get_package(package_id)
 
-                if not games_prices:
+                if not package_details:
                     raise ValueError
             except aiohttp.ClientError:
                 yield utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
-                await asyncio.sleep(60)
+                await asyncio.sleep(30)
                 continue
             except ValueError:
-                yield utils.ModuleData(error=_("Failed to get games prices"), info=_("Waiting Changes"))
-                await asyncio.sleep(15)
+                yield utils.ModuleData(error=_("Failed to get package details"), info=_("Waiting Changes"))
+                await asyncio.sleep(1)
                 continue
             else:
-                await asyncio.sleep(.3)
+                await asyncio.sleep(.5)
 
-        discount = int(coupon_.name.split('%')[0])
-        current_price = games_prices[0][1] if len(games_prices) > 0 else 0  # uni duni tee
-        real_price = current_price - (current_price * discount / 100)
+            if package_details.discount_percent:
+                real_price = package_details.price - (package_details.price * package_details.discount_percent / 100)
+            else:
+                real_price = package_details.price - (package_details.price * coupon_discount / 100)
 
-        yield utils.ModuleData(action='update', raw_data={
-            'price': round(real_price, 2),
-            'name': coupon_.name,
-            'assetid': coupon_.assetid,
-        })
+            yield utils.ModuleData(action='update', raw_data={
+                'price': round(real_price, 2),
+                'name': coupon_.name,
+                'assetid': coupon_.assetid,
+                'link': coupon_.actions[0]['link'],
+            })
 
-        if index and not index % 100:
+        if index and not index % 150:
             yield utils.ModuleData(error=_("Api rate limit reached. Waiting."), info=_("Waiting Changes"))
-            await asyncio.sleep(2 * 60)
+            await asyncio.sleep(100)
+
+    fetch_coupon_event.clear()

@@ -17,26 +17,53 @@
 #
 import asyncio
 import binascii
-import time
 from typing import Generator
 
-from stlib import universe
+import aiohttp
 
+from stlib import universe, webapi
 from . import utils
 from .. import i18n, config
+
+try:
+    from stlib import client
+except ImportError as exception:
+    client = None
 
 _ = i18n.get_translation
 
 
-async def main(time_offset: int) -> Generator[utils.ModuleData, None, None]:
+async def main() -> Generator[utils.ModuleData, None, None]:
     shared_secret = config.parser.get("login", "shared_secret")
+    webapi_session = webapi.SteamWebAPI.get_session(0)
+
+    try:
+        if not client:
+            raise ProcessLookupError
+
+        with client.SteamGameServer() as server:
+            server_time = server.get_server_time()
+    except ProcessLookupError:
+        yield utils.ModuleData(error=_("Steam is not running."), info=_("Fallbacking server time to WebAPI"))
+
+        try:
+            server_time = await webapi_session.get_server_time()
+        except aiohttp.ClientError:
+            raise aiohttp.ClientError(
+                _(
+                    "Unable to Connect. You can try these things:\n"
+                    "1. Check your connection\n"
+                    "2. Check if Steam Server isn't down\n"
+                    "3. Check if Steam Client is running\n"
+                    "4. Check if api_url and api_key is correct on config file\n"
+                )
+            )
 
     try:
         if not shared_secret:
             config.new("steamguard", "enable", "false")
             raise ValueError
 
-        server_time = int(time.time()) - time_offset
         auth_code = universe.generate_steam_code(server_time, shared_secret)
     except (ValueError, binascii.Error):
         yield utils.ModuleData(error=_("The current shared secret is invalid."), info=_("Waiting Changes"))

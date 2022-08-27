@@ -22,6 +22,7 @@ from typing import Any, Dict, List, Tuple, Union
 
 from gi.repository import Gtk
 
+from stlib import universe, community
 from . import utils
 from .. import config, i18n
 
@@ -42,6 +43,7 @@ class FinalizeDialog(Gtk.Dialog):
         super().__init__(use_header_bar=True)
         self.parent_window = parent_window
         self.application = application
+        self.community_session = community.Community.get_session(0)
 
         if action == "allow":
             self.action = _("accept")
@@ -183,14 +185,13 @@ class FinalizeDialog(Gtk.Dialog):
 
         # steam confirmation server isn't reliable
         for i in range(2):
-            result = await self.application.webapi_session.finalize_confirmation(
+            result = await self.community_session.send_confirmation(
                 identity_secret,
-                steamid,
+                universe.generate_steamid(steamid),
                 deviceid,
                 self.model[self.iter][1],
                 self.model[self.iter][2],
                 self.raw_action,
-                time_offset=self.application.time_offset,
             )
             assert isinstance(result, dict), "finalize_confirmation return is not a dict"
             await asyncio.sleep(0.5)

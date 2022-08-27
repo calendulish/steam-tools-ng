@@ -17,7 +17,7 @@
 #
 import asyncio
 import logging
-from collections import OrderedDict
+
 from gi.repository import Gtk
 
 from . import utils, settings, login

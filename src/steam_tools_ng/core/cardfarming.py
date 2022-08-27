@@ -20,28 +20,25 @@ import random
 from typing import Generator
 
 import aiohttp
-from stlib import webapi, client
 
+from stlib import webapi, client, universe, community
 from . import utils
 from .. import i18n, config
 
 _ = i18n.get_translation
 
 
-async def main(steamid: int, custom_game_id: int = 0) -> Generator[utils.ModuleData, None, None]:
+async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> Generator[utils.ModuleData, None, None]:
     reverse_sorting = config.parser.getboolean("cardfarming", "reverse_sorting")
     first_wait = config.parser.getint("cardfarming", "first_wait")
     default_wait = config.parser.getint("cardfarming", "default_wait")
     min_wait = config.parser.getint("cardfarming", "min_wait")
-
-    if not steamid:
-        raise NotImplementedError("Card farming with no steamid")
-
-    session = webapi.get_session(0)
+    community_session = community.Community.get_session(0)
+    webapi_session = webapi.SteamWebAPI.get_session(0)
 
     try:
         badges = sorted(
-            await session.get_badges(steamid),
+            await community_session.get_badges(steamid),
             key=lambda badge_: badge_.cards,
             reverse=reverse_sorting
         )
@@ -50,41 +47,41 @@ async def main(steamid: int, custom_game_id: int = 0) -> Generator[utils.ModuleD
         await asyncio.sleep(10)
         return
 
-    if not badges or (custom_game_id and custom_game_id not in [badge.game_id for badge in badges]):
+    if not badges or (custom_game_id and custom_game_id not in [badge.appid for badge in badges]):
         yield utils.ModuleData(error=_("No more cards to drop."), info=_("Waiting Changes"))
         await asyncio.sleep(random.randint(500, 1200))
         return
 
     for badge in badges:
-        if custom_game_id and badge.game_id != custom_game_id:
-            yield utils.ModuleData(info=_("Skipping {}").format(badge.game_id))
+        if custom_game_id and badge.appid != custom_game_id:
+            yield utils.ModuleData(info=_("Skipping {}").format(badge.appid))
             continue
 
         yield utils.ModuleData(
-            display=str(badge.game_id),
-            status=_("Loading {}").format(badge.game_name),
+            display=str(badge.appid),
+            status=_("Loading {}").format(badge.name),
         )
 
         while badge.cards != 0:
             try:
-                game_info = await session.get_owned_games(steamid, appids_filter=[badge.game_id])
-                assert isinstance(game_info, webapi.Game), "game_info is not a Game object"
+                game_list = await webapi_session.get_owned_games(steamid, appids_filter=[badge.appid])
+                game_info = game_list[0]
             except aiohttp.ClientError:
                 yield utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
                 await asyncio.sleep(10)
                 continue
 
-            if game_info.playtime * 60 >= first_wait:
+            if game_info.playtime_forever * 60 >= first_wait:
                 wait_offset = random.randint(default_wait, int(default_wait / 100 * 125))
             else:
-                wait_offset = first_wait - game_info.playtime * 60
+                wait_offset = first_wait - game_info.playtime_forever * 60
 
-            executor = client.SteamApiExecutor(badge.game_id)
+            executor = client.SteamApiExecutor(badge.appid)
 
             try:
                 await executor.init()
             except client.SteamAPIError:
-                yield utils.ModuleData(info=_("Invalid game id {}. Ignoring.").format(badge.game_id))
+                yield utils.ModuleData(info=_("Invalid game id {}. Ignoring.").format(badge.appid))
                 # noinspection PyProtectedMember
                 badge = badge._replace(cards=0)
                 break
@@ -102,9 +99,9 @@ async def main(steamid: int, custom_game_id: int = 0) -> Generator[utils.ModuleD
                     current_time_size = _('seconds')
 
                 yield utils.ModuleData(
-                    display=str(badge.game_id),
+                    display=str(badge.appid),
                     info=_("Waiting drops for {} {}.").format(current_time, current_time_size),
-                    status=_("Running {}").format(badge.game_name),
+                    status=_("Running {}").format(badge.name),
                     level=(past_time, wait_offset),
                     raw_data=executor,
                     action="check",
@@ -116,8 +113,8 @@ async def main(steamid: int, custom_game_id: int = 0) -> Generator[utils.ModuleD
             wait_offset = random.randint(min_wait, int(min_wait / 100 * 125))
             for past_time in range(wait_offset):
                 yield utils.ModuleData(
-                    display=str(badge.game_id),
-                    info="{} ({})".format(_("Updating drops"), badge.game_name),
+                    display=str(badge.appid),
+                    info="{} ({})".format(_("Updating drops"), badge.name),
                     status=_("Game paused"),
                     level=(past_time, wait_offset),
                 )
@@ -126,17 +123,19 @@ async def main(steamid: int, custom_game_id: int = 0) -> Generator[utils.ModuleD
 
             while True:
                 try:
-                    badge = await session.update_badge_drops(badge, steamid)
+                    cards = await community_session.get_card_drops_remaining(steamid, badge.appid)
                 except aiohttp.ClientError:
                     yield utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
                     await asyncio.sleep(10)
-                except webapi.BadgeError:
+                except community.BadgeError:
                     yield utils.ModuleData(error=_("Steam Server is busy"), info=_("Waiting Changes"))
                     await asyncio.sleep(20)
                 else:
                     break
 
+            badge._replace(cards=cards)
+
         utils.ModuleData(
-            display=str(badge.game_id),
-            info=_("{} ({})").format(_("Done"), badge.game_name),
+            display=str(badge.appid),
+            info=_("{} ({})").format(_("Done"), badge.name),
         )

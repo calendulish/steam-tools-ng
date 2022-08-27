@@ -27,7 +27,7 @@ from xml.etree import ElementTree
 
 from gi.repository import Gtk, Gdk
 
-from stlib import webapi
+from stlib import internals
 from . import async_gtk
 from .. import i18n, config
 
@@ -582,7 +582,7 @@ def sanitize_confirmation(value: Optional[List[str]]) -> str:
     return result
 
 
-def sanitize_package_details(package_details: List[webapi.Package]) -> List[webapi.Package]:
+def sanitize_package_details(package_details: List[internals.Package]) -> List[internals.Package]:
     previous = ()
 
     for package in package_details:

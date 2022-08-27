@@ -17,20 +17,15 @@
 #
 import asyncio
 import configparser
-import http
 import locale
 import logging
 import os
 import sys
-import time
 from collections import OrderedDict
 from pathlib import Path
 from typing import Any
 
-import aiohttp
 from stlib import plugins as stlib_plugins
-from stlib import webapi
-
 from . import i18n, logger_handlers
 
 parser = configparser.RawConfigParser()
@@ -123,7 +118,6 @@ default_config = {
         'botid': '76561198018370992',
         'appid': '753',
         'contextid': '3',
-        'partnerid': '58105264',
         'token': '6Z6Xn5NM',
         'last_trade_time': 0,
     },
@@ -286,49 +280,3 @@ def remove(section: str, option: str) -> None:
 
     # with open(config_file, 'w', encoding="utf8") as config_file_object:
     #    parser.write(config_file_object)
-
-
-def login_cookies() -> http.cookies.SimpleCookie:
-    steamid = parser.getint("login", "steamid")
-    token = parser.get("login", "token")
-    token_secure = parser.get("login", "token_secure")
-
-    if not steamid or not token or not token_secure:
-        log.warning(_("No login cookies"))
-        return {}
-
-    cookies_dict = {
-        'steamLogin': f'{steamid}%7C%7C{token}',
-        'steamLoginSecure': f'{steamid}%7C%7C{token_secure}',
-    }
-
-    return http.cookies.SimpleCookie(cookies_dict)
-
-
-async def time_offset(webapi_session: webapi.SteamWebAPI) -> int:
-    try:
-        if not client:
-            raise ProcessLookupError
-
-        with client.SteamGameServer() as server:
-            server_time = server.get_server_time()
-    except ProcessLookupError:
-        log.warning(_("Steam is not running."))
-        log.debug(_("Fallbacking time offset to WebAPI"))
-
-        while True:
-            try:
-                server_time = await webapi_session.get_server_time()
-            except aiohttp.ClientError:
-                raise aiohttp.ClientError(
-                    _(
-                        "Unable to Connect. You can try these things:\n"
-                        "1. Check your connection\n"
-                        "2. Check if Steam Server isn't down\n"
-                        "3. Check if api_url and api_key is correct on config file\n"
-                    )
-                )
-            else:
-                break
-
-    return int(time.time()) - server_time

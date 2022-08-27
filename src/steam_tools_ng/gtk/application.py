@@ -27,8 +27,9 @@ from typing import Any, Optional, Dict, Callable, List
 import aiohttp
 from gi.repository import Gio, Gtk
 
-from stlib import webapi
-from . import about, settings, login, window, utils
+from stlib import universe, login, community, webapi, internals
+from . import about, settings, window, utils
+from . import login as gtk_login
 from .. import config, i18n, core
 
 _ = i18n.get_translation
@@ -55,42 +56,28 @@ class SteamToolsNG(Gtk.Application):
     def __init__(self) -> None:
         super().__init__(application_id="monster.lara.SteamToolsNG",
                          flags=Gio.ApplicationFlags.FLAGS_NONE)
-
-        self._session = None
-        self._webapi_session = None
-
         self._main_window_id = 0
         self.gtk_settings = Gtk.Settings.get_default()
 
-        self.api_login: Optional[webapi.Login] = None
-        self._time_offset = 0
+        self.api_login: Optional[login.Login] = None
         self.api_url = config.parser.get("steam", "api_url")
         self.api_key = config.parser.get("steam", "api_key")
 
-        self.old_confirmations: List[webapi.Confirmation] = []
+        self.old_confirmations: List[community.Confirmation] = []
 
     @property
-    def main_window(self) -> Optional[Gtk.ApplicationWindow]:
+    def main_window(self) -> Optional[window.Main]:
         current_window = self.get_window_by_id(self._main_window_id)
         return self.get_window_by_id(self._main_window_id)
 
     @property
-    def time_offset(self) -> int:
-        return self._time_offset
+    def steamid(self) -> Optional[universe.SteamId]:
+        steamid = config.parser.getint("login", "steamid")
 
-    @property
-    def session(self) -> aiohttp.ClientSession:
-        assert isinstance(self._session, aiohttp.ClientSession), "session has not been created"
-        return self._session
-
-    @property
-    def webapi_session(self) -> webapi.SteamWebAPI:
-        assert isinstance(self._webapi_session, webapi.SteamWebAPI), "webapi session has not been created"
-        return self._webapi_session
-
-    @property
-    def steamid(self) -> Optional[int]:
-        return config.parser.getint("login", "steamid")
+        if steamid:
+            return universe.generate_steamid(steamid)
+        else:
+            return None
 
     def do_startup(self) -> None:
         Gtk.Application.do_startup(self)
@@ -124,7 +111,7 @@ class SteamToolsNG(Gtk.Application):
         task.add_done_callback(utils.safe_task_callback)
 
     async def do_login(self, *, block: bool = True, auto: bool = False) -> None:
-        login_dialog = login.LoginDialog(self.main_window, self)
+        login_dialog = gtk_login.LoginDialog(self.main_window, self)
         login_dialog.set_deletable(False)
         login_dialog.show()
 
@@ -151,16 +138,11 @@ class SteamToolsNG(Gtk.Application):
             ssl_context.load_verify_locations(cafile=_executable_path / 'etc' / 'cacert.pem')
 
         tcp_connector = aiohttp.TCPConnector(ssl=ssl_context)
-        self._session = aiohttp.ClientSession(raise_for_status=True, connector=tcp_connector)
-
-        self._webapi_session = webapi.get_session(
-            0,
-            api_url=self.api_url,
-            key=self.api_key,
-            http_session=self._session
-        )
-
-        self._time_offset = await config.time_offset(self.webapi_session)
+        http_session = aiohttp.ClientSession(raise_for_status=True, connector=tcp_connector)
+        login_session = await login.Login.new_session(0, api_url=self.api_url, http_session=http_session)
+        community_session = await community.Community.new_session(0, api_url=self.api_url)
+        webapi_session = await webapi.SteamWebAPI.new_session(0, api_key=self.api_key, api_url=self.api_url)
+        internals_session = await internals.Internals.new_session(0)
 
         self.main_window.statusbar.set_warning("steamguard", _("Logging on Steam. Please wait!"))
         log.info(_("Logging on Steam"))
@@ -171,16 +153,15 @@ class SteamToolsNG(Gtk.Application):
         if not token or not token_secure or not self.steamid:
             await self.do_login()
 
-        self.session.cookie_jar.update_cookies(config.login_cookies())  # type: ignore
+        login_session.restore_login(self.steamid, token, token_secure)
 
-        # noinspection PyShadowingNames
         try:
-            if self.api_key and await self.webapi_session.is_logged_in(self.steamid):
+            if self.api_key and await login_session.is_logged_in(self.steamid):
                 log.info("Steam login Successful")
             else:
                 await self.do_login(auto=True)
-        except aiohttp.ClientError as exception:
-            log.exception(str(exception))
+        except aiohttp.ClientError as exception_:
+            log.exception(str(exception_))
             self.main_window.statusbar.set_critical("steamguard", _("Check your connection. (server down?)"))
             await asyncio.sleep(10)
             return  # FIXME: RETRY ###
@@ -236,14 +217,13 @@ class SteamToolsNG(Gtk.Application):
     @while_window_realized
     async def run_steamguard(self, play_event) -> None:
         await play_event.wait()
-        steamguard = core.steamguard.main(self.time_offset)
+        steamguard = core.steamguard.main()
 
         async for module_data in steamguard:
             self.main_window.set_status("steamguard", module_data)
 
     @while_window_realized
     async def run_cardfarming(self, play_event) -> None:
-        self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
         cardfarming = core.cardfarming.main(self.steamid)
 
         async for module_data in cardfarming:
@@ -256,13 +236,12 @@ class SteamToolsNG(Gtk.Application):
                 if not play_event.is_set():
                     await executor.shutdown()
                     await play_event.wait()
-                    executor.__init__(executor.game_id)
+                    executor.__init__(executor.appid)
                     await executor.init()
 
     @while_window_realized
     async def run_confirmations(self) -> None:
-        self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
-        confirmations = core.confirmations.main(self.steamid, self.time_offset)
+        confirmations = core.confirmations.main(self.steamid)
 
         async for module_data in confirmations:
             if module_data.error:
@@ -295,7 +274,7 @@ class SteamToolsNG(Gtk.Application):
                     iter_ = self.main_window.confirmation_tree.store.append(None, [
                         confirmation_.mode,
                         str(confirmation_.id),
-                        str(confirmation_.key),
+                        str(confirmation_.api_key),
                         t_give,
                         confirmation_.to,
                         t_receive,
@@ -309,7 +288,6 @@ class SteamToolsNG(Gtk.Application):
 
     @while_window_realized
     async def run_coupons(self) -> None:
-        self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
         coupons = core.coupons.main(self.main_window.fetch_coupon_event)
 
         async for module_data in coupons:
@@ -327,6 +305,7 @@ class SteamToolsNG(Gtk.Application):
                     str(module_data.raw_data['price']),
                     utils.markup(module_data.raw_data['name'], foreground='blue', underline='single'),
                     str(module_data.raw_data['assetid']),
+                    module_data.raw_data['link'],
                 ])
 
             if module_data.action == "clear":
@@ -339,7 +318,6 @@ class SteamToolsNG(Gtk.Application):
     @while_window_realized
     async def run_steamtrades(self, play_event) -> None:
         await play_event.wait()
-        self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
         steamtrades = core.steamtrades.main()
 
         async for module_data in steamtrades:
@@ -352,7 +330,6 @@ class SteamToolsNG(Gtk.Application):
     @while_window_realized
     async def run_steamgifts(self, play_event) -> None:
         await play_event.wait()
-        self.webapi_session.http.cookie_jar.update_cookies(config.login_cookies())
         steamgifts = core.steamgifts.main()
 
         async for module_data in steamgifts:
