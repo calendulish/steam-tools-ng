@@ -146,12 +146,17 @@ class GetCouponDialog(Gtk.Dialog):
 
         steamid = universe.generate_steamid(botid)
         json_data = await self.community_session.send_trade_offer(steamid, token, contextid, [], receive)
-        config.new("coupons", "last_trade_time", int(time.time()))
+
+        if len(json_data) == 1 and 'tradeofferid' in json_data:
+            config.new("coupons", "last_trade_time", int(time.time()))
+            return
 
         if 'needs_email_confirmation' in json_data and json_data['needs_email_confirmation']:
             self.status.info(_('You will need to manually confirm the trade offer. Check your email.'))
             self.header_bar.set_show_title_buttons(True)
             self.yes_button.hide()
+            # FIXME: track tradeoffer and wait for email confirmation
+            config.new("coupons", "last_trade_time", int(time.time()) + 20)
             return
 
         if 'needs_mobile_confirmation' in json_data and json_data['needs_mobile_confirmation']:
