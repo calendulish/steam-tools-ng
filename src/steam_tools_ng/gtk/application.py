@@ -274,7 +274,7 @@ class SteamToolsNG(Gtk.Application):
                     iter_ = self.main_window.confirmation_tree.store.append(None, [
                         confirmation_.mode,
                         str(confirmation_.id),
-                        str(confirmation_.api_key),
+                        str(confirmation_.key),
                         t_give,
                         confirmation_.to,
                         t_receive,
