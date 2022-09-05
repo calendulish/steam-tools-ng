@@ -230,14 +230,17 @@ class SteamToolsNG(Gtk.Application):
             self.main_window.set_status("cardfarming", module_data)
 
             if module_data.action == "check":
-                executor = module_data.raw_data
-                assert isinstance(executor, client.SteamApiExecutor), "No SteamApiExecutor"
+                executors = module_data.raw_data
 
                 if not play_event.is_set():
-                    await executor.shutdown()
+                    for executor in executors:
+                        await executor.shutdown()
+
                     await play_event.wait()
-                    executor.__init__(executor.appid)
-                    await executor.init()
+
+                    for executor in executors:
+                        executor.__init__(executor.appid)
+                        await executor.init()
 
     @while_window_realized
     async def run_confirmations(self) -> None:

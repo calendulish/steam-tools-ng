@@ -151,6 +151,7 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> Generator[
         generators[badge.appid] = while_has_cards(steamid, badge)
 
     tasks = {}
+    executors = {}
     semaphore = asyncio.Semaphore(max_concurrency)
     last_update = 0
 
@@ -187,6 +188,9 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> Generator[
             if task and task.done() and not task.exception():
                 data = task.result()
 
+                if data.action == 'check':
+                    executors[appid] = data.raw_data
+
                 if time.time() > last_update + 3:
                     current_running = len(tasks)
                     total_remaining = len(generators) - len([task for task in tasks.values() if not task])
@@ -195,7 +199,7 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> Generator[
                         info=data.info,
                         status=_('Running {} from {} remaining').format(current_running, total_remaining),
                         level=data.level,
-                        raw_data=data.raw_data,
+                        raw_data=executors,
                         action=data.action,
                     )
                     last_update = time.time()
