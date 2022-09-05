@@ -338,6 +338,13 @@ class Status(Gtk.Frame):
         else:
             self._play_event.clear()
 
+    @staticmethod
+    def __sanitize_text(text: str, max_length: int) -> str:
+        if len(text) >= max_length:
+            return text[:max_length] + '...'
+        else:
+            return text
+
     def __disable_tooltip(self, event_status: Gtk.Label) -> None:
         self._grid.remove(event_status)
         self._grid.attach(self._status, 0, 1, 1, 1)
@@ -381,10 +388,12 @@ class Status(Gtk.Frame):
 
     @when_running
     def set_display(self, text: str) -> None:
+        text = self.__sanitize_text(text, 25)
         self._display.set_markup(markup(text, font_size='large', font_weight='bold'))
 
     @when_running
     def set_status(self, text: str) -> None:
+        text = self.__sanitize_text(text, 55)
         if self._gtk_settings.props.gtk_application_prefer_dark_theme:
             color = 'lightgreen'
         else:
@@ -394,6 +403,7 @@ class Status(Gtk.Frame):
 
     @when_running
     def set_info(self, text: str) -> None:
+        text = self.__sanitize_text(text, 55)
         if self._gtk_settings.props.gtk_application_prefer_dark_theme:
             color = 'lightgreen'
         else:
@@ -403,6 +413,7 @@ class Status(Gtk.Frame):
 
     @when_running
     def set_error(self, text: str) -> None:
+        text = self.__sanitize_text(text, 55)
         if self._gtk_settings.props.gtk_application_prefer_dark_theme:
             color = 'hotpink'
         else:

@@ -148,6 +148,7 @@ default_config = {
         'first_wait': 7200,
         'default_wait': 600,
         'min_wait': 120,
+        'max_concurrency': 5,
     },
     'general': {
         'theme': 'light',
