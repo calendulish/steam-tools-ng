@@ -189,7 +189,7 @@ class FinalizeDialog(Gtk.Dialog):
                 identity_secret,
                 universe.generate_steamid(steamid),
                 deviceid,
-                self.model[self.iter][1],
+                self.model[self.iter][0],
                 self.model[self.iter][2],
                 self.raw_action,
             )

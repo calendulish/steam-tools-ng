@@ -108,7 +108,7 @@ class Main(Gtk.ApplicationWindow):
         general_section.grid.attach(self.confirmations_grid, 0, 1, 4, 1)
 
         self.confirmation_tree = utils.SimpleTextTree(
-            _('mode'), _('id'), _('key'), _('give'), _('to'), _('receive'),
+            _('confid'), _('creatorid'), _('key'), _('give'), _('to'), _('receive'),
             overlay_scrolling=False,
         )
 
@@ -303,7 +303,8 @@ class Main(Gtk.ApplicationWindow):
             if context.model.iter_depth(context.iter) != 0:
                 return False
 
-            tooltip.set_text('Id:{}\nKey:{}'.format(
+            tooltip.set_text('ConfID:{}\nCreatorID{}\nKey:{}'.format(
+                context.model.get_value(context.iter, 0),
                 context.model.get_value(context.iter, 1),
                 context.model.get_value(context.iter, 2),
             ))

@@ -186,10 +186,10 @@ class CouponDialog(Gtk.Dialog):
 
         if 'needs_mobile_confirmation' in json_data and json_data['needs_mobile_confirmation']:
             confirmation_store = self.parent_window.confirmation_tree.store
-            confirmation_count = len(confirmation_store)
+            target = None
 
             while True:
-                target = None
+                confirmation_count = confirmation_store.iter_n_children()
 
                 for index in range(confirmation_count):
                     iter_ = confirmation_store[index].iter

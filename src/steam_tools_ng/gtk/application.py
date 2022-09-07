@@ -275,8 +275,8 @@ class SteamToolsNG(Gtk.Application):
                     t_receive = utils.sanitize_confirmation(confirmation_.receive)
 
                     iter_ = self.main_window.confirmation_tree.store.append(None, [
-                        confirmation_.mode,
-                        str(confirmation_.id),
+                        str(confirmation_.confid),
+                        str(confirmation_.creatorid),
                         str(confirmation_.key),
                         t_give,
                         confirmation_.to,
