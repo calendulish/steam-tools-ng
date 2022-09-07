@@ -148,6 +148,13 @@ class CouponDialog(Gtk.Dialog):
                 self.header_bar.set_show_title_buttons(True)
                 self.yes_button.hide()
         else:
+            config.new("coupons", "last_trade_time", int(time.time()))
+
+            try:
+                self.model.remove(self.iter)
+            except IndexError:
+                log.debug(_("Unable to remove tree path %s (already removed?). Ignoring."), self.iter)
+
             self.destroy()
 
     async def send_trade_offer(self, mode: str) -> None:
@@ -177,15 +184,14 @@ class CouponDialog(Gtk.Dialog):
         json_data = await self.community_session.send_trade_offer(steamid, token, contextid, give, receive)
 
         if len(json_data) == 1 and 'tradeofferid' in json_data:
-            config.new("coupons", "last_trade_time", int(time.time()))
             return
 
         if 'needs_email_confirmation' in json_data and json_data['needs_email_confirmation']:
             self.status.info(_('You will need to manually confirm the trade offer. Check your email.'))
             self.header_bar.set_show_title_buttons(True)
             self.yes_button.hide()
+
             # FIXME: track tradeoffer and wait for email confirmation
-            config.new("coupons", "last_trade_time", int(time.time()) + 20)
             return
 
         if 'needs_mobile_confirmation' in json_data and json_data['needs_mobile_confirmation']:
@@ -216,5 +222,3 @@ class CouponDialog(Gtk.Dialog):
 
             finalize_dialog.show()
             finalize_dialog.yes_button.emit('clicked')
-            config.new("coupons", "last_trade_time", int(time.time()))
-            self.destroy()
