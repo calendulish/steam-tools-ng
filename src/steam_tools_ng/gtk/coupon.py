@@ -138,7 +138,11 @@ class CouponDialog(Gtk.Dialog):
                 log.error(f"Steam Server is slow. {str(exception)}")
 
                 self.status.error(
-                    _("Steam Server is slow. Please, try again.")
+                    _(
+                        "The item you choose already gone or the Steam server is slow.\n"
+                        "Wait a minute and try again or choose another coupon.\n"
+                        "If you keep seeing this error, please update the coupon list."
+                    )
                 )
 
                 self.header_bar.set_show_title_buttons(True)
