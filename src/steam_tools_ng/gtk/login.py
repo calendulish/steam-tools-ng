@@ -174,7 +174,10 @@ class LoginDialog(Gtk.Dialog):
             self.login_button.set_sensitive(True)
 
     def on_quit(self, *args, **kwargs) -> None:
-        self.application.main_window.set_critical(_("Login cancelled! Modules will not work correctly!"))
+        self.application.main_window.statusbar.set_warning(
+            'steamguard',
+            _("Login cancelled! Modules will not work correctly!"),
+        )
         self.destroy()
 
     def on_key_release_event(
