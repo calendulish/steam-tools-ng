@@ -33,16 +33,21 @@ except ImportError as exception:
 _ = i18n.get_translation
 
 
+@utils.time_offset_cache(ttl=3600)
+def cached_server_time() -> int:
+    if not client:
+        raise ProcessLookupError
+
+    with client.SteamGameServer() as server:
+        return server.get_server_time()
+
+
 async def main() -> Generator[utils.ModuleData, None, None]:
     shared_secret = config.parser.get("login", "shared_secret")
     webapi_session = webapi.SteamWebAPI.get_session(0)
 
     try:
-        if not client:
-            raise ProcessLookupError
-
-        with client.SteamGameServer() as server:
-            server_time = server.get_server_time()
+        server_time = cached_server_time()
     except ProcessLookupError:
         yield utils.ModuleData(error=_("Steam is not running."), info=_("Fallbacking server time to WebAPI"))
 
