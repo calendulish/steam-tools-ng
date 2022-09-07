@@ -48,7 +48,8 @@ async def main(steamid: universe.SteamId) -> Generator[utils.ModuleData, None, N
 
     try:
         confirmations = await session.get_confirmations(identity_secret, steamid, deviceid)
-    except AttributeError:
+    except AttributeError as exception:
+        log.error(str(exception))
         yield utils.ModuleData(error=_("Error when fetch confirmations"), info=_("Waiting Changes"))
     except ProcessLookupError:
         yield utils.ModuleData(error=_("Steam is not running"), info=_("Waiting Changes"))
