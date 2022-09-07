@@ -278,9 +278,9 @@ class SteamToolsNG(Gtk.Application):
                         str(confirmation_.confid),
                         str(confirmation_.creatorid),
                         str(confirmation_.key),
-                        t_give,
-                        confirmation_.to,
-                        t_receive,
+                        utils.markup(t_give),
+                        utils.markup(confirmation_.to),
+                        utils.markup(t_receive),
                     ])
 
                     for item in itertools.zip_longest(confirmation_.give, confirmation_.receive):
