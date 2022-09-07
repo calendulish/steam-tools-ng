@@ -19,7 +19,7 @@ import asyncio
 import logging
 from importlib import resources
 from subprocess import call
-from typing import Union, Optional, Tuple
+from typing import Union, Optional, Tuple, Any
 
 from gi.repository import GdkPixbuf, Gio, Gtk
 
@@ -168,6 +168,7 @@ class Main(Gtk.ApplicationWindow):
         )
 
         self.coupon_tree.store.set_sort_column_id(0, Gtk.SortType.ASCENDING)
+        self.coupon_tree.store.set_sort_func(0, self.coupon_sorting)
         self.coupon_grid.attach(self.coupon_tree, 0, 0, 4, 2)
 
         coupon_classid_column = self.coupon_tree.view.get_column(2)
@@ -356,7 +357,6 @@ class Main(Gtk.ApplicationWindow):
         link = model[path][3]
         call(f'{config.file_manager} "{link}"')
 
-
     @staticmethod
     def on_tree_selection_changed(selection: Gtk.TreeSelection) -> None:
         model, iter_ = selection.get_selected()
@@ -366,6 +366,19 @@ class Main(Gtk.ApplicationWindow):
 
             if parent:
                 selection.select_iter(parent)
+
+    @staticmethod
+    def coupon_sorting(model: Gtk.TreeModel, iter1: Gtk.TreeIter, iter2: Gtk.TreeIter, user_data: Any) -> Any:
+        column, _ = model.get_sort_column_id()
+        price1 = model.get_value(iter1, column)
+        price2 = model.get_value(iter2, column)
+
+        if float(price1) < float(price2):
+            return -1
+        elif price1 == price2:
+            return 0
+        else:
+            return 1
 
     def set_status(
             self,
