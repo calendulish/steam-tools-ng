@@ -55,7 +55,6 @@ async def main() -> Generator[utils.ModuleData, None, None]:
                     "1. Check your connection\n"
                     "2. Check if Steam Server isn't down\n"
                     "3. Check if Steam Client is running\n"
-                    "4. Check if api_url and api_key is correct on config file\n"
                 )
             )
 

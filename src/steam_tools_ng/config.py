@@ -111,7 +111,6 @@ default_config = {
     },
     'steam': {
         'api_url': 'https://api.steampowered.com',
-        'api_key': '',
     },
     'coupons': {
         'enable': True,

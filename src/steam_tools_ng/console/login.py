@@ -46,7 +46,6 @@ class Login:
         self._mail_code = ''
         self._steam_code = ''
         self._captcha_text = ''
-        self._api_key = ''
 
     @property
     def username(self) -> str:
@@ -64,10 +63,6 @@ class Login:
     @property
     def steam_code(self) -> str:
         return self._steam_code
-
-    @property
-    def api_key(self) -> str:
-        return self._api_key
 
     @property
     def captcha_text(self) -> str:
@@ -114,9 +109,6 @@ class Login:
             # CaptchaError exception will reset it if needed
             self.captcha_gid = -1
 
-        if self.api_key:
-            config.new("steam", "api_key", self.api_key)
-
         if not self.shared_secret or not self.identity_secret:
             log.warning(_("No shared secret found. Trying to log-in without two-factor authentication."))
             # self.code_item.show()
@@ -128,9 +120,6 @@ class Login:
 
         while True:
             try:
-                if not config.parser.get('steam', 'api_key'):
-                    raise AttributeError
-
                 login_data = await self._login_session.do_login(**kwargs)
             except login.MailCodeError:
                 user_input = utils.safe_input(_("Write code received by email"))
@@ -176,18 +165,6 @@ class Login:
             except binascii.Error:
                 log.error(_("shared secret is invalid!"))
                 self.cli.on_quit()
-            except AttributeError:
-                log.info(
-                    _(
-                        "No api_key found on config file.\n"
-                        "Go to https://steamcommunity.com/dev/apikey\n"
-                        "and paste your Steam API key bellow\n"
-                    )
-                )
-
-                user_input = utils.safe_input(_("Write Steam API Key"))
-                self._api_key = user_input
-                await self.do_login(True)
             else:
                 new_configs = {}
 

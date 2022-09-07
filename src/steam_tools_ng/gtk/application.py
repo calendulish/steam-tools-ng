@@ -61,7 +61,6 @@ class SteamToolsNG(Gtk.Application):
 
         self.api_login: Optional[login.Login] = None
         self.api_url = config.parser.get("steam", "api_url")
-        self.api_key = config.parser.get("steam", "api_key")
 
         self.old_confirmations: List[community.Confirmation] = []
 
@@ -140,9 +139,6 @@ class SteamToolsNG(Gtk.Application):
         tcp_connector = aiohttp.TCPConnector(ssl=ssl_context)
         http_session = aiohttp.ClientSession(raise_for_status=True, connector=tcp_connector)
         login_session = await login.Login.new_session(0, api_url=self.api_url, http_session=http_session)
-        community_session = await community.Community.new_session(0, api_url=self.api_url)
-        webapi_session = await webapi.SteamWebAPI.new_session(0, api_key=self.api_key, api_url=self.api_url)
-        internals_session = await internals.Internals.new_session(0)
 
         self.main_window.statusbar.set_warning("steamguard", _("Logging on Steam. Please wait!"))
         log.info(_("Logging on Steam"))
@@ -156,7 +152,7 @@ class SteamToolsNG(Gtk.Application):
         login_session.restore_login(self.steamid, token, token_secure)
 
         try:
-            if self.api_key and await login_session.is_logged_in(self.steamid):
+            if await login_session.is_logged_in(self.steamid):
                 log.info("Steam login Successful")
             else:
                 await self.do_login(auto=True)
@@ -167,6 +163,30 @@ class SteamToolsNG(Gtk.Application):
             return  # FIXME: RETRY ###
 
         self.main_window.statusbar.clear("steamguard")
+
+        community_session = await community.Community.new_session(0, api_url=self.api_url)
+
+        try:
+            api_key = await community_session.get_api_key()
+            log.debug(_('SteamAPI key found: %s'), api_key)
+
+            if api_key[1] != 'Steam Tools NG':
+                raise AttributeError
+        except AttributeError:
+            self.main_window.statusbar.set_warning('steamguard', _('Updating your SteamAPI dev key'))
+            await asyncio.sleep(3)
+            await community_session.revoke_api_key()
+            await asyncio.sleep(3)
+            api_key = await community_session.register_api_key('Steam Tools NG')
+            self.main_window.statusbar.clear('steamguard')
+
+            if not api_key:
+                exception_ = ValueError(_('Something wrong with your SteamAPI dev key'))
+                utils.fatal_error_dialog(exception_, [])
+                raise exception_
+
+        webapi_session = await webapi.SteamWebAPI.new_session(0, api_key=api_key[0], api_url=self.api_url)
+        internals_session = await internals.Internals.new_session(0)
 
         modules: Dict = {}
 

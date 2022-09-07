@@ -84,7 +84,6 @@ class SteamToolsNG:
             sys.exit(1)
 
         self.api_url = config.parser.get("steam", "api_url")
-        self.api_key = config.parser.get("steam", "api_key")
 
     @property
     def steamid(self) -> Optional[universe.SteamId]:
@@ -119,9 +118,6 @@ class SteamToolsNG:
         tcp_connector = aiohttp.TCPConnector(ssl=ssl_context)
         http_session = aiohttp.ClientSession(raise_for_status=True, connector=tcp_connector)
         login_session = await login.Login.new_session(0, api_url=self.api_url, http_session=http_session)
-        community_session = await community.Community.new_session(0, api_url=self.api_url)
-        webapi_session = await webapi.SteamWebAPI.new_session(0, api_key=self.api_key, api_url=self.api_url)
-        internals_session = await internals.Internals.new_session(0)
 
         log.info(_("Logging on Steam. Please wait!"))
 
@@ -134,7 +130,7 @@ class SteamToolsNG:
         login_session.restore_login(self.steamid, token, token_secure)
 
         try:
-            if self.api_key and await login_session.is_logged_in(self.steamid):
+            if await login_session.is_logged_in(self.steamid):
                 log.info("Steam login Successful")
             else:
                 await self.do_login(auto=True)
@@ -143,6 +139,27 @@ class SteamToolsNG:
             log.error(_("Check your connection. (server down?)"))
             await asyncio.sleep(10)
             return  # FIXME: RETRY ###
+
+        community_session = await community.Community.new_session(0, api_url=self.api_url)
+
+        try:
+            api_key = await community_session.get_api_key()
+            log.debug(_('SteamAPI key found: %s'), api_key)
+
+            if api_key[1] != 'Steam Tools NG':
+                raise AttributeError
+        except AttributeError:
+            log.warning(_('Updating your SteamAPI dev key'))
+            await asyncio.sleep(3)
+            await community_session.revoke_api_key()
+            await asyncio.sleep(3)
+            api_key = await community_session.register_api_key('Steam Tools NG')
+
+            if not api_key:
+                raise ValueError(_('Something wrong with your SteamAPI dev key'))
+
+        webapi_session = await webapi.SteamWebAPI.new_session(0, api_key=api_key[0], api_url=self.api_url)
+        internals_session = await internals.Internals.new_session(0)
 
         log.debug(_("Initializing module %s"), self.module_name)
         module = getattr(self, f"run_{self.module_name}")

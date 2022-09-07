@@ -82,7 +82,6 @@ class LoginDialog(Gtk.Dialog):
 
         self.steam_code_item = self.user_details_section.new("_steam_code", _("Steam Code:"), Gtk.Entry, 0, 2)
         self.mail_code_item = self.user_details_section.new("_mail_code", _("Mail Code:"), Gtk.Entry, 0, 2)
-        self.api_key_item = self.user_details_section.new("_api_key", _("Steam API Key:"), Gtk.Entry, 0, 2)
 
         self.captcha_gid = -1
         self.captcha_item = self.user_details_section.new("_captcha", _("Code:"), Gtk.Image, 0, 3)
@@ -124,7 +123,6 @@ class LoginDialog(Gtk.Dialog):
 
         self.steam_code_item.hide()
         self.mail_code_item.hide()
-        self.api_key_item.hide()
         self.captcha_item.hide()
         self.captcha_text_item.hide()
         self.advanced_login_section.hide()
@@ -156,10 +154,6 @@ class LoginDialog(Gtk.Dialog):
     @property
     def steam_code(self) -> str:
         return self.steam_code_item.get_text()
-
-    @property
-    def api_key(self) -> str:
-        return self.api_key_item.get_text()
 
     @property
     def captcha_text(self) -> str:
@@ -219,9 +213,6 @@ class LoginDialog(Gtk.Dialog):
             # CaptchaError exception will reset it if needed
             self.captcha_gid = -1
 
-        if self.api_key:
-            config.new("steam", "api_key", self.api_key)
-
         if not self.shared_secret or not self.identity_secret:
             log.warning(_("No shared secret found. Trying to log-in without two-factor authentication."))
             # self.code_item.show()
@@ -234,13 +225,9 @@ class LoginDialog(Gtk.Dialog):
         self.captcha_text_item.hide()
         self.steam_code_item.hide()
         self.mail_code_item.hide()
-        self.api_key_item.hide()
 
         while True:
             try:
-                if not config.parser.get('steam', 'api_key'):
-                    raise AttributeError
-
                 login_data = await self.login_session.do_login(**kwargs)
             except login.MailCodeError:
                 self.status.info(_("Write code received by email\nand click on 'Log-in' button"))
@@ -297,17 +284,6 @@ class LoginDialog(Gtk.Dialog):
                 self.username_item.set_sensitive(True)
                 self.__password_item.set_sensitive(True)
                 self.shared_secret_item.grab_focus()
-            except AttributeError:
-                self.status.info(
-                    _(
-                        "No api_key found on config file.\n"
-                        "Go to https://steamcommunity.com/dev/apikey\n"
-                        "and paste your Steam API key bellow\n"
-                    )
-                )
-                self.api_key_item.set_text("")
-                self.api_key_item.show()
-                self.api_key_item.grab_focus()
             else:
                 new_configs = {"account_name": self.username}
 
