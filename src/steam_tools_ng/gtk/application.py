@@ -284,7 +284,8 @@ class SteamToolsNG(Gtk.Application):
                     ])
 
                     for item in itertools.zip_longest(confirmation_.give, confirmation_.receive):
-                        self.main_window.confirmation_tree.store.append(iter_, ['', '', '', item[0], '', item[1]])
+                        row = ['', '', '', item[0], '-->', item[1] if item[1] else 'Nothing']
+                        self.main_window.confirmation_tree.store.append(iter_, row)
 
                 self.old_confirmations = module_data.raw_data
                 self.main_window.statusbar.clear('confirmations')
