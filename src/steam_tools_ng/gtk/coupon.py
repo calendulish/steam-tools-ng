@@ -18,7 +18,7 @@
 import asyncio
 import logging
 import time
-from typing import Union
+from typing import Union, Optional
 
 from gi.repository import Gtk
 
@@ -32,12 +32,12 @@ _ = i18n.get_translation
 
 
 # noinspection PyUnusedLocal
-class GetCouponDialog(Gtk.Dialog):
+class CouponDialog(Gtk.Dialog):
     def __init__(
             self,
             parent_window: Gtk.Window,
             application: Gtk.Application,
-            model: Gtk.TreeModel,
+            model: Optional[Gtk.TreeModel] = None,
             iter_: Union[Gtk.TreeIter, bool, None] = False,
     ) -> None:
         super().__init__(use_header_bar=True)
@@ -70,7 +70,6 @@ class GetCouponDialog(Gtk.Dialog):
 
         self.yes_button = Gtk.Button()
         self.yes_button.set_label(_("Continue"))
-        self.yes_button.connect("clicked", self.on_yes_button_clicked)
         self.header_bar.pack_end(self.yes_button)
 
         self.no_button = Gtk.Button()
@@ -79,18 +78,26 @@ class GetCouponDialog(Gtk.Dialog):
         self.header_bar.pack_start(self.no_button)
 
         trade_time = int(time.time()) - config.parser.getint('coupons', 'last_trade_time')
-        if trade_time < 120:
+        if self.iter and trade_time < 120:
             self.status.error(_("You must wait {} seconds to get another coupon").format(120 - trade_time))
             self.header_bar.set_show_title_buttons(True)
             self.yes_button.hide()
             self.no_button.hide()
             return
 
-        if self.iter is None or not model:
+        if self.iter is None:
             self.status.error(_("You must select something"))
             self.header_bar.set_show_title_buttons(True)
             self.yes_button.hide()
             self.no_button.hide()
+        elif self.iter is False:
+            self.status.info(
+                _(
+                    "You are about to giveaway all coupons in your inventory\n"
+                    "The items will be automatically accepted and transfered in 1 minute"
+                )
+            )
+            self.yes_button.connect("clicked", self.on_yes_button_clicked, 'give')
         else:
             self.status.info(
                 _(
@@ -98,10 +105,11 @@ class GetCouponDialog(Gtk.Dialog):
                     "The item will be automatically added at your inventory in 1 minute"
                 ).format(utils.unmarkup(self.model.get_value(self.iter, 1)))
             )
+            self.yes_button.connect("clicked", self.on_yes_button_clicked, 'get')
 
         self.connect('response', lambda dialog, response_id: self.destroy())
 
-    def on_yes_button_clicked(self, button: Gtk.Button) -> None:
+    def on_yes_button_clicked(self, button: Gtk.Button, mode: str) -> None:
         button.hide()
         self.no_button.hide()
 
@@ -109,7 +117,7 @@ class GetCouponDialog(Gtk.Dialog):
         self.header_bar.set_show_title_buttons(False)
 
         loop = asyncio.get_event_loop()
-        task = loop.create_task(self.get_coupon())
+        task = loop.create_task(self.send_trade_offer(mode))
         task.add_done_callback(self.on_task_finish)
 
     def on_task_finish(self, task: asyncio.Task) -> None:
@@ -118,6 +126,9 @@ class GetCouponDialog(Gtk.Dialog):
         if exception and not isinstance(exception, asyncio.CancelledError):
             try:
                 raise task.exception()
+            except community.InventoryEmptyError:
+                self.status.error(_("Inventory is empty."))
+                self.header_bar.set_show_title_buttons(True)
             except Exception as exception:
                 stack = task.get_stack()
 
@@ -135,17 +146,31 @@ class GetCouponDialog(Gtk.Dialog):
         else:
             self.destroy()
 
-    async def get_coupon(self) -> None:
+    async def send_trade_offer(self, mode: str) -> None:
         self.status.info(_("Waiting Steam Server"))
         botid = config.parser.getint('coupons', 'botid')
         token = config.parser.get('coupons', 'token')
         contextid = config.parser.getint('coupons', 'contextid')
         appid = config.parser.getint('coupons', 'appid')
-        assetid = int(self.model.get_value(self.iter, 2))
-        receive = [(appid, assetid, 1)]
+        steamid = config.parser.getint('login', 'steamid')
+        give = []
+        receive = []
+
+        if mode == 'get':
+            assetid = int(self.model.get_value(self.iter, 2))
+            receive = [(appid, assetid, 1)]
+        else:
+            json_data = await self.community_session.get_inventory(
+                universe.generate_steamid(steamid),
+                appid,
+                contextid,
+            )
+
+            for coupon in json_data:
+                give.append((coupon.appid, coupon.assetid, coupon.amount))
 
         steamid = universe.generate_steamid(botid)
-        json_data = await self.community_session.send_trade_offer(steamid, token, contextid, [], receive)
+        json_data = await self.community_session.send_trade_offer(steamid, token, contextid, give, receive)
 
         if len(json_data) == 1 and 'tradeofferid' in json_data:
             config.new("coupons", "last_trade_time", int(time.time()))

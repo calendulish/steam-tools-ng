@@ -168,7 +168,7 @@ class Main(Gtk.ApplicationWindow):
         )
 
         self.coupon_tree.store.set_sort_column_id(0, Gtk.SortType.ASCENDING)
-        self.coupon_grid.attach(self.coupon_tree, 0, 0, 3, 2)
+        self.coupon_grid.attach(self.coupon_tree, 0, 0, 4, 2)
 
         coupon_classid_column = self.coupon_tree.view.get_column(2)
         coupon_classid_column.set_visible(False)
@@ -181,14 +181,21 @@ class Main(Gtk.ApplicationWindow):
         coupon_tree_selection.connect("changed", self.on_tree_selection_changed)
 
         self.coupon_progress = Gtk.LevelBar()
-        self.coupon_grid.attach(self.coupon_progress, 0, 3, 3, 1)
+        self.coupon_grid.attach(self.coupon_progress, 0, 3, 4, 1)
 
         get_coupon_button = Gtk.Button()
         get_coupon_button.set_margin_start(5)
         get_coupon_button.set_margin_end(5)
         get_coupon_button.set_label(_('Get selected coupon'))
-        get_coupon_button.connect('clicked', self.on_get_coupon, coupon_tree_selection)
+        get_coupon_button.connect('clicked', self.on_coupon_action, coupon_tree_selection)
         self.coupon_grid.attach(get_coupon_button, 2, 4, 1, 1)
+
+        give_coupon_button = Gtk.Button()
+        give_coupon_button.set_margin_start(5)
+        give_coupon_button.set_margin_end(5)
+        give_coupon_button.set_label(_('Giveaway your coupons'))
+        give_coupon_button.connect('clicked', self.on_coupon_action)
+        self.coupon_grid.attach(give_coupon_button, 3, 4, 1, 1)
 
         fetch_coupons_button = Gtk.Button()
         fetch_coupons_button.set_margin_start(5)
@@ -311,9 +318,13 @@ class Main(Gtk.ApplicationWindow):
     def on_stop_fetching_coupons(self, button: Gtk.Button):
         self.fetch_coupon_event.clear()
 
-    def on_get_coupon(self, button: Gtk.Button, model: Union[Gtk.TreeModel, Gtk.TreeSelection]) -> None:
-        get_coupon_dialog = coupon.GetCouponDialog(self, self.application, *model.get_selected())
-        get_coupon_dialog.show()
+    def on_coupon_action(self, button: Gtk.Button, model: Union[Gtk.TreeModel, Gtk.TreeSelection] = None) -> None:
+        if model:
+            coupon_dialog = coupon.CouponDialog(self, self.application, *model.get_selected())
+        else:
+            coupon_dialog = coupon.CouponDialog(self, self.application)
+
+        coupon_dialog.show()
 
     def on_validate_confirmations(
             self,
@@ -341,8 +352,6 @@ class Main(Gtk.ApplicationWindow):
     @staticmethod
     def on_coupon_double_clicked(view: Gtk.TreeView, path: Gtk.TreePath, column: Gtk.TreeViewColumn):
         model = view.get_model()
-        #appids = model[path][2]
-        #call(f'{config.file_manager} "https://store.steampowered.com/app/{appids}"')
         link = model[path][3]
         call(f'{config.file_manager} "{link}"')
 
