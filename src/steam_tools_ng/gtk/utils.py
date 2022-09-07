@@ -165,7 +165,7 @@ class StatusBar(Gtk.Grid):
         self.messages[module] = {"warning": "", "critical": ""}
 
 
-class SimpleTextTree(Gtk.ScrolledWindow):
+class SimpleTextTree(Gtk.Grid):
     def __init__(
             self,
             *elements,
@@ -175,8 +175,9 @@ class SimpleTextTree(Gtk.ScrolledWindow):
             model: Callable[..., Union[Gtk.TreeStore, Gtk.ListStore]] = Gtk.TreeStore,
     ) -> None:
         super().__init__()
-        self._main_grid = Gtk.Grid()
-        self.set_child(self._main_grid)
+        self._scrolled_window = Gtk.ScrolledWindow()
+        self._scrolled_window.set_overlay_scrolling(overlay_scrolling)
+        self.attach(self._scrolled_window, 0, 0, 1, 1)
 
         # noinspection PyUnusedLocal
         self._store = model(*[str for number in range(len(elements))])
@@ -184,9 +185,7 @@ class SimpleTextTree(Gtk.ScrolledWindow):
         self._view.set_model(self._store)
         self._view.set_hexpand(True)
         self._view.set_vexpand(True)
-        self._main_grid.attach(self._view, 0, 0, 1, 1)
-
-        self.set_overlay_scrolling(overlay_scrolling)
+        self._scrolled_window.set_child(self._view)
 
         self._lock = False
         self._lock_label = Gtk.Label()
@@ -203,7 +202,7 @@ class SimpleTextTree(Gtk.ScrolledWindow):
             )
         )
 
-        self._main_grid.attach(self._lock_label, 0, 0, 1, 1)
+        self.attach(self._lock_label, 0, 0, 1, 1)
 
         renderer = Gtk.CellRendererText()
 
