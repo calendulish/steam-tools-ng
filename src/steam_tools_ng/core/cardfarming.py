@@ -107,7 +107,8 @@ async def while_has_cards(
             else:
                 break
 
-        badge._replace(cards=cards)
+        # noinspection PyProtectedMember
+        badge = badge._replace(cards=cards)
 
     utils.ModuleData(
         display=str(badge.appid),
