@@ -33,7 +33,8 @@ _ = i18n.get_translation
 # FIXME: https://gitlab.gnome.org/GNOME/gtk/-/issues/2015
 # FIXME: L32:79
 if sys.platform == 'win32':
-    from psutil import Popen
+    import contextlib
+    from psutil import Popen, NoSuchProcess
     import atexit
 
 
@@ -42,8 +43,9 @@ def killall(process: 'psutil.Popen') -> None:
         return
 
     for child in process.children(recursive=True):
-        child.kill()
-        child.wait()
+        with contextlib.suppress(NoSuchProcess):
+            child.kill()
+            child.wait()
 
     process.kill()
     process.wait()
