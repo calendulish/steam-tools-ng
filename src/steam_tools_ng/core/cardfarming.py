@@ -17,6 +17,7 @@
 #
 import asyncio
 import random
+import sys
 import time
 from typing import Generator
 
@@ -28,6 +29,54 @@ from .. import i18n, config
 
 _ = i18n.get_translation
 
+# FIXME: Workaround for keyboard lag when running games on GUI on Windows
+# FIXME: https://gitlab.gnome.org/GNOME/gtk/-/issues/2015
+# FIXME: L32:79
+if sys.platform == 'win32':
+    from psutil import Popen
+    import atexit
+
+
+def killall(process: 'psutil.Popen') -> None:
+    if not process.is_running():
+        return
+
+    for child in process.children(recursive=True):
+        child.kill()
+        child.wait()
+
+    process.kill()
+    process.wait()
+
+
+class SteamApiExecutorWorkaround:
+    def __init__(self, appid: int, *args, **kwargs) -> None:
+        self.process = None
+        self.appid = appid
+
+        if sys.platform != 'win32':
+            self.executor = _SteamApiExecutor(appid, *args, **kwargs)
+
+    async def init(self) -> None:
+        if sys.platform == 'win32':
+            self.process = Popen([sys.executable, '-m', 'steam_tools_ng.steam_api_executor', str(self.appid)])
+            atexit.register(killall, self.process)
+        else:
+            await self.executor.init()
+
+    async def shutdown(self, *args, **kwargs) -> None:
+        if sys.platform == 'win32':
+            killall(self.process)
+        else:
+            await self.executor.shutdown(*args, **kwargs)
+
+
+_SteamApiExecutor = client.SteamApiExecutor
+client.SteamApiExecutor = SteamApiExecutorWorkaround
+
+
+# FIXME: L32:79
+# FIXME: ---- #
 
 async def while_has_cards(
         steamid: universe.SteamId,
