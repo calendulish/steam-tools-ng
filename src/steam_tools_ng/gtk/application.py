@@ -326,7 +326,7 @@ class SteamToolsNG(Gtk.Application):
 
             if module_data.action == "update":
                 iter_ = self.main_window.coupon_tree.store.append([
-                    str(module_data.raw_data['price']),
+                    f"{module_data.raw_data['price']:.2f}",
                     utils.markup(module_data.raw_data['name'], foreground='blue', underline='single'),
                     str(module_data.raw_data['assetid']),
                     module_data.raw_data['link'],
