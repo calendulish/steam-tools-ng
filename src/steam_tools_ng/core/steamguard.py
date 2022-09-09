@@ -84,7 +84,7 @@ async def main() -> Generator[utils.ModuleData, None, None]:
             yield utils.ModuleData(
                 display=auth_code,
                 status=_("Running"),
-                info=_("New code in {} seconds").format(seconds * 8 - past_time),
+                info=_("New code in {} seconds").format(seconds - round(past_time / 8)),
                 level=(past_time, seconds * 8),
             )
 
