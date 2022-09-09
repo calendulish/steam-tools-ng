@@ -222,7 +222,7 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> Generator[
                 semaphore.release()
 
                 if tasks[appid].exception():
-                    if tasks[appid].exception() == StopAsyncIteration:
+                    if isinstance(tasks[appid].exception(), StopAsyncIteration):
                         tasks[appid] = None
                         continue
                     else:
