@@ -16,6 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
+import contextlib
 import logging
 from importlib import resources
 from subprocess import call
@@ -28,6 +29,12 @@ from .. import config, i18n, core
 
 _ = i18n.get_translation
 log = logging.getLogger(__name__)
+
+try:
+    from stlib import client
+except ImportError as exception:
+    log.error(str(exception))
+    client = None
 
 
 # noinspection PyUnusedLocal
@@ -354,8 +361,18 @@ class Main(Gtk.ApplicationWindow):
     @staticmethod
     def on_coupon_double_clicked(view: Gtk.TreeView, path: Gtk.TreePath, column: Gtk.TreeViewColumn):
         model = view.get_model()
-        link = model[path][3]
-        call(f'{config.file_manager} "{link}"')
+        url = model[path][3]
+        steam_running = False
+
+        if client:
+            with contextlib.suppress(ProcessLookupError):
+                with client.SteamGameServer() as server:
+                    steam_running = True
+
+        if steam_running:
+            url = f"steam://openurl/{url}"
+
+        call(f'{config.file_manager} "{url}"')
 
     @staticmethod
     def on_tree_selection_changed(selection: Gtk.TreeSelection) -> None:
