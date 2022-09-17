@@ -59,7 +59,10 @@ if not exist release (
 )
 
 set PATH=%cd%\\release\\bin;%PATH%
-python -m pip install --force-reinstall dist\\stlib-0.14.1-cp310-cp310-win_amd64.whl || exit 1
+for %%i in (dist\\stlib-*-cp310-cp310-win_amd64.whl) do (python -m pip install --force-reinstall %%i) || exit 1
+for %%i in (release\\python\\pycairo-*-cp310-cp310-win_amd64.whl) do (python -m pip install --force-reinstall %%i) || exit 1
+for %%i in (release\\python\\PyGObject-*-cp310-cp310-win_amd64.whl) do (python -m pip install --force-reinstall --no-deps %%i) || exit 1
+
 python ./setup.py -v build || exit 1
 pushd build || exit 1
 move /y "exe.win-amd64-%PYTHON_VERSION%" "%RELEASE_NAME%" || exit 1
