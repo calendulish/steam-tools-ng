@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.9', '3.10']
     name: Python ${{ matrix.python-version }} linux build
     steps:
       - uses: actions/checkout@v3
@@ -37,13 +37,18 @@ jobs:
     if: ${{ always() }}
     needs: delete-old-artifacts
     runs-on: windows-2022
+    strategy:
+      matrix:
+        python-version: ['3.10']
     defaults:
       run:
         shell: cmd
         working-directory: .\\tools\Windows
     steps:
       - uses: actions/checkout@v3
-      - run: update_dev_environment.cmd
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
       - run: dist_script_native.cmd
       - uses: actions/upload-artifact@v3
         with:
