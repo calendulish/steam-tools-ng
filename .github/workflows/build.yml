@@ -44,7 +44,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: update_dev_environment.cmd
-      - run: dist_script.cmd
+      - run: dist_script_native.cmd
       - uses: actions/upload-artifact@v3
         with:
           name: windows

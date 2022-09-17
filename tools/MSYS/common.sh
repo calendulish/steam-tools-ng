@@ -27,7 +27,7 @@ cd "$(dirname "$0")/../.." || exit 1
 
 export PYTHON_VERSION RELEASE_NAME APP_VERSION STLIB_PLUGINS_VERSION ISCC
 PYTHON_VERSION="$(python --version | cut -f2 -d' ' | cut -f1,2 -d'.')"
-RELEASE_NAME="$(basename "$PWD")-WIN64-Python-$PYTHON_VERSION"
+RELEASE_NAME="$(basename "$PWD")-MINGW64-Python-$PYTHON_VERSION"
 APP_VERSION="$(grep version= setup.py | cut -d\' -f2)"
 STLIB_PLUGINS_VERSION="0.2"
 ISCC="/c/Program Files (x86)/Inno Setup 6/ISCC.exe"
