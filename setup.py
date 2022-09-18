@@ -26,7 +26,7 @@ from setuptools import find_packages
 from setuptools.command.build_py import build_py
 from typing import Any, List, Mapping, Tuple
 
-if os.name == 'nt':
+if os.name == 'nt' and not os.getenv('NO_FREEZE'):
     # noinspection PyPackageRequirements
     from cx_Freeze import setup, Executable
 else:
@@ -146,7 +146,7 @@ def fix_gtk() -> List[Tuple[str, str]]:
 
 
 def freeze_options() -> Mapping[str, Any]:
-    if os.name != 'nt':
+    if os.name != 'nt' or os.getenv('NO_FREEZE'):
         return {}
 
     icons_path = Path('src', 'steam_tools_ng', 'icons')
