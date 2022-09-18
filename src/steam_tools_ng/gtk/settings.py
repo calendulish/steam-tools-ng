@@ -279,8 +279,8 @@ class SettingsDialog(Gtk.Dialog):
 
             _message = _(
                 "cardfarming module has been disabled because you have\n"
-                "a stlib built without steam_api support. To enable it again,\n"
-                "reinstall stlib with Steam API support\n"
+                "a stlib built without SteamWorks support. To enable it again,\n"
+                "reinstall stlib with SteamWorks support\n"
             )
 
             _cardfarming_disabled.set_markup(utils.markup(_message, color="hotpink", background="black"))
