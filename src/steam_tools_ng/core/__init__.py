@@ -25,9 +25,8 @@ __all__ = [
     'utils',
 ]
 
+import stlib
 from . import *
 
-try:
+if stlib.steamworks_available:
     from . import cardfarming, fakerun
-except ImportError:
-    pass

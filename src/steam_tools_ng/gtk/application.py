@@ -35,12 +35,6 @@ from .. import config, i18n, core
 _ = i18n.get_translation
 log = logging.getLogger(__name__)
 
-try:
-    from stlib import client
-except ImportError as exception:
-    log.error(str(exception))
-    client = None
-
 
 def while_window_realized(function: Callable[..., Any]) -> Callable[..., Any]:
     @functools.wraps(function)

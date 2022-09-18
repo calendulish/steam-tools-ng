@@ -24,17 +24,15 @@ from typing import Union, Optional, Tuple, Any
 
 from gi.repository import GdkPixbuf, Gio, Gtk
 
+import stlib
 from . import confirmation, utils, coupon
 from .. import config, i18n, core
 
 _ = i18n.get_translation
 log = logging.getLogger(__name__)
 
-try:
+if stlib.steamworks_available:
     from stlib import client
-except ImportError as exception:
-    log.error(str(exception))
-    client = None
 
 
 # noinspection PyUnusedLocal
@@ -364,7 +362,7 @@ class Main(Gtk.ApplicationWindow):
         url = model[path][3]
         steam_running = False
 
-        if client:
+        if stlib.steamworks_available:
             with contextlib.suppress(ProcessLookupError):
                 with client.SteamGameServer() as server:
                     steam_running = True
