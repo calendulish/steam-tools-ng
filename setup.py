@@ -86,11 +86,14 @@ def fix_gtk() -> List[Tuple[str, str]]:
             'pango-1.0-0',
             'pangocairo-1.0-0',
             'pangowin32-1.0-0',
+            'Rsvg-2.0-vs17',
             'graphene-1.0-0',
             'freetype-6',
         ]
 
-        pixbuf_loaders = []
+        pixbuf_loaders = [
+            'libpixbufloader-svg',
+        ]
     else:
         # mingw
         lib_path = Path(sysconfig.get_path('platlib')).parent.parent.resolve()
