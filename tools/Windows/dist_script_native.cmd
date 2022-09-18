@@ -50,7 +50,7 @@ if not exist dist (
 )
 
 if not exist gvsbuild.zip (
-    set gvsbuild="https://github.com/ShyPixie/gvsbuild-release/releases/download/latest/gvsbuild-py3.10-vs22-x64.zip"
+    set gvsbuild="https://github.com/ShyPixie/gvsbuild-release/releases/download/latest/gvsbuild-py3.10-vs17-x64.zip"
     !curl! -o gvsbuild.zip -L !gvsbuild! || !certutil! -urlcache -split -f !gvsbuild! gvsbuild.zip || exit 1
 )
 
