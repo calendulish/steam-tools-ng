@@ -21,11 +21,6 @@ import sys
 from importlib.metadata import version, PackageNotFoundError
 from pathlib import Path
 
-if len(sys.argv) == 1:
-    import gi
-
-    gi.require_version('Gtk', '4.0')
-
 try:
     __version__ = version(__package__)
 except PackageNotFoundError:  # Freezed
