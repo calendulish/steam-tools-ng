@@ -260,6 +260,7 @@ setup(
     ]},
     install_requires=[
         "pywin32; sys_platform == 'win32'",
+        "psutil; sys_platform == 'win32'",
         'stlib>=0.14',
         'aiohttp',
         'certifi',

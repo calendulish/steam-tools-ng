@@ -83,6 +83,7 @@ call :install --force-reinstall --no-deps https://github.com/ShyPixie/stlib/rele
 
 echo Installing optional dependencies
 call :install gtk4 python-gobject
+call :install psutil
 
 echo Installing dev tools
 call :install git tar unzip
