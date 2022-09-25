@@ -51,6 +51,7 @@ async def main(fetch_coupon_event: asyncio.Event) -> Generator[utils.ModuleData,
         return
 
     yield utils.ModuleData(action="clear")
+    package_count = 1
 
     for index, coupon_ in enumerate(inventory):
         yield utils.ModuleData(action="update_level", raw_data=(index, len(inventory)))
@@ -68,6 +69,8 @@ async def main(fetch_coupon_event: asyncio.Event) -> Generator[utils.ModuleData,
             if coupon_discount < 75:
                 log.info(_('Ignoring coupon %s due low discount value'), coupon_.name)
                 continue
+            else:
+                package_count += 1
 
             try:
                 package_details = await internals_session.get_package(package_id)
@@ -97,7 +100,7 @@ async def main(fetch_coupon_event: asyncio.Event) -> Generator[utils.ModuleData,
                 'link': coupon_.actions[0]['link'],
             })
 
-        if index and not index % 150:
+        if index and not package_count % 150:
             yield utils.ModuleData(error=_("Api rate limit reached. Waiting."), info=_("Waiting Changes"))
             await asyncio.sleep(100)
 
