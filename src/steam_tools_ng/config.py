@@ -148,6 +148,7 @@ default_config = {
         'default_wait': 600,
         'min_wait': 120,
         'max_concurrency': 5,
+        'invisible': True,
     },
     'general': {
         'theme': 'light',

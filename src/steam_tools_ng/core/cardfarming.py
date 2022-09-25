@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+from subprocess import call
+
 import aiohttp
 import asyncio
 import atexit
@@ -167,6 +169,7 @@ async def while_has_cards(
 async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> Generator[utils.ModuleData, None, None]:
     reverse_sorting = config.parser.getboolean("cardfarming", "reverse_sorting")
     max_concurrency = config.parser.getint("cardfarming", "max_concurrency")
+    invisible = config.parser.getboolean("cardfarming", "invisible")
     community_session = community.Community.get_session(0)
 
     try:
@@ -186,6 +189,9 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> Generator[
         return
 
     generators = {}
+
+    if invisible:
+        call(f'{config.file_manager} "steam://friends/status/invisible"')
 
     for badge in badges:
         yield utils.ModuleData(
