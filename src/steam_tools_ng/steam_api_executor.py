@@ -15,24 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-
 # FIXME: Workaround for keyboard lag when running games on GUI on Windows
 # FIXME: https://gitlab.gnome.org/GNOME/gtk/-/issues/2015
-
-import asyncio
 import sys
+import time
 from multiprocessing import freeze_support
 
 from stlib import client
-
-
-async def steam_api_executor(appid: int) -> None:
-    async with client.SteamApiExecutor(appid) as executor:
-        await executor.init()
-
-        while True:
-            await asyncio.sleep(5)
-
 
 if __name__ == "__main__":
     freeze_support()
@@ -40,4 +29,6 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         raise AttributeError('No appid')
 
-    asyncio.run(steam_api_executor(int(sys.argv[1])))
+    with client.SteamAPIExecutor(int(sys.argv[1])):
+        while True:
+            time.sleep(5)

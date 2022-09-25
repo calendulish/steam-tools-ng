@@ -22,7 +22,7 @@ from typing import Optional
 import aiohttp
 from gi.repository import Gtk, Gdk
 
-from stlib import universe, webapi, login
+from stlib import universe, webapi
 from . import utils
 from .. import i18n, config
 
@@ -151,7 +151,12 @@ class NewAuthenticatorDialog(Gtk.Dialog):
         self.status.info(_("Adding authenticator"))
 
         try:
-            await self.webapi_session.add_authenticator(self._login_data, self.sms_code)
+            await self.webapi_session.add_authenticator(
+                self.steamid,
+                self.oauth_token,
+                self._login_data.auth['shared_secret'],
+                self.sms_code,
+            )
         except webapi.SMSCodeError:
             self.status.info(_("Invalid SMS Code. Please,\ncheck the code and try again."))
             self.user_details_section.show()

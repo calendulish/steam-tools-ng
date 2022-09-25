@@ -42,7 +42,7 @@ class AboutDialog(Gtk.AboutDialog):
             "®omano (fr)"
         )
 
-        self.set_website("http://github.com/ShyPixie/steam-tools-ng")
+        self.set_website("https://github.com/ShyPixie/steam-tools-ng")
         self.set_website_label(_("Git Repository"))
         self.set_version(__version__)
         self.set_copyright("Lara Maia (C) 2015 ~ 2022 - dev@lara.monster")

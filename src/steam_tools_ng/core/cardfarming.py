@@ -49,15 +49,11 @@ def killall(process: 'Popen') -> None:
     process.wait()
 
 
-class SteamApiExecutorWorkaround:
+class SteamAPIExecutorWorkaround:
     def __init__(self, appid: int, *args, **kwargs) -> None:
         self.process = None
         self.appid = appid
 
-        if sys.platform != 'win32':
-            self.executor = _SteamApiExecutor(appid, *args, **kwargs)
-
-    async def init(self) -> None:
         if sys.platform == 'win32':
             if getattr(sys, 'frozen', False):
                 executor_path = [str(Path(sys.executable).parent / 'steam-api-executor.exe'), str(self.appid)]
@@ -67,17 +63,17 @@ class SteamApiExecutorWorkaround:
             self.process = Popen(executor_path, creationflags=0x08000000)
             atexit.register(killall, self.process)
         else:
-            await self.executor.init()
+            self.executor = _SteamAPIExecutor(appid, *args, **kwargs)
 
-    async def shutdown(self, *args, **kwargs) -> None:
+    def shutdown(self, *args, **kwargs) -> None:
         if sys.platform == 'win32':
             killall(self.process)
         else:
-            await self.executor.shutdown(*args, **kwargs)
+            self.executor.shutdown(*args, **kwargs)
 
 
-_SteamApiExecutor = client.SteamApiExecutor
-client.SteamApiExecutor = SteamApiExecutorWorkaround
+_SteamAPIExecutor = client.SteamAPIExecutor
+client.SteamAPIExecutor = SteamAPIExecutorWorkaround
 
 
 # FIXME: L36:79
@@ -108,11 +104,9 @@ async def while_has_cards(
         else:
             wait_offset = first_wait - game_info.playtime_forever * 60
 
-        executor = client.SteamApiExecutor(badge.appid)
-
         try:
-            await executor.init()
-        except client.SteamAPIError:
+            executor = client.SteamAPIExecutor(badge.appid)
+        except AttributeError:
             yield utils.ModuleData(action='ignore', info=_("Invalid game id {}. Ignoring.").format(badge.appid))
             break
         except ProcessLookupError:
@@ -138,7 +132,7 @@ async def while_has_cards(
             )
             await asyncio.sleep(1)
 
-        await executor.shutdown()
+        executor.shutdown()
         wait_offset = random.randint(min_wait, int(min_wait / 100 * 125))
         for past_time in range(wait_offset):
             yield utils.ModuleData(

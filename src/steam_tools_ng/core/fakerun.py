@@ -49,7 +49,7 @@ async def main(steamid: universe.SteamId, game_id: int) -> Generator[utils.Modul
     start_time = 0
 
     try:
-        async with client.SteamApiExecutor(game_id) as executor:
+        with client.SteamAPIExecutor(game_id) as executor:
             while True:
                 yield utils.ModuleData(
                     display=str(game_id),

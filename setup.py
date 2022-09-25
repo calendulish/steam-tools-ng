@@ -253,7 +253,7 @@ setup(
     description="Some useful tools to use with steam client or compatible programs and websites.",
     author='Lara Maia',
     author_email='dev@lara.monster',
-    url='http://github.com/ShyPixie/steam-tools-ng',
+    url='https://github.com/ShyPixie/steam-tools-ng',
     license='GPLv3',
     classifiers=classifiers,
     keywords='steam valve',

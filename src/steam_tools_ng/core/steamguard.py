@@ -39,7 +39,7 @@ def cached_server_time() -> int:
         raise ProcessLookupError
 
     with client.SteamGameServer() as server:
-        return server.get_server_time()
+        return server.get_server_real_time()
 
 
 async def main() -> Generator[utils.ModuleData, None, None]:

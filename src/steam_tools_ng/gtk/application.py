@@ -248,13 +248,12 @@ class SteamToolsNG(Gtk.Application):
 
                 if not play_event.is_set():
                     for executor in executors:
-                        await executor.shutdown()
+                        executor.shutdown()
 
                     await play_event.wait()
 
                     for executor in executors:
                         executor.__init__(executor.appid)
-                        await executor.init()
 
     @while_window_realized
     async def run_confirmations(self) -> None:
