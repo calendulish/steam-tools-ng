@@ -151,7 +151,8 @@ class CouponDialog(Gtk.Dialog):
             config.new("coupons", "last_trade_time", int(time.time()))
 
             try:
-                self.model.remove(self.iter)
+                if self.iter:
+                    self.model.remove(self.iter)
             except IndexError:
                 log.debug(_("Unable to remove tree path %s (already removed?). Ignoring."), self.iter)
 
