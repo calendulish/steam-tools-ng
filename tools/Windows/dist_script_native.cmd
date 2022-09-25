@@ -40,15 +40,6 @@ set system32=!system32:cmd.exe=!
 set curl="!system32!curl.exe"
 set certutil="!system32!certutil.exe"
 
-if not exist stlib.zip (
-    set stlib="https://next.lara.monster/s/YC4G9pi8swBwYWj/download/windows.zip"
-    !curl! -o stlib.zip -L !stlib! || !certutil! -urlcache -split -f !stlib! stlib.zip || exit 1
-)
-
-if not exist dist (
-    7z x stlib.zip || exit 1
-)
-
 if not exist gvsbuild.zip (
     set gvsbuild="https://github.com/ShyPixie/gvsbuild-release/releases/download/latest/gvsbuild-py3.10-vs17-x64.zip"
     !curl! -o gvsbuild.zip -L !gvsbuild! || !certutil! -urlcache -split -f !gvsbuild! gvsbuild.zip || exit 1
@@ -59,7 +50,6 @@ if not exist release (
 )
 
 set PATH=%cd%\\release\\bin;%PATH%
-for %%i in (dist\\stlib-*-cp310-cp310-win_amd64.whl) do (python -m pip install --force-reinstall %%i) || exit 1
 for %%i in (release\\python\\pycairo-*-cp310-cp310-win_amd64.whl) do (python -m pip install --force-reinstall %%i) || exit 1
 for %%i in (release\\python\\PyGObject-*-cp310-cp310-win_amd64.whl) do (python -m pip install --force-reinstall --no-deps %%i) || exit 1
 
