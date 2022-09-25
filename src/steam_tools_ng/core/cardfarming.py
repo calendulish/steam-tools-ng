@@ -248,7 +248,7 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> Generator[
                         info=data.info,
                         status=_('Running {} from {} remaining').format(current_running, total_remaining),
                         level=data.level,
-                        raw_data=executors,
+                        raw_data=executors.values(),
                         action=data.action,
                     )
                     last_update = time.time()
