@@ -15,13 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import aiohttp
 import asyncio
+import atexit
+import contextlib
 import random
 import sys
 import time
+from pathlib import Path
+from psutil import Popen, NoSuchProcess
 from typing import Generator
-
-import aiohttp
 
 from stlib import webapi, client, universe, community
 from . import utils
@@ -29,16 +32,11 @@ from .. import i18n, config
 
 _ = i18n.get_translation
 
+
 # FIXME: Workaround for keyboard lag when running games on GUI on Windows
 # FIXME: https://gitlab.gnome.org/GNOME/gtk/-/issues/2015
-# FIXME: L32:79
-if sys.platform == 'win32':
-    import contextlib
-    from psutil import Popen, NoSuchProcess
-    import atexit
-
-
-def killall(process: 'psutil.Popen') -> None:
+# FIXME: L36:79
+def killall(process: 'Popen') -> None:
     if not process.is_running():
         return
 
@@ -61,7 +59,12 @@ class SteamApiExecutorWorkaround:
 
     async def init(self) -> None:
         if sys.platform == 'win32':
-            self.process = Popen([sys.executable, '-m', 'steam_tools_ng.steam_api_executor', str(self.appid)])
+            if getattr(sys, 'frozen', False):
+                executor_path = [str(Path(sys.executable).parent / 'steam-api-executor.exe'), str(self.appid)]
+            else:
+                executor_path = [sys.executable, '-m', 'steam_tools_ng.steam_api_executor', str(self.appid)]
+
+            self.process = Popen(executor_path, creationflags=0x08000000)
             atexit.register(killall, self.process)
         else:
             await self.executor.init()
@@ -77,7 +80,7 @@ _SteamApiExecutor = client.SteamApiExecutor
 client.SteamApiExecutor = SteamApiExecutorWorkaround
 
 
-# FIXME: L32:79
+# FIXME: L36:79
 # FIXME: ---- #
 
 async def while_has_cards(

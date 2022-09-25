@@ -150,7 +150,7 @@ def freeze_options() -> Mapping[str, Any]:
         return {}
 
     icons_path = Path('src', 'steam_tools_ng', 'icons')
-    copyright = 'Lara Maia (C) 2015 ~ 2022'
+    copyright_ = 'Lara Maia (C) 2015 ~ 2022'
 
     executables = [
         Executable(
@@ -159,7 +159,7 @@ def freeze_options() -> Mapping[str, Any]:
             base=None,
             icon=Path(icons_path, 'stng_console.ico'),
             shortcut_name='Steam Tools NG CLI',
-            copyright=copyright,
+            copyright=copyright_,
         ),
         Executable(
             Path("src", "steam_tools_ng", "gui.py"),
@@ -167,7 +167,13 @@ def freeze_options() -> Mapping[str, Any]:
             base='Win32GUI',
             icon=Path(icons_path, 'stng.ico'),
             shortcut_name='Steam Tools NG GUI',
-            copyright=copyright,
+            copyright=copyright_,
+        ),
+        Executable(
+            Path("src", "steam_tools_ng", "steam_api_executor.py"),
+            target_name='steam-api-executor',
+            base=None,
+            copyright=copyright_,
         )
     ]
 
