@@ -2,3 +2,10 @@ ignore:
   - "setup.py"
   - "**/__init__.py"
   - "tests/"
+
+coverage:
+  range: 50..90
+  project:
+    default:
+      target: auto
+      threshold: 5%
