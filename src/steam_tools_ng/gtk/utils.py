@@ -438,6 +438,7 @@ class Section(Gtk.Grid):
         super().__init__()
         # for backward compatibility
         self.grid = self
+        self.label = label
 
         self.set_name(name)
         self.set_row_spacing(10)
@@ -538,8 +539,7 @@ class Section(Gtk.Grid):
 
     def stackup_section(self, stack: Gtk.Stack) -> None:
         name = self.get_name()
-        title = name.capitalize()
-        stack.add_titled(self, name, title)
+        stack.add_titled(self, name, self.label)
 
 
 def markup(text: str, **kwargs: Any) -> str:

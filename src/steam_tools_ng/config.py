@@ -85,7 +85,7 @@ giveaway_sort_types = OrderedDict([
 ])
 
 plugins = OrderedDict([
-    ("coupons", "Coupons"),
+    ("coupons", "Free Coupons"),
     ("confirmations", "Confirmations"),
     ("steamtrades", "Steam Trades"),
     ("steamgifts", "Steam Gifts"),

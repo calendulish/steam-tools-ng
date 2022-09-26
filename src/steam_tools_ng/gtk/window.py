@@ -59,7 +59,7 @@ class Main(Gtk.ApplicationWindow):
         menu_button.set_menu_model(menu)
         header_bar.pack_end(menu_button)
 
-        self.set_default_size(650, 100)
+        self.set_default_size(650, 10)
         self.set_resizable(False)
 
         if config.parser.getboolean("general", "show_close_button"):
@@ -78,6 +78,7 @@ class Main(Gtk.ApplicationWindow):
         self.set_child(main_grid)
 
         stack = Gtk.Stack()
+        stack.set_hhomogeneous(True)
         main_grid.attach(stack, 0, 1, 1, 1)
 
         switcher = Gtk.StackSwitcher()
@@ -103,6 +104,7 @@ class Main(Gtk.ApplicationWindow):
         self.cardfarming_status = utils.Status(6, config.plugins['cardfarming'])
 
         self.confirmations_grid = Gtk.Grid()
+        self.confirmations_grid.set_size_request(655, 250)
         self.confirmations_grid.set_row_spacing(10)
         general_section.grid.attach(self.confirmations_grid, 0, 1, 4, 1)
 
@@ -157,6 +159,7 @@ class Main(Gtk.ApplicationWindow):
         self.confirmations_grid.attach(cancel_all_button, 3, 1, 1, 1)
 
         self.coupon_grid = Gtk.Grid()
+        self.coupon_grid.set_size_request(655, 300)
         self.coupon_grid.set_row_spacing(10)
         coupons_section.grid.attach(self.coupon_grid, 0, 0, 1, 1)
 
@@ -241,15 +244,17 @@ class Main(Gtk.ApplicationWindow):
                 if plugin_name == "confirmations":
                     if enabled:
                         self.confirmations_grid.show()
-                        self.set_size_request(655, 560)
                     else:
                         self.confirmations_grid.hide()
-                        self.set_size_request(655, 0)
 
                     continue
 
                 if plugin_name == "coupons":
-                    # TODO
+                    if enabled:
+                        self.coupon_grid.show()
+                    else:
+                        self.coupon_grid.hide()
+
                     continue
 
                 if enabled:

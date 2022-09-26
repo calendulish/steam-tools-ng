@@ -64,7 +64,7 @@ class SettingsDialog(Gtk.Dialog):
         sidebar.set_stack(stack)
         content_grid.attach(sidebar, 0, 0, 1, 1)
 
-        general_section = utils.Section("general", _("General Settings"))
+        general_section = utils.Section("general", _("General"))
 
         config_button = Gtk.Button()
         config_button.set_label(_("Config File Directory"))
@@ -94,7 +94,7 @@ class SettingsDialog(Gtk.Dialog):
         )
         language_item.connect("changed", self.update_language)
 
-        login_section = utils.Section("login", _("Login Settings"))
+        login_section = utils.Section("login", _("Login"))
 
         account_name = login_section.new('account_name', _("Username:"), Gtk.Entry, 0, 0)
         account_name.connect('changed', on_setting_changed)
@@ -123,9 +123,9 @@ class SettingsDialog(Gtk.Dialog):
         advanced_button.connect("toggled", self.on_advanced_button_toggled)
         login_section.grid.attach(advanced_button, 0, 4, 2, 1)
 
-        confirmations_section = utils.Section('confirmations', _('Confirmations Settings'))
+        confirmations_section = utils.Section('confirmations', _('Confirmations'))
 
-        confirmations_enable = confirmations_section.new("enable", _("Enable"), Gtk.CheckButton, 0, 0)
+        confirmations_enable = confirmations_section.new("enable", _("Enable:"), Gtk.CheckButton, 0, 0)
         confirmations_enable.connect('toggled', on_setting_toggled)
 
         if not config.parser.get("login", "identity_secret"):
@@ -145,9 +145,9 @@ class SettingsDialog(Gtk.Dialog):
             _confirmations_disabled.set_markup(utils.markup(_message, color="hotpink", background="black"))
             confirmations_section.grid.attach(_confirmations_disabled, 0, 1, 4, 4)
 
-        steamguard_section = utils.Section('steamguard', _('SteamGuard Settings'))
+        steamguard_section = utils.Section('steamguard', _('SteamGuard'))
 
-        steamguard_enable = steamguard_section.new("enable", _("Enable"), Gtk.CheckButton, 0, 0)
+        steamguard_enable = steamguard_section.new("enable", _("Enable:"), Gtk.CheckButton, 0, 0)
         steamguard_enable.connect('toggled', on_setting_toggled)
 
         if not config.parser.get("login", "shared_secret"):
@@ -167,9 +167,9 @@ class SettingsDialog(Gtk.Dialog):
             _steamguard_disabled.set_markup(utils.markup(_message, color="hotpink", background="black"))
             steamguard_section.grid.attach(_steamguard_disabled, 0, 1, 4, 4)
 
-        steamtrades_section = utils.Section('steamtrades', _('Steamtrades Settings'))
+        steamtrades_section = utils.Section('steamtrades', _('Steamtrades'))
 
-        steamtrades_enable = steamtrades_section.new("enable", _("Enable"), Gtk.CheckButton, 0, 0)
+        steamtrades_enable = steamtrades_section.new("enable", _("Enable:"), Gtk.CheckButton, 0, 0)
         steamtrades_enable.connect('toggled', on_setting_toggled)
 
         trade_ids = steamtrades_section.new("trade_ids", _("Trade IDs:"), Gtk.Entry, 0, 1)
@@ -198,9 +198,9 @@ class SettingsDialog(Gtk.Dialog):
             _steamtrades_disabled.set_markup(utils.markup(_message, color="hotpink", background="black"))
             steamtrades_section.grid.attach(_steamtrades_disabled, 0, 1, 4, 4)
 
-        steamgifts_section = utils.Section("steamgifts", _("Steamgifts Settings"))
+        steamgifts_section = utils.Section("steamgifts", _("Steamgifts"))
 
-        steamgifts_enable = steamgifts_section.new("enable", _("Enable"), Gtk.CheckButton, 0, 0)
+        steamgifts_enable = steamgifts_section.new("enable", _("Enable:"), Gtk.CheckButton, 0, 0)
         steamgifts_enable.connect('toggled', on_setting_toggled)
 
         giveaway_type = steamgifts_section.new(
@@ -254,9 +254,9 @@ class SettingsDialog(Gtk.Dialog):
             _steamgifts_disabled.set_markup(utils.markup(_message, color="hotpink", background="black"))
             steamgifts_section.grid.attach(_steamgifts_disabled, 0, 1, 4, 4)
 
-        cardfarming_section = utils.Section("cardfarming", _("Cardfarming settings"))
+        cardfarming_section = utils.Section("cardfarming", _("Cardfarming"))
 
-        cardfarming_enable = cardfarming_section.new("enable", _("Enable"), Gtk.CheckButton, 0, 0)
+        cardfarming_enable = cardfarming_section.new("enable", _("Enable:"), Gtk.CheckButton, 0, 0)
         cardfarming_enable.connect("toggled", on_setting_toggled)
 
         first_wait = cardfarming_section.new("first_wait", _("First Wait:"), Gtk.Entry, 0, 1)
@@ -268,7 +268,14 @@ class SettingsDialog(Gtk.Dialog):
         min_wait = cardfarming_section.new("min_wait", _("MIN Wait:"), Gtk.Entry, 0, 3)
         min_wait.connect("changed", on_digit_only_setting_changed)
 
-        reverse_sorting = cardfarming_section.new("reverse_sorting", _("More cards First:"), Gtk.CheckButton, 0, 4)
+        max_concurrency = cardfarming_section.new("max_concurrency", _("Max concurrency:"), Gtk.Entry, 0, 4)
+        max_concurrency.connect("changed", on_digit_only_setting_changed)
+
+        reverse_sorting = cardfarming_section.new("reverse_sorting", _("More cards first:"), Gtk.CheckButton, 0, 5)
+        reverse_sorting.connect("toggled", on_setting_toggled)
+
+        cardfarming_invisible = cardfarming_section.new("invisible", _("Invisible:"), Gtk.CheckButton, 0, 6)
+        cardfarming_invisible.connect("toggled", on_setting_toggled)
 
         if not config.client:
             cardfarming_section.set_sensitive(False)
@@ -286,7 +293,7 @@ class SettingsDialog(Gtk.Dialog):
             _cardfarming_disabled.set_markup(utils.markup(_message, color="hotpink", background="black"))
             cardfarming_section.grid.attach(_cardfarming_disabled, 0, 1, 4, 4)
 
-        logger_section = utils.Section("logger", _('Logger settings'))
+        logger_section = utils.Section("logger", _('Logger'))
 
         log_level_item = logger_section.new("log_level", _("Level:"), Gtk.ComboBoxText, 0, 0, items=config.log_levels)
 
@@ -301,6 +308,20 @@ class SettingsDialog(Gtk.Dialog):
         log_level_item.connect("changed", on_combo_setting_changed, config.log_levels)
         log_console_level_item.connect("changed", on_combo_setting_changed, config.log_levels)
 
+        log_color = logger_section.new("log_color", _("Log color:"), Gtk.CheckButton, 0, 2)
+        log_color.connect("toggled", on_setting_toggled)
+
+        coupons_section = utils.Section("coupons", _("Coupons"))
+
+        coupon_enable = coupons_section.new("enable", _("Enable:"), Gtk.CheckButton, 0, 0)
+        coupon_enable.connect("toggled", on_setting_toggled)
+
+        coupon_botid = coupons_section.new("botid", _("BotID:"), Gtk.Entry, 0, 1)
+        coupon_botid.connect("changed", on_digit_only_setting_changed)
+
+        coupon_token = coupons_section.new("token", _("Token:"), Gtk.Entry, 0, 2)
+        coupon_token.connect("changed", on_setting_changed)
+
         self.connect('response', lambda dialog, response_id: self.destroy())
 
         for section in [
@@ -310,6 +331,7 @@ class SettingsDialog(Gtk.Dialog):
             steamtrades_section,
             cardfarming_section,
             steamgifts_section,
+            coupons_section,
             steamguard_section,
             confirmations_section,
         ]:
@@ -405,7 +427,9 @@ def on_digit_only_setting_changed(entry: Gtk.Entry) -> None:
     if current_value.isdigit():
         config.new(section, option, int(current_value))
     else:
+        entry.handler_block_by_func(on_digit_only_setting_changed)
         entry.set_text(utils.remove_letters(current_value))
+        entry.handler_unblock_by_func(on_digit_only_setting_changed)
 
 
 def on_combo_setting_changed(combo: Gtk.ComboBoxText, items: 'OrderedDict[str, str]') -> None:

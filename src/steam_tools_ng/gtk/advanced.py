@@ -50,6 +50,9 @@ class AdvancedSettingsDialog(Gtk.Dialog):
         self.gtk_settings_class = Gtk.Settings.get_default()
 
         content_area = self.get_content_area()
+        content_area.set_margin_start(10)
+        content_area.set_margin_end(10)
+
         content_grid = Gtk.Grid()
         content_grid.set_row_spacing(10)
         content_grid.set_column_spacing(10)
