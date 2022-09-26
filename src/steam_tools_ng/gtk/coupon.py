@@ -196,6 +196,16 @@ class CouponDialog(Gtk.Dialog):
             return
 
         if 'needs_mobile_confirmation' in json_data and json_data['needs_mobile_confirmation']:
+            if not config.parser.getboolean('confirmations', 'enable'):
+                self.status.info(_(
+                    "Mobile confirmation is needed but the confirmation module isn't enabled.\n"
+                    "You will need to manually confirm the trade offer."
+                ))
+
+                self.header_bar.set_show_title_buttons(True)
+                # FIXME: track and wait for manual confirmation
+                return
+
             confirmation_store = self.parent_window.confirmation_tree.store
             target = None
 
