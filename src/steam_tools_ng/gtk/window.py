@@ -96,17 +96,11 @@ class Main(Gtk.ApplicationWindow):
         self.status_grid.set_column_homogeneous(True)
         general_section.grid.attach(self.status_grid, 0, 0, 4, 1)
 
+        # grid managed by plugin switch
         self.steamtrades_status = utils.Status(5, config.plugins['steamtrades'])
-        self.status_grid.attach(self.steamtrades_status, 0, 0, 1, 1)
-
         self.steamgifts_status = utils.Status(5, config.plugins['steamgifts'])
-        self.status_grid.attach(self.steamgifts_status, 1, 0, 1, 1)
-
         self.steamguard_status = utils.Status(4, config.plugins['steamguard'])
-        self.status_grid.attach(self.steamguard_status, 0, 1, 1, 1)
-
         self.cardfarming_status = utils.Status(6, config.plugins['cardfarming'])
-        self.status_grid.attach(self.cardfarming_status, 1, 1, 1, 1)
 
         self.confirmations_grid = Gtk.Grid()
         self.confirmations_grid.set_row_spacing(10)
