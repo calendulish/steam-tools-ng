@@ -46,6 +46,7 @@ class CouponDialog(Gtk.Dialog):
         self.community_session = community.Community.get_session(0)
         self.model = model
         self.iter = iter_
+        self.has_status = False
 
         self.header_bar = self.get_header_bar()
         self.header_bar.set_show_title_buttons(False)
@@ -156,7 +157,8 @@ class CouponDialog(Gtk.Dialog):
             except IndexError:
                 log.debug(_("Unable to remove tree path %s (already removed?). Ignoring."), self.iter)
 
-            self.destroy()
+            if not self.has_status:
+                self.destroy()
 
     async def send_trade_offer(self, mode: str) -> None:
         self.status.info(_("Waiting Steam Server"))
@@ -193,6 +195,7 @@ class CouponDialog(Gtk.Dialog):
             self.yes_button.hide()
 
             # FIXME: track tradeoffer and wait for email confirmation
+            self.has_status = True
             return
 
         if 'needs_mobile_confirmation' in json_data and json_data['needs_mobile_confirmation']:
@@ -203,7 +206,9 @@ class CouponDialog(Gtk.Dialog):
                 ))
 
                 self.header_bar.set_show_title_buttons(True)
+                self.yes_button.hide()
                 # FIXME: track and wait for manual confirmation
+                self.has_status = True
                 return
 
             confirmation_store = self.parent_window.confirmation_tree.store
