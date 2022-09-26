@@ -249,7 +249,7 @@ classifiers = [
 
 setup(
     name='steam-tools-ng',
-    version='1.1.1',
+    version='2.0',
     description="Some useful tools to use with steam client or compatible programs and websites.",
     author='Lara Maia',
     author_email='dev@lara.monster',
@@ -267,7 +267,7 @@ setup(
     install_requires=[
         "pywin32; sys_platform == 'win32'",
         "psutil; sys_platform == 'win32'",
-        'stlib>=0.14',
+        'stlib>=1.0',
         'aiohttp',
         'certifi',
     ],
