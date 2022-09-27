@@ -20,7 +20,7 @@ import contextlib
 import logging
 from importlib import resources
 from subprocess import call
-from typing import Union, Optional, Tuple, Any
+from typing import Union, Optional, Tuple, Any, List
 
 from gi.repository import GdkPixbuf, Gio, Gtk
 
@@ -220,14 +220,15 @@ class Main(Gtk.ApplicationWindow):
         main_grid.attach(self.statusbar, 0, 2, 1, 1)
 
         self.connect("destroy", self.application.on_exit_activate)
+        self.connect("close-request", self.application.on_exit_activate)
 
         loop = asyncio.get_event_loop()
         task = loop.create_task(self.plugin_switch())
         task.add_done_callback(utils.safe_task_callback)
 
     async def plugin_switch(self) -> None:
-        plugins_enabled = []
-        plugins_status = []
+        plugins_enabled: List[str] = []
+        plugins_status: List[utils.Status] = []
 
         for plugin_name in config.plugins.keys():
             if plugin_name in ["confirmations", "coupons"]:
@@ -236,7 +237,7 @@ class Main(Gtk.ApplicationWindow):
             plugins_status.append(getattr(self, f'{plugin_name}_status'))
 
         while self.get_realized():
-            plugins = []
+            plugins: List[str] = []
 
             for plugin_name in config.plugins.keys():
                 enabled = config.parser.getboolean(plugin_name, "enable")
@@ -297,22 +298,22 @@ class Main(Gtk.ApplicationWindow):
     @staticmethod
     def on_query_confirmations_tooltip(
             tree_view: Gtk.TreeView,
-            x: int,
-            y: int,
-            tip: bool,
+            x_coord: int,
+            y_coord: int,
+            keyboard_tip: bool,
             tooltip: Gtk.Tooltip,
     ) -> bool:
-        context = tree_view.get_tooltip_context(x, y, tip)
+        context = tree_view.get_tooltip_context(x_coord, y_coord, keyboard_tip)
 
         if context[0]:
             if context.model.iter_depth(context.iter) != 0:
                 return False
 
-            tooltip.set_text('ConfID:{}\nCreatorID{}\nKey:{}'.format(
-                context.model.get_value(context.iter, 0),
-                context.model.get_value(context.iter, 1),
-                context.model.get_value(context.iter, 2),
-            ))
+            tooltip.set_text(
+                f'ConfID:{context.model.get_value(context.iter, 0)}\n'
+                f'CreatorID{context.model.get_value(context.iter, 1)}\n'
+                f'Key:{context.model.get_value(context.iter, 2)}'
+            )
 
             return True
 
@@ -321,7 +322,7 @@ class Main(Gtk.ApplicationWindow):
     def on_fetch_coupons(self, button: Gtk.Button) -> None:
         self.fetch_coupon_event.set()
 
-    def on_stop_fetching_coupons(self, button: Gtk.Button):
+    def on_stop_fetching_coupons(self, button: Gtk.Button) -> None:
         self.fetch_coupon_event.clear()
 
     def on_coupon_action(self, button: Gtk.Button, model: Union[Gtk.TreeModel, Gtk.TreeSelection] = None) -> None:
@@ -356,7 +357,7 @@ class Main(Gtk.ApplicationWindow):
         finalize_dialog.show()
 
     @staticmethod
-    def on_coupon_double_clicked(view: Gtk.TreeView, path: Gtk.TreePath, column: Gtk.TreeViewColumn):
+    def on_coupon_double_clicked(view: Gtk.TreeView, path: Gtk.TreePath, column: Gtk.TreeViewColumn) -> None:
         model = view.get_model()
         url = model[path][3]
         steam_running = False
@@ -389,21 +390,22 @@ class Main(Gtk.ApplicationWindow):
 
         if float(price1) < float(price2):
             return -1
-        elif price1 == price2:
+
+        if price1 == price2:
             return 0
-        else:
-            return 1
+
+        return 1
 
     def set_status(
             self,
             module: str,
             module_data: Optional[core.utils.ModuleData] = None,
             *,
-            display: Optional[str] = None,
-            status: Optional[str] = None,
-            info: Optional[str] = None,
-            error: Optional[str] = None,
-            level: Optional[Tuple[int, int]] = None,
+            display: str = '',
+            status: str = '',
+            info: str = '',
+            error: str = '',
+            level: Tuple[int, int] = (0, 0),
     ) -> None:
         _status = getattr(self, f'{module}_status')
 
@@ -433,4 +435,5 @@ class Main(Gtk.ApplicationWindow):
 
     def get_play_event(self, module: str) -> asyncio.Event:
         _status = getattr(self, f'{module}_status')
+        assert isinstance(_status, utils.Status)
         return _status.play_event

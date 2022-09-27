@@ -21,12 +21,14 @@ import html
 import logging
 import traceback
 from collections import OrderedDict
+from traceback import StackSummary
 from types import FrameType
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union, Type, Tuple
 from xml.etree import ElementTree
 
 from gi.repository import Gtk, Gdk
 
+import stlib.internals
 from stlib import internals
 from . import async_gtk
 from .. import i18n, config
@@ -79,7 +81,7 @@ class VariableButton(Gtk.Button):
 
 class AsyncButton(Gtk.Button):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__()
+        super().__init__(*args, **kwargs)
         super().connect('clicked', self.__callback)
         self._user_callback: Optional[Callable[..., Any]] = None
         self._user_args: Any = None
@@ -142,17 +144,17 @@ class StatusBar(Gtk.Grid):
     async def __loop_messages(self) -> None:
         while True:
             # when query is empty
-            if all([all(value == '' for value in messages.values()) for messages in self.messages.values()]):
+            if all(all(value == '' for value in messages.values()) for messages in self.messages.values()):
                 self._status.set_css_classes([])
                 self._status.set_text('')
                 await asyncio.sleep(1)
                 continue
 
-            for module in self.messages.keys():
+            for module_name, module_messages in self.messages.items():
                 for level in ["warning", "critical"]:
-                    if self.messages[module][level]:
+                    if module_messages[level]:
                         self._status.set_css_classes([level])
-                        self._status.set_text(f"{module}: {self.messages[module][level]}")
+                        self._status.set_text(f"{module_name}: {module_messages[level]}")
                         await asyncio.sleep(3)
 
     def set_warning(self, module: str, message: str) -> None:
@@ -168,7 +170,7 @@ class StatusBar(Gtk.Grid):
 class SimpleTextTree(Gtk.Grid):
     def __init__(
             self,
-            *elements,
+            *elements: str,
             overlay_scrolling: bool = True,
             resizable: bool = True,
             fixed_width: int = 0,
@@ -180,7 +182,7 @@ class SimpleTextTree(Gtk.Grid):
         self.attach(self._scrolled_window, 0, 0, 1, 1)
 
         # noinspection PyUnusedLocal
-        self._store = model(*[str for number in range(len(elements))])
+        self._store = model(*[str for header in elements])
         self._view = Gtk.TreeView()
         self._view.set_model(self._store)
         self._view.set_hexpand(True)
@@ -277,7 +279,7 @@ class SimpleStatus(Gtk.Frame):
 
 def when_running(function: Callable[..., Any]) -> Callable[..., Any]:
     @functools.wraps(function)
-    def wrapper(self, *args, **kwargs) -> None:
+    def wrapper(self: 'Status', *args: Any, **kwargs: Any) -> None:
         if self.play_event.is_set():
             function(self, *args, **kwargs)
 
@@ -341,8 +343,8 @@ class Status(Gtk.Frame):
     def __sanitize_text(text: str, max_length: int) -> str:
         if len(text) >= max_length:
             return text[:max_length] + '...'
-        else:
-            return text
+
+        return text
 
     def __disable_tooltip(self, event_status: Gtk.Label) -> None:
         self._grid.remove(event_status)
@@ -350,7 +352,7 @@ class Status(Gtk.Frame):
         self._display.set_has_tooltip(False)
         self._display.set_sensitive(True)
 
-    def __on_display_event_changed(self, *args, **kwargs) -> None:
+    def __on_display_event_changed(self, *args: Any, **kwargs: Any) -> None:
         message = _("Text Copied to Clipboard")
 
         if self._gtk_settings.props.gtk_application_prefer_dark_theme:
@@ -462,13 +464,13 @@ class Section(Gtk.Grid):
         item.label.hide()
         super(item.__class__, item).hide()
 
-    def new(
+    def new_item(
             self,
             name: str,
             label: str,
-            widget: Callable[..., Gtk.Widget],
+            widget: Type[Gtk.Widget],
             *grid_position: int,
-            items: 'OrderedDict[str, str]' = None,
+            items: Optional[OrderedDict[str, str]] = None,
     ) -> Gtk.Widget:
         bases = (widget,)
 
@@ -503,6 +505,7 @@ class Section(Gtk.Grid):
             return item
 
         if isinstance(item, Gtk.ComboBoxText):
+            assert isinstance(items, OrderedDict), "ComboBox needs items mapping"
             value = config.parser.get(section, option)
 
             for option_label in items.values():
@@ -555,6 +558,7 @@ def markup(text: str, **kwargs: Any) -> str:
 
 def unmarkup(text: str) -> str:
     tree = ElementTree.fromstring(text)
+    assert isinstance(tree.text, str)
     return tree.text
 
 
@@ -593,7 +597,7 @@ def sanitize_confirmation(value: Optional[List[str]]) -> str:
 
 
 def sanitize_package_details(package_details: List[internals.Package]) -> List[internals.Package]:
-    previous = ()
+    previous: Optional[Tuple[stlib.internals.Package, int, int]] = None
 
     for package in package_details:
         for index, app in enumerate(package.apps):
@@ -604,6 +608,7 @@ def sanitize_package_details(package_details: List[internals.Package]) -> List[i
             if previous[2] != app:
                 return package_details
 
+    assert isinstance(previous, tuple)
     return [previous[0]]
 
 
@@ -619,10 +624,9 @@ def remove_letters(text: str) -> str:
 
 def fatal_error_dialog(
         exception: BaseException,
-        stack: Optional[List[FrameType]] = None,
+        stack: Optional[Union[StackSummary, List[FrameType]]] = None,
         transient: Optional[Gtk.Window] = None,
 ) -> None:
-    log.critical("\n".join([str(frame) for frame in stack]))
     log.critical(str(exception))
 
     error_dialog = Gtk.MessageDialog()
@@ -636,9 +640,10 @@ def fatal_error_dialog(
     message_area.append(secondary_text)
 
     if stack:
+        log.critical("\n".join([str(frame) for frame in stack]))
         secondary_text.set_text("\n".join([str(frame) for frame in stack]))
 
-    def callback(dialog, _action) -> None:
+    def callback(dialog: Any, _action: Any) -> None:
         loop = asyncio.get_event_loop()
         loop.stop()
 
@@ -655,7 +660,7 @@ def fatal_error_dialog(
         async_gtk.run()
 
 
-def safe_task_callback(task: asyncio.Task) -> None:
+def safe_task_callback(task: asyncio.Task[Any]) -> None:
     if task.cancelled():
         log.debug(_("%s has been stopped due user request"), task.get_coro())
         return

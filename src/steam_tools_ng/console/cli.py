@@ -26,6 +26,7 @@ from typing import Optional, Any, Callable
 
 import aiohttp
 
+import stlib
 from stlib import plugins, universe, login, community, webapi, internals
 from . import authenticator, utils
 from . import login as cli_login
@@ -37,7 +38,7 @@ _ = i18n.get_translation
 
 def while_running(function: Callable[..., Any]) -> Callable[..., Any]:
     @functools.wraps(function)
-    async def wrapper(self, *args, **kwargs) -> None:
+    async def wrapper(self: 'SteamToolsNG', *args: Any, **kwargs: Any) -> None:
         while True:
             await function(self, *args, **kwargs)
 
@@ -54,7 +55,7 @@ class SteamToolsNG:
         self.stop = False
         self.custom_gameid = 0
 
-        if module_name in ['cardfarming', 'fakerun'] and not config.client:
+        if module_name in ['cardfarming', 'fakerun'] and not stlib.steamworks_available:
             log.critical(_(
                 "{} module has been disabled because you have "
                 "a stlib built without SteamWorks support. To enable it again, "

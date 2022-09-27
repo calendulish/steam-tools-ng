@@ -30,9 +30,9 @@ cache: Dict[bytes, str] = {}
 
 
 def new_hash(text: str) -> bytes:
-    md5 = hashlib.md5(text.encode())
+    sums = hashlib.sha256(text.encode())
 
-    return md5.digest()
+    return sums.digest()
 
 
 def get_translation(text: str) -> str:

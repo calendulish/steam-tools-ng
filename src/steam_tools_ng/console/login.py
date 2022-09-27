@@ -25,7 +25,7 @@ import tempfile
 import aiohttp
 from stlib import login
 
-from . import utils
+from . import utils, cli
 from .. import i18n, config
 
 log = logging.getLogger(__name__)
@@ -34,13 +34,11 @@ _ = i18n.get_translation
 
 # noinspection PyUnusedLocal
 class Login:
-    def __init__(self, cli_: 'SteamToolsNG', mobile_login: bool = True) -> None:
+    def __init__(self, cli_: 'cli.SteamToolsNG', mobile_login: bool = True) -> None:
         self.cli = cli_
         self.mobile_login = mobile_login
         self.has_user_data = False
         self.captcha_gid = -1
-
-        self._login_session = None
         self._username = ''
         self.__password = ''
         self._mail_code = ''
@@ -95,9 +93,9 @@ class Login:
             encrypted_password = codecs.encode(password_key.decode(), 'rot13')
             config.new("login", "password", encrypted_password)
 
-        self._login_session = login.Login.get_session(0)
-        self._login_session.username = self.username
-        self._login_session.password = self.__password
+        _login_session = login.Login.get_session(0)
+        _login_session.username = self.username
+        _login_session.password = self.__password
 
         kwargs = {'emailauth': self.mail_code, 'mobile_login': self.mobile_login}
 
@@ -120,7 +118,7 @@ class Login:
 
         while True:
             try:
-                login_data = await self._login_session.do_login(**kwargs)
+                login_data = await _login_session.do_login(**kwargs)
             except login.MailCodeError:
                 user_input = utils.safe_input(_("Write code received by email"))
                 assert isinstance(user_input, str), "safe_input is returning bool when it should return str"
@@ -150,8 +148,12 @@ class Login:
                         _("Open {} in an image view and write captcha code that it shows").format(temp_file.name),
                     )
 
+                assert isinstance(user_input, str)
                 self._captcha_text = user_input
                 await self.do_login(True)
+            except binascii.Error:
+                log.error(_("shared secret is invalid!"))
+                self.cli.on_quit()
             except login.LoginError as exception:
                 log.error(str(exception))
                 config.remove('login', 'token')
@@ -162,9 +164,6 @@ class Login:
                 log.error(_("Check your connection. (server down?)"))
                 await asyncio.sleep(15)
                 continue
-            except binascii.Error:
-                log.error(_("shared secret is invalid!"))
-                self.cli.on_quit()
             else:
                 new_configs = {}
 

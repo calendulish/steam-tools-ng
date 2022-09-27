@@ -18,11 +18,11 @@
 import asyncio
 import logging
 import random
-from typing import Generator
+from typing import AsyncGenerator
 
 import aiohttp
-from stlib import plugins, login
 
+from stlib import plugins, login
 from . import utils
 from .. import i18n, config
 
@@ -30,7 +30,7 @@ _ = i18n.get_translation
 log = logging.getLogger(__name__)
 
 
-async def main() -> Generator[utils.ModuleData, None, None]:
+async def main() -> AsyncGenerator[utils.ModuleData, None]:
     yield utils.ModuleData(status=_("Loading"))
 
     if plugins.has_plugin("steamtrades"):

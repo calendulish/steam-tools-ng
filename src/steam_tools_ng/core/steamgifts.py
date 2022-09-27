@@ -18,11 +18,11 @@
 import asyncio
 import logging
 import random
-from typing import Generator
+from typing import AsyncGenerator
 
 import aiohttp
-from stlib import plugins, login
 
+from stlib import plugins, login
 from . import utils
 from .. import i18n, config
 
@@ -30,7 +30,7 @@ _ = i18n.get_translation
 log = logging.getLogger(__name__)
 
 
-async def main() -> Generator[utils.ModuleData, None, None]:
+async def main() -> AsyncGenerator[utils.ModuleData, None]:
     yield utils.ModuleData(status=_("Loading"))
 
     if plugins.has_plugin("steamgifts"):
@@ -92,7 +92,7 @@ async def main() -> Generator[utils.ModuleData, None, None]:
         if sort:
             giveaways = sorted(
                 giveaways,
-                key=lambda giveaway_: getattr(giveaway_, sort),
+                key=lambda giveaway_: getattr(giveaway_, sort),  # type: ignore
                 reverse=reverse,
             )
     else:
@@ -115,7 +115,8 @@ async def main() -> Generator[utils.ModuleData, None, None]:
             if await steamgifts.join(giveaway):
                 yield utils.ModuleData(
                     display=giveaway.id,
-                    status="{} {} ({}:{}:{})".format(_("Joined!"), *giveaway[:4]),
+                    status=f"{_('Joined')} {giveaway.name} "
+                           f"(C:{giveaway.copies} P:{giveaway.points} L:{giveaway.level})",
                 )
                 joined = True
             else:
@@ -150,8 +151,8 @@ async def main() -> Generator[utils.ModuleData, None, None]:
 
             if steamgifts.user_info.points <= 2:
                 break
-            else:
-                continue
+
+            continue
 
     if not joined:
         await asyncio.sleep(10)

@@ -67,7 +67,7 @@ class NewAuthenticatorDialog(Gtk.Dialog):
         self.user_details_section = utils.Section("Login", _("User Details"))
         self.content_area.append(self.user_details_section)
 
-        self.sms_code_item = self.user_details_section.new("_sms_code", _("SMS Code:"), Gtk.Entry, 0, 1)
+        self.sms_code_item = self.user_details_section.new_item("_sms_code", _("SMS Code:"), Gtk.Entry, 0, 1)
 
         self.connect('response', lambda dialog, _action: dialog.destroy())
 

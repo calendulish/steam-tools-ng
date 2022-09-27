@@ -17,7 +17,7 @@
 #
 import asyncio
 import logging
-from typing import Generator
+from typing import AsyncGenerator
 
 import aiohttp
 
@@ -29,7 +29,7 @@ _ = i18n.get_translation
 log = logging.getLogger(__name__)
 
 
-async def main(steamid: universe.SteamId) -> Generator[utils.ModuleData, None, None]:
+async def main(steamid: universe.SteamId) -> AsyncGenerator[utils.ModuleData, None]:
     identity_secret = config.parser.get("login", "identity_secret")
     session = community.Community.get_session(0)
 

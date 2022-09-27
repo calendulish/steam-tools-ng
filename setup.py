@@ -116,30 +116,30 @@ def fix_gtk() -> List[Tuple[str, str]]:
 
     for package in namespace_packages:
         includes.append((
-            lib_path / 'girepository-1.0' / f'{package}.typelib',
-            Path('lib', 'girepository-1.0', f'{package}.typelib'),
+            str(lib_path / 'girepository-1.0' / f'{package}.typelib'),
+            str(Path('lib', 'girepository-1.0', f'{package}.typelib')),
         ))
 
     for dll in required_dlls:
         includes.append((
-            bin_path / f'{dll}.dll',
+            str(bin_path / f'{dll}.dll'),
             f'{dll}.dll',
         ))
 
     for loader in pixbuf_loaders:
         includes.append((
-            lib_path / 'gdk-pixbuf-2.0' / '2.10.0' / 'loaders' / f'{loader}.dll',
-            Path('lib', 'gdk-pixbuf-2.0', '2.10.0', 'loaders', f'{loader}.dll'),
+            str(lib_path / 'gdk-pixbuf-2.0' / '2.10.0' / 'loaders' / f'{loader}.dll'),
+            str(Path('lib', 'gdk-pixbuf-2.0', '2.10.0', 'loaders', f'{loader}.dll')),
         ))
 
     includes.append((
-        lib_path / 'gdk-pixbuf-2.0' / '2.10.0' / 'loaders.cache',
-        Path('lib', 'gdk-pixbuf-2.0', '2.10.0', 'loaders.cache'),
+        str(lib_path / 'gdk-pixbuf-2.0' / '2.10.0' / 'loaders.cache'),
+        str(Path('lib', 'gdk-pixbuf-2.0', '2.10.0', 'loaders.cache')),
     ))
 
     includes.append((
-        Path('src', 'steam_tools_ng', 'icons', 'settings.ini'),
-        Path('etc', 'gtk-4.0', 'settings.ini'),
+        str(Path('src', 'steam_tools_ng', 'icons', 'settings.ini')),
+        str(Path('etc', 'gtk-4.0', 'settings.ini')),
     ))
 
     return includes

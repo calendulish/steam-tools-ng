@@ -18,7 +18,7 @@
 import asyncio
 import logging
 import time
-from typing import Union, Optional
+from typing import Union, Optional, Any
 
 from gi.repository import Gtk
 
@@ -100,6 +100,7 @@ class CouponDialog(Gtk.Dialog):
             )
             self.yes_button.connect("clicked", self.on_yes_button_clicked, 'give')
         else:
+            assert isinstance(self.model, Gtk.TreeModel)
             self.status.info(
                 _(
                     "You are about to request {}\n"
@@ -121,12 +122,14 @@ class CouponDialog(Gtk.Dialog):
         task = loop.create_task(self.send_trade_offer(mode))
         task.add_done_callback(self.on_task_finish)
 
-    def on_task_finish(self, task: asyncio.Task) -> None:
+    def on_task_finish(self, task: asyncio.Task[Any]) -> None:
         exception = task.exception()
 
         if exception and not isinstance(exception, asyncio.CancelledError):
             try:
-                raise task.exception()
+                current_exception = task.exception()
+                assert isinstance(current_exception, BaseException)
+                raise current_exception
             except community.InventoryEmptyError:
                 self.status.error(_("Inventory is empty."))
                 self.header_bar.set_show_title_buttons(True)
@@ -153,6 +156,7 @@ class CouponDialog(Gtk.Dialog):
 
             try:
                 if self.iter:
+                    assert isinstance(self.model, Gtk.TreeModel)
                     self.model.remove(self.iter)
             except IndexError:
                 log.debug(_("Unable to remove tree path %s (already removed?). Ignoring."), self.iter)
@@ -169,6 +173,8 @@ class CouponDialog(Gtk.Dialog):
         steamid = config.parser.getint('login', 'steamid')
         give = []
         receive = []
+
+        assert isinstance(self.model, Gtk.TreeModel)
 
         if mode == 'get':
             assetid = int(self.model.get_value(self.iter, 2))

@@ -23,7 +23,7 @@ import os
 import sys
 from collections import OrderedDict
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 from stlib import plugins as stlib_plugins
 from . import i18n, logger_handlers
@@ -102,7 +102,7 @@ else:
 
 asyncio.set_event_loop(event_loop)
 
-default_config = {
+default_config: Mapping[str, Mapping[str, Any]] = {
     'logger': {
         'log_directory': data_dir / 'steam-tools-ng',
         'log_level': 'debug',
@@ -171,7 +171,7 @@ default_config = {
 
 def update_log_level(type_: str, level_string: str) -> None:
     level = getattr(logging, level_string.upper())
-    file_handler, console_handler = logging.root.handlers
+    file_handler, console_handler, *extra_handlers = logging.root.handlers
 
     if type_ == "console":
         console_handler.setLevel(level)
@@ -179,7 +179,7 @@ def update_log_level(type_: str, level_string: str) -> None:
         file_handler.setLevel(level)
 
 
-def validate_config(section: str, option: str, defaults: OrderedDict) -> None:
+def validate_config(section: str, option: str, defaults: OrderedDict[str, str]) -> None:
     value = parser.get(section, option)
 
     if value and value not in defaults.keys():

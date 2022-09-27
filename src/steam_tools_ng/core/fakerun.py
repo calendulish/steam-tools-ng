@@ -16,18 +16,18 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
-from typing import Generator
+from typing import AsyncGenerator
 
 import aiohttp
-from stlib import webapi, client, universe
 
+from stlib import webapi, client, universe
 from . import utils
 from .. import i18n
 
 _ = i18n.get_translation
 
 
-async def main(steamid: universe.SteamId, game_id: int) -> Generator[utils.ModuleData, None, None]:
+async def main(steamid: universe.SteamId, game_id: int) -> AsyncGenerator[utils.ModuleData, None]:
     session = webapi.SteamWebAPI.get_session(0)
 
     try:

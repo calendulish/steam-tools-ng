@@ -144,6 +144,7 @@ class FinalizeDialog(Gtk.Dialog):
         self.header_bar.set_show_title_buttons(False)
         self.parent_window.confirmation_tree.lock = True
         loop = asyncio.get_event_loop()
+        task: asyncio.Task[Union[Dict[str, Any], List[Tuple[Gtk.TreeIter, Dict[str, Any]]]]]
 
         if self.iter:
             task = loop.create_task(self.finalize())
@@ -152,12 +153,14 @@ class FinalizeDialog(Gtk.Dialog):
 
         task.add_done_callback(self.on_task_finish)
 
-    def on_task_finish(self, task: asyncio.Task) -> None:
+    def on_task_finish(self, task: asyncio.Task[Any]) -> None:
         exception = task.exception()
 
         if exception and not isinstance(exception, asyncio.CancelledError):
             try:
-                raise task.exception()
+                current_exception = task.exception()
+                assert isinstance(current_exception, BaseException)
+                raise current_exception
             except Exception as exception:
                 stack = task.get_stack()
 
@@ -193,7 +196,6 @@ class FinalizeDialog(Gtk.Dialog):
                 self.model[self.iter][2],
                 self.raw_action,
             )
-            assert isinstance(result, dict), "finalize_confirmation return is not a dict"
             await asyncio.sleep(0.5)
 
         if not keep_iter:
@@ -202,6 +204,8 @@ class FinalizeDialog(Gtk.Dialog):
             except IndexError:
                 log.debug(_("Unable to remove tree path %s (already removed?). Ignoring."), self.iter)
 
+        # noinspection PyUnboundLocalVariable
+        assert isinstance(result, dict)
         return result
 
     async def batch_finalize(self) -> List[Tuple[Gtk.TreeIter, Dict[str, Any]]]:

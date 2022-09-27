@@ -17,7 +17,7 @@
 #
 import asyncio
 import binascii
-from typing import Generator
+from typing import AsyncGenerator
 
 import aiohttp
 
@@ -39,10 +39,12 @@ def cached_server_time() -> int:
         raise ProcessLookupError
 
     with client.SteamGameServer() as server:
-        return server.get_server_real_time()
+        real_time = server.get_server_real_time()
+        assert isinstance(real_time, int)
+        return real_time
 
 
-async def main() -> Generator[utils.ModuleData, None, None]:
+async def main() -> AsyncGenerator[utils.ModuleData, None]:
     shared_secret = config.parser.get("login", "shared_secret")
     webapi_session = webapi.SteamWebAPI.get_session(0)
 

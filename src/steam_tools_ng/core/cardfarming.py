@@ -15,9 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-from subprocess import call
-
-import aiohttp
 import asyncio
 import atexit
 import contextlib
@@ -25,8 +22,11 @@ import random
 import sys
 import time
 from pathlib import Path
+from subprocess import call
+from typing import AsyncGenerator, Dict, Optional, Any
+
+import aiohttp
 from psutil import Popen, NoSuchProcess
-from typing import Generator
 
 from stlib import webapi, client, universe, community
 from . import utils
@@ -52,7 +52,7 @@ def killall(process: 'Popen') -> None:
 
 
 class SteamAPIExecutorWorkaround:
-    def __init__(self, appid: int, *args, **kwargs) -> None:
+    def __init__(self, appid: int, *args: Any, **kwargs: Any) -> None:
         self.process = None
         self.appid = appid
 
@@ -67,7 +67,7 @@ class SteamAPIExecutorWorkaround:
         else:
             self.executor = _SteamAPIExecutor(appid, *args, **kwargs)
 
-    def shutdown(self, *args, **kwargs) -> None:
+    def shutdown(self, *args: Any, **kwargs: Any) -> None:
         if sys.platform == 'win32':
             killall(self.process)
         else:
@@ -84,7 +84,7 @@ client.SteamAPIExecutor = SteamAPIExecutorWorkaround
 async def while_has_cards(
         steamid: universe.SteamId,
         badge: community.Badge,
-) -> Generator[utils.ModuleData, None, None]:
+) -> AsyncGenerator[utils.ModuleData, None]:
     webapi_session = webapi.SteamWebAPI.get_session(0)
     community_session = community.Community.get_session(0)
 
@@ -139,7 +139,7 @@ async def while_has_cards(
         for past_time in range(wait_offset):
             yield utils.ModuleData(
                 display=str(badge.appid),
-                info="{} ({})".format(_("Updating drops"), badge.name),
+                info=f"{_('Updating drops')} ({badge.name})",
                 status=_("Game paused"),
                 level=(past_time, wait_offset),
             )
@@ -166,7 +166,7 @@ async def while_has_cards(
     )
 
 
-async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> Generator[utils.ModuleData, None, None]:
+async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> AsyncGenerator[utils.ModuleData, None]:
     reverse_sorting = config.parser.getboolean("cardfarming", "reverse_sorting")
     max_concurrency = config.parser.getint("cardfarming", "max_concurrency")
     invisible = config.parser.getboolean("cardfarming", "invisible")
@@ -175,7 +175,7 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> Generator[
     try:
         badges = sorted(
             await community_session.get_badges(steamid),
-            key=lambda badge_: badge_.cards,
+            key=lambda badge_: badge_.cards,  # type: ignore
             reverse=reverse_sorting
         )
     except aiohttp.ClientError:
@@ -205,7 +205,7 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> Generator[
 
         generators[badge.appid] = while_has_cards(steamid, badge)
 
-    tasks = {}
+    tasks: Dict[int, Optional[asyncio.Task[Any]]] = {}
     executors = {}
     semaphore = asyncio.Semaphore(max_concurrency)
     last_update = 0
@@ -213,6 +213,7 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> Generator[
     while True:
         for appid in generators.keys():
             progress_coro = anext(generators[appid])
+            assert asyncio.iscoroutine(progress_coro)
 
             if appid not in tasks:
                 if semaphore.locked():
@@ -221,15 +222,23 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> Generator[
                 await semaphore.acquire()
                 tasks[appid] = asyncio.create_task(progress_coro)
 
-            if tasks[appid] and tasks[appid].done():
+            if not tasks[appid]:
+                continue
+
+            current_task = tasks[appid]
+            assert isinstance(current_task, asyncio.Task)
+
+            if current_task.done():
                 semaphore.release()
 
-                if tasks[appid].exception():
-                    if isinstance(tasks[appid].exception(), StopAsyncIteration):
+                if current_task.exception():
+                    if isinstance(current_task.exception(), StopAsyncIteration):
                         tasks[appid] = None
                         continue
                     else:
-                        raise tasks[appid].exception()
+                        current_exception = current_task.exception()
+                        assert isinstance(current_exception, BaseException)
+                        raise current_exception
 
                 await semaphore.acquire()
                 tasks[appid] = asyncio.create_task(progress_coro)
@@ -241,12 +250,12 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> Generator[
 
         for appid, task in tasks.items():
             if task and task.done() and not task.exception():
-                data = task.result()
+                data: utils.ModuleData = task.result()
 
                 if data.action == 'check':
                     executors[appid] = data.raw_data
 
-                if time.time() > last_update + 3:
+                if int(time.time()) > last_update + 3:
                     current_running = len(tasks)
                     total_remaining = len(generators) - len([task for task in tasks.values() if not task])
                     yield utils.ModuleData(
@@ -257,4 +266,4 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> Generator[
                         raw_data=executors.values(),
                         action=data.action,
                     )
-                    last_update = time.time()
+                    last_update = int(time.time())

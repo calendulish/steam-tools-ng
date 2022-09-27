@@ -19,6 +19,7 @@ import asyncio
 import binascii
 import codecs
 import logging
+from typing import Any
 
 import aiohttp
 from gi.repository import Gtk, Gdk, GdkPixbuf
@@ -41,7 +42,6 @@ class LoginDialog(Gtk.Dialog):
     ) -> None:
         super().__init__(use_header_bar=True)
         self.application = application
-        self._login_session = None
         self.mobile_login = mobile_login
         self.has_user_data = False
 
@@ -74,22 +74,22 @@ class LoginDialog(Gtk.Dialog):
         self.user_details_section = utils.Section("login", _("User Details"))
         self.content_area.append(self.user_details_section)
 
-        self.username_item = self.user_details_section.new("account_name", _("Username:"), Gtk.Entry, 0, 0)
+        self.username_item = self.user_details_section.new_item("account_name", _("Username:"), Gtk.Entry, 0, 0)
 
-        self.__password_item = self.user_details_section.new("_password", _("Password:"), Gtk.Entry, 0, 1)
+        self.__password_item = self.user_details_section.new_item("_password", _("Password:"), Gtk.Entry, 0, 1)
         self.__password_item.set_visibility(False)
         self.__password_item.set_invisible_char('*')
 
-        self.steam_code_item = self.user_details_section.new("_steam_code", _("Steam Code:"), Gtk.Entry, 0, 2)
-        self.mail_code_item = self.user_details_section.new("_mail_code", _("Mail Code:"), Gtk.Entry, 0, 2)
+        self.steam_code_item = self.user_details_section.new_item("_steam_code", _("Steam Code:"), Gtk.Entry, 0, 2)
+        self.mail_code_item = self.user_details_section.new_item("_mail_code", _("Mail Code:"), Gtk.Entry, 0, 2)
 
         self.captcha_gid = -1
-        self.captcha_item = self.user_details_section.new("_captcha", _("Code:"), Gtk.Image, 0, 3)
-        self.captcha_text_item = self.user_details_section.new(
+        self.captcha_item = self.user_details_section.new_item("_captcha", _("Code:"), Gtk.Image, 0, 3)
+        self.captcha_text_item = self.user_details_section.new_item(
             "_captcha_text", _("Captcha Text:"), Gtk.Entry, 0, 4,
         )
 
-        self.save_password_item = self.user_details_section.new("_savepwd", _("Save Password:"), Gtk.CheckButton, 0, 5)
+        self.save_password_item = self.user_details_section.new_item("_savepwd", _("Save Password:"), Gtk.CheckButton, 0, 5)
         self.save_password_item.set_active(True)
 
         self.advanced_login = utils.ClickableLabel()
@@ -101,14 +101,14 @@ class LoginDialog(Gtk.Dialog):
         self.advanced_login_section = utils.Section("login", _("Advanced Login"))
         self.content_area.append(self.advanced_login_section)
 
-        self.identity_secret_item = self.advanced_login_section.new(
+        self.identity_secret_item = self.advanced_login_section.new_item(
             'identity_secret',
             _("Identity Secret:"),
             Gtk.Entry,
             0, 0,
         )
 
-        self.shared_secret_item = self.advanced_login_section.new(
+        self.shared_secret_item = self.advanced_login_section.new_item(
             'shared_secret',
             _("Shared Secret:"),
             Gtk.Entry,
@@ -128,11 +128,6 @@ class LoginDialog(Gtk.Dialog):
         self.advanced_login_section.hide()
 
         self.check_login_availability()
-
-    @property
-    def login_session(self) -> login.Login:
-        assert isinstance(self._login_session, login.Login)
-        return self._login_session
 
     @property
     def username(self) -> str:
@@ -173,7 +168,7 @@ class LoginDialog(Gtk.Dialog):
         else:
             self.login_button.set_sensitive(True)
 
-    def on_quit(self, *args, **kwargs) -> None:
+    def on_quit(self, *args: Any, **kwargs: Any) -> None:
         self.application.main_window.statusbar.set_warning(
             'steamguard',
             _("Login cancelled! Modules will not work correctly!"),
@@ -195,16 +190,16 @@ class LoginDialog(Gtk.Dialog):
             else:
                 self.login_button.emit('clicked')
 
-    async def on_login_button_clicked(self, *args) -> None:
+    async def on_login_button_clicked(self, *args: Any) -> None:
         self.status.info(_("Retrieving user data"))
         self.username_item.set_sensitive(False)
         self.__password_item.set_sensitive(False)
         self.save_password_item.set_sensitive(False)
         self.login_button.set_sensitive(False)
 
-        self._login_session = login.Login.get_session(0)
-        self._login_session.username = self.username
-        self._login_session.password = self.__password
+        _login_session = login.Login.get_session(0)
+        _login_session.username = self.username
+        _login_session.password = self.__password
 
         kwargs = {'emailauth': self.mail_code, 'mobile_login': self.mobile_login}
 
@@ -231,7 +226,7 @@ class LoginDialog(Gtk.Dialog):
 
         while True:
             try:
-                login_data = await self.login_session.do_login(**kwargs)
+                login_data = await _login_session.do_login(**kwargs)
             except login.MailCodeError:
                 self.status.info(_("Write code received by email\nand click on 'Log-in' button"))
                 self.mail_code_item.set_text("")
@@ -315,8 +310,8 @@ class LoginDialog(Gtk.Dialog):
                     new_configs['token'] = login_data.auth['transfer_parameters']['webcookie']
                     new_configs['token_secure'] = login_data.auth['transfer_parameters']['token_secure']
 
-                for key, value in new_configs.items():
-                    config.new("login", key, value)
+                for key_, value_ in new_configs.items():
+                    config.new("login", key_, value_)
 
                 self.has_user_data = True
                 self.destroy()
@@ -327,7 +322,7 @@ class LoginDialog(Gtk.Dialog):
 
             break
 
-    def on_advanced_login_clicked(self, *args) -> None:
+    def on_advanced_login_clicked(self, *args: Any) -> None:
         if self.advanced_login_section.props.visible:
             self.identity_secret_item.set_text('')
             self.shared_secret_item.set_text('')

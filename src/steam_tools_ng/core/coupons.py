@@ -17,7 +17,7 @@
 #
 import asyncio
 import logging
-from typing import Generator
+from typing import AsyncGenerator
 
 import aiohttp
 
@@ -29,7 +29,7 @@ _ = i18n.get_translation
 log = logging.getLogger(__name__)
 
 
-async def main(fetch_coupon_event: asyncio.Event) -> Generator[utils.ModuleData, None, None]:
+async def main(fetch_coupon_event: asyncio.Event) -> AsyncGenerator[utils.ModuleData, None]:
     community_session = community.Community.get_session(0)
     internals_session = internals.Internals.get_session(0)
     botid = config.parser.getint('coupons', 'botid')

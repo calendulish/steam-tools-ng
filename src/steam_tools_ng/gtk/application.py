@@ -38,7 +38,7 @@ log = logging.getLogger(__name__)
 
 def while_window_realized(function: Callable[..., Any]) -> Callable[..., Any]:
     @functools.wraps(function)
-    async def wrapper(self, *args, **kwargs) -> None:
+    async def wrapper(self: 'SteamToolsNG', *args: Any, **kwargs: Any) -> None:
         while self.main_window.get_realized():
             await function(self, *args, **kwargs)
 
@@ -59,9 +59,10 @@ class SteamToolsNG(Gtk.Application):
         self.old_confirmations: List[community.Confirmation] = []
 
     @property
-    def main_window(self) -> Optional[window.Main]:
+    def main_window(self) -> window.Main:
         current_window = self.get_window_by_id(self._main_window_id)
-        return self.get_window_by_id(self._main_window_id)
+        assert isinstance(current_window, window.Main)
+        return current_window
 
     @property
     def steamid(self) -> Optional[universe.SteamId]:
@@ -69,8 +70,8 @@ class SteamToolsNG(Gtk.Application):
 
         if steamid:
             return universe.generate_steamid(steamid)
-        else:
-            return None
+
+        return None
 
     def do_startup(self) -> None:
         Gtk.Application.do_startup(self)
@@ -150,8 +151,8 @@ class SteamToolsNG(Gtk.Application):
                 log.info("Steam login Successful")
             else:
                 await self.do_login(auto=True)
-        except aiohttp.ClientError as exception_:
-            log.exception(str(exception_))
+        except aiohttp.ClientError as error:
+            log.exception(str(error))
             self.main_window.statusbar.set_critical("steamguard", _("Check your connection. (server down?)"))
             await asyncio.sleep(10)
             return  # FIXME: RETRY ###
@@ -175,21 +176,16 @@ class SteamToolsNG(Gtk.Application):
             self.main_window.statusbar.clear('steamguard')
 
             if not api_key:
-                exception_ = ValueError(_('Something wrong with your SteamAPI dev key'))
-                utils.fatal_error_dialog(exception_, [])
-                raise exception_
+                utils.fatal_error_dialog(ValueError(_('Something wrong with your SteamAPI dev key')), [])
 
         webapi_session = await webapi.SteamWebAPI.new_session(0, api_key=api_key[0], api_url=self.api_url)
         internals_session = await internals.Internals.new_session(0)
 
-        modules: Dict = {}
+        modules: Dict[str, asyncio.Task[Any]] = {}
 
         while self.main_window.get_realized():
             for module_name in config.plugins.keys():
-                task = None
-
-                if module_name in modules:
-                    task = modules[module_name]
+                task = modules.get(module_name, None)
 
                 if config.parser.getboolean(module_name, "enable"):
                     if task:
@@ -229,7 +225,7 @@ class SteamToolsNG(Gtk.Application):
                     await asyncio.sleep(1)
 
     @while_window_realized
-    async def run_steamguard(self, play_event) -> None:
+    async def run_steamguard(self, play_event: asyncio.Event) -> None:
         await play_event.wait()
         steamguard = core.steamguard.main()
 
@@ -237,7 +233,7 @@ class SteamToolsNG(Gtk.Application):
             self.main_window.set_status("steamguard", module_data)
 
     @while_window_realized
-    async def run_cardfarming(self, play_event) -> None:
+    async def run_cardfarming(self, play_event: asyncio.Event) -> None:
         cardfarming = core.cardfarming.main(self.steamid)
 
         async for module_data in cardfarming:
@@ -333,7 +329,7 @@ class SteamToolsNG(Gtk.Application):
                 self.main_window.coupon_progress.set_max_value(module_data.raw_data[1])
 
     @while_window_realized
-    async def run_steamtrades(self, play_event) -> None:
+    async def run_steamtrades(self, play_event: asyncio.Event) -> None:
         await play_event.wait()
         steamtrades = core.steamtrades.main()
 
@@ -345,7 +341,7 @@ class SteamToolsNG(Gtk.Application):
                 continue
 
     @while_window_realized
-    async def run_steamgifts(self, play_event) -> None:
+    async def run_steamgifts(self, play_event: asyncio.Event) -> None:
         await play_event.wait()
         steamgifts = core.steamgifts.main()
 
@@ -367,4 +363,4 @@ class SteamToolsNG(Gtk.Application):
     def on_exit_activate(self, *args: Any) -> None:
         loop = asyncio.get_running_loop()
         loop.stop()
-        self.main_window.destroy()
+        #self.main_window.destroy()
