@@ -85,6 +85,7 @@ class LoginDialog(Gtk.Dialog):
 
         self.captcha_gid = -1
         self.captcha_item = self.user_details_section.new_item("_captcha", _("Code:"), Gtk.Image, 0, 3)
+        self.captcha_item.set_size_request(140, 140)
         self.captcha_text_item = self.user_details_section.new_item(
             "_captcha_text", _("Captcha Text:"), Gtk.Entry, 0, 4,
         )
@@ -252,6 +253,7 @@ class LoginDialog(Gtk.Dialog):
                 self.captcha_gid = exception.captcha_gid
 
                 pixbuf_loader = GdkPixbuf.PixbufLoader()
+                pixbuf_loader.set_size(140, 50)
                 pixbuf_loader.write(exception.captcha)
                 pixbuf_loader.close()
                 self.captcha_item.set_from_pixbuf(pixbuf_loader.get_pixbuf())
