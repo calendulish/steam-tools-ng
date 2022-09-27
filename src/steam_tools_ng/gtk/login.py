@@ -193,6 +193,7 @@ class LoginDialog(Gtk.Dialog):
 
     async def on_login_button_clicked(self, *args: Any) -> None:
         self.status.info(_("Retrieving user data"))
+        self.application.main_window.statusbar.set_warning("steamguard", _("Not logged in"))
         self.username_item.set_sensitive(False)
         self.__password_item.set_sensitive(False)
         self.save_password_item.set_sensitive(False)
@@ -314,6 +315,8 @@ class LoginDialog(Gtk.Dialog):
 
                 for key_, value_ in new_configs.items():
                     config.new("login", key_, value_)
+
+                self.application.main_window.statusbar.clear('steamguard')
 
                 self.has_user_data = True
                 self.destroy()

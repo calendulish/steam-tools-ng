@@ -41,13 +41,6 @@ class Main(Gtk.ApplicationWindow):
         super().__init__(application=application, title=title)
         self.application = application
         header_bar = Gtk.HeaderBar()
-        icon = Gtk.Image()
-
-        with resources.as_file(resources.files('steam_tools_ng')) as path:
-            pix = GdkPixbuf.Pixbuf.new_from_file_at_size(str(path / 'icons' / 'stng.png'), 28, 28)
-
-        icon.set_from_pixbuf(pix)
-        header_bar.pack_start(icon)
 
         menu = Gio.Menu()
         menu.append(_("Settings"), "app.settings")
@@ -77,13 +70,17 @@ class Main(Gtk.ApplicationWindow):
         main_grid.set_margin_bottom(10)
         self.set_child(main_grid)
 
+        self.user_info_label = Gtk.Label()
+        self.user_info_label.set_halign(Gtk.Align.END)
+        header_bar.pack_start(self.user_info_label)
+
         stack = Gtk.Stack()
         stack.set_hhomogeneous(True)
-        main_grid.attach(stack, 0, 1, 1, 1)
+        main_grid.attach(stack, 1, 2, 1, 1)
 
         switcher = Gtk.StackSwitcher()
         switcher.set_stack(stack)
-        main_grid.attach(switcher, 0, 0, 1, 1)
+        main_grid.attach(switcher, 1, 1, 1, 1)
 
         general_section = utils.Section("general", _("General"))
         general_section.stackup_section(stack)
@@ -217,14 +214,43 @@ class Main(Gtk.ApplicationWindow):
         self.coupon_grid.attach(stop_fetching_coupons_button, 1, 4, 1, 1)
 
         self.statusbar = utils.StatusBar()
-        main_grid.attach(self.statusbar, 0, 2, 1, 1)
+        main_grid.attach(self.statusbar, 1, 3, 1, 1)
 
         self.connect("destroy", self.application.on_exit_activate)
         self.connect("close-request", self.application.on_exit_activate)
 
         loop = asyncio.get_event_loop()
-        task = loop.create_task(self.plugin_switch())
-        task.add_done_callback(utils.safe_task_callback)
+
+        plugin_switch_task = loop.create_task(self.plugin_switch())
+        plugin_switch_task.add_done_callback(utils.safe_task_callback)
+
+        user_info_task = loop.create_task(self.user_info())
+        user_info_task.add_done_callback(utils.safe_task_callback)
+
+    async def user_info(self) -> None:
+        while self.get_realized():
+            theme = config.parser.get('general', 'theme')
+            account_name = config.parser.get('login', 'account_name')
+
+            self.application.main_window.user_info_label.set_markup(
+                utils.markup(
+                    _('You are logged in as:\n'),
+                    color='darkgreen' if theme == 'light' else 'green',
+                    size='small',
+                ) +
+                utils.markup(
+                    account_name,
+                    color='darkblue' if theme == 'light' else 'blue',
+                    size='small',
+                ) +
+                utils.markup(
+                    f" {self.application.steamid.id3_string}",
+                    color='grey',
+                    size='small',
+                )
+            )
+
+            await asyncio.sleep(1)
 
     async def plugin_switch(self) -> None:
         plugins_enabled: List[str] = []
