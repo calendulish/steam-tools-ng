@@ -376,6 +376,8 @@ class SettingsDialog(Gtk.Dialog):
 
     def on_login_button_clicked(self, button: Gtk.Button) -> None:
         login_dialog = login.LoginDialog(self.parent_window, self.application)
+        login_dialog.shared_secret_item.set_text('')
+        login_dialog.identity_secret_item.set_text('')
         login_dialog.show()
         self.destroy()
 
