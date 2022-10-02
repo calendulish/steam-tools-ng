@@ -174,9 +174,8 @@ class CouponDialog(Gtk.Dialog):
         give = []
         receive = []
 
-        assert isinstance(self.model, Gtk.TreeModel)
-
         if mode == 'get':
+            assert isinstance(self.model, Gtk.TreeModel)
             assetid = int(self.model.get_value(self.iter, 2))
             receive = [(appid, assetid, 1)]
         else:
