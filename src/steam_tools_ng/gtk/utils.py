@@ -28,7 +28,6 @@ from xml.etree import ElementTree
 
 from gi.repository import Gtk, Gdk
 
-import stlib.internals
 from stlib import internals
 from . import async_gtk
 from .. import i18n, config
@@ -597,7 +596,7 @@ def sanitize_confirmation(value: Optional[List[str]]) -> str:
 
 
 def sanitize_package_details(package_details: List[internals.Package]) -> List[internals.Package]:
-    previous: Optional[Tuple[stlib.internals.Package, int, int]] = None
+    previous: Optional[Tuple[internals.Package, int, int]] = None
 
     for package in package_details:
         for index, app in enumerate(package.apps):

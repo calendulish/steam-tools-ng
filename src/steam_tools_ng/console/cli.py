@@ -92,8 +92,8 @@ class SteamToolsNG:
 
         if steamid:
             return universe.generate_steamid(steamid)
-        else:
-            return None
+
+        return None
 
     # FIXME: https://github.com/python/asyncio/pull/465
     def run(self) -> None:
@@ -159,8 +159,8 @@ class SteamToolsNG:
             if not api_key:
                 raise ValueError(_('Something wrong with your SteamAPI dev key'))
 
-        webapi_session = await webapi.SteamWebAPI.new_session(0, api_key=api_key[0], api_url=self.api_url)
-        internals_session = await internals.Internals.new_session(0)
+        await webapi.SteamWebAPI.new_session(0, api_key=api_key[0], api_url=self.api_url)
+        await internals.Internals.new_session(0)
 
         log.debug(_("Initializing module %s"), self.module_name)
         module = getattr(self, f"run_{self.module_name}")

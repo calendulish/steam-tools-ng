@@ -165,9 +165,9 @@ class FinalizeDialog(Gtk.Dialog):
                 stack = task.get_stack()
 
                 for frame in stack:
-                    log.error(f"{type(exception).__name__} at {frame}")
+                    log.error("%s at %s", type(exception).__name__, frame)
 
-                log.error(f"Steam Server is slow. {str(exception)}")
+                log.error("Steam Server is slow. (%s)", str(exception))
 
                 self.status.error(
                     _("Steam Server is slow. Please, try again.")

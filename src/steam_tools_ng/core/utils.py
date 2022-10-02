@@ -48,9 +48,9 @@ def time_offset_cache(ttl: int = 60) -> Callable[[Callable[[], int]], Callable[[
             if function_.cache_info().currsize == 0:
                 assert isinstance(time_raw, int)
                 return time_raw
-            else:
-                function_.time_offset = function_.time_base - time_raw
-                return round(time.time() + function_.time_offset)
+
+            function_.time_offset = function_.time_base - time_raw
+            return round(time.time() + function_.time_offset)
 
         return wrapped
 

@@ -235,10 +235,10 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> AsyncGener
                     if isinstance(current_task.exception(), StopAsyncIteration):
                         tasks[appid] = None
                         continue
-                    else:
-                        current_exception = current_task.exception()
-                        assert isinstance(current_exception, BaseException)
-                        raise current_exception
+
+                    current_exception = current_task.exception()
+                    assert isinstance(current_exception, BaseException)
+                    raise current_exception
 
                 await semaphore.acquire()
                 tasks[appid] = asyncio.create_task(progress_coro)
@@ -259,7 +259,7 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> AsyncGener
                     current_running = len(tasks)
                     total_remaining = len(generators) - len([task for task in tasks.values() if not task])
                     yield utils.ModuleData(
-                        display="{}".format(' : '.join([str(appid) for appid in tasks.keys()])),
+                        display=' : '.join([str(appid) for appid in tasks.keys()]),
                         info=data.info,
                         status=_('Running {} from {} remaining').format(current_running, total_remaining),
                         level=data.level,

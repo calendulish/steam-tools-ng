@@ -275,15 +275,15 @@ class LoginDialog(Gtk.Dialog):
                 self.username_item.set_sensitive(True)
                 self.__password_item.set_sensitive(True)
                 self.__password_item.grab_focus()
-            except (aiohttp.ClientError, ValueError):
-                self.status.error(_("Check your connection. (server down?)"))
-                await asyncio.sleep(15)
-                continue
             except binascii.Error:
                 self.status.error(_("shared secret is invalid!"))
                 self.username_item.set_sensitive(True)
                 self.__password_item.set_sensitive(True)
                 self.shared_secret_item.grab_focus()
+            except (aiohttp.ClientError, ValueError):
+                self.status.error(_("Check your connection. (server down?)"))
+                await asyncio.sleep(15)
+                continue
             else:
                 new_configs = {"account_name": self.username}
 

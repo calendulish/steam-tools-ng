@@ -91,8 +91,8 @@ class NewAuthenticatorDialog(Gtk.Dialog):
 
         if steamid:
             return universe.generate_steamid(steamid)
-        else:
-            return None
+
+        return None
 
     def on_key_release_event(
             self,
@@ -146,7 +146,8 @@ class NewAuthenticatorDialog(Gtk.Dialog):
                 self.sms_code_item.grab_focus()
             finally:
                 button.set_sensitive(True)
-                return
+
+            return
 
         self.status.info(_("Adding authenticator"))
 

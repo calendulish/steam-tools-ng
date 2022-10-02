@@ -69,8 +69,8 @@ async def main(fetch_coupon_event: asyncio.Event) -> AsyncGenerator[utils.Module
             if coupon_discount < 75:
                 log.info(_('Ignoring coupon %s due low discount value'), coupon_.name)
                 continue
-            else:
-                package_count += 1
+
+            package_count += 1
 
             try:
                 package_details = await internals_session.get_package(package_id)
