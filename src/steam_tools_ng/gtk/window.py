@@ -336,7 +336,6 @@ class Main(Gtk.ApplicationWindow):
                 if index == 3 and len(plugins_enabled) == 4:
                     self.status_grid.attach(status, 1, 1, 1, 1)
 
-                status.set_status(_("Loading"))
                 status.show()
 
     @staticmethod
