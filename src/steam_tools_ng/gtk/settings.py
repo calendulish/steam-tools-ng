@@ -320,11 +320,19 @@ class SettingsDialog(Gtk.Dialog):
         coupon_enable = coupons_section.new_item("enable", _("Enable:"), Gtk.CheckButton, 0, 0)
         coupon_enable.connect("toggled", on_setting_toggled)
 
-        coupon_botid = coupons_section.new_item("botid", _("BotID:"), Gtk.Entry, 0, 1)
-        coupon_botid.connect("changed", on_digit_only_setting_changed)
+        coupon_botids = coupons_section.new_item("botids", _("BotIDs:"), Gtk.Entry, 0, 1)
+        coupon_botids.set_placeholder_text('12345, asdfg, ...')
+        coupon_botids.connect("changed", on_setting_changed)
 
-        coupon_token = coupons_section.new_item("token", _("Token:"), Gtk.Entry, 0, 2)
-        coupon_token.connect("changed", on_setting_changed)
+        coupon_tokens = coupons_section.new_item("tokens", _("Tokens:"), Gtk.Entry, 0, 2)
+        coupon_tokens.set_placeholder_text('12345, asdfg, ...')
+        coupon_tokens.connect("changed", on_setting_changed)
+
+        coupon_botid_to_donate = coupons_section.new_item("botid_to_donate", _("BotID To Donate:"), Gtk.Entry, 0, 3)
+        coupon_botid_to_donate.connect("changed", on_digit_only_setting_changed)
+
+        coupon_token_to_donate = coupons_section.new_item("token_to_donate", _("Token To Donate:"), Gtk.Entry, 0, 4)
+        coupon_token_to_donate.connect("changed", on_setting_changed)
 
         self.connect('response', lambda dialog, response_id: self.destroy())
 

@@ -323,8 +323,10 @@ class SteamToolsNG(Gtk.Application):
                 iter_ = self.main_window.coupon_tree.store.append([
                     f"{module_data.raw_data['price']:.2f}",
                     utils.markup(module_data.raw_data['name'], foreground='blue', underline='single'),
-                    str(module_data.raw_data['assetid']),
                     module_data.raw_data['link'],
+                    module_data.raw_data['botid'],
+                    module_data.raw_data['token'],
+                    str(module_data.raw_data['assetid']),
                 ])
 
             if module_data.action == "clear":

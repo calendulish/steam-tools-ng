@@ -114,10 +114,12 @@ default_config: Mapping[str, Mapping[str, Any]] = {
     },
     'coupons': {
         'enable': True,
-        'botid': '76561198018370992',
+        'botid_to_donate': '76561198018370992',
+        'botids': '76561198018370992',
         'appid': '753',
         'contextid': '3',
-        'token': '6Z6Xn5NM',
+        'token_to_donate': '6Z6Xn5NM',
+        'tokens': '6Z6Xn5NM',
         'last_trade_time': 0,
     },
     'confirmations': {

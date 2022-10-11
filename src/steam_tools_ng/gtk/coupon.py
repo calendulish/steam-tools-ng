@@ -166,21 +166,24 @@ class CouponDialog(Gtk.Dialog):
 
     async def send_trade_offer(self, mode: str) -> None:
         self.status.info(_("Waiting Steam Server"))
-        botid = config.parser.getint('coupons', 'botid')
-        token = config.parser.get('coupons', 'token')
         contextid = config.parser.getint('coupons', 'contextid')
         appid = config.parser.getint('coupons', 'appid')
-        steamid = config.parser.getint('login', 'steamid')
+        botid_raw = config.parser.get('coupons', 'botid_to_donate')
+        token = config.parser.get('coupons', 'token_to_donate')
+        steamid_raw = config.parser.getint('login', 'steamid')
+        steamid = universe.generate_steamid(steamid_raw)
         give = []
         receive = []
 
         if mode == 'get':
             assert isinstance(self.model, Gtk.TreeModel)
-            assetid = int(self.model.get_value(self.iter, 2))
+            botid_raw = self.model.get_value(self.iter, 3)
+            token = self.model.get_value(self.iter, 4)
+            assetid = int(self.model.get_value(self.iter, 5))
             receive = [(appid, assetid, 1)]
         else:
             json_data = await self.community_session.get_inventory(
-                universe.generate_steamid(steamid),
+                steamid,
                 appid,
                 contextid,
             )
@@ -188,8 +191,8 @@ class CouponDialog(Gtk.Dialog):
             for coupon in json_data:
                 give.append((coupon.appid, coupon.assetid, coupon.amount))
 
-        steamid = universe.generate_steamid(botid)
-        json_data = await self.community_session.send_trade_offer(steamid, token, contextid, give, receive)
+        botid = universe.generate_steamid(botid_raw)
+        json_data = await self.community_session.send_trade_offer(botid, token, contextid, give, receive)
 
         if len(json_data) == 1 and 'tradeofferid' in json_data:
             return

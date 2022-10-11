@@ -161,7 +161,7 @@ class Main(Gtk.ApplicationWindow):
         coupons_section.grid.attach(self.coupon_grid, 0, 0, 1, 1)
 
         self.coupon_tree = utils.SimpleTextTree(
-            _('price'), _('name'), 'assetid', 'link',
+            _('price'), _('name'), 'link', 'botid', 'token', 'assetid',
             overlay_scrolling=False,
             model=Gtk.ListStore,
         )
@@ -170,10 +170,9 @@ class Main(Gtk.ApplicationWindow):
         self.coupon_tree.store.set_sort_func(0, self.coupon_sorting)
         self.coupon_grid.attach(self.coupon_tree, 0, 0, 4, 2)
 
-        coupon_classid_column = self.coupon_tree.view.get_column(2)
-        coupon_classid_column.set_visible(False)
-        coupon_link_column = self.coupon_tree.view.get_column(3)
-        coupon_link_column.set_visible(False)
+        for index, column in enumerate(self.coupon_tree.view.get_columns()):
+            if index in (2, 3, 4, 5):
+                column.set_visible(False)
 
         self.coupon_tree.view.connect('row-activated', self.on_coupon_double_clicked)
 
@@ -402,7 +401,7 @@ class Main(Gtk.ApplicationWindow):
     @staticmethod
     def on_coupon_double_clicked(view: Gtk.TreeView, path: Gtk.TreePath, column: Gtk.TreeViewColumn) -> None:
         model = view.get_model()
-        url = model[path][3]
+        url = model[path][2]
         steam_running = False
 
         if stlib.steamworks_available:
