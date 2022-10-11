@@ -18,13 +18,13 @@
 import asyncio
 import contextlib
 import logging
-from importlib import resources
 from subprocess import call
 from typing import Union, Optional, Tuple, Any, List
 
-from gi.repository import GdkPixbuf, Gio, Gtk
+from gi.repository import Gio, Gtk
 
 import stlib
+from stlib import login, universe
 from . import confirmation, utils, coupon
 from .. import config, i18n, core
 
@@ -231,6 +231,24 @@ class Main(Gtk.ApplicationWindow):
         while self.get_realized():
             theme = config.parser.get('general', 'theme')
             account_name = config.parser.get('login', 'account_name')
+            steamid_raw = config.parser.get('login', 'steamid')
+            steamid = universe.generate_steamid(steamid_raw)
+            login_session = None
+
+            with contextlib.suppress(IndexError):
+                login_session = login.Login.get_session(0)
+
+            if not login_session or not await login_session.is_logged_in(steamid):
+                self.application.main_window.user_info_label.set_markup(
+                    utils.markup(
+                        _('You are not logged in'),
+                        color='darkred' if theme == 'light' else 'red',
+                        size='small',
+                    )
+                )
+
+                await asyncio.sleep(5)
+                continue
 
             self.application.main_window.user_info_label.set_markup(
                 utils.markup(
@@ -250,7 +268,7 @@ class Main(Gtk.ApplicationWindow):
                 )
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(30)
 
     async def plugin_switch(self) -> None:
         plugins_enabled: List[str] = []
