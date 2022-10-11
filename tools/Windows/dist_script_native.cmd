@@ -18,7 +18,7 @@ pushd %~dp0..\\.. || exit 1
 ::
 for /f %%i in ('findstr /c:"version=" setup.py') do (set APP_VERSION=%%i)
 set APP_VERSION=%APP_VERSION:~9,-2%
-set STLIB_PLUGINS_VERSION="0.2"
+set STLIB_PLUGINS_VERSION="1.0"
 set ISCC="C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe"
 for /d %%i in (%cd%) do (set project_name=%%~ni)
 call set project_name=%%project_name:-=_%%
