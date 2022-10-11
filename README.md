@@ -5,7 +5,6 @@
 [![transifex](https://img.shields.io/badge/transifex-contribute%20now-blue.svg?style=flat)](https://www.transifex.com/shypixie/steam-tools-ng)
 [![windows build status](https://badges.lara.monster/ShyPixie/.github/steam-tools-ng-windows-build)](https://github.com/ShyPixie/steam-tools-ng/actions/workflows/build.yml)
 [![linux build status](https://badges.lara.monster/ShyPixie/.github/steam-tools-ng-linux-build)](https://github.com/ShyPixie/steam-tools-ng/actions/workflows/build.yml)
-[![codecov](https://codecov.io/gh/ShyPixie/steam-tools-ng/branch/master/graph/badge.svg?token=RTNIQZDZ69)](https://codecov.io/gh/ShyPixie/steam-tools-ng)
 [![Quality](https://api.codiga.io/project/33951/score/svg)](https://app.codiga.io/project/33951/dashboard)
 [![GitHub license](https://img.shields.io/badge/license-GPLv3-brightgreen.svg?style=flat)](https://www.gnu.org/licenses/gpl-3.0.html)
 [![GitHub release](https://img.shields.io/github/release/ShyPixie/steam-tools-ng.svg?style=flat)](https://github.com/ShyPixie/steam-tools-ng/releases)
@@ -23,6 +22,10 @@ You can run the follow modules from steam-tools:
 * SteamGifts: Join in giveaway at steamgifts.com
 
 * Card Farming: Drop cards from steam games
+
+* Fake Run: Will run any game forever, even if you don't have it installed
+
+* Free coupons: Get coupons for free and donate your coupons
 
 * More (**Coming Soon**)
 
@@ -65,4 +68,6 @@ The Steam Tools NG is distributed in the hope that it will be useful, but WITHOU
 
 You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
 
-Lara Maia <dev@lara.monster>
+Lara Maia <dev@lara.monster> 2015 ~ 2022
+
+[![Made with](https://img.shields.io/badge/made%20with-girl%20power-f070D0.svg?longCache=true&style=for-the-badge)](https://lara.monster)
