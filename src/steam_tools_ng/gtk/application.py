@@ -16,6 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
+import contextlib
 import functools
 import itertools
 import logging
@@ -27,7 +28,7 @@ from typing import Any, Optional, Dict, Callable, List
 import aiohttp
 from gi.repository import Gio, Gtk
 
-from stlib import universe, login, community, webapi, internals
+from stlib import universe, login, community, webapi, internals, plugins
 from . import about, settings, window, utils
 from . import login as gtk_login
 from .. import config, i18n, core
@@ -196,8 +197,13 @@ class SteamToolsNG(Gtk.Application):
                         await asyncio.sleep(1)
                     else:
                         log.debug(_("%s is enabled but not initialized. Initializing now."), module_name)
-
                         module = getattr(self, f"run_{module_name}")
+
+                        if module_name in ["steamgifts", "steamtrades"]:
+                            plugin = plugins.get_plugin(module_name)
+
+                            with contextlib.suppress(IndexError):
+                                await plugin.Main.new_session(0)
 
                         if module_name in ["confirmations", "coupons"]:
                             task = asyncio.create_task(module())
@@ -363,4 +369,4 @@ class SteamToolsNG(Gtk.Application):
     def on_exit_activate(self, *args: Any) -> None:
         loop = asyncio.get_running_loop()
         loop.stop()
-        #self.main_window.destroy()
+        # self.main_window.destroy()

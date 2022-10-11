@@ -35,6 +35,7 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
 
     if plugins.has_plugin("steamgifts"):
         steamgifts = plugins.get_plugin("steamgifts")
+        steamgifts_session = steamgifts.Main.get_session(0)
     else:
         raise ImportError(_("Unable to find Steamgifts plugin."))
 
@@ -46,7 +47,7 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
     reverse = config.parser.getboolean("steamgifts", "reverse_sorting")
 
     try:
-        await steamgifts.do_login()
+        await steamgifts_session.do_login()
     except aiohttp.ClientError:
         yield utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
         await asyncio.sleep(15)
@@ -69,7 +70,7 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
         return
 
     try:
-        await steamgifts.configure()
+        await steamgifts_session.configure()
     except aiohttp.ClientError:
         yield utils.ModuleData(error=_("Check your connection. (server down?)"))
         await asyncio.sleep(15)
@@ -80,7 +81,7 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
         return
 
     try:
-        giveaways = await steamgifts.get_giveaways(type_, pinned_giveaways=pinned)
+        giveaways = await steamgifts_session.get_giveaways(type_, pinned_giveaways=pinned)
     except aiohttp.ClientError:
         yield utils.ModuleData(error=_("Check your connection. (server down?)"))
         await asyncio.sleep(15)
@@ -112,7 +113,7 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
             await asyncio.sleep(1)
 
         try:
-            if await steamgifts.join(giveaway):
+            if await steamgifts_session.join(giveaway):
                 yield utils.ModuleData(
                     display=giveaway.id,
                     status=f"{_('Joined')} {giveaway.name} "
@@ -149,7 +150,7 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
             yield utils.ModuleData(error=_("User don't have required points to join."))
             await asyncio.sleep(5)
 
-            if steamgifts.user_info.points <= 2:
+            if steamgifts_session.user_info.points <= 2:
                 break
 
             continue

@@ -162,6 +162,10 @@ class SteamToolsNG:
         await webapi.SteamWebAPI.new_session(0, api_key=api_key[0], api_url=self.api_url)
         await internals.Internals.new_session(0)
 
+        if self.module_name in ['steamtrades', 'steamgifts']:
+            plugin = plugins.get_plugin(self.module_name)
+            await plugin.Main.new_session(0)
+
         log.debug(_("Initializing module %s"), self.module_name)
         module = getattr(self, f"run_{self.module_name}")
         task = asyncio.create_task(module())
