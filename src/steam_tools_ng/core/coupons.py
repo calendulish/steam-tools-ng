@@ -30,6 +30,8 @@ log = logging.getLogger(__name__)
 
 
 async def main(fetch_coupon_event: asyncio.Event) -> AsyncGenerator[utils.ModuleData, None]:
+    await fetch_coupon_event.wait()
+
     community_session = community.Community.get_session(0)
     internals_session = internals.Internals.get_session(0)
     botids = config.parser.get('coupons', 'botids')
@@ -37,10 +39,18 @@ async def main(fetch_coupon_event: asyncio.Event) -> AsyncGenerator[utils.Module
     appid = config.parser.getint('coupons', 'appid')
     contextid = config.parser.getint('coupons', 'contextid')
 
-    await fetch_coupon_event.wait()
+    if not botids:
+        yield utils.ModuleData(error=_("No botID found"), info=_("Waiting Changes"))
+        await asyncio.sleep(5)
+        return
 
     bot_list = [bot.strip() for bot in botids.split(',')]
     token_list = [token.strip() for token in tokens.split(',')]
+
+    if len(bot_list) != len(token_list):
+        yield utils.ModuleData(error=_("Invalid config. Each bot must have id and token."), info=_("Waiting Changes"))
+        await asyncio.sleep(5)
+        return
 
     yield utils.ModuleData(action="clear")
     package_count = 1
@@ -48,6 +58,12 @@ async def main(fetch_coupon_event: asyncio.Event) -> AsyncGenerator[utils.Module
     for botid, token in zip(bot_list, token_list):
         try:
             steamid = universe.generate_steamid(botid)
+        except ValueError:
+            yield utils.ModuleData(error=_("The botid {} is invalid").format(botid))
+            await asyncio.sleep(5)
+            return
+
+        try:
             inventory = await community_session.get_inventory(steamid, appid, contextid)
         except AttributeError:
             yield utils.ModuleData(error=_("Error when fetch inventory"), info=_("Waiting Changes"))

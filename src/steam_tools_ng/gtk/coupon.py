@@ -143,8 +143,10 @@ class CouponDialog(Gtk.Dialog):
 
                 self.status.error(
                     _(
-                        "The item you choose already gone or the Steam server is slow.\n"
-                        "Wait a minute and try again or choose another coupon.\n"
+                        "Unable to complete this trade. The reason is one of the following:\n\n"
+                        "1. The item you choose already gone. Try another one.\n"
+                        "2. You wrote a wrong token in config. Update you config.\n"
+                        "3. The Steam server is slow. Wait a minute and try again.\n\n"
                         "If you keep seeing this error, please update the coupon list."
                     )
                 )
