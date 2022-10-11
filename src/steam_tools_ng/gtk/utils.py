@@ -626,12 +626,12 @@ def fatal_error_dialog(
         stack: Optional[Union[StackSummary, List[FrameType]]] = None,
         transient: Optional[Gtk.Window] = None,
 ) -> None:
-    log.critical(str(exception))
+    log.critical("%s: %s", type(exception).__name__, str(exception))
 
     error_dialog = Gtk.MessageDialog()
     error_dialog.set_transient_for(transient)
     error_dialog.set_title(_("Fatal Error"))
-    error_dialog.set_markup(str(exception))
+    error_dialog.set_markup(f"{type(exception).__name__}: {str(exception)}")
     error_dialog.set_modal(True)
 
     message_area = error_dialog.get_message_area()
