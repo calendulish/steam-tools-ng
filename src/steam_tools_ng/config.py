@@ -20,6 +20,7 @@ import configparser
 import locale
 import logging
 import os
+import site
 import sys
 from collections import OrderedDict
 from pathlib import Path
@@ -224,6 +225,8 @@ def init() -> None:
     validate_config("steamgifts", "sort", giveaway_sort_types)
 
     log_directory.mkdir(parents=True, exist_ok=True)
+
+    stlib_plugins.add_search_paths(*site.getsitepackages(), site.getusersitepackages())
 
     if not stlib_plugins.has_plugin("steamtrades"):
         new("steamtrades", "enable", False)

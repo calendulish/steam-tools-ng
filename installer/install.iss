@@ -31,37 +31,24 @@ SolidCompression=True
 ChangesEnvironment=True
 LicenseFile=../LICENSE
 
-[Types]
-Name: "full"; Description: "Full installation"
-Name: "compact"; Description: "Compact installation"
-Name: "custom"; Description: "Custom installation"; Flags: iscustom
-
-[Components]
-Name: "main"; Description: "Main Files"; Types: full compact custom; Flags: fixed
-Name: "plugins"; Description: "Plugins Files"; Types: full
-Name: "plugins\steamgifts"; Description: "Steamgifts Plugin"; Types: full
-Name: "plugins\steamtrades"; Description: "Steamtrades Plugin"; Types: full
-
 [Tasks]
 Name: "envpath"; Description: "Add STNG to PATH"; GroupDescription: "Additional Settings"; Flags: unchecked
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "..\build\{#ReleaseName}\steam-tools-ng.exe"; DestDir: "{app}"; Flags: ignoreversion; Components: main
-Source: "..\build\{#ReleaseName}\steam-tools-ng-gui.exe"; DestDir: "{app}"; Flags: ignoreversion; Components: main
-Source: "..\build\{#ReleaseName}\steam-api-executor.exe"; DestDir: "{app}"; Flags: ignoreversion; Components: main
-Source: "..\build\{#ReleaseName}\*.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: main
-Source: "..\build\{#ReleaseName}\share\*"; DestDir: "{app}\share"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: main
-Source: "..\build\{#ReleaseName}\etc\*"; DestDir: "{app}\etc"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: main
-Source: "..\build\{#ReleaseName}\lib\*"; DestDir: "{app}\lib"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: main
-Source: "..\build\{#ReleaseName}\plugins\steamgifts.pyc"; DestDir: "{app}\plugins"; Flags: ignoreversion; Components: plugins\steamgifts
-Source: "..\build\{#ReleaseName}\plugins\steamtrades.pyc"; DestDir: "{app}\plugins"; Flags: ignoreversion; Components: plugins\steamtrades
+Source: "..\build\{#ReleaseName}\steam-tools-ng.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\{#ReleaseName}\steam-tools-ng-gui.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\{#ReleaseName}\steam-api-executor.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\{#ReleaseName}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\build\{#ReleaseName}\share\*"; DestDir: "{app}\share"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\build\{#ReleaseName}\etc\*"; DestDir: "{app}\etc"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\build\{#ReleaseName}\lib\*"; DestDir: "{app}\lib"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\Steam Tools NG"; Filename: "{app}\steam-tools-ng-gui.exe"; IconFilename: "{app}\lib\steam_tools_ng\icons\stng.ico"
 Name: "{group}\(console) steamguard"; Filename: "{app}\steam-tools-ng.exe"; Parameters: "steamguard"; IconFilename: "{app}\lib\steam_tools_ng\icons\stng_console.ico"
-Name: "{group}\(console) steamtrades"; Filename: "{app}\steam-tools-ng.exe"; Parameters: "steamtrades"; Components: plugins\steamtrades; IconFilename: "{app}\lib\steam_tools_ng\icons\stng_console.ico"
-Name: "{group}\(console) steamgifts"; Filename: "{app}\steam-tools-ng.exe"; Parameters: "steamgifts"; Components: plugins\steamgifts; IconFilename: "{app}\lib\steam_tools_ng\icons\stng_console.ico"
+Name: "{group}\(console) steamtrades"; Filename: "{app}\steam-tools-ng.exe"; Parameters: "steamtrades"; IconFilename: "{app}\lib\steam_tools_ng\icons\stng_console.ico"
+Name: "{group}\(console) steamgifts"; Filename: "{app}\steam-tools-ng.exe"; Parameters: "steamgifts"; IconFilename: "{app}\lib\steam_tools_ng\icons\stng_console.ico"
 Name: "{group}\(console) cardfarming"; Filename: "{app}\steam-tools-ng.exe"; Parameters: "cardfarming"; IconFilename: "{app}\lib\steam_tools_ng\icons\stng_console.ico"
 Name: "{group}\Config Files"; Filename: "{app}\steam-tools-ng-gui.exe"; Parameters: "--config-dir"; IconFilename: "{app}\lib\steam_tools_ng\icons\stng_nc.ico"
 Name: "{group}\Log Files"; Filename: "{app}\steam-tools-ng-gui.exe"; Parameters: "--log-dir"; IconFilename: "{app}\lib\steam_tools_ng\icons\stng_nc.ico"
@@ -73,6 +60,7 @@ Type: files; Name: "{group}\(console) authenticator.lnk"
 Type: files; Name: "{app}\steam_tools_ng.exe"
 Type: files; Name: "{app}\share\icons\steam-tools-ng*"
 Type: filesandordirs; Name: "{app}\lib\src"
+Type: filesandordirs; Name: "{app}\plugins"
 
 [Run]
 Filename: "{app}\steam-tools-ng-gui.exe"; Description: "{cm:LaunchProgram,Steam Tools NG}"; Flags: nowait postinstall skipifsilent

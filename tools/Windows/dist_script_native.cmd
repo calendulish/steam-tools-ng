@@ -18,7 +18,6 @@ pushd %~dp0..\\.. || exit 1
 ::
 for /f %%i in ('findstr /c:"version=" setup.py') do (set APP_VERSION=%%i)
 set APP_VERSION=%APP_VERSION:~9,-2%
-set STLIB_PLUGINS_VERSION="1.0"
 set ISCC="C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe"
 for /d %%i in (%cd%) do (set project_name=%%~ni)
 call set project_name=%%project_name:-=_%%
@@ -56,26 +55,6 @@ for %%i in (release\\python\\PyGObject-*-cp310-cp310-win_amd64.whl) do (python -
 python ./setup.py -v build || exit 1
 pushd build || exit 1
 move /y "exe.win-amd64-%PYTHON_VERSION%" "%RELEASE_NAME%" || exit 1
-
-:: build plugins (FIXME)
-if not exist "%RELEASE_NAME%"\\plugins (
-    mkdir "%RELEASE_NAME%"\\plugins || exit 1
-)
-
-if not exist stlib-plugins.tar.gz (
-    set stlib_plugins="https://github.com/ShyPixie/stlib-plugins/archive/refs/tags/v%STLIB_PLUGINS_VERSION%.tar.gz"
-    !curl! -o stlib-plugins.tar.gz -L !stlib_plugins! || !certutil! -urlcache -split -f !stlib_plugins! stlib-plugins.tar.gz || exit 1
-)
-
-if not exist "stlib-plugins-%STLIB_PLUGINS_VERSION%" (
-    tar -vvxf stlib-plugins.tar.gz || exit 1
-)
-
-pushd "stlib-plugins-%STLIB_PLUGINS_VERSION%" || exit 1
-python -m compileall src || exit 1
-copy /y src\\__pycache__\\steamtrades* "..\\%RELEASE_NAME%\\plugins\\steamtrades.pyc" || exit 1
-copy /y src\\__pycache__\\steamgifts* "..\\%RELEASE_NAME%\\plugins\\steamgifts.pyc" || exit 1
-popd || exit 1
 
 :: zip release
 tar -vvcf "%RELEASE_NAME%.zip" "%RELEASE_NAME%" || exit 1

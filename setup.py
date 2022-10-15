@@ -177,7 +177,7 @@ def freeze_options() -> Mapping[str, Any]:
         )
     ]
 
-    packages = ['asyncio', 'steam_tools_ng', 'gi', 'win32com.client']
+    packages = ['steam_tools_ng', 'stlib-plugins', 'gi', 'win32com.client']
 
     paths = ['src']
     paths.extend(sys.path)
@@ -268,6 +268,7 @@ setup(
         "pywin32; sys_platform == 'win32'",
         "psutil; sys_platform == 'win32'",
         'stlib>=1.0',
+        'stlib-plugins>=1.1',
         'aiohttp',
         'certifi',
     ],

@@ -28,16 +28,6 @@ rm -rfv build dist
 pushd build || exit 1
 mv "exe.mingw_x86_64-$PYTHON_VERSION" "$RELEASE_NAME" || exit 1
 
-# build plugins (FIXME)
-mkdir -p "$RELEASE_NAME"/plugins || exit 1
-curl -o stlib-plugins.tar.gz -L "https://github.com/ShyPixie/stlib-plugins/archive/refs/tags/v$STLIB_PLUGINS_VERSION.tar.gz" || exit 1
-tar xfv stlib-plugins.tar.gz || exit 1
-pushd "stlib-plugins-$STLIB_PLUGINS_VERSION" || exit 1
-mingw32-make || exit 1
-cp -fv src/__pycache__/steamtrades* ../"$RELEASE_NAME"/plugins/steamtrades.pyc || exit 1
-cp -fv src/__pycache__/steamgifts* ../"$RELEASE_NAME"/plugins/steamgifts.pyc || exit 1
-popd || exit 1
-
 # zip release
 tar -vvcf "$RELEASE_NAME.zip" "$RELEASE_NAME" || exit 1
 popd || exit 1
