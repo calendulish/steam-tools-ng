@@ -18,13 +18,16 @@
 import asyncio
 import logging
 import sys
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 import aiohttp
-from stlib import universe, webapi, login
 
-from . import utils, cli
+from stlib import universe, webapi, login
+from . import utils
 from .. import i18n, config
+
+if TYPE_CHECKING:
+    from . import cli
 
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
@@ -32,7 +35,7 @@ _ = i18n.get_translation
 
 # noinspection PyUnusedLocal
 class NewAuthenticator:
-    def __init__(self, cli_: cli.SteamToolsNG) -> None:
+    def __init__(self, cli_: 'cli.SteamToolsNG') -> None:
         self.cli = cli_
         self.webapi_session = webapi.SteamWebAPI.get_session(0)
         self._login_data: Optional[login.LoginData] = None

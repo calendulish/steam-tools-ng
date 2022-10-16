@@ -21,12 +21,16 @@ import codecs
 import getpass
 import logging
 import tempfile
+from typing import TYPE_CHECKING
 
 import aiohttp
-from stlib import login
 
-from . import utils, cli
+from stlib import login
+from . import utils
 from .. import i18n, config
+
+if TYPE_CHECKING:
+    from . import cli
 
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
