@@ -226,7 +226,11 @@ def init() -> None:
 
     log_directory.mkdir(parents=True, exist_ok=True)
 
-    stlib_plugins.add_search_paths(*site.getsitepackages(), site.getusersitepackages())
+    stlib_plugins.add_search_paths(
+        str(Path(os.getcwd(), 'lib', 'stlib-plugins')),
+        *[str(Path(site_, 'stlib-plugins')) for site_ in site.getsitepackages()],
+        str(Path(site.getusersitepackages(), 'stlib-plugins')),
+    )
 
     if not stlib_plugins.has_plugin("steamtrades"):
         new("steamtrades", "enable", False)
