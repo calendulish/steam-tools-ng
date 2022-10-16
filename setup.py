@@ -239,18 +239,24 @@ classifiers = [
     'Operating System :: Microsoft :: Windows :: Windows 10',
     'Environment :: X11 Applications :: GTK',
     'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.7',
-    'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
     'Typing :: Typed',
 ]
 
+try:
+    with open('README.md') as readme:
+        long_description = readme.read()
+except FileNotFoundError:
+    long_description = ''
+
 setup(
     name='steam-tools-ng',
     version='2.0',
     description="Some useful tools to use with steam client or compatible programs and websites.",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     author='Lara Maia',
     author_email='dev@lara.monster',
     url='https://github.com/ShyPixie/steam-tools-ng',
@@ -272,7 +278,7 @@ setup(
         'aiohttp',
         'certifi',
     ],
-    python_requires='>=3.7',
+    python_requires='>=3.9',
     cmdclass={'build_py': BuildTranslations},
     **freeze_options()
 )
