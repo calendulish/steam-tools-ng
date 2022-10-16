@@ -59,6 +59,36 @@ jobs:
             installer/build/*.exe
           if-no-files-found: error
           retention-days: 90
+  deploy:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [linux-build, windows-build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+      - uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          files: |
+            linux/dist/*
+            windows/installer/build/*.exe
+            windows/build/*.zip
+  pypi-upload:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.9', '3.10' ]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages_dir: linux/dist/
+          verbose: true
+          print_hash: true
   generate-badges:
     if: ${{ always() }}
     needs: [linux-build, windows-build]
