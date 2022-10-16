@@ -17,7 +17,7 @@
 #
 import asyncio
 import logging
-from collections import OrderedDict
+
 from gi.repository import Gtk
 
 from . import utils, settings, login
@@ -50,6 +50,9 @@ class AdvancedSettingsDialog(Gtk.Dialog):
         self.gtk_settings_class = Gtk.Settings.get_default()
 
         content_area = self.get_content_area()
+        content_area.set_margin_start(10)
+        content_area.set_margin_end(10)
+
         content_grid = Gtk.Grid()
         content_grid.set_row_spacing(10)
         content_grid.set_column_spacing(10)
@@ -58,22 +61,22 @@ class AdvancedSettingsDialog(Gtk.Dialog):
         login_section = utils.Section("login", _("Advanced Login Settings"))
         content_grid.attach(login_section, 0, 0, 1, 2)
 
-        shared_secret = login_section.new('shared_secret', _("Shared Secret:"), Gtk.Entry, 0, 0)
+        shared_secret = login_section.new_item('shared_secret', _("Shared Secret:"), Gtk.Entry, 0, 0)
         shared_secret.connect('changed', settings.on_setting_changed)
 
-        token_item = login_section.new("token", _("Token:"), Gtk.Entry, 0, 1)
+        token_item = login_section.new_item("token", _("Token:"), Gtk.Entry, 0, 1)
         token_item.connect("changed", settings.on_setting_changed)
 
-        token_secure_item = login_section.new("token_secure", _("Token Secure:"), Gtk.Entry, 0, 2)
+        token_secure_item = login_section.new_item("token_secure", _("Token Secure:"), Gtk.Entry, 0, 2)
         token_secure_item.connect("changed", settings.on_setting_changed)
 
-        identity_secret = login_section.new('identity_secret', _("Identity Secret:"), Gtk.Entry, 2, 0)
+        identity_secret = login_section.new_item('identity_secret', _("Identity Secret:"), Gtk.Entry, 2, 0)
         identity_secret.connect('changed', settings.on_setting_changed)
 
-        deviceid = login_section.new('deviceid', _("Device ID:"), Gtk.Entry, 2, 1)
+        deviceid = login_section.new_item('deviceid', _("Device ID:"), Gtk.Entry, 2, 1)
         deviceid.connect('changed', settings.on_setting_changed)
 
-        steamid_item = login_section.new("steamid", _("Steam ID:"), Gtk.Entry, 2, 2)
+        steamid_item = login_section.new_item("steamid", _("Steam ID:"), Gtk.Entry, 2, 2)
         steamid_item.set_input_purpose(Gtk.InputPurpose.DIGITS)
         steamid_item.connect("changed", settings.on_digit_only_setting_changed)
 
@@ -105,7 +108,9 @@ class AdvancedSettingsDialog(Gtk.Dialog):
         config.parser.clear()
         config.init()
         self.parent_window.destroy()
-        self.destroy()
+
         login_dialog.status.info(_("Waiting"))
         login_dialog.user_details_section.show()
         login_dialog.advanced_login.show()
+
+        self.destroy()

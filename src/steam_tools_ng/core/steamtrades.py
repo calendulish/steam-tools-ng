@@ -18,11 +18,11 @@
 import asyncio
 import logging
 import random
-from typing import Generator
+from typing import AsyncGenerator
 
 import aiohttp
-from stlib import plugins, login
 
+from stlib import plugins, login
 from . import utils
 from .. import i18n, config
 
@@ -30,11 +30,12 @@ _ = i18n.get_translation
 log = logging.getLogger(__name__)
 
 
-async def main() -> Generator[utils.ModuleData, None, None]:
+async def main() -> AsyncGenerator[utils.ModuleData, None]:
     yield utils.ModuleData(status=_("Loading"))
 
     if plugins.has_plugin("steamtrades"):
         steamtrades = plugins.get_plugin("steamtrades")
+        steamtrades_session = steamtrades.Main.get_session(0)
     else:
         raise ImportError(_("Unable to find Steamtrades plugin"))
 
@@ -50,7 +51,7 @@ async def main() -> Generator[utils.ModuleData, None, None]:
     trades = [trade.strip() for trade in trade_ids.split(',')]
 
     try:
-        await steamtrades.do_login()
+        await steamtrades_session.do_login()
     except aiohttp.ClientError:
         yield utils.ModuleData(error=_("Check your connection. (server down?)"))
         await asyncio.sleep(15)
@@ -80,7 +81,7 @@ async def main() -> Generator[utils.ModuleData, None, None]:
 
     for trade_id in trades:
         try:
-            trade_info = await steamtrades.get_trade_info(trade_id)
+            trade_info = await steamtrades_session.get_trade_info(trade_id)
         except (IndexError, aiohttp.ClientResponseError):
             yield utils.ModuleData(error=_("Unable to find trade id"))
             bumped = False
@@ -101,7 +102,7 @@ async def main() -> Generator[utils.ModuleData, None, None]:
             await asyncio.sleep(1)
 
         try:
-            if await steamtrades.bump(trade_info):
+            if await steamtrades_session.bump(trade_info):
                 yield utils.ModuleData(display=trade_id, info=_("Bumped!"))
                 bumped = True
             else:

@@ -17,20 +17,16 @@
 #
 import asyncio
 import configparser
-import http
 import locale
 import logging
 import os
+import site
 import sys
-import time
 from collections import OrderedDict
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
-import aiohttp
 from stlib import plugins as stlib_plugins
-from stlib import webapi
-
 from . import i18n, logger_handlers
 
 parser = configparser.RawConfigParser()
@@ -90,6 +86,7 @@ giveaway_sort_types = OrderedDict([
 ])
 
 plugins = OrderedDict([
+    ("coupons", "Free Coupons"),
     ("confirmations", "Confirmations"),
     ("steamtrades", "Steam Trades"),
     ("steamgifts", "Steam Gifts"),
@@ -106,7 +103,7 @@ else:
 
 asyncio.set_event_loop(event_loop)
 
-default_config = {
+default_config: Mapping[str, Mapping[str, Any]] = {
     'logger': {
         'log_directory': data_dir / 'steam-tools-ng',
         'log_level': 'debug',
@@ -115,7 +112,16 @@ default_config = {
     },
     'steam': {
         'api_url': 'https://api.steampowered.com',
-        'api_key': '',
+    },
+    'coupons': {
+        'enable': True,
+        'botid_to_donate': '76561198018370992',
+        'botids': '76561198018370992',
+        'appid': '753',
+        'contextid': '3',
+        'token_to_donate': '6Z6Xn5NM',
+        'tokens': '6Z6Xn5NM',
+        'last_trade_time': 0,
     },
     'confirmations': {
         'enable': True,
@@ -144,6 +150,8 @@ default_config = {
         'first_wait': 7200,
         'default_wait': 600,
         'min_wait': 120,
+        'max_concurrency': 5,
+        'invisible': True,
     },
     'general': {
         'theme': 'light',
@@ -166,7 +174,7 @@ default_config = {
 
 def update_log_level(type_: str, level_string: str) -> None:
     level = getattr(logging, level_string.upper())
-    file_handler, console_handler = logging.root.handlers
+    file_handler, console_handler, *extra_handlers = logging.root.handlers
 
     if type_ == "console":
         console_handler.setLevel(level)
@@ -174,7 +182,7 @@ def update_log_level(type_: str, level_string: str) -> None:
         file_handler.setLevel(level)
 
 
-def validate_config(section: str, option: str, defaults: OrderedDict) -> None:
+def validate_config(section: str, option: str, defaults: OrderedDict[str, str]) -> None:
     value = parser.get(section, option)
 
     if value and value not in defaults.keys():
@@ -217,6 +225,8 @@ def init() -> None:
     validate_config("steamgifts", "sort", giveaway_sort_types)
 
     log_directory.mkdir(parents=True, exist_ok=True)
+
+    stlib_plugins.add_search_paths(*site.getsitepackages(), site.getusersitepackages())
 
     if not stlib_plugins.has_plugin("steamtrades"):
         new("steamtrades", "enable", False)
@@ -276,49 +286,3 @@ def remove(section: str, option: str) -> None:
 
     # with open(config_file, 'w', encoding="utf8") as config_file_object:
     #    parser.write(config_file_object)
-
-
-def login_cookies() -> http.cookies.SimpleCookie:
-    steamid = parser.getint("login", "steamid")
-    token = parser.get("login", "token")
-    token_secure = parser.get("login", "token_secure")
-
-    if not steamid or not token or not token_secure:
-        log.warning(_("No login cookies"))
-        return {}
-
-    cookies_dict = {
-        'steamLogin': f'{steamid}%7C%7C{token}',
-        'steamLoginSecure': f'{steamid}%7C%7C{token_secure}',
-    }
-
-    return http.cookies.SimpleCookie(cookies_dict)
-
-
-async def time_offset(webapi_session: webapi.SteamWebAPI) -> int:
-    try:
-        if not client:
-            raise ProcessLookupError
-
-        with client.SteamGameServer() as server:
-            server_time = server.get_server_time()
-    except ProcessLookupError:
-        log.warning(_("Steam is not running."))
-        log.debug(_("Fallbacking time offset to WebAPI"))
-
-        while True:
-            try:
-                server_time = await webapi_session.get_server_time()
-            except aiohttp.ClientError:
-                raise aiohttp.ClientError(
-                    _(
-                        "Unable to Connect. You can try these things:\n"
-                        "1. Check your connection\n"
-                        "2. Check if Steam Server isn't down\n"
-                        "3. Check if api_url and api_key is correct on config file\n"
-                    )
-                )
-            else:
-                break
-
-    return int(time.time()) - server_time

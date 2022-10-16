@@ -22,6 +22,7 @@ from typing import Any, Dict, List, Tuple, Union
 
 from gi.repository import Gtk
 
+from stlib import universe, community
 from . import utils
 from .. import config, i18n
 
@@ -42,6 +43,7 @@ class FinalizeDialog(Gtk.Dialog):
         super().__init__(use_header_bar=True)
         self.parent_window = parent_window
         self.application = application
+        self.community_session = community.Community.get_session(0)
 
         if action == "allow":
             self.action = _("accept")
@@ -140,8 +142,9 @@ class FinalizeDialog(Gtk.Dialog):
 
         self.set_size_request(0, 0)
         self.header_bar.set_show_title_buttons(False)
-        self.parent_window.text_tree_lock = True
+        self.parent_window.confirmation_tree.lock = True
         loop = asyncio.get_event_loop()
+        task: asyncio.Task[Union[Dict[str, Any], List[Tuple[Gtk.TreeIter, Dict[str, Any]]]]]
 
         if self.iter:
             task = loop.create_task(self.finalize())
@@ -150,19 +153,21 @@ class FinalizeDialog(Gtk.Dialog):
 
         task.add_done_callback(self.on_task_finish)
 
-    def on_task_finish(self, task: asyncio.Task) -> None:
+    def on_task_finish(self, task: asyncio.Task[Any]) -> None:
         exception = task.exception()
 
         if exception and not isinstance(exception, asyncio.CancelledError):
             try:
-                raise task.exception()
+                current_exception = task.exception()
+                assert isinstance(current_exception, BaseException)
+                raise current_exception
             except Exception as exception:
                 stack = task.get_stack()
 
                 for frame in stack:
-                    log.error(f"{type(exception).__name__} at {frame}")
+                    log.error("%s at %s", type(exception).__name__, frame)
 
-                log.error(f"Steam Server is slow. {str(exception)}")
+                log.error("Steam Server is slow. (%s)", str(exception))
 
                 self.status.error(
                     _("Steam Server is slow. Please, try again.")
@@ -171,7 +176,7 @@ class FinalizeDialog(Gtk.Dialog):
                 self.header_bar.set_show_title_buttons(True)
                 self.yes_button.hide()
         else:
-            self.parent_window.text_tree_lock = False
+            self.parent_window.confirmation_tree.lock = False
             self.destroy()
 
     async def finalize(self, keep_iter: bool = False) -> Dict[str, Any]:
@@ -183,16 +188,14 @@ class FinalizeDialog(Gtk.Dialog):
 
         # steam confirmation server isn't reliable
         for i in range(2):
-            result = await self.application.webapi_session.finalize_confirmation(
+            result = await self.community_session.send_confirmation(
                 identity_secret,
-                steamid,
+                universe.generate_steamid(steamid),
                 deviceid,
-                self.model[self.iter][1],
+                self.model[self.iter][0],
                 self.model[self.iter][2],
                 self.raw_action,
-                time_offset=self.application.time_offset,
             )
-            assert isinstance(result, dict), "finalize_confirmation return is not a dict"
             await asyncio.sleep(0.5)
 
         if not keep_iter:
@@ -201,6 +204,8 @@ class FinalizeDialog(Gtk.Dialog):
             except IndexError:
                 log.debug(_("Unable to remove tree path %s (already removed?). Ignoring."), self.iter)
 
+        # noinspection PyUnboundLocalVariable
+        assert isinstance(result, dict)
         return result
 
     async def batch_finalize(self) -> List[Tuple[Gtk.TreeIter, Dict[str, Any]]]:

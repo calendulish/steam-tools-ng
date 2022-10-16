@@ -25,7 +25,7 @@ import tempfile
 import aiohttp
 from stlib import login
 
-from . import utils
+from . import utils, cli
 from .. import i18n, config
 
 log = logging.getLogger(__name__)
@@ -34,24 +34,16 @@ _ = i18n.get_translation
 
 # noinspection PyUnusedLocal
 class Login:
-    def __init__(self, cli_: 'SteamToolsNG', mobile_login: bool = True) -> None:
+    def __init__(self, cli_: 'cli.SteamToolsNG', mobile_login: bool = True) -> None:
         self.cli = cli_
         self.mobile_login = mobile_login
         self.has_user_data = False
         self.captcha_gid = -1
-
-        self._login_session = None
         self._username = ''
         self.__password = ''
         self._mail_code = ''
         self._steam_code = ''
         self._captcha_text = ''
-        self._api_key = ''
-
-    @property
-    def login_session(self) -> login.Login:
-        assert isinstance(self._login_session, login.Login)
-        return self._login_session
 
     @property
     def username(self) -> str:
@@ -69,10 +61,6 @@ class Login:
     @property
     def steam_code(self) -> str:
         return self._steam_code
-
-    @property
-    def api_key(self) -> str:
-        return self._api_key
 
     @property
     def captcha_text(self) -> str:
@@ -105,12 +93,9 @@ class Login:
             encrypted_password = codecs.encode(password_key.decode(), 'rot13')
             config.new("login", "password", encrypted_password)
 
-        self._login_session = login.get_session(
-            0,
-            self.username,
-            self.__password,
-            http_session=self.cli.session,
-        )
+        _login_session = login.Login.get_session(0)
+        _login_session.username = self.username
+        _login_session.password = self.__password
 
         kwargs = {'emailauth': self.mail_code, 'mobile_login': self.mobile_login}
 
@@ -122,25 +107,18 @@ class Login:
             # CaptchaError exception will reset it if needed
             self.captcha_gid = -1
 
-        if self.api_key:
-            config.new("steam", "api_key", self.api_key)
-
         if not self.shared_secret or not self.identity_secret:
             log.warning(_("No shared secret found. Trying to log-in without two-factor authentication."))
             # self.code_item.show()
 
         kwargs['shared_secret'] = self.shared_secret
-        kwargs['time_offset'] = self.cli.time_offset
         kwargs['authenticator_code'] = self.steam_code
 
         log.info(_("Logging in"))
 
         while True:
             try:
-                if not config.parser.get('steam', 'api_key'):
-                    raise AttributeError
-
-                login_data = await self.login_session.do_login(**kwargs)
+                login_data = await _login_session.do_login(**kwargs)
             except login.MailCodeError:
                 user_input = utils.safe_input(_("Write code received by email"))
                 assert isinstance(user_input, str), "safe_input is returning bool when it should return str"
@@ -170,8 +148,12 @@ class Login:
                         _("Open {} in an image view and write captcha code that it shows").format(temp_file.name),
                     )
 
+                assert isinstance(user_input, str)
                 self._captcha_text = user_input
                 await self.do_login(True)
+            except binascii.Error:
+                log.error(_("shared secret is invalid!"))
+                self.cli.on_quit()
             except login.LoginError as exception:
                 log.error(str(exception))
                 config.remove('login', 'token')
@@ -182,21 +164,6 @@ class Login:
                 log.error(_("Check your connection. (server down?)"))
                 await asyncio.sleep(15)
                 continue
-            except binascii.Error:
-                log.error(_("shared secret is invalid!"))
-                self.cli.on_quit()
-            except AttributeError:
-                log.info(
-                    _(
-                        "No api_key found on config file.\n"
-                        "Go to https://steamcommunity.com/dev/apikey\n"
-                        "and paste your Steam API key bellow\n"
-                    )
-                )
-
-                user_input = utils.safe_input(_("Write Steam API Key"))
-                self._api_key = user_input
-                await self.do_login(True)
             else:
                 new_configs = {}
 

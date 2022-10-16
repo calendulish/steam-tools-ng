@@ -18,11 +18,12 @@
 import asyncio
 import logging
 import sys
+from typing import Optional
 
 import aiohttp
 from stlib import universe, webapi, login
 
-from . import utils
+from . import utils, cli
 from .. import i18n, config
 
 log = logging.getLogger(__name__)
@@ -31,9 +32,10 @@ _ = i18n.get_translation
 
 # noinspection PyUnusedLocal
 class NewAuthenticator:
-    def __init__(self, cli_: 'SteamToolsNG') -> None:
+    def __init__(self, cli_: cli.SteamToolsNG) -> None:
         self.cli = cli_
-        self._login_data = None
+        self.webapi_session = webapi.SteamWebAPI.get_session(0)
+        self._login_data: Optional[login.LoginData] = None
         self._sms_code = ''
 
     @property
@@ -41,12 +43,17 @@ class NewAuthenticator:
         return self._sms_code
 
     @property
-    def oauth_token(self) -> None:
+    def oauth_token(self) -> str:
         return config.parser.get("login", "oauth_token")
 
     @property
-    def steamid(self) -> None:
-        return config.parser.get("login", "steamid")
+    def steamid(self) -> Optional[universe.SteamId]:
+        steamid = config.parser.getint("login", "steamid")
+
+        if steamid:
+            return universe.generate_steamid(steamid)
+        else:
+            return None
 
     async def add_authenticator(self) -> None:
         log.info(_("Retrieving user data"))
@@ -59,13 +66,13 @@ class NewAuthenticator:
 
             self.cli.on_quit(1)
 
-        deviceid = universe.generate_device_id(token=self.oauth_token)
-        oauth = {'steamid': self.steamid, 'oauth_token': self.oauth_token}
+        assert isinstance(self.steamid, universe.SteamId)
+        oauth = {'steamid': self.steamid.id64, 'oauth_token': self.oauth_token}
         login_data = login.LoginData(auth={}, oauth=oauth)
 
         if not self._login_data or not self.sms_code:
             try:
-                self._login_data = await self.cli.webapi_session.add_authenticator(login_data, deviceid)
+                self._login_data = await self.webapi_session.new_authenticator(self.steamid, self.oauth_token)
             except aiohttp.ClientError:
                 log.error(_("Check your connection. (server down?)"))
                 self.cli.on_quit(1)
@@ -82,17 +89,22 @@ class NewAuthenticator:
                 ))
                 self.cli.on_quit(1)
             except NotImplementedError as exception:
-                log.critical(f"{type(exception).__name__}: {str(exception)}")
+                log.critical("%s: %s", type(exception).__name__, str(exception))
                 self.cli.on_quit(1)
             else:
                 user_input = utils.safe_input(_("Enter the code received by SMS"))
+                assert isinstance(user_input, str)
                 self._sms_code = user_input
 
         log.info(_("Adding authenticator"))
+        assert isinstance(self._login_data, login.LoginData)
 
         try:
-            await self.cli.webapi_session.finalize_add_authenticator(
-                self._login_data, self.sms_code, time_offset=self.cli.time_offset,
+            await self.webapi_session.add_authenticator(
+                self.steamid,
+                self.oauth_token,
+                self._login_data.auth['shared_secret'],
+                self.sms_code,
             )
         except webapi.SMSCodeError:
             log.error(_("Invalid SMS Code. Please, check the code and try again."))
@@ -101,7 +113,7 @@ class NewAuthenticator:
             log.error(_("Check your connection. (server down?)"))
             self.cli.on_quit(1)
         except Exception as exception:
-            log.critical(f"{type(exception).__name__}: {str(exception)}")
+            log.critical("%s: %s", type(exception).__name__, str(exception))
             self.cli.on_quit(1)
 
         log.info(_("Saving new secrets"))

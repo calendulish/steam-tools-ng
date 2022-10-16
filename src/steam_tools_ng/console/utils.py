@@ -16,18 +16,12 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
-import codecs
-import getpass
 import logging
 import os
 import sys
-import tempfile
-from typing import Optional, Union, List, Tuple
+from typing import Optional, Union, List, Tuple, Any
 
-import aiohttp
-from stlib import webapi, universe, login
-
-from .. import i18n, config, core
+from .. import i18n, core
 
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
@@ -74,10 +68,11 @@ def safe_input(
 
             if user_input.lower() == _('y'):
                 return True
-            elif user_input.lower() == _('n'):
+
+            if user_input.lower() == _('n'):
                 return False
-            else:
-                raise ValueError(_('{} is not an accepted value').format(user_input))
+
+            raise ValueError(_('{} is not an accepted value').format(user_input))
         except ValueError as exception:
             log.error(exception.args[0])
             log.error(_('Please, try again.'))
@@ -86,11 +81,11 @@ def safe_input(
 def set_console(
         module_data: Optional[core.utils.ModuleData] = None,
         *,
-        display: Optional[str] = None,
-        status: Optional[str] = None,
-        info: Optional[str] = None,
-        error: Optional[str] = None,
-        level: Optional[Tuple[int, int]] = None,
+        display: str = '',
+        status: str = '',
+        info: str = '',
+        error: str = '',
+        level: Tuple[int, int] = (0, 0),
 ) -> None:
     for std in (sys.stdout, sys.stderr):
         print(' ' * (os.get_terminal_size().columns - 1), end='\r', file=std)
@@ -118,7 +113,7 @@ def set_console(
         else:
             total = bar_size
 
-        print("┌{:{}}┐".format('█' * total, bar_size), end=' ')
+        print(f"┌{'█' * total:{bar_size}}┐", end=' ')
 
     if module_data.info:
         print(module_data.info, sep=' ', end=' ')
@@ -126,7 +121,7 @@ def set_console(
     print('', end='\r')
 
 
-def safe_task_callback(task: asyncio.Task) -> None:
+def safe_task_callback(task: asyncio.Task[Any]) -> None:
     if task.cancelled():
         log.debug(_("%s has been stopped due user request"), task.get_coro())
         return
@@ -137,9 +132,9 @@ def safe_task_callback(task: asyncio.Task) -> None:
         stack = task.get_stack()
 
         for frame in stack:
-            log.critical(f"{type(exception).__name__} at {frame}")
+            log.critical("%s at %s", type(exception).__name__, frame)
 
-        log.critical(f"Fatal Error: {str(exception)}")
+        log.critical("Fatal Error: %s", str(exception))
         loop = asyncio.get_running_loop()
         loop.stop()
         sys.exit(1)

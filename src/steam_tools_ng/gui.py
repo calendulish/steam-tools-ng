@@ -24,6 +24,7 @@ import sys
 from multiprocessing import freeze_support
 from pathlib import Path
 from subprocess import call
+from typing import Optional, Any
 
 from steam_tools_ng import config, i18n
 from steam_tools_ng.gtk import application
@@ -34,7 +35,7 @@ log = logging.getLogger(__name__)
 
 
 class GraphicalArgParser(argparse.ArgumentParser):
-    def _print_message(self, message, file=None) -> None:
+    def _print_message(self, message: str, file: Optional[Any] = None) -> None:
         if message:
             utils.fatal_error_dialog(Exception(message), [])
 

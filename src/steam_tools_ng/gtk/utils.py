@@ -21,11 +21,14 @@ import html
 import logging
 import traceback
 from collections import OrderedDict
+from traceback import StackSummary
 from types import FrameType
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union, Type, Tuple
+from xml.etree import ElementTree
 
 from gi.repository import Gtk, Gdk
 
+from stlib import internals
 from . import async_gtk
 from .. import i18n, config
 
@@ -77,7 +80,7 @@ class VariableButton(Gtk.Button):
 
 class AsyncButton(Gtk.Button):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__()
+        super().__init__(*args, **kwargs)
         super().connect('clicked', self.__callback)
         self._user_callback: Optional[Callable[..., Any]] = None
         self._user_args: Any = None
@@ -106,36 +109,134 @@ class AsyncButton(Gtk.Button):
             self.__callback(self)
 
 
-class SimpleTextTree(Gtk.ScrolledWindow):
+class StatusBar(Gtk.Grid):
+    def __init__(self) -> None:
+        super().__init__()
+        self.display = Gdk.Display.get_default()
+        self._style_provider = Gtk.CssProvider()
+        self._style_provider.load_from_data(
+            b"label.warning { background-color: darkblue; color: white; }"
+            b"label.critical {background-color: darkred; color: white; }"
+        )
+        self._style_context = self.get_style_context()
+        self._style_context.add_provider_for_display(
+            self.display,
+            self._style_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+        )
+
+        _separator = Gtk.Separator()
+        self.attach(_separator, 0, 0, 1, 1)
+
+        self._status = Gtk.Label()
+        self._status.set_hexpand(True)
+        self.attach(self._status, 0, 1, 1, 1)
+
+        self.messages = {}
+        for module in config.plugins.keys():
+            self.messages[module] = {"warning": "", "critical": ""}
+
+        loop = asyncio.get_event_loop()
+        task = loop.create_task(self.__loop_messages())
+        task.add_done_callback(safe_task_callback)
+
+    async def __loop_messages(self) -> None:
+        while True:
+            # when query is empty
+            if all(all(value == '' for value in messages.values()) for messages in self.messages.values()):
+                self._status.set_css_classes([])
+                self._status.set_text('')
+                await asyncio.sleep(1)
+                continue
+
+            for module_name, module_messages in self.messages.items():
+                for level in ["warning", "critical"]:
+                    if module_messages[level]:
+                        self._status.set_css_classes([level])
+                        self._status.set_text(f"{module_name}: {module_messages[level]}")
+                        await asyncio.sleep(3)
+
+    def set_warning(self, module: str, message: str) -> None:
+        self.messages[module]["warning"] = message
+
+    def set_critical(self, module: str, message: str) -> None:
+        self.messages[module]["critical"] = message
+
+    def clear(self, module: str) -> None:
+        self.messages[module] = {"warning": "", "critical": ""}
+
+
+class SimpleTextTree(Gtk.Grid):
     def __init__(
             self,
-            *elements,
+            *elements: str,
             overlay_scrolling: bool = True,
             resizable: bool = True,
             fixed_width: int = 0,
             model: Callable[..., Union[Gtk.TreeStore, Gtk.ListStore]] = Gtk.TreeStore,
     ) -> None:
         super().__init__()
+        self._scrolled_window = Gtk.ScrolledWindow()
+        self._scrolled_window.set_overlay_scrolling(overlay_scrolling)
+        self.attach(self._scrolled_window, 0, 0, 1, 1)
+
         # noinspection PyUnusedLocal
-        self._store = model(*[str for number in range(len(elements))])
+        self._store = model(*[str for header in elements])
         self._view = Gtk.TreeView()
         self._view.set_model(self._store)
-        self.set_child(self._view)
+        self._view.set_hexpand(True)
+        self._view.set_vexpand(True)
+        self._scrolled_window.set_child(self._view)
 
-        self.set_hexpand(True)
-        self.set_vexpand(True)
-        self.set_overlay_scrolling(overlay_scrolling)
+        self._lock = False
+        self._lock_label = Gtk.Label()
+        self._lock_label.hide()
+        self._lock_label.set_vexpand(True)
+        self._lock_label.set_hexpand(True)
+
+        self._lock_label.set_markup(
+            markup(
+                _("Waiting another process"),
+                background="#0000FF77",
+                color="white",
+                font_size="xx-large",
+            )
+        )
+
+        self.attach(self._lock_label, 0, 0, 1, 1)
 
         renderer = Gtk.CellRendererText()
 
         for index, header in enumerate(elements):
-            column = Gtk.TreeViewColumn(header, renderer, text=index)
+            column = Gtk.TreeViewColumn(header, renderer, markup=index)
             column.set_resizable(resizable)
 
             if fixed_width:
                 column.set_fixed_width(fixed_width)
 
             self._view.append_column(column)
+
+    async def wait_available(self) -> None:
+        while self.lock:
+            await asyncio.sleep(1)
+
+    @property
+    def lock(self) -> bool:
+        return self._lock
+
+    @lock.setter
+    def lock(self, enable_lock: bool) -> None:
+        if enable_lock:
+            log.debug(_("Waiting another process"))
+            self.set_focusable(False)
+            self.set_sensitive(False)
+            self._lock_label.show()
+            self._lock = True
+        else:
+            self.set_focusable(True)
+            self.set_sensitive(True)
+            self._lock_label.hide()
+            self._lock = False
 
     @property
     def store(self) -> Union[Gtk.TreeStore, Gtk.ListStore]:
@@ -177,7 +278,7 @@ class SimpleStatus(Gtk.Frame):
 
 def when_running(function: Callable[..., Any]) -> Callable[..., Any]:
     @functools.wraps(function)
-    def wrapper(self, *args, **kwargs) -> None:
+    def wrapper(self: 'Status', *args: Any, **kwargs: Any) -> None:
         if self.play_event.is_set():
             function(self, *args, **kwargs)
 
@@ -237,13 +338,20 @@ class Status(Gtk.Frame):
         else:
             self._play_event.clear()
 
+    @staticmethod
+    def __sanitize_text(text: str, max_length: int) -> str:
+        if len(text) >= max_length:
+            return text[:max_length] + '...'
+
+        return text
+
     def __disable_tooltip(self, event_status: Gtk.Label) -> None:
         self._grid.remove(event_status)
         self._grid.attach(self._status, 0, 1, 1, 1)
         self._display.set_has_tooltip(False)
         self._display.set_sensitive(True)
 
-    def __on_display_event_changed(self, *args, **kwargs) -> None:
+    def __on_display_event_changed(self, *args: Any, **kwargs: Any) -> None:
         message = _("Text Copied to Clipboard")
 
         if self._gtk_settings.props.gtk_application_prefer_dark_theme:
@@ -280,10 +388,12 @@ class Status(Gtk.Frame):
 
     @when_running
     def set_display(self, text: str) -> None:
+        text = self.__sanitize_text(text, 25)
         self._display.set_markup(markup(text, font_size='large', font_weight='bold'))
 
     @when_running
     def set_status(self, text: str) -> None:
+        text = self.__sanitize_text(text, 55)
         if self._gtk_settings.props.gtk_application_prefer_dark_theme:
             color = 'lightgreen'
         else:
@@ -293,6 +403,7 @@ class Status(Gtk.Frame):
 
     @when_running
     def set_info(self, text: str) -> None:
+        text = self.__sanitize_text(text, 55)
         if self._gtk_settings.props.gtk_application_prefer_dark_theme:
             color = 'lightgreen'
         else:
@@ -302,6 +413,7 @@ class Status(Gtk.Frame):
 
     @when_running
     def set_error(self, text: str) -> None:
+        text = self.__sanitize_text(text, 55)
         if self._gtk_settings.props.gtk_application_prefer_dark_theme:
             color = 'hotpink'
         else:
@@ -322,25 +434,18 @@ class Status(Gtk.Frame):
         self._level_bar.set_max_value(0)
 
 
-class Section(Gtk.Frame):
+class Section(Gtk.Grid):
     def __init__(self, name: str, label: str) -> None:
-        super().__init__(label=label)
-        self.set_label_align(0.03)
+        super().__init__()
+        # for backward compatibility
+        self.grid = self
+        self.label = label
+
         self.set_name(name)
-        self.set_margin_start(10)
-        self.set_margin_end(10)
+        self.set_row_spacing(10)
+        self.set_column_spacing(10)
         self.set_margin_top(10)
         self.set_margin_bottom(10)
-
-        self.grid = Gtk.Grid()
-        self.grid.set_name(name)
-        self.grid.set_row_spacing(10)
-        self.grid.set_column_spacing(10)
-        self.grid.set_margin_start(10)
-        self.grid.set_margin_end(10)
-        self.grid.set_margin_top(10)
-        self.grid.set_margin_bottom(10)
-        self.set_child(self.grid)
 
     # noinspection PyProtectedMember
     @staticmethod
@@ -358,13 +463,13 @@ class Section(Gtk.Frame):
         item.label.hide()
         super(item.__class__, item).hide()
 
-    def new(
+    def new_item(
             self,
             name: str,
             label: str,
-            widget: Callable[..., Gtk.Widget],
+            widget: Type[Gtk.Widget],
             *grid_position: int,
-            items: 'OrderedDict[str, str]' = None,
+            items: Optional[OrderedDict[str, str]] = None,
     ) -> Gtk.Widget:
         bases = (widget,)
 
@@ -399,6 +504,7 @@ class Section(Gtk.Frame):
             return item
 
         if isinstance(item, Gtk.ComboBoxText):
+            assert isinstance(items, OrderedDict), "ComboBox needs items mapping"
             value = config.parser.get(section, option)
 
             for option_label in items.values():
@@ -435,8 +541,7 @@ class Section(Gtk.Frame):
 
     def stackup_section(self, stack: Gtk.Stack) -> None:
         name = self.get_name()
-        title = name.capitalize()
-        stack.add_titled(self, name, title)
+        stack.add_titled(self, name, self.label)
 
 
 def markup(text: str, **kwargs: Any) -> str:
@@ -448,6 +553,12 @@ def markup(text: str, **kwargs: Any) -> str:
     markup_string.append(f'>{html.escape(text)}</span>')
 
     return ' '.join(markup_string)
+
+
+def unmarkup(text: str) -> str:
+    tree = ElementTree.fromstring(text)
+    assert isinstance(tree.text, str)
+    return tree.text
 
 
 def copy_childrens(from_model: Gtk.TreeModel, to_model: Gtk.TreeModel, iter_: Gtk.TreeIter, column: int) -> None:
@@ -484,6 +595,22 @@ def sanitize_confirmation(value: Optional[List[str]]) -> str:
     return result
 
 
+def sanitize_package_details(package_details: List[internals.Package]) -> List[internals.Package]:
+    previous: Optional[Tuple[internals.Package, int, int]] = None
+
+    for package in package_details:
+        for index, app in enumerate(package.apps):
+            if not previous:
+                previous = (package, index, app)
+                continue
+
+            if previous[2] != app:
+                return package_details
+
+    assert isinstance(previous, tuple)
+    return [previous[0]]
+
+
 def remove_letters(text: str) -> str:
     new_text = []
 
@@ -496,16 +623,15 @@ def remove_letters(text: str) -> str:
 
 def fatal_error_dialog(
         exception: BaseException,
-        stack: Optional[List[FrameType]] = None,
+        stack: Optional[Union[StackSummary, List[FrameType]]] = None,
         transient: Optional[Gtk.Window] = None,
 ) -> None:
-    log.critical("\n".join([str(frame) for frame in stack]))
-    log.critical(str(exception))
+    log.critical("%s: %s", type(exception).__name__, str(exception))
 
     error_dialog = Gtk.MessageDialog()
     error_dialog.set_transient_for(transient)
     error_dialog.set_title(_("Fatal Error"))
-    error_dialog.set_markup(str(exception))
+    error_dialog.set_markup(f"{type(exception).__name__}: {str(exception)}")
     error_dialog.set_modal(True)
 
     message_area = error_dialog.get_message_area()
@@ -513,9 +639,10 @@ def fatal_error_dialog(
     message_area.append(secondary_text)
 
     if stack:
+        log.critical("\n".join([str(frame) for frame in stack]))
         secondary_text.set_text("\n".join([str(frame) for frame in stack]))
 
-    def callback(dialog, _action) -> None:
+    def callback(dialog: Any, _action: Any) -> None:
         loop = asyncio.get_event_loop()
         loop.stop()
 
@@ -532,7 +659,7 @@ def fatal_error_dialog(
         async_gtk.run()
 
 
-def safe_task_callback(task: asyncio.Task) -> None:
+def safe_task_callback(task: asyncio.Task[Any]) -> None:
     if task.cancelled():
         log.debug(_("%s has been stopped due user request"), task.get_coro())
         return

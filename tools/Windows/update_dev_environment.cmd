@@ -1,14 +1,14 @@
 @echo off
 call %~dp0common.cmd
 ::
-:: Lara Maia <dev@lara.monster> <YEAR>
+:: Lara Maia <dev@lara.monster> 2015 ~ 2022
 ::
-:: The <program> is free software: you can redistribute it and/or
+:: The Steam Tools NG is free software: you can redistribute it and/or
 :: modify it under the terms of the GNU General Public License as
 :: published by the Free Software Foundation, either version 3 of
 :: the License, or (at your option) any later version.
 ::
-:: The <program> is distributed in the hope that it will be useful,
+:: The Steam Tools NG is distributed in the hope that it will be useful,
 :: but WITHOUT ANY WARRANTY; without even the implied warranty of
 :: MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 :: See the GNU General Public License for more details.
@@ -80,9 +80,11 @@ call :install aiohttp beautifulsoup4 rsa
 :: reinstall stlib with prebuilt library included
 :: currently we can't upload mingw builds to pypi (FIXME: version check)
 call :install --force-reinstall --no-deps https://github.com/ShyPixie/stlib/releases/download/v0.14.1.1/stlib-0.14.1-cp310-cp310-mingw_x86_64.whl
+call :install stlib-plugins
 
 echo Installing optional dependencies
 call :install gtk4 python-gobject
+call :install psutil
 
 echo Installing dev tools
 call :install git tar unzip

@@ -15,10 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import asyncio
-import sys
+import time
 from dataclasses import dataclass
-from typing import Tuple, Any
+from functools import cache, wraps
+from typing import Tuple, Any, Callable
 
 
 @dataclass
@@ -30,3 +30,28 @@ class ModuleData:
     level: Tuple[int, int] = (0, 0)
     action: str = ''
     raw_data: Any = None
+
+
+def time_offset_cache(ttl: int = 60) -> Callable[[Callable[[], int]], Callable[[], int]]:
+    def wrapper(function_: Any) -> Callable[[], int]:
+        function_ = cache(function_)
+        function_.time_base = time.time()
+
+        @wraps(function_)
+        def wrapped() -> int:
+            if time.time() >= function_.time_base + ttl:
+                function_.cache_clear()
+                function_.time_base = time.time()
+
+            time_raw = function_()
+
+            if function_.cache_info().currsize == 0:
+                assert isinstance(time_raw, int)
+                return time_raw
+
+            function_.time_offset = function_.time_base - time_raw
+            return round(time.time() + function_.time_offset)
+
+        return wrapped
+
+    return wrapper

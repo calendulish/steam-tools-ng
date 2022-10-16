@@ -16,23 +16,23 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
-from typing import Generator
+from typing import AsyncGenerator
 
 import aiohttp
-from stlib import webapi, client
 
+from stlib import webapi, client, universe
 from . import utils
 from .. import i18n
 
 _ = i18n.get_translation
 
 
-async def main(steam_id: int, game_id: int) -> Generator[utils.ModuleData, None, None]:
-    session = webapi.get_session(0)
+async def main(steamid: universe.SteamId, game_id: int) -> AsyncGenerator[utils.ModuleData, None]:
+    session = webapi.SteamWebAPI.get_session(0)
 
     try:
-        game_info = await session.get_owned_games(steam_id, appids_filter=[game_id])
-        assert isinstance(game_info, webapi.Game), "game_info is not a Game object"
+        game_list = await session.get_owned_games(steamid, appids_filter=[game_id])
+        game_name = game_list[0].name
     except aiohttp.ClientError:
         yield utils.ModuleData(error=_("Check your connection. (server down?)"))
         await asyncio.sleep(15)
@@ -43,18 +43,18 @@ async def main(steam_id: int, game_id: int) -> Generator[utils.ModuleData, None,
 
     yield utils.ModuleData(
         display=str(game_id),
-        status=_("Loading {}").format(game_info.name),
+        status=_("Loading {}").format(game_name),
     )
 
     start_time = 0
 
     try:
-        async with client.SteamApiExecutor(game_id) as executor:
+        with client.SteamAPIExecutor(game_id) as executor:
             while True:
                 yield utils.ModuleData(
                     display=str(game_id),
                     info=_("Running for {} minutes.").format(round(start_time / 60)),
-                    status=_("Running {}").format(game_info.name),
+                    status=_("Running {}").format(game_name),
                     raw_data=executor,
                     action="check",
                 )

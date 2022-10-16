@@ -16,18 +16,17 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+import certifi
 import os
 import subprocess
 import sys
 import sysconfig
 from pathlib import Path
-from typing import Any, List, Mapping, Tuple
-
-import certifi
 from setuptools import find_packages
 from setuptools.command.build_py import build_py
+from typing import Any, List, Mapping, Tuple
 
-if os.name == 'nt':
+if os.name == 'nt' and not os.getenv('NO_FREEZE'):
     # noinspection PyPackageRequirements
     from cx_Freeze import setup, Executable
 else:
@@ -41,19 +40,19 @@ class BuildTranslations(build_py):
         po_build_path = Path('build', 'lib', 'steam_tools_ng', 'locale')
         po_build_path.mkdir(exist_ok=True)
 
+        if 'MSC ' in sys.version:
+            # windows
+            msgfmt_path = Path(sysconfig.get_path('platlib')).parent.parent.resolve() / 'Tools' / 'i18n' / 'msgfmt.py'
+            msgfmt_executor = [sys.executable, msgfmt_path]
+        else:
+            # mingw/linux
+            msgfmt_executor = ['msgfmt']
+
         for path in Path('i18n').glob('*.po'):
             language = path.stem
             output_directory = po_build_path / language / 'LC_MESSAGES'
             output_directory.mkdir(exist_ok=True, parents=True)
-
-            subprocess.run(
-                [
-                    'msgfmt',
-                    path,
-                    '-o',
-                    output_directory / 'steam-tools-ng.mo',
-                ], check=True
-            )
+            subprocess.run(msgfmt_executor + ['-o', output_directory / 'steam-tools-ng.mo', path], check=True)
 
 
 def fix_gtk() -> List[Tuple[str, str]]:
@@ -74,63 +73,84 @@ def fix_gtk() -> List[Tuple[str, str]]:
         'freetype2-2.0',
     ]
 
-    required_dlls = [
-        'libgtk-4-1',
-        'libpango-1.0-0',
-        'libpangocairo-1.0-0',
-        'libpangowin32-1.0-0',
-        'librsvg-2-2',
-        'libgraphene-1.0-0',
-        'libfreetype-6',
-    ]
-
-    pixbuf_loaders = [
-        'libpixbufloader-png',
-        'libpixbufloader-svg',
-    ]
-
     includes = []
 
-    lib_path = Path(sysconfig.get_path('platlib')).parent.parent.resolve()
-    bin_path = Path(sysconfig.get_path('platlib')).parent.parent.parent.resolve() / 'bin'
+    if 'MSC ' in sys.version:
+        # windows
+        from gi.repository import Gtk
+        lib_path = Path(Gtk.__path__[0]).parent.parent.resolve()
+        bin_path = lib_path.parent.resolve() / 'bin'
+
+        required_dlls = [
+            'gtk-4-1',
+            'pango-1.0-0',
+            'pangocairo-1.0-0',
+            'pangowin32-1.0-0',
+            'Rsvg-2.0-vs17',
+            'graphene-1.0-0',
+            'freetype-6',
+        ]
+
+        pixbuf_loaders = [
+            'libpixbufloader-svg',
+        ]
+    else:
+        # mingw
+        lib_path = Path(sysconfig.get_path('platlib')).parent.parent.resolve()
+        bin_path = lib_path.parent.resolve() / 'bin'
+
+        required_dlls = [
+            'libgtk-4-1',
+            'libpango-1.0-0',
+            'libpangocairo-1.0-0',
+            'libpangowin32-1.0-0',
+            'librsvg-2-2',
+            'libgraphene-1.0-0',
+            'libfreetype-6',
+        ]
+
+        pixbuf_loaders = [
+            'libpixbufloader-png',
+            'libpixbufloader-svg',
+        ]
 
     for package in namespace_packages:
         includes.append((
-            lib_path / 'girepository-1.0' / f'{package}.typelib',
-            Path('lib', 'girepository-1.0', f'{package}.typelib'),
+            str(lib_path / 'girepository-1.0' / f'{package}.typelib'),
+            str(Path('lib', 'girepository-1.0', f'{package}.typelib')),
         ))
 
     for dll in required_dlls:
         includes.append((
-            bin_path / f'{dll}.dll',
+            str(bin_path / f'{dll}.dll'),
             f'{dll}.dll',
         ))
 
     for loader in pixbuf_loaders:
         includes.append((
-            lib_path / 'gdk-pixbuf-2.0' / '2.10.0' / 'loaders' / f'{loader}.dll',
-            Path('lib', 'gdk-pixbuf-2.0', '2.10.0', 'loaders', f'{loader}.dll'),
+            str(lib_path / 'gdk-pixbuf-2.0' / '2.10.0' / 'loaders' / f'{loader}.dll'),
+            str(Path('lib', 'gdk-pixbuf-2.0', '2.10.0', 'loaders', f'{loader}.dll')),
         ))
 
     includes.append((
-        lib_path / 'gdk-pixbuf-2.0' / '2.10.0' / 'loaders.cache',
-        Path('lib', 'gdk-pixbuf-2.0', '2.10.0', 'loaders.cache'),
+        str(lib_path / 'gdk-pixbuf-2.0' / '2.10.0' / 'loaders.cache'),
+        str(Path('lib', 'gdk-pixbuf-2.0', '2.10.0', 'loaders.cache')),
     ))
 
     includes.append((
-        Path('src', 'steam_tools_ng', 'icons', 'settings.ini'),
-        Path('etc', 'gtk-4.0', 'settings.ini'),
+        str(Path('src', 'steam_tools_ng', 'icons', 'settings.ini')),
+        str(Path('etc', 'gtk-4.0', 'settings.ini')),
     ))
 
     return includes
 
 
 def freeze_options() -> Mapping[str, Any]:
-    if os.name != 'nt':
+    if os.name != 'nt' or os.getenv('NO_FREEZE'):
         return {}
 
     icons_path = Path('src', 'steam_tools_ng', 'icons')
-    copyright = 'Lara Maia (C) 2015 ~ 2022'
+    copyright_ = 'Lara Maia (C) 2015 ~ 2022'
 
     executables = [
         Executable(
@@ -139,7 +159,7 @@ def freeze_options() -> Mapping[str, Any]:
             base=None,
             icon=Path(icons_path, 'stng_console.ico'),
             shortcut_name='Steam Tools NG CLI',
-            copyright=copyright,
+            copyright=copyright_,
         ),
         Executable(
             Path("src", "steam_tools_ng", "gui.py"),
@@ -147,11 +167,17 @@ def freeze_options() -> Mapping[str, Any]:
             base='Win32GUI',
             icon=Path(icons_path, 'stng.ico'),
             shortcut_name='Steam Tools NG GUI',
-            copyright=copyright,
+            copyright=copyright_,
+        ),
+        Executable(
+            Path("src", "steam_tools_ng", "steam_api_executor.py"),
+            target_name='steam-api-executor',
+            base=None,
+            copyright=copyright_,
         )
     ]
 
-    packages = ['asyncio', 'steam_tools_ng', 'gi', 'win32com.client']
+    packages = ['steam_tools_ng', 'stlib-plugins', 'gi', 'win32com.client']
 
     paths = ['src']
     paths.extend(sys.path)
@@ -223,11 +249,11 @@ classifiers = [
 
 setup(
     name='steam-tools-ng',
-    version='1.1.2',
+    version='2.0',
     description="Some useful tools to use with steam client or compatible programs and websites.",
     author='Lara Maia',
     author_email='dev@lara.monster',
-    url='http://github.com/ShyPixie/steam-tools-ng',
+    url='https://github.com/ShyPixie/steam-tools-ng',
     license='GPLv3',
     classifiers=classifiers,
     keywords='steam valve',
@@ -240,7 +266,9 @@ setup(
     ]},
     install_requires=[
         "pywin32; sys_platform == 'win32'",
-        'stlib>=0.14',
+        "psutil; sys_platform == 'win32'",
+        'stlib>=1.0',
+        'stlib-plugins>=1.1',
         'aiohttp',
         'certifi',
     ],

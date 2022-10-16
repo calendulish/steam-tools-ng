@@ -15,14 +15,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-
-import os
+# FIXME: Workaround for keyboard lag when running games on GUI on Windows
+# FIXME: https://gitlab.gnome.org/GNOME/gtk/-/issues/2015
 import sys
-from pathlib import Path
+import time
+from multiprocessing import freeze_support
 
-if getattr(sys, 'frozen', False):
-    os.environ['GI_TYPELIB_PATH'] = str(Path(sys.executable).parent.resolve() / 'lib' / 'girepository-1.0')
+from stlib import client
 
-import gi
+if __name__ == "__main__":
+    freeze_support()
 
-gi.require_version('Gtk', '4.0')
+    if len(sys.argv) < 2:
+        raise AttributeError('No appid')
+
+    with client.SteamAPIExecutor(int(sys.argv[1])):
+        while True:
+            time.sleep(5)
