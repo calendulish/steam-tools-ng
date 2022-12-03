@@ -77,9 +77,16 @@ class SteamAPIExecutorWorkaround:
 _SteamAPIExecutor = client.SteamAPIExecutor
 client.SteamAPIExecutor = SteamAPIExecutorWorkaround
 
-
 # FIXME: L36:79
 # FIXME: ---- #
+
+executors = {}
+
+
+def safe_exit(*args: Any) -> None:
+    for executor in executors.values():
+        executor.shutdown()
+
 
 async def while_has_cards(
         steamid: universe.SteamId,
@@ -167,6 +174,8 @@ async def while_has_cards(
 
 
 async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> AsyncGenerator[utils.ModuleData, None]:
+    asyncio.current_task().add_done_callback(safe_exit)
+
     reverse_sorting = config.parser.getboolean("cardfarming", "reverse_sorting")
     max_concurrency = config.parser.getint("cardfarming", "max_concurrency")
     invisible = config.parser.getboolean("cardfarming", "invisible")
@@ -206,7 +215,6 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> AsyncGener
         generators[badge.appid] = while_has_cards(steamid, badge)
 
     tasks: Dict[int, Optional[asyncio.Task[Any]]] = {}
-    executors = {}
     semaphore = asyncio.Semaphore(max_concurrency)
     last_update = 0
 
@@ -250,6 +258,7 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> AsyncGener
 
         for appid, task in tasks.items():
             if task and task.done() and not task.exception():
+                global executors
                 data: utils.ModuleData = task.result()
 
                 if data.action == 'check':
