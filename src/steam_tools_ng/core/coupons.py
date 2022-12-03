@@ -123,8 +123,8 @@ async def main(fetch_coupon_event: asyncio.Event) -> AsyncGenerator[utils.Module
                     'assetid': coupon_.assetid,
                 })
 
-            if index and not package_count % 150:
+            if index and not package_count % 130:
                 yield utils.ModuleData(error=_("Api rate limit reached. Waiting."), info=_("Waiting Changes"))
-                await asyncio.sleep(100)
+                await asyncio.sleep(120)
 
     fetch_coupon_event.clear()
