@@ -148,9 +148,9 @@ default_config: Mapping[str, Mapping[str, Any]] = {
         'enable': True,
         'reverse_sorting': False,
         'first_wait': 7200,
-        'default_wait': 600,
+        'default_wait': 300,
         'min_wait': 120,
-        'max_concurrency': 5,
+        'max_concurrency': 50,
         'invisible': True,
     },
     'general': {
