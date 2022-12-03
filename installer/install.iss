@@ -59,6 +59,7 @@ Name: "{commondesktop}\Steam Tools NG"; Filename: "{app}\steam-tools-ng-gui.exe"
 Type: files; Name: "{group}\(console) authenticator.lnk"
 Type: files; Name: "{app}\steam_tools_ng.exe"
 Type: files; Name: "{app}\share\icons\steam-tools-ng*"
+Type: files; Name: "{app}\lib\psutil\_psutil_windows.c*"
 Type: filesandordirs; Name: "{app}\lib\src"
 Type: filesandordirs; Name: "{app}\plugins"
 
