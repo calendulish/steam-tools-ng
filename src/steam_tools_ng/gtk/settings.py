@@ -334,6 +334,9 @@ class SettingsDialog(Gtk.Dialog):
         coupon_token_to_donate = coupons_section.new_item("token_to_donate", _("Token To Donate:"), Gtk.Entry, 0, 4)
         coupon_token_to_donate.connect("changed", on_setting_changed)
 
+        coupon_blacklist = coupons_section.new_item("blacklist", _("Blacklist:"), Gtk.Entry, 0, 5)
+        coupon_blacklist.connect("changed", on_setting_changed)
+
         self.connect('response', lambda dialog, response_id: self.destroy())
 
         for section in [

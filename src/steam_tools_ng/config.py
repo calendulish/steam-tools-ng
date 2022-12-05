@@ -121,6 +121,7 @@ default_config: Mapping[str, Mapping[str, Any]] = {
         'contextid': '3',
         'token_to_donate': '6Z6Xn5NM',
         'tokens': '6Z6Xn5NM',
+        'blacklist': '',
         'last_trade_time': 0,
     },
     'confirmations': {
