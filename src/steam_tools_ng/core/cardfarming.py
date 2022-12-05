@@ -266,6 +266,10 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> AsyncGener
                 if int(time.time()) > last_update + 3:
                     current_running = len(tasks)
                     total_remaining = len(generators) - len([task for task in tasks.values() if not task])
+
+                    if current_running > total_remaining:
+                        current_running = total_remaining
+
                     yield utils.ModuleData(
                         display=' : '.join([str(appid) for appid in tasks.keys()]),
                         info=data.info,
