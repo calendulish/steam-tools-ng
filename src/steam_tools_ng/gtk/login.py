@@ -15,14 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import aiohttp
 import asyncio
 import binascii
 import codecs
 import logging
-from typing import Any
-
-import aiohttp
 from gi.repository import Gtk, Gdk, GdkPixbuf
+from typing import Any
 
 from stlib import login
 from . import utils

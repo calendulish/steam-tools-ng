@@ -16,9 +16,9 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-import sys
-
 from importlib.metadata import version, PackageNotFoundError
+
+import sys
 from pathlib import Path
 
 try:

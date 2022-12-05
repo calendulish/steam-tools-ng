@@ -16,11 +16,12 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+from multiprocessing import freeze_support
+
 import argparse
 import logging
 import sys
 import textwrap
-from multiprocessing import freeze_support
 from pathlib import Path
 
 from steam_tools_ng import config, i18n, __version__

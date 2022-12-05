@@ -16,12 +16,13 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+from multiprocessing import freeze_support
+
 import argparse
 import configparser
 import logging
 import os
 import sys
-from multiprocessing import freeze_support
 from pathlib import Path
 from subprocess import call
 from typing import Optional, Any

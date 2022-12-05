@@ -18,9 +18,8 @@
 import asyncio
 import logging
 import time
-from typing import Union, Optional, Any
-
 from gi.repository import Gtk
+from typing import Union, Optional, Any
 
 from stlib import community
 from stlib import universe

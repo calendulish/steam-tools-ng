@@ -18,10 +18,9 @@
 import asyncio
 import contextlib
 import logging
+from gi.repository import Gio, Gtk
 from subprocess import call
 from typing import Union, Optional, Tuple, Any, List
-
-from gi.repository import Gio, Gtk
 
 import stlib
 from stlib import login, universe

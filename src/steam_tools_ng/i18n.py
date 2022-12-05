@@ -16,12 +16,13 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+from importlib import resources
+
 # Never use VHL methods in this file to avoid infinite recursion:
 # [method>get_translation->vhlm->get_translation->vhlm] IT'S NOT A BUG!
 import configparser
 import gettext
 import hashlib
-from importlib import resources
 from typing import Dict
 
 from . import config

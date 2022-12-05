@@ -15,18 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-from typing import Type
+from collections import OrderedDict
 
 import asyncio
 import logging
-from collections import OrderedDict
-from subprocess import call
-
 from gi.repository import Gtk, Pango
+from subprocess import call
+from typing import Type
 
 import stlib
 from stlib import plugins
-
 from . import utils, advanced, authenticator, login
 from .. import config, i18n
 

@@ -17,7 +17,6 @@
 #
 import asyncio
 import logging
-
 from gi.repository import Gtk
 
 from . import utils, settings, login

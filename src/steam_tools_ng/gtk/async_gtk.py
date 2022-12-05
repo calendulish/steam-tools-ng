@@ -18,9 +18,8 @@
 
 import asyncio
 import contextlib
-from typing import Optional
-
 from gi.repository import Gtk, GLib
+from typing import Optional
 
 
 async def async_iterator(

@@ -15,12 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import aiohttp
 import asyncio
 import logging
-from typing import Optional
-
-import aiohttp
 from gi.repository import Gtk, Gdk
+from typing import Optional
 
 from stlib import universe, webapi
 from . import utils

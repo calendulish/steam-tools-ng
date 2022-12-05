@@ -15,18 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+from collections import OrderedDict
+from xml.etree import ElementTree
+
 import asyncio
 import functools
 import html
 import logging
 import traceback
-from collections import OrderedDict
+from gi.repository import Gtk, Gdk
 from traceback import StackSummary
 from types import FrameType
 from typing import Any, Callable, List, Optional, Union, Type, Tuple
-from xml.etree import ElementTree
-
-from gi.repository import Gtk, Gdk
 
 from stlib import internals
 from . import async_gtk

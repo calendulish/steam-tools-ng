@@ -15,10 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import aiohttp
 import asyncio
 from typing import AsyncGenerator
-
-import aiohttp
 
 from stlib import webapi, client, universe
 from . import utils

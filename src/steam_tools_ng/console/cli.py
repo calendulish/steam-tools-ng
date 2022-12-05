@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import aiohttp
 import asyncio
 import contextlib
 import functools
@@ -23,8 +24,6 @@ import ssl
 import sys
 from pathlib import Path
 from typing import Optional, Any, Callable
-
-import aiohttp
 
 import stlib
 from stlib import plugins, universe, login, community, webapi, internals

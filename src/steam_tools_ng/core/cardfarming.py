@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import aiohttp
 import asyncio
 import atexit
 import contextlib
@@ -22,11 +23,9 @@ import random
 import sys
 import time
 from pathlib import Path
+from psutil import Popen, NoSuchProcess
 from subprocess import call
 from typing import AsyncGenerator, Dict, Optional, Any
-
-import aiohttp
-from psutil import Popen, NoSuchProcess
 
 from stlib import webapi, client, universe, community
 from . import utils

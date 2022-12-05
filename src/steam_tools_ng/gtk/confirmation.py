@@ -18,9 +18,8 @@
 import asyncio
 import contextlib
 import logging
-from typing import Any, Dict, List, Tuple, Union
-
 from gi.repository import Gtk
+from typing import Any, Dict, List, Tuple, Union
 
 from stlib import universe, community
 from . import utils

@@ -17,9 +17,10 @@
 #
 # FIXME: Workaround for keyboard lag when running games on GUI on Windows
 # FIXME: https://gitlab.gnome.org/GNOME/gtk/-/issues/2015
+from multiprocessing import freeze_support
+
 import sys
 import time
-from multiprocessing import freeze_support
 
 from stlib import client
 

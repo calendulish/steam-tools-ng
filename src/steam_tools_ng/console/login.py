@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import aiohttp
 import asyncio
 import binascii
 import codecs
@@ -22,8 +23,6 @@ import getpass
 import logging
 import tempfile
 from typing import TYPE_CHECKING
-
-import aiohttp
 
 from stlib import login
 from . import utils

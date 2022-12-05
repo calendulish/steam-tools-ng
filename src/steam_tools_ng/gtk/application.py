@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import aiohttp
 import asyncio
 import contextlib
 import functools
@@ -22,11 +23,9 @@ import itertools
 import logging
 import ssl
 import sys
+from gi.repository import Gio, Gtk
 from pathlib import Path
 from typing import Any, Optional, Dict, Callable, List
-
-import aiohttp
-from gi.repository import Gio, Gtk
 
 from stlib import universe, login, community, webapi, internals, plugins
 from . import about, settings, window, utils

@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+from collections import OrderedDict
+
 import asyncio
 import configparser
 import locale
@@ -22,7 +24,6 @@ import logging
 import os
 import site
 import sys
-from collections import OrderedDict
 from pathlib import Path
 from typing import Any, Mapping
 
