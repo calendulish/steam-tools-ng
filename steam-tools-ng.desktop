@@ -2,8 +2,8 @@
 Type=Application
 Encoding=UTF-8
 Name=Steam Tools NG
-Comment=Useful tools for Steam
+Comment=Some useful tools to use with steam client
 Icon=/usr/share/steam-tools-ng/icons/steam-tools-ng.png
-Exec=steam-tools-ng
+Exec=steam-tools-ng-gui
 Terminal=false
 Categories=Game;Utility
