@@ -250,6 +250,8 @@ class SteamToolsNG(Gtk.Application):
                 if not play_event.is_set():
                     for executor in executors:
                         executor.shutdown()
+                        # TODO: On Windows processes can't answer too fast due executor workaround
+                        await asyncio.sleep(1)
 
                     await play_event.wait()
 
