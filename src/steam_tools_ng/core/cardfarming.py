@@ -54,6 +54,7 @@ class SteamAPIExecutorWorkaround:
     def __init__(self, appid: int, *args: Any, **kwargs: Any) -> None:
         self.process = None
         self.appid = appid
+        self._is_running = False
 
         if sys.platform == 'win32':
             if getattr(sys, 'frozen', False):
@@ -62,13 +63,21 @@ class SteamAPIExecutorWorkaround:
                 executor_path = [sys.executable, '-m', 'steam_tools_ng.steam_api_executor', str(self.appid)]
 
             self.process = Popen(executor_path, creationflags=0x08000000)
+            self._is_running = True
             atexit.register(killall, self.process)
         else:
             self.executor = _SteamAPIExecutor(appid, *args, **kwargs)
 
+    def is_running(self) -> bool:
+        if sys.platform == 'win32':
+            return self._is_running
+        else:
+            return self.executor.is_running()
+
     def shutdown(self, *args: Any, **kwargs: Any) -> None:
         if sys.platform == 'win32':
             killall(self.process)
+            self._is_running = False
         else:
             self.executor.shutdown(*args, **kwargs)
 
@@ -275,7 +284,7 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> AsyncGener
                         info=data.info,
                         status=_('Running {} from {} remaining').format(current_running, total_remaining),
                         level=data.level,
-                        raw_data=executors.values(),
+                        raw_data=[executor for executor in executors.values() if executor.is_running()],
                         action=data.action,
                     )
                     last_update = int(time.time())
