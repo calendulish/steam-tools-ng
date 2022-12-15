@@ -154,7 +154,7 @@ async def while_has_cards(
         for past_time in range(wait_offset):
             yield utils.ModuleData(
                 display=str(badge.appid),
-                info=f"{_('Updating drops')} ({badge.name})",
+                info=_('Updating drops for {}').format(badge.name),
                 status=_("Game paused"),
                 level=(past_time, wait_offset),
             )
@@ -282,7 +282,7 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> AsyncGener
 
                     yield utils.ModuleData(
                         display=' : '.join([str(executor.appid) for executor in running_executors]),
-                        info=data.info,
+                        info=f'{data.info} +{len(running_executors)-1}',
                         status=_('Running {} from {} remaining').format(current_running_limit, total_remaining),
                         level=data.level,
                         raw_data=running_executors,
