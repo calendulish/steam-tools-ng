@@ -253,7 +253,7 @@ except FileNotFoundError:
 
 setup(
     name='steam-tools-ng',
-    version='2.0.1',
+    version='2.0.2',
     description="Steam Tools NG",
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -273,7 +273,7 @@ setup(
     install_requires=[
         "pywin32; sys_platform == 'win32'",
         "psutil; sys_platform == 'win32'",
-        'stlib>=1.0',
+        'stlib>=1.0.6',
         'stlib-plugins>=1.1',
         'aiohttp',
         'certifi',
