@@ -36,7 +36,7 @@ _ = i18n.get_translation
 
 # FIXME: Workaround for keyboard lag when running games on GUI on Windows
 # FIXME: https://gitlab.gnome.org/GNOME/gtk/-/issues/2015
-# FIXME: L36:79
+# FIXME: L36:91
 def killall(process: 'Popen') -> None:
     if not process.is_running():
         return
@@ -82,10 +82,12 @@ class SteamAPIExecutorWorkaround:
             self.executor.shutdown(*args, **kwargs)
 
 
-_SteamAPIExecutor = client.SteamAPIExecutor
-client.SteamAPIExecutor = SteamAPIExecutorWorkaround
+# TODO: It's not a secure way to detect the gui mode...
+if 'gui' in Path(sys.argv[0]).name:
+    _SteamAPIExecutor = client.SteamAPIExecutor
+    client.SteamAPIExecutor = SteamAPIExecutorWorkaround
 
-# FIXME: L36:79
+# FIXME: L36:91
 # FIXME: ---- #
 
 executors = {}
