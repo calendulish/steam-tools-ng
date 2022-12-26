@@ -157,7 +157,14 @@ class Main(Gtk.ApplicationWindow):
         self.coupon_grid = Gtk.Grid()
         self.coupon_grid.set_size_request(655, 300)
         self.coupon_grid.set_row_spacing(10)
-        coupons_section.grid.attach(self.coupon_grid, 0, 0, 1, 1)
+        coupons_section.grid.attach(self.coupon_grid, 0, 1, 1, 1)
+
+        self.coupon_warning = Gtk.Label()
+        self.coupon_warning.set_markup(utils.markup(
+            _("Warning: It's a heavy uncached operation. Fetch only once a day or you will be blocked."),
+            color='red',
+        ))
+        coupons_section.grid.attach(self.coupon_warning, 0, 0, 1, 1)
 
         self.coupon_tree = utils.SimpleTextTree(
             _('price'), _('name'), 'link', 'botid', 'token', 'assetid',
