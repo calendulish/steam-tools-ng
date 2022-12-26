@@ -155,6 +155,9 @@ default_config: Mapping[str, Mapping[str, Any]] = {
         'max_concurrency': 50,
         'invisible': True,
     },
+    'fakerun': {
+        'cakes': '',
+    },
     'general': {
         'theme': 'light',
         'show_close_button': True,

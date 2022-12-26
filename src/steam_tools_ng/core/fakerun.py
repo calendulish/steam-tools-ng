@@ -21,13 +21,35 @@ from typing import AsyncGenerator
 
 from stlib import webapi, client, universe
 from . import utils
-from .. import i18n
+from .. import i18n, config
 
 _ = i18n.get_translation
 
 
+async def cake() -> AsyncGenerator[utils.ModuleData, None]:
+    yield utils.ModuleData(display=str(34), status=_("Loading a delicious cake"))
+    ids = config.parser.get('fakerun', 'cakes').strip().split(',')
+
+    if len(ids) < 3:
+        yield utils.ModuleData(error=_("Not enough ingredients"))
+        return
+
+    try:
+        for id_ in ids:
+            with client.SteamAPIExecutor(int(id_)) as executor:
+                await asyncio.sleep(2)
+                yield utils.ModuleData(display=id_, status=_("Sugar successfully added"))
+    except ProcessLookupError:
+        yield utils.ModuleData(error=_("Steam Client is not running."))
+
+
 async def main(steamid: universe.SteamId, game_id: int) -> AsyncGenerator[utils.ModuleData, None]:
     session = webapi.SteamWebAPI.get_session(0)
+
+    if game_id == 34:
+        async for slice_ in cake():
+            yield slice_
+        return
 
     try:
         game_list = await session.get_owned_games(steamid, appids_filter=[game_id])
