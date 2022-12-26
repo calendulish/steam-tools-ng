@@ -82,8 +82,7 @@ class SteamAPIExecutorWorkaround:
             self.executor.shutdown(*args, **kwargs)
 
 
-# TODO: It's not a secure way to detect the gui mode...
-if 'gui' in Path(sys.argv[0]).name:
+if 'gtk' in sys.modules:
     _SteamAPIExecutor = client.SteamAPIExecutor
     client.SteamAPIExecutor = SteamAPIExecutorWorkaround
 
