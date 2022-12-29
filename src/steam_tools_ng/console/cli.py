@@ -75,10 +75,16 @@ class SteamToolsNG:
             if module_name == 'fakerun' and not module_options:
                 raise ValueError
 
-            for option in module_options:
-                self.stop = True
-                if option != 'oneshot':
-                    self.custom_gameid = int(option)
+            self.custom_gameid = int(module_options[0])
+            self.extra_gameid = None
+
+            if self.custom_gameid == 34:
+                if len(module_options) < 2:
+                    raise ValueError
+
+                self.extra_gameid = int(module_options[1])
+
+            self.stop = True
         except ValueError:
             logging.critical("Wrong command line params!")
             sys.exit(1)
@@ -191,7 +197,7 @@ class SteamToolsNG:
 
     @while_running
     async def run_fakerun(self) -> None:
-        fakerun = core.fakerun.main(self.steamid, self.custom_gameid)
+        fakerun = core.fakerun.main(self.steamid, self.custom_gameid, self.extra_gameid)
 
         async for module_data in fakerun:
             utils.set_console(module_data)

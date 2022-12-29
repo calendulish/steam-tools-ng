@@ -17,42 +17,93 @@
 #
 import aiohttp
 import asyncio
-from typing import AsyncGenerator
+from subprocess import call
+from typing import AsyncGenerator, Optional, List
 
-from stlib import webapi, client, universe
+from stlib import webapi, client, universe, community
 from . import utils
 from .. import i18n, config
 
 _ = i18n.get_translation
 
 
-async def cake() -> AsyncGenerator[utils.ModuleData, None]:
-    yield utils.ModuleData(display=str(34), status=_("Loading a delicious cake"))
-    ids = config.parser.get('fakerun', 'cakes').strip().split(',')
-
-    if len(ids) < 3:
-        yield utils.ModuleData(error=_("Not enough ingredients"))
-        return
+async def mixing_igredients(ids: List[str]) -> AsyncGenerator[utils.ModuleData, None]:
+    yield utils.ModuleData(display=str(34), status=_("Mixing ingredients"))
+    await asyncio.sleep(2)
 
     try:
         for id_ in ids:
-            with client.SteamAPIExecutor(int(id_)) as executor:
+            with client.SteamAPIExecutor(int(id_)):
                 await asyncio.sleep(2)
                 yield utils.ModuleData(display=id_, status=_("Sugar successfully added"))
     except ProcessLookupError:
         yield utils.ModuleData(error=_("Steam Client is not running."))
 
 
-async def main(steamid: universe.SteamId, game_id: int) -> AsyncGenerator[utils.ModuleData, None]:
-    session = webapi.SteamWebAPI.get_session(0)
+async def cake(
+        webapi_session: webapi.SteamWebAPI,
+        steamid: universe.SteamId,
+        game_id: int,
+) -> AsyncGenerator[utils.ModuleData, None]:
+    yield utils.ModuleData(display=str(34), status=_("Loading a delicious cake"))
+    ids = config.parser.get('fakerun', 'cakes').strip().split(',')
+    call(f'{config.file_manager} "steam://friends/status/invisible"')
+
+    if len(ids) < 3:
+        yield utils.ModuleData(error=_("Not enough ingredients"))
+        return
+
+    try:
+        game_list = await webapi_session.get_owned_games(steamid, appids_filter=[game_id, *ids])
+
+        if len(game_list) != 4:
+            raise ValueError
+    except aiohttp.ClientError:
+        yield utils.ModuleData(error=_("Check your connection. (server down?)"))
+        await asyncio.sleep(15)
+        return
+    except ValueError:
+        yield utils.ModuleData(error=_("Some ingredients are missing from your cuisine"))
+        return
+
+    call(f'{config.file_manager} "steam://run/{game_id}"')
+    await asyncio.sleep(3)
+
+    async for slice_ in mixing_igredients(ids):
+        yield slice_
+
+    community_session = community.Community.get_session(0)
+
+    while True:
+        last_played_game = await community_session.get_last_played_game(steamid)
+
+        if last_played_game == game_id:
+            yield utils.ModuleData(display=str(34), status=_("getting cake out of pan"))
+
+            async for slice_ in mixing_igredients(ids):
+                yield slice_
+
+            yield utils.ModuleData(display=str(34), status=_("Cake is ready"))
+            break
+
+        await asyncio.sleep(30)
+
+
+async def main(
+        steamid: universe.SteamId,
+        game_id: int,
+        extra_game_id: Optional[int] = None,
+) -> AsyncGenerator[utils.ModuleData, None]:
+    webapi_session = webapi.SteamWebAPI.get_session(0)
 
     if game_id == 34:
-        async for slice_ in cake():
+        assert isinstance(extra_game_id, int), "No extra game_id"
+        async for slice_ in cake(webapi_session, steamid, extra_game_id):
             yield slice_
         return
 
     try:
-        game_list = await session.get_owned_games(steamid, appids_filter=[game_id])
+        game_list = await webapi_session.get_owned_games(steamid, appids_filter=[game_id])
         game_name = game_list[0].name
     except aiohttp.ClientError:
         yield utils.ModuleData(error=_("Check your connection. (server down?)"))
