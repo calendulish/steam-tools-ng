@@ -16,7 +16,6 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import aiohttp
-import asyncio
 import logging
 from typing import AsyncGenerator
 
@@ -34,8 +33,11 @@ async def main(steamid: universe.SteamId) -> AsyncGenerator[utils.ModuleData, No
 
     if not identity_secret:
         config.new("confirmations", "enable", "false")
-        yield utils.ModuleData(error=_("The current identity secret is invalid."), info=_("Waiting Changes"))
-        await asyncio.sleep(10)
+        module_data = utils.ModuleData(error=_("The current identity secret is invalid."), info=_("Waiting Changes"))
+
+        async for data in utils.timed_module_data(10, module_data):
+            yield data
+
         return
 
     deviceid = config.parser.get("login", "deviceid")
@@ -49,14 +51,15 @@ async def main(steamid: universe.SteamId) -> AsyncGenerator[utils.ModuleData, No
         confirmations = await session.get_confirmations(identity_secret, steamid, deviceid)
     except AttributeError as exception:
         log.error(str(exception))
-        yield utils.ModuleData(error=_("Error when fetch confirmations"), info=_("Waiting Changes"))
+        module_data = utils.ModuleData(error=_("Error when fetch confirmations"), info=_("Waiting Changes"))
     except ProcessLookupError:
-        yield utils.ModuleData(error=_("Steam is not running"), info=_("Waiting Changes"))
+        module_data = utils.ModuleData(error=_("Steam is not running"), info=_("Waiting Changes"))
     except login.LoginError:
-        yield utils.ModuleData(error=_("User is not logged in"), action="login")
+        module_data = utils.ModuleData(error=_("User is not logged in"), action="login")
     except aiohttp.ClientError:
-        yield utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
+        module_data = utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
     else:
-        yield utils.ModuleData(action="update", raw_data=confirmations)
+        module_data = utils.ModuleData(action="update", raw_data=confirmations)
 
-    await asyncio.sleep(20)
+    async for data in utils.timed_module_data(20, module_data):
+        yield data

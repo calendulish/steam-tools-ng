@@ -56,8 +56,11 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
         await asyncio.sleep(15)
         return
     except steamgifts.UserSuspended:
-        yield utils.ModuleData(error=_("User is suspended."))
-        await asyncio.sleep(18000)
+        module_data = utils.ModuleData(error=_("User is suspended."))
+
+        async for data in utils.timed_module_data(18000, module_data):
+            yield data
+
         return
     except steamgifts.PrivateProfile:
         yield utils.ModuleData(error=_("Your profile must be public to use steamgifts."), info=_("Waiting Changes"))
@@ -102,14 +105,11 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
     for index, giveaway in enumerate(giveaways):
         yield utils.ModuleData(level=(index, len(giveaway)))
 
+        module_data = utils.ModuleData(display=giveaway.id, info=giveaway.name)
         max_ban_wait = random.randint(5, 15)
-        for past_time in range(max_ban_wait):
-            try:
-                yield utils.ModuleData(level=(past_time, max_ban_wait))
-            except KeyError:
-                yield utils.ModuleData(level=(0, 0))
 
-            await asyncio.sleep(1)
+        async for data in utils.timed_module_data(max_ban_wait, module_data):
+            yield data
 
         try:
             if await steamgifts_session.join(giveaway):
@@ -159,11 +159,7 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
         return
 
     wait_offset = random.randint(wait_min, wait_max)
-    log.debug(_("Setting wait_offset from steamgifts to %s."), wait_offset)
-    for past_time in range(wait_offset):
-        yield utils.ModuleData(
-            info=_("Waiting more {} minutes.").format(round((wait_offset - past_time) / 60)),
-            level=(past_time, wait_offset),
-        )
+    module_data = utils.ModuleData(info=_("Waiting Changes"))
 
-        await asyncio.sleep(1)
+    async for data in utils.timed_module_data(wait_offset, module_data):
+        yield data

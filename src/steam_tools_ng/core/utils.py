@@ -15,10 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import asyncio
+
 import time
 from dataclasses import dataclass
 from functools import cache, wraps
-from typing import Tuple, Any, Callable
+from typing import Tuple, Any, Callable, AsyncGenerator
 
 
 @dataclass
@@ -30,6 +32,25 @@ class ModuleData:
     level: Tuple[int, int] = (0, 0)
     action: str = ''
     raw_data: Any = None
+
+
+async def timed_module_data(wait_offset: int, module_data: ModuleData) -> AsyncGenerator[ModuleData, None]:
+    info = module_data.info
+    assert module_data.level == (0, 0), "level should not be used here"
+
+    for past_time in range(wait_offset):
+        current_time = round((wait_offset - past_time) / 60)
+        current_time_size = 'm'
+
+        if current_time <= 1:
+            current_time = wait_offset - past_time
+            current_time_size = 's'
+
+        module_data.level = (past_time, wait_offset)
+        module_data.info = f'{info} ({current_time}{current_time_size})'
+
+        yield module_data
+        await asyncio.sleep(1)
 
 
 def time_offset_cache(ttl: int = 60) -> Callable[[Callable[[], int]], Callable[[], int]]:

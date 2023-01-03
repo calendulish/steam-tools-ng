@@ -59,8 +59,11 @@ async def cake(
         if len(game_list) != 4:
             raise ValueError
     except aiohttp.ClientError:
-        yield utils.ModuleData(error=_("Check your connection. (server down?)"))
-        await asyncio.sleep(15)
+        module_data = utils.ModuleData(error=_("Check your connection. (server down?)"))
+
+        async for data in utils.timed_module_data(15, module_data):
+            yield data
+
         return
     except ValueError:
         yield utils.ModuleData(error=_("Some ingredients are missing from your cuisine"))
@@ -106,8 +109,11 @@ async def main(
         game_list = await webapi_session.get_owned_games(steamid, appids_filter=[game_id])
         game_name = game_list[0].name
     except aiohttp.ClientError:
-        yield utils.ModuleData(error=_("Check your connection. (server down?)"))
-        await asyncio.sleep(15)
+        module_data = utils.ModuleData(error=_("Check your connection. (server down?)"))
+
+        async for data in utils.timed_module_data(15, module_data):
+            yield data
+
         return
     except ValueError:
         yield utils.ModuleData(error=_("Game {} doesn't exist").format(game_id))

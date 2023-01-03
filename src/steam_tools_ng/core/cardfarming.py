@@ -113,8 +113,11 @@ async def while_has_cards(
             game_list = await webapi_session.get_owned_games(steamid, appids_filter=[badge.appid])
             game_info = game_list[0]
         except aiohttp.ClientError:
-            yield utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
-            await asyncio.sleep(10)
+            module_data = utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
+
+            async for data in utils.timed_module_data(10, module_data):
+                yield data
+
             continue
 
         if game_info.playtime_forever * 60 >= first_wait:
@@ -128,38 +131,35 @@ async def while_has_cards(
             yield utils.ModuleData(action='ignore', info=_("Invalid game id {}. Ignoring.").format(badge.appid))
             break
         except ProcessLookupError:
-            yield utils.ModuleData(error=_("Steam Client is not running."), info=_("Waiting Changes"))
-            await asyncio.sleep(15)
+            module_data = utils.ModuleData(error=_("Steam Client is not running."), info=_("Waiting Changes"))
+
+            async for data in utils.timed_module_data(15, module_data):
+                yield data
+
             continue
 
-        for past_time in range(wait_offset):
-            current_time = round((wait_offset - past_time) / 60)
-            current_time_size = _('minutes')
+        module_data = utils.ModuleData(
+            display=str(badge.appid),
+            info=badge.name,
+            status=_("Running {}").format(badge.name),
+            raw_data=executor,
+            action="check",
+        )
 
-            if current_time <= 1:
-                current_time = wait_offset - past_time
-                current_time_size = _('seconds')
-
-            yield utils.ModuleData(
-                display=str(badge.appid),
-                info=_("{} {} for {}").format(current_time, current_time_size, badge.name),
-                status=_("Running {}").format(badge.name),
-                level=(past_time, wait_offset),
-                raw_data=executor,
-                action="check",
-            )
-            await asyncio.sleep(1)
+        async for data in utils.timed_module_data(wait_offset, module_data):
+            yield data
 
         executor.shutdown()
         wait_offset = random.randint(min_wait, int(min_wait / 100 * 125))
-        for past_time in range(wait_offset):
-            yield utils.ModuleData(
-                display=str(badge.appid),
-                info=_('Updating drops for {}').format(badge.name),
-                status=_("Game paused"),
-                level=(past_time, wait_offset),
-            )
-            await asyncio.sleep(1)
+
+        module_data = utils.ModuleData(
+            display=str(badge.appid),
+            info=_('Updating {} drops').format(badge.name),
+            status=_("Game paused"),
+        )
+
+        async for data in utils.timed_module_data(wait_offset, module_data):
+            yield data
 
         while True:
             try:
@@ -197,13 +197,20 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> AsyncGener
             reverse=reverse_sorting
         )
     except aiohttp.ClientError:
-        yield utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
-        await asyncio.sleep(10)
+        module_data = utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
+
+        async for data in utils.timed_module_data(10, module_data):
+            yield data
+
         return
 
     if not badges or (custom_game_id and custom_game_id not in [badge.appid for badge in badges]):
-        yield utils.ModuleData(error=_("No more cards to drop."), info=_("Waiting Changes"))
-        await asyncio.sleep(random.randint(500, 1200))
+        module_data = utils.ModuleData(error=_("No more cards to drop."), info=_("Waiting Changes"))
+        wait_offset = random.randint(300, 500)
+
+        async for data in utils.timed_module_data(wait_offset, module_data):
+            yield data
+
         return
 
     generators = {}

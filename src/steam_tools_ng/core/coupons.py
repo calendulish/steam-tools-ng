@@ -67,12 +67,18 @@ async def main(fetch_coupon_event: asyncio.Event) -> AsyncGenerator[utils.Module
         try:
             inventory = await community_session.get_inventory(steamid, appid, contextid)
         except AttributeError:
-            yield utils.ModuleData(error=_("Error when fetch inventory"), info=_("Waiting Changes"))
-            await asyncio.sleep(15)
+            module_data = utils.ModuleData(error=_("Error when fetch inventory"), info=_("Waiting Changes"))
+
+            async for data in utils.timed_module_data(15, module_data):
+                yield data
+
             return
         except aiohttp.ClientError:
-            yield utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
-            await asyncio.sleep(60)
+            module_data = utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
+
+            async for data in utils.timed_module_data(60, module_data):
+                yield data
+
             return
 
         for index, coupon_ in enumerate(inventory):
@@ -104,8 +110,14 @@ async def main(fetch_coupon_event: asyncio.Event) -> AsyncGenerator[utils.Module
                     if not package_details:
                         raise ValueError
                 except aiohttp.ClientError:
-                    yield utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
-                    await asyncio.sleep(30)
+                    module_data = utils.ModuleData(
+                        error=_("Check your connection. (server down?)"),
+                        info=_("Waiting Changes"),
+                    )
+
+                    async for data in utils.timed_module_data(60, module_data):
+                        yield data
+
                     continue
                 except ValueError:
                     yield utils.ModuleData(error=_("Failed to get package details"), info=_("Waiting Changes"))
@@ -129,7 +141,9 @@ async def main(fetch_coupon_event: asyncio.Event) -> AsyncGenerator[utils.Module
                 })
 
             if index and not package_count % 130:
-                yield utils.ModuleData(error=_("Api rate limit reached. Waiting."), info=_("Waiting Changes"))
-                await asyncio.sleep(120)
+                module_data = utils.ModuleData(error=_("Api rate limit reached. Waiting."), info=_("Waiting Changes"))
+
+                async for data in utils.timed_module_data(120, module_data):
+                    yield data
 
     fetch_coupon_event.clear()
