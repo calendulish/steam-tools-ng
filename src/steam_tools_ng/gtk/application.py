@@ -279,7 +279,7 @@ class SteamToolsNG(Gtk.Application):
             if module_data.action == "update":
                 self.main_window.statusbar.set_warning("confirmations", "Updating now!")
                 if module_data.raw_data == self.old_confirmations:
-                    log.info(_("Skipping confirmations update because data doesn't seem to have changed"))
+                    log.debug(_("Skipping confirmations update because data doesn't seem to have changed"))
                     self.main_window.statusbar.clear('confirmations')
                     continue
 
