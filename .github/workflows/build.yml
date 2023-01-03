@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.9', '3.10']
+        python-version: ['3.9', '3.10', '3.11']
     name: Python ${{ matrix.python-version }} linux build
     steps:
       - uses: actions/checkout@v3
@@ -39,7 +39,7 @@ jobs:
     runs-on: windows-2022
     strategy:
       matrix:
-        python-version: ['3.10']
+        python-version: ['3.10', '3.11']
     defaults:
       run:
         shell: cmd
@@ -79,7 +79,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.9', '3.10' ]
+        python-version: [ '3.9', '3.10', '3.11' ]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/download-artifact@v3
