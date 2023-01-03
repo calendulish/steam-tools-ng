@@ -1,5 +1,5 @@
 # Steam Tools NG - Useful tools for Steam
-# Lara Maia <dev@lara.monster> (C) 2015 ~ 2022
+# Lara Maia <dev@lara.monster> (C) 2015 ~ 2023
 # 
 # This file is distributed under the same license as the steam-tools-ng package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: steam-tools-ng\n"
 "Report-Msgid-Bugs-To: dev@lara.monster\n"
-"POT-Creation-Date: 2022-12-14 22:49-0300\n"
+"POT-Creation-Date: 2023-01-03 00:51-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -23,29 +23,29 @@ msgstr ""
 msgid "Done!"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:192
+#: src/steam_tools_ng/config.py:195
 msgid "Unsupported language requested. Fallbacking to English."
 msgstr ""
 
-#: src/steam_tools_ng/config.py:196
+#: src/steam_tools_ng/config.py:199
 msgid ""
 "Please, fix your config file. Available values for {}:\n"
 "{}"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:218
+#: src/steam_tools_ng/config.py:221
 msgid "Incorrect log directory. Fallbacking to default."
 msgstr ""
 
-#: src/steam_tools_ng/config.py:261
+#: src/steam_tools_ng/config.py:264
 msgid "Unable to open steam-tools-ng.log"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:279
+#: src/steam_tools_ng/config.py:282
 msgid "Saving {}:{} on config file"
 msgstr ""
 
-#: src/steam_tools_ng/config.py:285
+#: src/steam_tools_ng/config.py:288
 msgid "Not saving {}:{} because values are already updated"
 msgstr ""
 
@@ -64,21 +64,21 @@ msgstr ""
 
 #: src/steam_tools_ng/console/authenticator.py:79
 #: src/steam_tools_ng/console/authenticator.py:115
-#: src/steam_tools_ng/console/cli.py:139
+#: src/steam_tools_ng/console/cli.py:145
 #: src/steam_tools_ng/console/login.py:167
-#: src/steam_tools_ng/core/cardfarming.py:115
-#: src/steam_tools_ng/core/cardfarming.py:167
-#: src/steam_tools_ng/core/cardfarming.py:199
-#: src/steam_tools_ng/core/confirmations.py:58
-#: src/steam_tools_ng/core/coupons.py:74 src/steam_tools_ng/core/coupons.py:107
-#: src/steam_tools_ng/core/fakerun.py:36
+#: src/steam_tools_ng/core/cardfarming.py:117
+#: src/steam_tools_ng/core/cardfarming.py:169
+#: src/steam_tools_ng/core/cardfarming.py:204
+#: src/steam_tools_ng/core/confirmations.py:60
+#: src/steam_tools_ng/core/coupons.py:77 src/steam_tools_ng/core/coupons.py:114
+#: src/steam_tools_ng/core/fakerun.py:62 src/steam_tools_ng/core/fakerun.py:112
 #: src/steam_tools_ng/core/steamgifts.py:51
-#: src/steam_tools_ng/core/steamgifts.py:74
-#: src/steam_tools_ng/core/steamgifts.py:85
+#: src/steam_tools_ng/core/steamgifts.py:77
+#: src/steam_tools_ng/core/steamgifts.py:88
 #: src/steam_tools_ng/core/steamgifts.py:127
 #: src/steam_tools_ng/core/steamtrades.py:55
-#: src/steam_tools_ng/core/steamtrades.py:89
-#: src/steam_tools_ng/core/steamtrades.py:112
+#: src/steam_tools_ng/core/steamtrades.py:92
+#: src/steam_tools_ng/core/steamtrades.py:111
 #: src/steam_tools_ng/gtk/application.py:156
 #: src/steam_tools_ng/gtk/authenticator.py:124
 #: src/steam_tools_ng/gtk/authenticator.py:166
@@ -143,33 +143,33 @@ msgid ""
 "enable it again, install the {0} plugin."
 msgstr ""
 
-#: src/steam_tools_ng/console/cli.py:122
+#: src/steam_tools_ng/console/cli.py:128
 #: src/steam_tools_ng/gtk/application.py:138
 msgid "Logging on Steam. Please wait!"
 msgstr ""
 
-#: src/steam_tools_ng/console/cli.py:147
+#: src/steam_tools_ng/console/cli.py:153
 #: src/steam_tools_ng/gtk/application.py:166
 #, python-format
 msgid "SteamAPI key found: %s"
 msgstr ""
 
-#: src/steam_tools_ng/console/cli.py:152
+#: src/steam_tools_ng/console/cli.py:158
 #: src/steam_tools_ng/gtk/application.py:171
 msgid "Updating your SteamAPI dev key"
 msgstr ""
 
-#: src/steam_tools_ng/console/cli.py:159
+#: src/steam_tools_ng/console/cli.py:165
 #: src/steam_tools_ng/gtk/application.py:179
 msgid "Something wrong with your SteamAPI dev key"
 msgstr ""
 
-#: src/steam_tools_ng/console/cli.py:168
+#: src/steam_tools_ng/console/cli.py:174
 #, python-format
 msgid "Initializing module %s"
 msgstr ""
 
-#: src/steam_tools_ng/console/cli.py:171
+#: src/steam_tools_ng/console/cli.py:177
 #: src/steam_tools_ng/gtk/application.py:214
 #, python-format
 msgid "Adding a new callback for %s"
@@ -253,110 +253,108 @@ msgstr ""
 msgid "%s has been stopped due user request"
 msgstr ""
 
-#: src/steam_tools_ng/core/cardfarming.py:115
-#: src/steam_tools_ng/core/cardfarming.py:130
-#: src/steam_tools_ng/core/cardfarming.py:167
-#: src/steam_tools_ng/core/cardfarming.py:170
-#: src/steam_tools_ng/core/cardfarming.py:199
+#: src/steam_tools_ng/core/cardfarming.py:117
+#: src/steam_tools_ng/core/cardfarming.py:135
+#: src/steam_tools_ng/core/cardfarming.py:169
+#: src/steam_tools_ng/core/cardfarming.py:172
 #: src/steam_tools_ng/core/cardfarming.py:204
-#: src/steam_tools_ng/core/confirmations.py:37
-#: src/steam_tools_ng/core/confirmations.py:52
+#: src/steam_tools_ng/core/cardfarming.py:212
+#: src/steam_tools_ng/core/confirmations.py:36
 #: src/steam_tools_ng/core/confirmations.py:54
-#: src/steam_tools_ng/core/confirmations.py:58
+#: src/steam_tools_ng/core/confirmations.py:56
+#: src/steam_tools_ng/core/confirmations.py:60
 #: src/steam_tools_ng/core/coupons.py:43 src/steam_tools_ng/core/coupons.py:52
-#: src/steam_tools_ng/core/coupons.py:70 src/steam_tools_ng/core/coupons.py:74
-#: src/steam_tools_ng/core/coupons.py:107
-#: src/steam_tools_ng/core/coupons.py:111
-#: src/steam_tools_ng/core/coupons.py:132
+#: src/steam_tools_ng/core/coupons.py:70 src/steam_tools_ng/core/coupons.py:77
+#: src/steam_tools_ng/core/coupons.py:115
+#: src/steam_tools_ng/core/coupons.py:123
+#: src/steam_tools_ng/core/coupons.py:144
 #: src/steam_tools_ng/core/steamgifts.py:51
-#: src/steam_tools_ng/core/steamgifts.py:63
+#: src/steam_tools_ng/core/steamgifts.py:66
+#: src/steam_tools_ng/core/steamgifts.py:162
 #: src/steam_tools_ng/core/steamguard.py:74
 #: src/steam_tools_ng/core/steamguard.py:77
 #: src/steam_tools_ng/core/steamtrades.py:46
-#: src/steam_tools_ng/core/steamtrades.py:67
+#: src/steam_tools_ng/core/steamtrades.py:70
+#: src/steam_tools_ng/core/steamtrades.py:138
 msgid "Waiting Changes"
 msgstr ""
 
-#: src/steam_tools_ng/core/cardfarming.py:127
+#: src/steam_tools_ng/core/cardfarming.py:132
 msgid "Invalid game id {}. Ignoring."
 msgstr ""
 
-#: src/steam_tools_ng/core/cardfarming.py:130
-#: src/steam_tools_ng/core/fakerun.py:63
+#: src/steam_tools_ng/core/cardfarming.py:135
+#: src/steam_tools_ng/core/fakerun.py:40 src/steam_tools_ng/core/fakerun.py:142
 msgid "Steam Client is not running."
 msgstr ""
 
-#: src/steam_tools_ng/core/cardfarming.py:136
-msgid "minutes"
-msgstr ""
-
-#: src/steam_tools_ng/core/cardfarming.py:140
-msgid "seconds"
-msgstr ""
-
-#: src/steam_tools_ng/core/cardfarming.py:144
-msgid "{} {} for {}"
-msgstr ""
-
 #: src/steam_tools_ng/core/cardfarming.py:145
-#: src/steam_tools_ng/core/fakerun.py:56
+#: src/steam_tools_ng/core/fakerun.py:135
 msgid "Running {}"
 msgstr ""
 
-#: src/steam_tools_ng/core/cardfarming.py:157
-msgid "Updating drops for {}"
+#: src/steam_tools_ng/core/cardfarming.py:158
+msgid "Updating {} drops"
 msgstr ""
 
-#: src/steam_tools_ng/core/cardfarming.py:158
+#: src/steam_tools_ng/core/cardfarming.py:159
 msgid "Game paused"
 msgstr ""
 
-#: src/steam_tools_ng/core/cardfarming.py:170
+#: src/steam_tools_ng/core/cardfarming.py:172
 msgid "Steam Server is busy"
 msgstr ""
 
-#: src/steam_tools_ng/core/cardfarming.py:180
+#: src/steam_tools_ng/core/cardfarming.py:184
 msgid "{} ({})"
 msgstr ""
 
-#: src/steam_tools_ng/core/cardfarming.py:180
+#: src/steam_tools_ng/core/cardfarming.py:184
 msgid "Done"
 msgstr ""
 
-#: src/steam_tools_ng/core/cardfarming.py:204
+#: src/steam_tools_ng/core/cardfarming.py:212
 msgid "No more cards to drop."
 msgstr ""
 
-#: src/steam_tools_ng/core/cardfarming.py:216
-#: src/steam_tools_ng/core/fakerun.py:45
+#: src/steam_tools_ng/core/cardfarming.py:228
+#: src/steam_tools_ng/core/fakerun.py:124
 msgid "Loading {}"
 msgstr ""
 
-#: src/steam_tools_ng/core/cardfarming.py:220
+#: src/steam_tools_ng/core/cardfarming.py:232
 msgid "Skipping {}"
 msgstr ""
 
-#: src/steam_tools_ng/core/cardfarming.py:286
-msgid "Running {} from {} remaining"
+#: src/steam_tools_ng/core/cardfarming.py:298
+msgid " +{} other"
 msgstr ""
 
-#: src/steam_tools_ng/core/confirmations.py:37
+#: src/steam_tools_ng/core/cardfarming.py:300
+msgid " +{} others"
+msgstr ""
+
+#: src/steam_tools_ng/core/cardfarming.py:305
+msgid "{} from {} remaining ({} cards)"
+msgstr ""
+
+#: src/steam_tools_ng/core/confirmations.py:36
 msgid "The current identity secret is invalid."
 msgstr ""
 
-#: src/steam_tools_ng/core/confirmations.py:44
+#: src/steam_tools_ng/core/confirmations.py:46
 msgid "Unable to find deviceid. Generating from identity."
 msgstr ""
 
-#: src/steam_tools_ng/core/confirmations.py:52
+#: src/steam_tools_ng/core/confirmations.py:54
 msgid "Error when fetch confirmations"
 msgstr ""
 
-#: src/steam_tools_ng/core/confirmations.py:54
+#: src/steam_tools_ng/core/confirmations.py:56
 msgid "Steam is not running"
 msgstr ""
 
-#: src/steam_tools_ng/core/confirmations.py:56
+#: src/steam_tools_ng/core/confirmations.py:58
 msgid "User is not logged in"
 msgstr ""
 
@@ -376,33 +374,61 @@ msgstr ""
 msgid "Error when fetch inventory"
 msgstr ""
 
-#: src/steam_tools_ng/core/coupons.py:85
+#: src/steam_tools_ng/core/coupons.py:91
 msgid "Stopping fetching coupons (requested by user)"
-msgstr ""
-
-#: src/steam_tools_ng/core/coupons.py:90
-#, python-format
-msgid "Ignoring coupon %s due blacklist"
 msgstr ""
 
 #: src/steam_tools_ng/core/coupons.py:96
 #, python-format
+msgid "Ignoring coupon %s due blacklist"
+msgstr ""
+
+#: src/steam_tools_ng/core/coupons.py:102
+#, python-format
 msgid "Ignoring coupon %s due low discount value"
 msgstr ""
 
-#: src/steam_tools_ng/core/coupons.py:111
+#: src/steam_tools_ng/core/coupons.py:123
 msgid "Failed to get package details"
 msgstr ""
 
-#: src/steam_tools_ng/core/coupons.py:132
+#: src/steam_tools_ng/core/coupons.py:144
 msgid "Api rate limit reached. Waiting."
 msgstr ""
 
-#: src/steam_tools_ng/core/fakerun.py:40
+#: src/steam_tools_ng/core/fakerun.py:31
+msgid "Mixing ingredients"
+msgstr ""
+
+#: src/steam_tools_ng/core/fakerun.py:38
+msgid "Sugar successfully added"
+msgstr ""
+
+#: src/steam_tools_ng/core/fakerun.py:48
+msgid "Loading a delicious cake"
+msgstr ""
+
+#: src/steam_tools_ng/core/fakerun.py:53
+msgid "Not enough ingredients"
+msgstr ""
+
+#: src/steam_tools_ng/core/fakerun.py:69
+msgid "Some ingredients are missing from your cuisine"
+msgstr ""
+
+#: src/steam_tools_ng/core/fakerun.py:84
+msgid "getting cake out of pan"
+msgstr ""
+
+#: src/steam_tools_ng/core/fakerun.py:89
+msgid "Cake is ready"
+msgstr ""
+
+#: src/steam_tools_ng/core/fakerun.py:119
 msgid "Game {} doesn't exist"
 msgstr ""
 
-#: src/steam_tools_ng/core/fakerun.py:55
+#: src/steam_tools_ng/core/fakerun.py:134
 msgid "Running for {} minutes."
 msgstr ""
 
@@ -426,20 +452,20 @@ msgstr ""
 msgid "User is suspended."
 msgstr ""
 
-#: src/steam_tools_ng/core/steamgifts.py:63
+#: src/steam_tools_ng/core/steamgifts.py:66
 msgid "Your profile must be public to use steamgifts."
 msgstr ""
 
-#: src/steam_tools_ng/core/steamgifts.py:67
-#: src/steam_tools_ng/core/steamtrades.py:75
+#: src/steam_tools_ng/core/steamgifts.py:70
+#: src/steam_tools_ng/core/steamtrades.py:78
 msgid "User is not logged in. Trying again in 30 seconds"
 msgstr ""
 
-#: src/steam_tools_ng/core/steamgifts.py:78
+#: src/steam_tools_ng/core/steamgifts.py:81
 msgid "Unable to configure steamgifts."
 msgstr ""
 
-#: src/steam_tools_ng/core/steamgifts.py:99
+#: src/steam_tools_ng/core/steamgifts.py:102
 msgid "No giveaways to join."
 msgstr ""
 
@@ -456,7 +482,7 @@ msgid "Giveaway is already ended."
 msgstr ""
 
 #: src/steam_tools_ng/core/steamgifts.py:140
-#: src/steam_tools_ng/core/steamtrades.py:129
+#: src/steam_tools_ng/core/steamtrades.py:128
 msgid "Login is lost. Trying to relogin."
 msgstr ""
 
@@ -466,15 +492,6 @@ msgstr ""
 
 #: src/steam_tools_ng/core/steamgifts.py:149
 msgid "User don't have required points to join."
-msgstr ""
-
-#: src/steam_tools_ng/core/steamgifts.py:162
-#, python-format
-msgid "Setting wait_offset from steamgifts to %s."
-msgstr ""
-
-#: src/steam_tools_ng/core/steamgifts.py:165
-msgid "Waiting more {} minutes."
 msgstr ""
 
 #: src/steam_tools_ng/core/steamguard.py:53
@@ -521,41 +538,32 @@ msgstr ""
 msgid "No trade ID found"
 msgstr ""
 
-#: src/steam_tools_ng/core/steamtrades.py:67
+#: src/steam_tools_ng/core/steamtrades.py:70
 msgid "Your profile must be public to use steamtrades."
 msgstr ""
 
-#: src/steam_tools_ng/core/steamtrades.py:71
+#: src/steam_tools_ng/core/steamtrades.py:74
 msgid "You must be level 1 or greater to use steamtrades."
 msgstr ""
 
-#: src/steam_tools_ng/core/steamtrades.py:85
+#: src/steam_tools_ng/core/steamtrades.py:88
 msgid "Unable to find trade id"
 msgstr ""
 
-#: src/steam_tools_ng/core/steamtrades.py:105
+#: src/steam_tools_ng/core/steamtrades.py:104
 msgid "Bumped!"
 msgstr ""
 
-#: src/steam_tools_ng/core/steamtrades.py:108
+#: src/steam_tools_ng/core/steamtrades.py:107
 msgid "Unable to bump"
 msgstr ""
 
-#: src/steam_tools_ng/core/steamtrades.py:117
+#: src/steam_tools_ng/core/steamtrades.py:116
 msgid "No trades available to bump"
 msgstr ""
 
-#: src/steam_tools_ng/core/steamtrades.py:125
+#: src/steam_tools_ng/core/steamtrades.py:124
 msgid "Trade {}({}) is closed"
-msgstr ""
-
-#: src/steam_tools_ng/core/steamtrades.py:139
-#, python-format
-msgid "Setting wait_offset from steamtrades to %s"
-msgstr ""
-
-#: src/steam_tools_ng/core/steamtrades.py:142
-msgid "Waiting more {} minutes"
 msgstr ""
 
 #: src/steam_tools_ng/gtk/about.py:46
@@ -1172,34 +1180,40 @@ msgstr ""
 msgid "Cancel all"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/window.py:163
+#: src/steam_tools_ng/gtk/window.py:164
+msgid ""
+"Warning: It's a heavy uncached operation. Fetch only once a day or you will "
+"be blocked."
+msgstr ""
+
+#: src/steam_tools_ng/gtk/window.py:170
 msgid "price"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/window.py:163
+#: src/steam_tools_ng/gtk/window.py:170
 msgid "name"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/window.py:187
+#: src/steam_tools_ng/gtk/window.py:194
 msgid "Get selected coupon"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/window.py:194
+#: src/steam_tools_ng/gtk/window.py:201
 msgid "Giveaway your coupons"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/window.py:201
+#: src/steam_tools_ng/gtk/window.py:208
 msgid "Fetch coupons"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/window.py:210
+#: src/steam_tools_ng/gtk/window.py:217
 msgid "Stop fetching coupons"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/window.py:242
+#: src/steam_tools_ng/gtk/window.py:249
 msgid "You are not logged in"
 msgstr ""
 
-#: src/steam_tools_ng/gtk/window.py:253
+#: src/steam_tools_ng/gtk/window.py:260
 msgid "You are logged in as:\n"
 msgstr ""
