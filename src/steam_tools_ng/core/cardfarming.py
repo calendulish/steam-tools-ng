@@ -90,6 +90,7 @@ if 'gtk' in sys.modules:
 # FIXME: ---- #
 
 executors = {}
+total_cards_remaining = 0
 
 
 def safe_exit(*args: Any) -> None:
@@ -174,6 +175,8 @@ async def while_has_cards(
                 break
 
         # noinspection PyProtectedMember
+        global total_cards_remaining
+        total_cards_remaining -= badge.cards - cards
         badge = badge._replace(cards=cards)
 
     utils.ModuleData(
@@ -189,6 +192,7 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> AsyncGener
     max_concurrency = config.parser.getint("cardfarming", "max_concurrency")
     invisible = config.parser.getboolean("cardfarming", "invisible")
     community_session = community.Community.get_session(0)
+    global total_cards_remaining
 
     try:
         badges = sorted(
@@ -229,6 +233,7 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> AsyncGener
             continue
 
         generators[badge.appid] = while_has_cards(steamid, badge)
+        total_cards_remaining += badge.cards
 
     tasks: Dict[int, Optional[asyncio.Task[Any]]] = {}
     semaphore = asyncio.Semaphore(max_concurrency)
@@ -297,7 +302,11 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> AsyncGener
                     yield utils.ModuleData(
                         display=' : '.join([str(executor.appid) for executor in running_executors]),
                         info=data.info + extra_info,
-                        status=_('Running {} from {} remaining').format(current_running_limit, total_remaining),
+                        status=_('{} from {} remaining ({} cards)').format(
+                            current_running_limit,
+                            total_remaining,
+                            total_cards_remaining,
+                        ),
                         level=data.level,
                         raw_data=running_executors,
                         action=data.action,
