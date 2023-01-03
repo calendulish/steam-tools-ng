@@ -284,13 +284,19 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> AsyncGener
                     current_running_limit = len(tasks)
                     total_remaining = len(generators) - len([task for task in tasks.values() if not task])
                     running_executors = [executor for executor in executors.values() if executor.is_running()]
+                    extra_info = ''
 
                     if current_running_limit > total_remaining:
                         current_running_limit = total_remaining
 
+                    if current_running_limit == 2:
+                        extra_info = _(" +{} other").format(current_running_limit - 1)
+                    elif current_running_limit > 2:
+                        extra_info = _(" +{} others").format(current_running_limit - 1)
+
                     yield utils.ModuleData(
                         display=' : '.join([str(executor.appid) for executor in running_executors]),
-                        info=f'{data.info} +{len(running_executors)-1}',
+                        info=data.info + extra_info,
                         status=_('Running {} from {} remaining').format(current_running_limit, total_remaining),
                         level=data.level,
                         raw_data=running_executors,
