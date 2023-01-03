@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Lara Maia <dev@lara.monster> 2015 ~ 2022
+# Lara Maia <dev@lara.monster> 2015 ~ 2023
 #
 # The Steam Tools NG is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -150,7 +150,7 @@ def freeze_options() -> Mapping[str, Any]:
         return {}
 
     icons_path = Path('src', 'steam_tools_ng', 'icons')
-    copyright_ = 'Lara Maia (C) 2015 ~ 2022'
+    copyright_ = 'Lara Maia (C) 2015 ~ 2023'
 
     executables = [
         Executable(
@@ -253,7 +253,7 @@ except FileNotFoundError:
 
 setup(
     name='steam-tools-ng',
-    version='2.0.2',
+    version='2.0.3',
     description="Steam Tools NG",
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -273,7 +273,7 @@ setup(
     install_requires=[
         "pywin32; sys_platform == 'win32'",
         "psutil; sys_platform == 'win32'",
-        'stlib>=1.0.6',
+        'stlib>=1.0.7',
         'stlib-plugins>=1.1',
         'aiohttp',
         'certifi',

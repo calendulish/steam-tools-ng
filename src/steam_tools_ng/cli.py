@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Lara Maia <dev@lara.monster> 2015 ~ 2022
+# Lara Maia <dev@lara.monster> 2015 ~ 2023
 #
 # The Steam Tools NG is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -114,7 +114,7 @@ def main() -> None:
         sys.exit(0)
 
     print(f'Steam Tools NG version {__version__} (Made with Girl Power <33)')
-    print('Copyright (C) 2015 ~ 2022 Lara Maia - <dev@lara.monster>')
+    print('Copyright (C) 2015 ~ 2023 Lara Maia - <dev@lara.monster>')
 
     if console_params.add_authenticator:
         app = cli.SteamToolsNG('add_authenticator', '')

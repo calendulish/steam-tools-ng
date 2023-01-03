@@ -8,7 +8,7 @@
 [Setup]
 AppName={#FancyAppName}
 AppVersion=latest
-AppCopyright=Lara Maia <dev@lara.monster> 2022
+AppCopyright=Lara Maia <dev@lara.monster> 2023
 AppPublisherURL=https://lara.monster
 AppSupportURL=https://github.com/ShyPixie/{#AppName}/issues
 AppUpdatesURL=https://github.com/ShyPixie/{#AppName}/releases

@@ -7,7 +7,7 @@
 AppId={{983543BE-2504-48BF-B6E7-308EA032DAB3}
 AppName={#FancyAppName}
 AppVersion={#AppVersion}
-AppCopyright=Lara Maia <dev@lara.monster> 2022
+AppCopyright=Lara Maia <dev@lara.monster> 2023
 AppPublisherURL=https://lara.monster
 AppSupportURL=https://github.com/ShyPixie/{#AppName}/issues
 AppUpdatesURL=https://github.com/ShyPixie/{#AppName}/releases
