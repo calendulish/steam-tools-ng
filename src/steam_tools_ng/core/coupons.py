@@ -37,7 +37,6 @@ async def main(fetch_coupon_event: asyncio.Event) -> AsyncGenerator[utils.Module
     tokens = config.parser.get('coupons', 'tokens')
     appid = config.parser.getint('coupons', 'appid')
     contextid = config.parser.getint('coupons', 'contextid')
-    blacklist = config.parser.get('coupons', 'blacklist')
 
     if not botids:
         yield utils.ModuleData(error=_("No botID found"), info=_("Waiting Changes"))
@@ -46,7 +45,6 @@ async def main(fetch_coupon_event: asyncio.Event) -> AsyncGenerator[utils.Module
 
     bot_list = [bot.strip() for bot in botids.split(',')]
     token_list = [token.strip() for token in tokens.split(',')]
-    ignored_list = [coupon.split('% OFF')[-1].split('- Coupon')[0].strip() for coupon in blacklist.split(',')]
 
     if len(bot_list) != len(token_list):
         yield utils.ModuleData(error=_("Invalid config. Each bot must have id and token."), info=_("Waiting Changes"))
@@ -85,6 +83,8 @@ async def main(fetch_coupon_event: asyncio.Event) -> AsyncGenerator[utils.Module
             yield utils.ModuleData(action="update_level", raw_data=(index, len(inventory)))
             package_link = coupon_.actions[0]['link']
             packageids = [int(id_) for id_ in package_link.split('=')[1].split(',')]
+            blacklist = config.parser.get('coupons', 'blacklist')
+            ignored_list = [coupon.split('% OFF')[-1].split('- Coupon')[0].strip() for coupon in blacklist.split(',')]
 
             for package_id in packageids:
                 if not fetch_coupon_event.is_set():
