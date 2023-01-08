@@ -272,6 +272,9 @@ def init_logger() -> None:
     log_console_handler = logger_handlers.ColoredStreamHandler()
     log_console_handler.setLevel(getattr(logging, log_console_level.upper()))
 
+    if 'gtk' not in sys.modules:
+        log_console_handler.setLevel(logging.WARNING)
+
     # noinspection PyArgumentList
     logging.basicConfig(level=logging.DEBUG, handlers=[log_file_handler, log_console_handler])
 

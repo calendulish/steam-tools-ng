@@ -130,7 +130,7 @@ class SteamToolsNG:
         http_session = aiohttp.ClientSession(raise_for_status=True, connector=tcp_connector)
         login_session = await login.Login.new_session(0, api_url=self.api_url, http_session=http_session)
 
-        log.info(_("Logging on Steam. Please wait!"))
+        print(_("Logging on Steam. Please wait!"))
 
         token = config.parser.get("login", "token")
         token_secure = config.parser.get("login", "token_secure")
@@ -142,7 +142,7 @@ class SteamToolsNG:
 
         try:
             if await login_session.is_logged_in(self.steamid):
-                log.info("Steam login Successful")
+                print(_("Steam login Successful"))
             else:
                 await self.do_login(auto=True)
         except aiohttp.ClientError as exception:

@@ -95,10 +95,11 @@ def set_console(
         module_data = core.utils.ModuleData(display, status, info, error, level, suppress_logging=suppress_logging)
 
     if module_data.error:
-        if not module_data.suppress_logging:
+        if module_data.suppress_logging:
+            print(module_data.error)
+        else:
             log.error(module_data.error)
 
-        print(module_data.error)
         return
 
     if module_data.status:
