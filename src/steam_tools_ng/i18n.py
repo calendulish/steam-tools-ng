@@ -40,7 +40,7 @@ def get_translation(text: str) -> str:
     try:
         language = config.parser.get('general', 'language')
     except configparser.NoSectionError:
-        # assume that config is not fully load yet
+        # assume that config is not fully loaded yet
         return text
 
     with resources.as_file(resources.files('steam_tools_ng')) as path:

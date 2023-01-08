@@ -32,7 +32,6 @@ from . import i18n, logger_handlers
 
 parser = configparser.RawConfigParser()
 log = logging.getLogger(__name__)
-_ = i18n.get_translation
 
 if Path('src').is_dir():
     # development mode
@@ -52,48 +51,55 @@ except ImportError as exception:
     log.error(str(exception))
     client = None
 
+
+def _(message):
+    return message
+
+
 gtk_themes = OrderedDict([
-    ('light', "Light"),
-    ('dark', "Dark"),
+    ('light', _("Light")),
+    ('dark', _("Dark")),
 ])
 
 log_levels = OrderedDict([
-    ('critical', "Critical"),
-    ('error', "Error"),
-    ('warning', "Warning"),
-    ('info', "Info"),
-    ('debug', "Debug"),
+    ('critical', _("Critical")),
+    ('error', _("Error")),
+    ('warning', _("Warning")),
+    ('info', _("Info")),
+    ('debug', _("Debug")),
 ])
 
 translations = OrderedDict([
-    ('en', "English"),
-    ('pt_BR', "Portuguese (Brazil)"),
-    ('fr', "French"),
+    ('en', _("English")),
+    ('pt_BR', _("Portuguese (Brazil)")),
+    ('fr', _("French")),
 ])
 
 giveaway_types = OrderedDict([
-    ('main', "Main Giveaways"),
-    ('new', "New Giveaways"),
-    ('recommended', "Recommended"),
-    ('wishlist', "Wishlist Only"),
-    ('group', 'Group Only'),
+    ('main', _("Main Giveaways")),
+    ('new', _("New Giveaways")),
+    ('recommended', _("Recommended")),
+    ('wishlist', _("Wishlist Only")),
+    ('group', _('Group Only')),
 ])
 
 giveaway_sort_types = OrderedDict([
-    ('name', "Name"),
-    ('copies', "Copies"),
-    ('points', "Points"),
-    ('level', "Level"),
+    ('name', _("Name")),
+    ('copies', _("Copies")),
+    ('points', _("Points")),
+    ('level', _("Level")),
 ])
 
 plugins = OrderedDict([
-    ("coupons", "Free Coupons"),
-    ("confirmations", "Confirmations"),
-    ("steamtrades", "Steam Trades"),
-    ("steamgifts", "Steam Gifts"),
-    ("steamguard", "Steam Guard"),
-    ("cardfarming", "Card Farming"),
+    ("coupons", _("Free Coupons")),
+    ("confirmations", _("Confirmations")),
+    ("steamtrades", _("Steam Trades")),
+    ("steamgifts", _("Steam Gifts")),
+    ("steamguard", _("Steam Guard")),
+    ("cardfarming", _("Card Farming")),
 ])
+
+_ = i18n.get_translation
 
 if sys.platform == 'win32':
     event_loop = asyncio.ProactorEventLoop()
