@@ -259,7 +259,7 @@ def init_logger() -> None:
     log_file_handler = logger_handlers.RotatingFileHandler(log_directory / 'steam-tools-ng.log',
                                                            backupCount=1,
                                                            encoding='utf-8')
-    log_file_handler.setFormatter(logging.Formatter('%(module)s:%(levelname)s (%(funcName)s) => %(message)s'))
+    log_file_handler.setFormatter(logging.Formatter('%(name)s:%(levelname)s (%(funcName)s) => %(message)s'))
     log_file_handler.setLevel(getattr(logging, log_level.upper()))
 
     try:

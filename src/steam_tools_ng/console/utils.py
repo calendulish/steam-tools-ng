@@ -86,21 +86,31 @@ def set_console(
         info: str = '',
         error: str = '',
         level: Tuple[int, int] = (0, 0),
+        suppress_logging: bool = False,
 ) -> None:
     for std in (sys.stdout, sys.stderr):
         print(' ' * (os.get_terminal_size().columns - 1), end='\r', file=std)
 
     if not module_data:
-        module_data = core.utils.ModuleData(display, status, info, error, level)
+        module_data = core.utils.ModuleData(display, status, info, error, level, suppress_logging=suppress_logging)
 
     if module_data.error:
-        log.error(module_data.error)
+        if not module_data.suppress_logging:
+            log.error(module_data.error)
+
+        print(module_data.error)
         return
 
     if module_data.status:
+        if not module_data.suppress_logging:
+            log.debug(f"status data: {module_data.status}")
+
         print(module_data.status, end=' ')
 
     if module_data.display:
+        if not module_data.suppress_logging:
+            log.debug(f"display data: {module_data.display}")
+
         print(module_data.display, end=' ')
 
     if module_data.level:
@@ -116,6 +126,9 @@ def set_console(
         print(f"┌{'█' * total:{bar_size}}┐", end=' ')
 
     if module_data.info:
+        if not module_data.suppress_logging:
+            log.info(module_data.info)
+
         print(module_data.info, sep=' ', end=' ')
 
     print('', end='\r')

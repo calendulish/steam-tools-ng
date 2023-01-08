@@ -454,28 +454,37 @@ class Main(Gtk.ApplicationWindow):
             info: str = '',
             error: str = '',
             level: Tuple[int, int] = (0, 0),
+            suppress_logging: bool = False,
     ) -> None:
         _status = getattr(self, f'{module}_status')
 
         if not module_data:
-            module_data = core.utils.ModuleData(display, status, info, error, level)
+            module_data = core.utils.ModuleData(display, status, info, error, level, suppress_logging=suppress_logging)
 
         if module_data.display:
-            # log.debug(f"display data: {module_data.display}")
+            if not module_data.suppress_logging:
+                log.debug(f"display data: {module_data.display}")
+
             _status.set_display(module_data.display)
         else:
             _status.unset_display()
 
         if module_data.status:
-            # log.debug(f"status data: {module_data.status}")
+            if not module_data.suppress_logging:
+                log.debug(f"status data: {module_data.status}")
+
             _status.set_status(module_data.status)
 
         if module_data.info:
-            # log.debug(f"info data: {module_data.info}")
+            if not module_data.suppress_logging:
+                log.info(module_data.info)
+
             _status.set_info(module_data.info)
 
         if module_data.error:
-            log.error(module_data.error)
+            if not module_data.suppress_logging:
+                log.error(module_data.error)
+
             _status.set_error(module_data.error)
 
         if module_data.level:

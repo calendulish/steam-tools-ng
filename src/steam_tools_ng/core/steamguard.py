@@ -18,6 +18,7 @@
 import aiohttp
 import asyncio
 import binascii
+import logging
 from typing import AsyncGenerator
 
 from stlib import universe, webapi
@@ -29,6 +30,7 @@ try:
 except ImportError as exception:
     client = None
 
+log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
 
@@ -77,8 +79,7 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
         yield utils.ModuleData(status=_("Steam Client is not running"), info=_("Waiting Changes"))
         await asyncio.sleep(10)
     else:
-        yield utils.ModuleData(status=_("Loading..."))
-
+        log.info(_("New code in 30 seconds"))
         seconds = 30 - (server_time % 30)
 
         for past_time in range(seconds * 8):
@@ -87,6 +88,7 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
                 status=_("Running"),
                 info=_("New code in {} seconds").format(seconds - round(past_time / 8)),
                 level=(past_time, seconds * 8),
+                suppress_logging=True,
             )
 
             await asyncio.sleep(0.125)

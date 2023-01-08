@@ -15,8 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import asyncio
 
+import asyncio
+import inspect
+import logging
 import time
 from dataclasses import dataclass
 from functools import cache, wraps
@@ -32,11 +34,17 @@ class ModuleData:
     level: Tuple[int, int] = (0, 0)
     action: str = ''
     raw_data: Any = None
+    suppress_logging: bool = False
 
 
 async def timed_module_data(wait_offset: int, module_data: ModuleData) -> AsyncGenerator[ModuleData, None]:
     info = module_data.info
     assert module_data.level == (0, 0), "level should not be used here"
+
+    module_data.suppress_logging = True
+    caller = inspect.currentframe().f_back
+    log = logging.getLogger(caller.f_globals['__name__'])
+    log.info(info)
 
     for past_time in range(wait_offset):
         current_time = round((wait_offset - past_time) / 60)
