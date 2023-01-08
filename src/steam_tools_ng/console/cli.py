@@ -53,6 +53,7 @@ class SteamToolsNG:
         self.module_name = module_name
         self.stop = False
         self.custom_gameid = 0
+        self.extra_gameid = None
 
         if module_name in ['cardfarming', 'fakerun'] and not stlib.steamworks_available:
             log.critical(_(
@@ -75,16 +76,20 @@ class SteamToolsNG:
             if module_name == 'fakerun' and not module_options:
                 raise ValueError
 
-            self.custom_gameid = int(module_options[0])
-            self.extra_gameid = None
+            for index, option in enumerate(module_options):
+                self.stop = True
 
-            if self.custom_gameid == 34:
-                if len(module_options) < 2:
-                    raise ValueError
+                if option != 'oneshot':
+                    self.custom_gameid = int(option)
 
-                self.extra_gameid = int(module_options[1])
+                    if module_name == 'fakerun':
+                        if self.custom_gameid == 34:
+                            if len(module_options) < 2:
+                                raise ValueError
 
-            self.stop = True
+                            self.extra_gameid = int(module_options[index + 1])
+
+                            break
         except ValueError:
             logging.critical("Wrong command line params!")
             sys.exit(1)
