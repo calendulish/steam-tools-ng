@@ -85,10 +85,23 @@ class SettingsDialog(Gtk.Dialog):
             general_section.grid.attach(config_button, 0, 1, 1, 1)
             general_section.grid.attach(log_button, 1, 1, 1, 1)
 
-        theme = general_section.new_item("theme", _("Theme:"), Gtk.ComboBoxText, 0, 3, items=config.gtk_themes)
+        theme = general_section.new_item(
+            "theme",
+            _("Theme:"),
+            Gtk.ComboBoxText,
+            0, 3,
+            items=config.gtk_themes,
+        )
+
         theme.connect('changed', self.on_theme_changed)
 
-        show_close_button = general_section.new_item("show_close_button", _("Show close button:"), Gtk.CheckButton, 0, 4)
+        show_close_button = general_section.new_item(
+            "show_close_button",
+            _("Show close button:"),
+            Gtk.CheckButton,
+            0, 4,
+        )
+
         show_close_button.connect('toggled', self.on_show_close_button_toggled)
 
         language_item = general_section.new_item(
@@ -178,11 +191,8 @@ class SettingsDialog(Gtk.Dialog):
         trade_ids.set_placeholder_text('12345, asdfg, ...')
         trade_ids.connect("changed", on_setting_changed)
 
-        wait_min = steamtrades_section.new_item("wait_min", _("Wait MIN:"), Gtk.Entry, 0, 2)
-        wait_min.connect("changed", on_digit_only_setting_changed)
-
-        wait_max = steamtrades_section.new_item("wait_max", _("Wait MAX:"), Gtk.Entry, 0, 3)
-        wait_max.connect("changed", on_digit_only_setting_changed)
+        wait_for_bump = steamtrades_section.new_item("wait_for_bump", _("Wait:"), Gtk.Entry, 0, 2)
+        wait_for_bump.connect("changed", on_digit_only_setting_changed)
 
         if not plugins.has_plugin("steamtrades"):
             steamtrades_section.set_sensitive(False)
@@ -234,11 +244,8 @@ class SettingsDialog(Gtk.Dialog):
         )
         developer_giveaways.connect("toggled", on_setting_toggled)
 
-        wait_min = steamgifts_section.new_item("wait_min", _("Wait MIN:"), Gtk.Entry, 0, 5)
-        wait_min.connect("changed", on_digit_only_setting_changed)
-
-        wait_max = steamgifts_section.new_item("wait_max", _("Wait MAX:"), Gtk.Entry, 0, 6)
-        wait_max.connect("changed", on_digit_only_setting_changed)
+        wait_for_giveaways = steamgifts_section.new_item("wait_for_giveaways", _("Wait:"), Gtk.Entry, 0, 5)
+        wait_for_giveaways.connect("changed", on_digit_only_setting_changed)
 
         if not plugins.has_plugin("steamgifts"):
             steamgifts_section.set_sensitive(False)
@@ -261,14 +268,20 @@ class SettingsDialog(Gtk.Dialog):
         cardfarming_enable = cardfarming_section.new_item("enable", _("Enable:"), Gtk.CheckButton, 0, 0)
         cardfarming_enable.connect("toggled", on_setting_toggled)
 
-        first_wait = cardfarming_section.new_item("first_wait", _("First Wait:"), Gtk.Entry, 0, 1)
-        first_wait.connect("changed", on_digit_only_setting_changed)
+        mandatory_waiting = cardfarming_section.new_item("mandatory_waiting", _("Mandatory waiting:"), Gtk.Entry, 0, 1)
+        mandatory_waiting.connect("changed", on_digit_only_setting_changed)
 
-        default_wait = cardfarming_section.new_item("default_wait", _("Default Wait:"), Gtk.Entry, 0, 2)
-        default_wait.connect("changed", on_digit_only_setting_changed)
+        wait_while_running = cardfarming_section.new_item(
+            "wait_while_running",
+            _("Wait while running:"),
+            Gtk.Entry,
+            0, 2,
+        )
 
-        min_wait = cardfarming_section.new_item("min_wait", _("MIN Wait:"), Gtk.Entry, 0, 3)
-        min_wait.connect("changed", on_digit_only_setting_changed)
+        wait_while_running.connect("changed", on_digit_only_setting_changed)
+
+        wait_for_drops = cardfarming_section.new_item("wait_for_drops", _("Wait for drops:"), Gtk.Entry, 0, 3)
+        wait_for_drops.connect("changed", on_digit_only_setting_changed)
 
         max_concurrency = cardfarming_section.new_item("max_concurrency", _("Max concurrency:"), Gtk.Entry, 0, 4)
         max_concurrency.connect("changed", on_digit_only_setting_changed)
@@ -297,7 +310,13 @@ class SettingsDialog(Gtk.Dialog):
 
         logger_section = utils.Section("logger", _('Logger'))
 
-        log_level_item = logger_section.new_item("log_level", _("Level:"), Gtk.ComboBoxText, 0, 0, items=config.log_levels)
+        log_level_item = logger_section.new_item(
+            "log_level",
+            _("Level:"),
+            Gtk.ComboBoxText,
+            0, 0,
+            items=config.log_levels,
+        )
 
         log_console_level_item = logger_section.new_item(
             "log_console_level",

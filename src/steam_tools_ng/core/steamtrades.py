@@ -39,8 +39,7 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
         raise ImportError(_("Unable to find Steamtrades plugin"))
 
     trade_ids = config.parser.get("steamtrades", "trade_ids")
-    wait_min = config.parser.getint("steamtrades", "wait_min")
-    wait_max = config.parser.getint("steamtrades", "wait_max")
+    wait_for_bump = config.parser.getint("steamtrades", "wait_for_bump")
 
     if not trade_ids:
         yield utils.ModuleData(error=_("No trade ID found"), info=_("Waiting Changes"))
@@ -117,8 +116,7 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
             await asyncio.sleep(15)
             continue
         except steamtrades.TradeNotReadyError as exception:
-            wait_min = exception.time_left * 60
-            wait_max = wait_min + 400
+            wait_for_bump = exception.time_left * 60
             bumped = True
         except steamtrades.TradeClosedError as exception:
             yield utils.ModuleData(error=_("Trade {}({}) is closed").format(exception.title, exception.id))
@@ -134,7 +132,7 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
         await asyncio.sleep(10)
         return
 
-    wait_offset = random.randint(wait_min, wait_max)
+    wait_offset = random.randint(wait_for_bump, wait_for_bump + 400)
     module_data = utils.ModuleData(info=_("Waiting Changes"))
 
     async for data in utils.timed_module_data(wait_offset, module_data):

@@ -106,9 +106,9 @@ async def while_has_cards(
     community_session = community.Community.get_session(0)
 
     while badge.cards != 0:
-        first_wait = config.parser.getint("cardfarming", "first_wait")
-        default_wait = config.parser.getint("cardfarming", "default_wait")
-        min_wait = config.parser.getint("cardfarming", "min_wait")
+        mandatory_waiting = config.parser.getint("cardfarming", "mandatory_waiting")
+        wait_while_running = config.parser.getint("cardfarming", "wait_while_running")
+        wait_for_drops = config.parser.getint("cardfarming", "wair_for_drops")
 
         try:
             game_list = await webapi_session.get_owned_games(steamid, appids_filter=[badge.appid])
@@ -121,10 +121,10 @@ async def while_has_cards(
 
             continue
 
-        if game_info.playtime_forever * 60 >= first_wait:
-            wait_offset = random.randint(default_wait, int(default_wait / 100 * 125))
+        if game_info.playtime_forever * 60 >= mandatory_waiting:
+            wait_offset = random.randint(wait_while_running, int(wait_while_running / 100 * 125))
         else:
-            wait_offset = first_wait - game_info.playtime_forever * 60
+            wait_offset = mandatory_waiting - game_info.playtime_forever * 60
 
         try:
             executor = client.SteamAPIExecutor(badge.appid)
@@ -151,7 +151,7 @@ async def while_has_cards(
             yield data
 
         executor.shutdown()
-        wait_offset = random.randint(min_wait, int(min_wait / 100 * 125))
+        wait_offset = random.randint(wait_for_drops, int(wait_for_drops / 100 * 125))
 
         module_data = utils.ModuleData(
             display=str(badge.appid),

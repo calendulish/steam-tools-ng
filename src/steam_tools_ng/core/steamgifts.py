@@ -38,8 +38,7 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
     else:
         raise ImportError(_("Unable to find Steamgifts plugin."))
 
-    wait_min = config.parser.getint("steamgifts", "wait_min")
-    wait_max = config.parser.getint("steamgifts", "wait_max")
+    wait_for_giveaways = config.parser.getint("steamgifts", "wait_for_giveaways")
     type_ = config.parser.get("steamgifts", "giveaway_type")
     pinned = config.parser.get("steamgifts", "developer_giveaways")
     sort = config.parser.get("steamgifts", "sort")
@@ -158,7 +157,7 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
         await asyncio.sleep(10)
         return
 
-    wait_offset = random.randint(wait_min, wait_max)
+    wait_offset = random.randint(wait_for_giveaways, wait_for_giveaways + 400)
     module_data = utils.ModuleData(info=_("Waiting Changes"))
 
     async for data in utils.timed_module_data(wait_offset, module_data):
