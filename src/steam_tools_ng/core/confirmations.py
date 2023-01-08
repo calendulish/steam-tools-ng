@@ -55,7 +55,7 @@ async def main(steamid: universe.SteamId) -> AsyncGenerator[utils.ModuleData, No
     except ProcessLookupError:
         module_data = utils.ModuleData(error=_("Steam is not running"), info=_("Waiting Changes"))
     except login.LoginError:
-        module_data = utils.ModuleData(error=_("User is not logged in"), action="login")
+        module_data = utils.ModuleData(error=_("Not logged in"), action="login")
     except aiohttp.ClientError:
         module_data = utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
     else:

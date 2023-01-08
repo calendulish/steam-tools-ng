@@ -246,7 +246,7 @@ class Main(Gtk.ApplicationWindow):
             if not login_session or not await login_session.is_logged_in(steamid):
                 self.application.main_window.user_info_label.set_markup(
                     utils.markup(
-                        _('You are not logged in'),
+                        _('Not logged in'),
                         color='darkred' if theme == 'light' else 'red',
                         size='small',
                     )

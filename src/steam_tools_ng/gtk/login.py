@@ -264,7 +264,7 @@ class LoginDialog(Gtk.Dialog):
                 self.captcha_text_item.grab_focus()
             except login.LoginError as exception:
                 log.error(str(exception))
-                self.__password_item.set_text('')
+                #self.__password_item.set_text('')
                 self.__password_item.grab_focus()
                 config.remove('login', 'token')
                 config.remove('login', 'token_secure')
