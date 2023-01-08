@@ -79,6 +79,14 @@ async def main(fetch_coupon_event: asyncio.Event) -> AsyncGenerator[utils.Module
 
             return
 
+        if not inventory:
+            module_data = utils.ModuleData(error=_("The botid {} has no coupons available"), info=_("Skipping"))
+
+            async for data in utils.timed_module_data(15, module_data):
+                yield data
+
+            continue
+
         for index, coupon_ in enumerate(inventory):
             yield utils.ModuleData(action="update_level", raw_data=(index, len(inventory)))
             package_link = coupon_.actions[0]['link']
