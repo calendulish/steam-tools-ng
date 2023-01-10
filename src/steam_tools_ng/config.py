@@ -99,6 +99,14 @@ plugins = OrderedDict([
     ("cardfarming", _("Card Farming")),
 ])
 
+coupon_discounts = OrderedDict([
+    ("33", _("33% OFF")),
+    ("50", _("50% OFF")),
+    ("66", _("66% OFF")),
+    ("75", _("75% OFF")),
+    ("90", _("90% OFF")),
+])
+
 _ = i18n.get_translation
 
 if sys.platform == 'win32':
@@ -130,6 +138,7 @@ default_config: Mapping[str, Mapping[str, Any]] = {
         'tokens': '6Z6Xn5NM',
         'blacklist': '',
         'last_trade_time': 0,
+        'minimum_discount': 75,
     },
     'confirmations': {
         'enable': True,

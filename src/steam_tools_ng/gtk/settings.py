@@ -354,6 +354,14 @@ class SettingsDialog(Gtk.Dialog):
         coupon_blacklist = coupons_section.new_item("blacklist", _("Blacklist:"), Gtk.Entry, 0, 5)
         coupon_blacklist.connect("changed", on_setting_changed)
 
+        coupon_discount = coupons_section.new_item(
+            "minimum_discount",
+            _("Minimum Discount:"),
+            Gtk.ComboBoxText,
+            0, 6,
+            items=config.coupon_discounts,
+        )
+
         self.connect('response', lambda dialog, response_id: self.destroy())
 
         for section in [

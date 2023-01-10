@@ -93,6 +93,7 @@ async def main(fetch_coupon_event: asyncio.Event) -> AsyncGenerator[utils.Module
             packageids = [int(id_) for id_ in package_link.split('=')[1].split(',')]
             blacklist = config.parser.get('coupons', 'blacklist')
             ignored_list = [coupon.split('% OFF')[-1].split('- Coupon')[0].strip() for coupon in blacklist.split(',')]
+            minimum_discount = config.parser.getint('coupons', 'minimum_discount')
 
             for package_id in packageids:
                 if not fetch_coupon_event.is_set():
@@ -106,7 +107,7 @@ async def main(fetch_coupon_event: asyncio.Event) -> AsyncGenerator[utils.Module
 
                 coupon_discount = int(coupon_.name.split('%')[0])
 
-                if coupon_discount < 75:
+                if coupon_discount < minimum_discount:
                     log.info(_('Ignoring coupon %s due low discount value'), coupon_.name)
                     continue
 
