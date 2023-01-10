@@ -27,7 +27,7 @@ jobs:
       - run: python -m build
       - uses: actions/upload-artifact@v3
         with:
-          name: linux
+          name: linux_${{ matrix.python-version }}
           path: |
             build/*.zip
             dist/
@@ -56,7 +56,7 @@ jobs:
       - run: dist_script_native.cmd
       - uses: actions/upload-artifact@v3
         with:
-          name: windows
+          name: windows_${{ matrix.python-version }}
           path: |
             build/*.zip
             installer/build/*.exe
@@ -73,23 +73,26 @@ jobs:
         with:
           draft: true
           files: |
-            linux/dist/*
-            windows/installer/build/*.exe
-            windows/build/*.zip
+            linux_3.9/dist/*
+            linux_3.10/dist/*
+            linux_3.11/dist/*
+            windows_3.11/installer/build/*.exe
+            windows_3.10/build/*.zip
+            windows_3.11/build/*.zip
   pypi-upload:
     if: startsWith(github.ref, 'refs/tags/')
     needs: [deploy]
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.9', '3.10', '3.11' ]
+        python-version: [ '3.11' ]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/download-artifact@v3
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
-          packages_dir: linux/dist/
+          packages_dir: linux_${{ matrix.python-version }}/dist/
           verbose: true
           print_hash: true
   generate-badges:
