@@ -58,7 +58,7 @@ class NewAuthenticator:
             return None
 
     async def add_authenticator(self) -> None:
-        print(_("Retrieving user data"))
+        utils.set_console(info=_("Retrieving user data"))
 
         if not self.oauth_token or not self.steamid:
             log.error(_(
@@ -98,7 +98,7 @@ class NewAuthenticator:
                 assert isinstance(user_input, str)
                 self._sms_code = user_input
 
-        print(_("Adding authenticator"))
+        utils.set_console(info=_("Adding authenticator"))
         assert isinstance(self._login_data, login.LoginData)
 
         try:
@@ -118,13 +118,13 @@ class NewAuthenticator:
             log.critical("%s: %s", type(exception).__name__, str(exception))
             self.cli.on_quit(1)
 
-        print(_("Saving new secrets"))
+        utils.set_console(info=_("Saving new secrets"))
         config.new("login", "shared_secret", self._login_data.auth['shared_secret'])
         config.new("login", "identity_secret", self._login_data.auth['identity_secret'])
         config.new("steamguard", "enable", True)
         config.new("confirmations", "enable", True)
 
-        print(_(
+        utils.set_console(info=_(
             "RECOVERY CODE\n\n"
             "You will need this code to recovery your Steam Account\n"
             "if you lose access to STNG Authenticator. So, write"
@@ -133,5 +133,5 @@ class NewAuthenticator:
         ))
 
         revocation_code = self._login_data.auth['revocation_code']
-        print(revocation_code)
+        utils.set_console(info=revocation_code)
         await asyncio.sleep(30)

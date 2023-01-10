@@ -121,7 +121,7 @@ class Login:
         kwargs['shared_secret'] = self.shared_secret
         kwargs['authenticator_code'] = self.steam_code
 
-        print(_("Logging in"))
+        utils.set_console(info=_("Logging in"))
         try_count = 3
 
         while True:
@@ -156,7 +156,7 @@ class Login:
             except login.CaptchaError as exception:
                 self.captcha_gid = exception.captcha_gid
 
-                print(_("Steam server is requesting a captcha code."))
+                utils.set_console(info=_("Steam server is requesting a captcha code."))
 
                 with tempfile.NamedTemporaryFile(buffering=0, prefix='stng_', suffix='.captcha.png') as temp_file:
                     temp_file.write(exception.captcha)
