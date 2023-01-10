@@ -23,7 +23,7 @@ import logging
 from gi.repository import Gtk, Gdk, GdkPixbuf
 from typing import Any
 
-from stlib import login
+from stlib import login, universe
 from . import utils
 from .. import i18n, config
 
@@ -334,6 +334,9 @@ class LoginDialog(Gtk.Dialog):
 
                 for key_, value_ in new_configs.items():
                     config.new("login", key_, value_)
+
+                steamid = universe.generate_steamid(new_configs['steamid'])
+                _login_session.restore_login(steamid, new_configs['token'], new_configs['token_secure'])
 
                 self.application.main_window.statusbar.clear('steamguard')
 

@@ -24,7 +24,7 @@ import logging
 import tempfile
 from typing import TYPE_CHECKING
 
-from stlib import login
+from stlib import login, universe
 from . import utils
 from .. import i18n, config
 
@@ -208,6 +208,8 @@ class Login:
                 for key, value in new_configs.items():
                     config.new("login", key, value)
 
+                steamid = universe.generate_steamid(new_configs['steamid'])
+                _login_session.restore_login(steamid, new_configs['token'], new_configs['token_secure'])
                 self.has_user_data = True
 
             break
