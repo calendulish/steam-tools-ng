@@ -89,7 +89,8 @@ class LoginDialog(Gtk.Dialog):
             "_captcha_text", _("Captcha Text:"), Gtk.Entry, 0, 4,
         )
 
-        self.save_password_item = self.user_details_section.new_item("_savepwd", _("Save Password:"), Gtk.CheckButton, 0, 5)
+        self.save_password_item = self.user_details_section.new_item("_savepwd", _("Save Password:"), Gtk.CheckButton,
+                                                                     0, 5)
         self.save_password_item.set_active(True)
 
         self.advanced_login = utils.ClickableLabel()
@@ -138,9 +139,13 @@ class LoginDialog(Gtk.Dialog):
         return self.__password_item.get_text()
 
     def set_password(self, encrypted_password: str) -> None:
-        key = codecs.decode(encrypted_password, 'rot13')
-        raw = codecs.decode(key.encode(), 'base64')
-        self.__password_item.set_text(raw.decode())
+        try:
+            key = codecs.decode(encrypted_password, 'rot13')
+            raw = codecs.decode(key.encode(), 'base64')
+            self.__password_item.set_text(raw.decode())
+        except (binascii.Error, UnicodeError, TypeError):
+            log.warning(_("Password decode failed. Trying RAW."))
+            self.__password.set_text(encrypted_password)
 
     @property
     def mail_code(self) -> str:
@@ -262,9 +267,9 @@ class LoginDialog(Gtk.Dialog):
                 self.captcha_text_item.set_text("")
                 self.captcha_text_item.show()
                 self.captcha_text_item.grab_focus()
-            except login.LoginError as exception:
+            except (login.LoginError, AttributeError) as exception:
                 log.error(str(exception))
-                #self.__password_item.set_text('')
+                # self.__password_item.set_text('')
                 self.__password_item.grab_focus()
                 config.remove('login', 'token')
                 config.remove('login', 'token_secure')

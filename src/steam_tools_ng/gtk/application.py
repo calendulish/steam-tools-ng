@@ -111,11 +111,8 @@ class SteamToolsNG(Gtk.Application):
 
         if auto:
             encrypted_password = config.parser.get("login", "password")
-            try:
-                login_dialog.set_password(encrypted_password)
-                login_dialog.login_button.emit('clicked')
-            except ValueError:
-                log.error(_("Saved password is not usable"))
+            login_dialog.set_password(encrypted_password)
+            login_dialog.login_button.emit('clicked')
 
         if block:
             while self.main_window.get_realized():

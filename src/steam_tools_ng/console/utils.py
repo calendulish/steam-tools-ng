@@ -46,7 +46,7 @@ def safe_input(
 
     while True:
         try:
-            user_input = input(f'{msg} {options}: ')
+            user_input = input(f'\n{msg} {options}: ')
 
             if custom_choices:
                 if not user_input:

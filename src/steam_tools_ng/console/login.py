@@ -53,9 +53,13 @@ class Login:
         return self._username
 
     def set_password(self, encrypted_password: str) -> None:
-        key = codecs.decode(encrypted_password, 'rot13')
-        raw = codecs.decode(key.encode(), 'base64')
-        self.__password = raw.decode()
+        try:
+            key = codecs.decode(encrypted_password, 'rot13')
+            raw = codecs.decode(key.encode(), 'base64')
+            self.__password = raw.decode()
+        except (binascii.Error, UnicodeError, TypeError):
+            log.warning(_("Password decode failed. Trying RAW."))
+            self.__password = encrypted_password
 
     @property
     def mail_code(self) -> str:
