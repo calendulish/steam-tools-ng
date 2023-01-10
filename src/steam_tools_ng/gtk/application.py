@@ -204,7 +204,9 @@ class SteamToolsNG(Gtk.Application):
                             with contextlib.suppress(IndexError):
                                 await plugin.Main.new_session(0)
 
-                        if module_name in ["confirmations", "coupons"]:
+                        if module_name == "coupons":
+                            task = asyncio.create_task(module(self.main_window.fetch_coupon_event))
+                        elif module_name == "confirmations":
                             task = asyncio.create_task(module())
                         else:
                             self.main_window.set_status(module_name, status=_("Loading"))
@@ -307,10 +309,12 @@ class SteamToolsNG(Gtk.Application):
                 self.main_window.statusbar.clear('confirmations')
 
     @while_window_realized
-    async def run_coupons(self) -> None:
+    async def run_coupons(self, play_event: asyncio.Event) -> None:
         coupons = core.coupons.main(self.main_window.fetch_coupon_event)
 
         async for module_data in coupons:
+            await play_event.wait()
+
             if module_data.error:
                 self.main_window.statusbar.set_critical("coupons", module_data.error)
 
