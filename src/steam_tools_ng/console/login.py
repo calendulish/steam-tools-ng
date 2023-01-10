@@ -122,6 +122,7 @@ class Login:
         kwargs['authenticator_code'] = self.steam_code
 
         print(_("Logging in"))
+        try_count = 3
 
         while True:
             try:
@@ -132,6 +133,16 @@ class Login:
                 self._mail_code = user_input
                 await self.do_login(True)
             except login.TwoFactorCodeError:
+                if self.shared_secret:
+                    if try_count > 0:
+                        log.warning(_("Retrying login in 10 seconds"))
+                        await asyncio.sleep(10)
+                        try_count -= 1
+                        continue
+                    else:
+                        log.error(_("shared secret is invalid!"))
+                        self.cli.on_quit()
+
                 user_input = utils.safe_input(_("Write Steam Code"))
                 assert isinstance(user_input, str), "safe_input is returning bool when it should return str"
                 self._steam_code = user_input

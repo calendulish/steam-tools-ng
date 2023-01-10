@@ -230,6 +230,8 @@ class LoginDialog(Gtk.Dialog):
         self.steam_code_item.hide()
         self.mail_code_item.hide()
 
+        try_count = 3
+
         while True:
             try:
                 login_data = await _login_session.do_login(**kwargs)
@@ -239,6 +241,19 @@ class LoginDialog(Gtk.Dialog):
                 self.mail_code_item.show()
                 self.mail_code_item.grab_focus()
             except login.TwoFactorCodeError:
+                if self.shared_secret:
+                    if try_count > 0:
+                        log.warning(_("Retrying login in 10 seconds"))
+                        await asyncio.sleep(10)
+                        try_count -= 1
+                        continue
+                    else:
+                        self.status.error(_("shared secret is invalid!"))
+                        self.username_item.set_sensitive(True)
+                        self.__password_item.set_sensitive(True)
+                        self.shared_secret_item.grab_focus()
+                        break
+
                 self.status.error(_("Write Steam Code bellow and click on 'Log-in'"))
                 self.steam_code_item.set_text("")
                 self.steam_code_item.show()
