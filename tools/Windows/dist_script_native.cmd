@@ -40,7 +40,7 @@ set curl="!system32!curl.exe"
 set certutil="!system32!certutil.exe"
 
 if not exist gvsbuild.zip (
-    set gvsbuild="https://github.com/ShyPixie/gvsbuild-release/releases/download/latest/gvsbuild-py3.10-vs17-x64.zip"
+    set gvsbuild="https://github.com/ShyPixie/gvsbuild/releases/download/latest/gvsbuild-py!PYTHON_VERSION!-vs17-x64.zip"
     !curl! -o gvsbuild.zip -L !gvsbuild! || !certutil! -urlcache -split -f !gvsbuild! gvsbuild.zip || exit 1
 )
 
