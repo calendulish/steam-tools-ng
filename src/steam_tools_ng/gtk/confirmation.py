@@ -180,8 +180,15 @@ class FinalizeDialog(Gtk.Dialog):
 
     async def finalize(self, keep_iter: bool = False) -> Dict[str, Any]:
         identity_secret = config.parser.get("login", "identity_secret")
-        steamid = config.parser.getint("login", "steamid")
         deviceid = config.parser.get("login", "deviceid")
+        steamid_raw = config.parser.getint("login", "steamid")
+
+        try:
+            steamid = universe.generate_steamid(steamid_raw)
+        except ValueError:
+            self.status.info(_("Your steam is invalid. (are you logged in?)"))
+            await asyncio.sleep(5)
+            return {}
 
         self.status.info(_("Waiting Steam Server (OP: {})").format(self.model[self.iter][1]))
 

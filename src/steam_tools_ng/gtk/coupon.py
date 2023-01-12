@@ -172,7 +172,16 @@ class CouponDialog(Gtk.Dialog):
         botid_raw = config.parser.get('coupons', 'botid_to_donate')
         token = config.parser.get('coupons', 'token_to_donate')
         steamid_raw = config.parser.getint('login', 'steamid')
-        steamid = universe.generate_steamid(steamid_raw)
+
+        try:
+            steamid = universe.generate_steamid(steamid_raw)
+        except ValueError:
+            self.status.info(_("Your steamid is invalid. (are you logged in?)"))
+            self.header_bar.set_show_title_buttons(True)
+            self.yes_button.hide()
+            self.has_status = True
+            return
+
         give = []
         receive = []
 
@@ -192,7 +201,15 @@ class CouponDialog(Gtk.Dialog):
             for coupon in json_data:
                 give.append((coupon.appid, coupon.assetid, coupon.amount))
 
-        botid = universe.generate_steamid(botid_raw)
+        try:
+            botid = universe.generate_steamid(botid_raw)
+        except ValueError:
+            self.status.info(_("botid to donation is invalid. Check your config."))
+            self.header_bar.set_show_title_buttons(True)
+            self.yes_button.hide()
+            self.has_status = True
+            return
+
         json_data = await self.community_session.send_trade_offer(botid, token, contextid, give, receive)
 
         if len(json_data) == 1 and 'tradeofferid' in json_data:

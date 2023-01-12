@@ -102,7 +102,10 @@ class SteamToolsNG:
         steamid = config.parser.getint("login", "steamid")
 
         if steamid:
-            return universe.generate_steamid(steamid)
+            try:
+                return universe.generate_steamid(steamid)
+            except ValueError:
+                log.warning(_("SteamId is invalid"))
 
         return None
 

@@ -53,9 +53,12 @@ class NewAuthenticator:
         steamid = config.parser.getint("login", "steamid")
 
         if steamid:
-            return universe.generate_steamid(steamid)
-        else:
-            return None
+            try:
+                return universe.generate_steamid(steamid)
+            except ValueError:
+                log.warning(_("SteamId is invalid"))
+
+        return None
 
     async def add_authenticator(self) -> None:
         utils.set_console(info=_("Retrieving user data"))
