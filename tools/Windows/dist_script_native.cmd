@@ -49,8 +49,8 @@ if not exist release (
 )
 
 set PATH=%cd%\\release\\bin;%PATH%
-for %%i in (release\\python\\pycairo-*-cp310-cp310-win_amd64.whl) do (python -m pip install --force-reinstall %%i) || exit 1
-for %%i in (release\\python\\PyGObject-*-cp310-cp310-win_amd64.whl) do (python -m pip install --force-reinstall --no-deps %%i) || exit 1
+for %%i in (release\\python\\pycairo-*-cp%PYTHON_VERSION:.=%-cp%PYTHON_VERSION:.=%-win_amd64.whl) do (python -m pip install --force-reinstall %%i) || exit 1
+for %%i in (release\\python\\PyGObject-*-cp%PYTHON_VERSION:.=%-cp%PYTHON_VERSION:.=%-win_amd64.whl) do (python -m pip install --force-reinstall --no-deps %%i) || exit 1
 
 python ./setup.py -v build || exit 1
 pushd build || exit 1
