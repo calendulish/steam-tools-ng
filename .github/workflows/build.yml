@@ -73,8 +73,6 @@ jobs:
         with:
           draft: true
           files: |
-            linux_3.9/dist/*
-            linux_3.10/dist/*
             linux_3.11/dist/*
             windows_3.11/installer/build/*.exe
             windows_3.10/build/*.zip
