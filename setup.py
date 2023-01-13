@@ -253,7 +253,7 @@ except FileNotFoundError:
 
 setup(
     name='steam-tools-ng',
-    version='2.0.3',
+    version='2.1.0',
     description="Steam Tools NG",
     long_description=long_description,
     long_description_content_type='text/markdown',
