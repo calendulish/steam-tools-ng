@@ -16,13 +16,23 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+import os
+import sys
+
+# FIXME: Temporary workaround for cx_freeze
+#  not running from Win32GUI correctly
+if os.name == 'nt' and hasattr(sys, 'frozen'):
+    import ctypes
+
+    console = ctypes.windll.kernel32.GetConsoleWindow()
+    ctypes.windll.user32.ShowWindow(console, 0)
+    ctypes.windll.kernel32.CloseHandle(console)
+
 from multiprocessing import freeze_support
 
 import argparse
 import configparser
 import logging
-import os
-import sys
 from pathlib import Path
 from subprocess import call
 from typing import Optional, Any
