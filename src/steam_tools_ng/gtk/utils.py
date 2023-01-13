@@ -647,7 +647,9 @@ def fatal_error_dialog(
         loop.stop()
 
         application = Gtk.Application.get_default()
-        application.quit()
+
+        if application:
+            application.quit()
 
     error_dialog.add_button(_('Ok'), Gtk.ResponseType.OK)
     error_dialog.connect("response", callback)
