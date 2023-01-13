@@ -23,13 +23,15 @@ import random
 import sys
 import time
 from pathlib import Path
-from psutil import Popen, NoSuchProcess
 from subprocess import call
 from typing import AsyncGenerator, Dict, Optional, Any
 
 from stlib import webapi, client, universe, community
 from . import utils
 from .. import i18n, config
+
+if sys.platform == 'win32':
+    from psutil import Popen, NoSuchProcess
 
 _ = i18n.get_translation
 
