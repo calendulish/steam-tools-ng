@@ -196,7 +196,7 @@ class FinalizeDialog(Gtk.Dialog):
         for i in range(2):
             result = await self.community_session.send_confirmation(
                 identity_secret,
-                universe.generate_steamid(steamid),
+                steamid,
                 deviceid,
                 self.model[self.iter][0],
                 self.model[self.iter][2],
