@@ -313,6 +313,7 @@ class SteamToolsNG(Gtk.Application):
         coupons = core.coupons.main(self.main_window.fetch_coupon_event)
 
         async for module_data in coupons:
+            self.main_window.statusbar.clear("coupons")
             await play_event.wait()
 
             if module_data.error:
