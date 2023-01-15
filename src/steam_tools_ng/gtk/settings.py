@@ -361,6 +361,7 @@ class SettingsDialog(Gtk.Dialog):
             0, 6,
             items=config.coupon_discounts,
         )
+        coupon_discount.connect("changed", on_combo_setting_changed, config.coupon_discounts)
 
         self.connect('response', lambda dialog, response_id: self.destroy())
 
