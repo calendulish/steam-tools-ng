@@ -153,6 +153,7 @@ class FinalizeDialog(Gtk.Dialog):
         task.add_done_callback(self.on_task_finish)
 
     def on_task_finish(self, task: asyncio.Task[Any]) -> None:
+        self.parent_window.confirmation_tree.lock = False
         exception = task.exception()
 
         if exception and not isinstance(exception, asyncio.CancelledError):
@@ -175,7 +176,6 @@ class FinalizeDialog(Gtk.Dialog):
                 self.header_bar.set_show_title_buttons(True)
                 self.yes_button.hide()
         else:
-            self.parent_window.confirmation_tree.lock = False
             self.destroy()
 
     async def finalize(self, keep_iter: bool = False) -> Dict[str, Any]:
