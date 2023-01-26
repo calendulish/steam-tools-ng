@@ -110,7 +110,7 @@ async def while_has_cards(
     while badge.cards != 0:
         mandatory_waiting = config.parser.getint("cardfarming", "mandatory_waiting")
         wait_while_running = config.parser.getint("cardfarming", "wait_while_running")
-        wait_for_drops = config.parser.getint("cardfarming", "wair_for_drops")
+        wait_for_drops = config.parser.getint("cardfarming", "wait_for_drops")
 
         try:
             game_list = await webapi_session.get_owned_games(steamid, appids_filter=[badge.appid])
