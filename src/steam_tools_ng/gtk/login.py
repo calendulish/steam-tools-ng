@@ -320,7 +320,7 @@ class LoginDialog(Gtk.Dialog):
                     # Just for curious people. It's not even safe.
                     key = codecs.encode(self.__password.encode(), 'base64')
                     out = codecs.encode(key.decode(), 'rot13')
-                    new_configs["password"] = out
+                    new_configs["password"] = out.replace('\n', '')
 
                 if login_data.oauth:
                     new_configs['steamid'] = login_data.oauth['steamid']

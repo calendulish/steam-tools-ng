@@ -98,7 +98,7 @@ class Login:
             self.__password = getpass.getpass(_("Please, write your password (IT'S HIDDEN, and will be encrypted)"))
             password_key = codecs.encode(self.__password.encode(), 'base64')
             encrypted_password = codecs.encode(password_key.decode(), 'rot13')
-            config.new("login", "password", encrypted_password)
+            config.new("login", "password", encrypted_password.replace('\n', ''))
 
         _login_session = login.Login.get_session(0)
         _login_session.username = self.username
