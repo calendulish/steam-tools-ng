@@ -24,10 +24,16 @@ from pathlib import Path
 try:
     __version__ = version(__package__)
 except PackageNotFoundError:  # Freezed
-    # noinspection PyPackageRequirements
+    import win32event
+    import win32api
+    import winerror
     from win32com.client import Dispatch
 
     parser = Dispatch('Scripting.FileSystemObject')
     working_directory = Path(sys.executable).parent.resolve()
     version_raw = parser.GetFileVersion(working_directory / Path(sys.executable).name)
     __version__ = str(version_raw).rpartition('.')[0]
+    __mutex__ = win32event.CreateMutex(None, False, 'steam-tools-ng')
+
+    if win32api.GetLastError() == winerror.ERROR_ALREADY_EXISTS:
+        sys.exit(1)
