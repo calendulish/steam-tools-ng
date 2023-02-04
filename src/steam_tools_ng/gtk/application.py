@@ -310,7 +310,7 @@ class SteamToolsNG(Gtk.Application):
 
     @while_window_realized
     async def run_coupons(self, play_event: asyncio.Event) -> None:
-        coupons = core.coupons.main(self.main_window.fetch_coupon_event)
+        coupons = core.coupons.main(self.steamid, self.main_window.fetch_coupon_event)
 
         async for module_data in coupons:
             self.main_window.statusbar.clear("coupons")

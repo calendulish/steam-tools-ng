@@ -20,7 +20,7 @@ import asyncio
 import logging
 from typing import AsyncGenerator
 
-from stlib import universe, community, internals
+from stlib import universe, community, internals, webapi
 from . import utils
 from .. import i18n, config
 
@@ -28,11 +28,12 @@ _ = i18n.get_translation
 log = logging.getLogger(__name__)
 
 
-async def main(fetch_coupon_event: asyncio.Event) -> AsyncGenerator[utils.ModuleData, None]:
+async def main(steamid: universe.SteamId, fetch_coupon_event: asyncio.Event) -> AsyncGenerator[utils.ModuleData, None]:
     await fetch_coupon_event.wait()
 
     community_session = community.Community.get_session(0)
     internals_session = internals.Internals.get_session(0)
+    webapi_session = webapi.SteamWebAPI.get_session(0)
     botids = config.parser.get('coupons', 'botids')
     tokens = config.parser.get('coupons', 'tokens')
     appid = config.parser.getint('coupons', 'appid')
@@ -49,6 +50,13 @@ async def main(fetch_coupon_event: asyncio.Event) -> AsyncGenerator[utils.Module
     if len(bot_list) != len(token_list):
         yield utils.ModuleData(error=_("Invalid config. Each bot must have id and token."), info=_("Waiting Changes"))
         await asyncio.sleep(5)
+        return
+
+    try:
+        owned_games = await webapi_session.get_owned_games(steamid)
+    except aiohttp.ClientError:
+        yield utils.ModuleData(error=_("Failed when trying to get owned games"))
+        await asyncio.sleep(15)
         return
 
     yield utils.ModuleData(action="clear")
@@ -93,6 +101,7 @@ async def main(fetch_coupon_event: asyncio.Event) -> AsyncGenerator[utils.Module
             packageids = [int(id_) for id_ in package_link.split('=')[1].split(',')]
             blacklist = config.parser.get('coupons', 'blacklist')
             ignored_list = [coupon.split('% OFF')[-1].split('- Coupon')[0].strip() for coupon in blacklist.split(',')]
+            ignored_list += [game.name for game in owned_games]
             minimum_discount = config.parser.getint('coupons', 'minimum_discount')
 
             for package_id in packageids:
@@ -136,7 +145,8 @@ async def main(fetch_coupon_event: asyncio.Event) -> AsyncGenerator[utils.Module
                     await asyncio.sleep(.5)
 
                 if package_details.discount_percent:
-                    real_price = package_details.price - (package_details.price * package_details.discount_percent / 100)
+                    real_price = package_details.price - (
+                            package_details.price * package_details.discount_percent / 100)
                 else:
                     real_price = package_details.price - (package_details.price * coupon_discount / 100)
 
