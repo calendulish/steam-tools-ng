@@ -59,9 +59,9 @@ class SteamToolsNG(Gtk.Application):
         self.old_confirmations: List[community.Confirmation] = []
 
     @property
-    def main_window(self) -> window.Main:
+    def main_window(self) -> Optional[window.Main]:
         current_window = self.get_window_by_id(self._main_window_id)
-        assert isinstance(current_window, window.Main)
+
         return current_window
 
     @property
@@ -99,6 +99,10 @@ class SteamToolsNG(Gtk.Application):
             self.gtk_settings.props.gtk_application_prefer_dark_theme = False
 
     def do_activate(self) -> None:
+        if self._main_window_id != 0:
+            self.main_window.present()
+            return
+
         current_window = window.Main(application=self, title="Steam Tools NG")
         self._main_window_id = current_window.get_id()
         current_window.show()
@@ -126,6 +130,7 @@ class SteamToolsNG(Gtk.Application):
 
     async def async_activate(self) -> None:
         ssl_context = ssl.SSLContext()
+        assert isinstance(self.main_window, window.Main)
 
         if hasattr(sys, 'frozen'):
             _executable_path = Path(sys.executable).parent
