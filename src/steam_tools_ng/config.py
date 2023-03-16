@@ -76,18 +76,30 @@ translations = OrderedDict([
 ])
 
 giveaway_types = OrderedDict([
-    ('main', _("Main Giveaways")),
+    ('main', _("No restriction")),
     ('new', _("New Giveaways")),
     ('recommended', _("Recommended")),
-    ('wishlist', _("Wishlist Only")),
-    ('group', _('Group Only')),
+    ('wishlist', _("Wishlist")),
+    ('group', _('Group')),
+    ('dlc', _('DLC')),
+    ('region_restricted', _("Region Restricted")),
 ])
 
 giveaway_sort_types = OrderedDict([
-    ('name', _("Name")),
-    ('copies', _("Copies")),
-    ('points', _("Points")),
-    ('level', _("Level")),
+    ('name+', _("Name (A-Z)")),
+    ('name-', _("Name (Z-A)")),
+    ('copies+', _("Copies (0..99)")),
+    ('copies-', _("Copies (99..0)")),
+    ('points+', _("Points (0-50)")),
+    ('points-', _("Points (50-0)")),
+    ('level+', _("Level (0-100)")),
+    ('level-', _("Level (100-0)")),
+])
+
+steamgifts_modes = OrderedDict([
+    ('run_all_and_restart', _('Run all and restart')),
+    ('stop_after_minimum_and_wait', _('Stop after reach minimum points and wait')),
+    ('stop_after_minimum_and_restart', _('Stop after reach minimum points and restart')),
 ])
 
 plugins = OrderedDict([
@@ -140,11 +152,9 @@ default_config: Mapping[str, Mapping[str, Any]] = {
         'last_trade_time': 0,
         'minimum_discount': 75,
     },
-    'confirmations': {
-        'enable': True,
-    },
     'steamguard': {
         'enable': True,
+        'enable_confirmations': True,
     },
     'steamtrades': {
         'enable': True,
@@ -153,11 +163,11 @@ default_config: Mapping[str, Mapping[str, Any]] = {
     },
     'steamgifts': {
         'enable': True,
-        'wait_for_giveaways': 3700,
-        'giveaway_type': 'main',
         'developer_giveaways': 'True',
-        'sort': 'name',
-        'reverse_sorting': False,
+        'mode': 'run_all_and_restart',
+        'wait_after_each_strategy': 10,
+        'wait_after_full_cycle': 3700,
+        'minimum_points': 0,
     },
     'cardfarming': {
         'enable': True,
@@ -188,6 +198,23 @@ default_config: Mapping[str, Mapping[str, Any]] = {
         'password': '',
     },
 }
+
+for index in range(1, 4):
+    default_config[f'steamgifts_strategy{index}'] = {
+        'enable': True,
+        'minimum_points': 0,
+        'maximum_points': 50,
+        'minimum_level': 0,
+        'maximum_level': 100,
+        'minimum_copies': 0,
+        'maximum_copies': 999999,
+        'minimum_metascore': 0,
+        'maximum_metascore': 100,
+        'minimum_entries': 0,
+        'maximum_entries': 999999,
+        'restrict_type': "main",
+        'sort_type': "name+",
+    }
 
 
 def update_log_level(type_: str, level_string: str) -> None:
@@ -239,8 +266,11 @@ def init() -> None:
     validate_config("logger", "log_console_level", log_levels)
     validate_config("general", "theme", gtk_themes)
     validate_config("general", "language", translations)
-    validate_config("steamgifts", "giveaway_type", giveaway_types)
-    validate_config("steamgifts", "sort", giveaway_sort_types)
+    validate_config("steamgifts", "mode", steamgifts_modes)
+
+    for _index in range(1, 4):
+        validate_config(f"steamgifts_strategy{_index}", "restrict_type", giveaway_types)
+        validate_config(f"steamgifts_strategy{_index}", "sort_type", giveaway_sort_types)
 
     log_directory.mkdir(parents=True, exist_ok=True)
 

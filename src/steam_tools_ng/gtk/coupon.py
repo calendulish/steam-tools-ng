@@ -237,7 +237,7 @@ class CouponDialog(Gtk.Dialog):
                 self.has_status = True
                 return
 
-            confirmation_store = self.parent_window.confirmation_tree.store
+            confirmation_store = self.parent_window.confirmations_tree.store
             target = None
 
             while True:
