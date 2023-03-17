@@ -79,7 +79,7 @@ call :install aiohttp beautifulsoup4 rsa
 
 :: reinstall stlib with prebuilt library included
 :: currently we can't upload mingw builds to pypi (FIXME: version check)
-call :install --force-reinstall --no-deps https://github.com/ShyPixie/stlib/releases/download/v0.14.1.1/stlib-0.14.1-cp310-cp310-mingw_x86_64.whl
+call :install --force-reinstall --no-deps https://github.com/calendulish/stlib/releases/download/v0.14.1.1/stlib-0.14.1-cp310-cp310-mingw_x86_64.whl
 call :install stlib-plugins
 
 echo Installing optional dependencies

@@ -1,4 +1,4 @@
-#define DownloadPage 'https://github.com/ShyPixie/steam-tools-ng/releases/latest/download/steam-tools-ng-setup.exe'
+#define DownloadPage 'https://github.com/calendulish/steam-tools-ng/releases/latest/download/steam-tools-ng-setup.exe'
 #define AppName 'steam-tools-ng'
 #define FancyAppName 'Steam Tools NG'
 
@@ -10,8 +10,8 @@ AppName={#FancyAppName}
 AppVersion=latest
 AppCopyright=Lara Maia <dev@lara.monster> 2023
 AppPublisherURL=https://lara.monster
-AppSupportURL=https://github.com/ShyPixie/{#AppName}/issues
-AppUpdatesURL=https://github.com/ShyPixie/{#AppName}/releases
+AppSupportURL=https://github.com/calendulish/{#AppName}/issues
+AppUpdatesURL=https://github.com/calendulish/{#AppName}/releases
 WizardStyle=modern
 WizardSmallImageFile=logo.bmp
 SetupIconFile={#AppName}.ico

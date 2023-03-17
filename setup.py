@@ -259,7 +259,7 @@ setup(
     long_description_content_type='text/markdown',
     author='Lara Maia',
     author_email='dev@lara.monster',
-    url='https://github.com/ShyPixie/steam-tools-ng',
+    url='https://github.com/calendulish/steam-tools-ng',
     license='GPLv3',
     classifiers=classifiers,
     keywords='steam valve',

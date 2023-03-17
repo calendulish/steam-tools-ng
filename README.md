@@ -1,13 +1,13 @@
 [STNG] Steam Tools NG (formerly Steam Tools)
 ========================================
-[![STNG](https://lara.monster/archive/stng_last.png)](https://github.com/ShyPixie/steam-tools-ng)  
+[![STNG](https://lara.monster/archive/stng_last.png)](https://github.com/calendulish/steam-tools-ng)  
   
 [![transifex](https://img.shields.io/badge/transifex-contribute%20now-blue.svg?style=flat)](https://www.transifex.com/shypixie/steam-tools-ng)
-[![windows build status](https://badges.lara.monster/ShyPixie/.github/steam-tools-ng-windows-build)](https://github.com/ShyPixie/steam-tools-ng/actions/workflows/build.yml)
-[![linux build status](https://badges.lara.monster/ShyPixie/.github/steam-tools-ng-linux-build)](https://github.com/ShyPixie/steam-tools-ng/actions/workflows/build.yml)
+[![windows build status](https://badges.lara.monster/calendulish/.github/steam-tools-ng-windows-build)](https://github.com/calendulish/steam-tools-ng/actions/workflows/build.yml)
+[![linux build status](https://badges.lara.monster/calendulish/.github/steam-tools-ng-linux-build)](https://github.com/calendulish/steam-tools-ng/actions/workflows/build.yml)
 [![Quality](https://api.codiga.io/project/33951/score/svg)](https://app.codiga.io/project/33951/dashboard)
 [![GitHub license](https://img.shields.io/badge/license-GPLv3-brightgreen.svg?style=flat)](https://www.gnu.org/licenses/gpl-3.0.html)
-[![GitHub release](https://img.shields.io/github/release/ShyPixie/steam-tools-ng.svg?style=flat)](https://github.com/ShyPixie/steam-tools-ng/releases)
+[![GitHub release](https://img.shields.io/github/release/calendulish/steam-tools-ng.svg?style=flat)](https://github.com/calendulish/steam-tools-ng/releases)
 
 Some useful tools to use with steam client or compatible programs and websites.
 
@@ -60,7 +60,7 @@ Available modules | available options
 ```
 ___________________________________________________________________________________________
 
-You can request improvements and/or new features at https://github.com/ShyPixie/steam-tools-ng/issues
+You can request improvements and/or new features at https://github.com/calendulish/steam-tools-ng/issues
 
 The Steam Tools NG is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
