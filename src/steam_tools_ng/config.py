@@ -15,17 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-from collections import OrderedDict
-
 import asyncio
 import configparser
 import locale
 import logging
 import os
 import site
-import sys
+from collections import OrderedDict
 from pathlib import Path
-from typing import Any, Mapping
+
+import sys
+from typing import Any, Dict
 
 from stlib import plugins as stlib_plugins
 from . import i18n, logger_handlers
@@ -130,7 +130,7 @@ else:
 
 asyncio.set_event_loop(event_loop)
 
-default_config: Mapping[str, Mapping[str, Any]] = {
+default_config: Dict[str, Dict[str, Any]] = {
     'logger': {
         'log_directory': data_dir / 'steam-tools-ng',
         'log_level': 'debug',
@@ -199,9 +199,9 @@ default_config: Mapping[str, Mapping[str, Any]] = {
     },
 }
 
-for index in range(1, 4):
+for index in range(1, 6):
     default_config[f'steamgifts_strategy{index}'] = {
-        'enable': True,
+        'enable': False,
         'minimum_points': 0,
         'maximum_points': 50,
         'minimum_level': 0,
@@ -215,6 +215,9 @@ for index in range(1, 4):
         'restrict_type': "main",
         'sort_type': "name+",
     }
+
+    if index == 1:
+        default_config[f'steamgifts_strategy{index}']['enable'] = True
 
 
 def update_log_level(type_: str, level_string: str) -> None:

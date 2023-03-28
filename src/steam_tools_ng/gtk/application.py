@@ -188,9 +188,6 @@ class SteamToolsNG(Gtk.Application):
 
         modules: Dict[str, asyncio.Task[Any]] = {}
 
-        # TODO: Update core
-        return
-
         while self.main_window.get_realized():
             for module_name in config.plugins.keys():
                 task = modules.get(module_name, None)

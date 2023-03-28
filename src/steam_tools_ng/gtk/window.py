@@ -409,7 +409,7 @@ class Main(Gtk.ApplicationWindow):
         minimum_points = steamgifts_settings.new_item("minimum_points", _("Minimum points:"), Gtk.Entry, 0, 5)
         minimum_points.connect("changed", utils.on_digit_only_setting_changed)
 
-        for index in range(1, 4):
+        for index in range(1, 6):
             strategy_section = utils.Section(f"steamgifts_strategy{index}")
             strategy_section.stackup_section(_("Strategy {}").format(index), steamgifts_stack, scroll=True)
 
@@ -710,10 +710,10 @@ class Main(Gtk.ApplicationWindow):
                     enabled = config.parser.getboolean(plugin_name, "enable")
                     status = getattr(self, f'{plugin_name}_status')
 
-                    if enabled:
-                        status.set_status(_("Loading"))
-                    else:
+                    if not enabled:
+                        await asyncio.sleep(5)
                         status.set_status(_("Disabled"))
+                        status.set_info("")
 
             await asyncio.sleep(3)
 

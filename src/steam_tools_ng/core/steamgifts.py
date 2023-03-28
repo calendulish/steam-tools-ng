@@ -15,11 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import aiohttp
 import asyncio
 import logging
 import random
 from typing import AsyncGenerator
+
+import aiohttp
 
 from stlib import plugins, login
 from . import utils
@@ -37,12 +38,6 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
         steamgifts_session = steamgifts.Main.get_session(0)
     else:
         raise ImportError(_("Unable to find Steamgifts plugin."))
-
-    wait_for_giveaways = config.parser.getint("steamgifts", "wait_for_giveaways")
-    type_ = config.parser.get("steamgifts", "giveaway_type")
-    pinned = config.parser.get("steamgifts", "developer_giveaways")
-    sort = config.parser.get("steamgifts", "sort")
-    reverse = config.parser.getboolean("steamgifts", "reverse_sorting")
 
     try:
         await steamgifts_session.do_login()
@@ -81,84 +76,150 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
         await asyncio.sleep(20)
         return
 
-    try:
-        giveaways = await steamgifts_session.get_giveaways(type_, pinned_giveaways=pinned)
-    except aiohttp.ClientError:
-        yield utils.ModuleData(error=_("Check your connection. (server down?)"))
-        await asyncio.sleep(15)
-        return
+    pinned = config.parser.getboolean("steamgifts", "developer_giveaways")
+    points_to_preserve = config.parser.getint("steamgifts", "minimum_points")
+    mode = config.parser.get("steamgifts", "mode")
+    wait_after_each_strategy = config.parser.getint("steamgifts", "wait_after_each_strategy")
+    wait_after_full_cycle = config.parser.getint("steamgifts", "wait_after_full_cycle")
 
-    joined = False
+    for strategy_index in range(1, 6):
+        strategy = f"steamgifts_strategy{strategy_index}"
+        enabled = config.parser.get(strategy, "enable")
 
-    if giveaways:
-        if sort:
-            giveaways = sorted(
-                giveaways,
-                key=lambda giveaway_: getattr(giveaway_, sort),  # type: ignore
-                reverse=reverse,
-            )
-    else:
-        yield utils.ModuleData(status=_("No giveaways to join."))
-        joined = True
+        if not enabled:
+            yield utils.ModuleData(info=_("Strategy {} is disabled. Skipping.").format(strategy_index))
+            continue
 
-    for index, giveaway in enumerate(giveaways):
-        yield utils.ModuleData(level=(index, len(giveaway)))
-
-        module_data = utils.ModuleData(display=giveaway.id, info=giveaway.name)
-        max_ban_wait = random.randint(5, 15)
-
-        async for data in utils.timed_module_data(max_ban_wait, module_data):
-            yield data
+        type_ = config.parser.get(strategy, "restrict_type")
+        minimum_points = config.parser.getint(strategy, "minimum_points")
+        maximum_points = config.parser.getint(strategy, "maximum_points")
+        minimum_level = config.parser.getint(strategy, "minimum_level")
+        maximum_level = config.parser.getint(strategy, "maximum_level")
+        minimum_copies = config.parser.getint(strategy, "minimum_copies")
+        maximum_copies = config.parser.getint(strategy, "maximum_copies")
+        minimum_metascore = config.parser.getint(strategy, "minimum_metascore")
+        maximum_metascore = config.parser.getint(strategy, "maximum_metascore")
+        minimum_entries = config.parser.getint(strategy, "minimum_entries")
+        maximum_entries = config.parser.getint(strategy, "maximum_entries")
 
         try:
-            if await steamgifts_session.join(giveaway):
-                yield utils.ModuleData(
-                    display=giveaway.id,
-                    status=f"{_('Joined')} {giveaway.name} "
-                           f"(C:{giveaway.copies} P:{giveaway.points} L:{giveaway.level})",
-                )
-                joined = True
-            else:
-                yield utils.ModuleData(display=giveaway.id, error=_("Unable to join {}."))
-                await asyncio.sleep(5)
-                continue
+            giveaways = await steamgifts_session.get_giveaways(
+                type_,
+                (minimum_metascore, maximum_metascore),
+                (minimum_level, maximum_level),
+                (minimum_entries, maximum_entries),
+                (minimum_points, maximum_points),
+                (minimum_copies, maximum_copies),
+                pinned_giveaways=pinned,
+            )
         except aiohttp.ClientError:
             yield utils.ModuleData(error=_("Check your connection. (server down?)"))
             await asyncio.sleep(15)
-            joined = False
-            break
-        except steamgifts.NoGiveawaysError:
-            yield utils.ModuleData(error=_("No giveaways available to join."))
-            await asyncio.sleep(15)
-            continue
-        except steamgifts.GiveawayEndedError:
-            yield utils.ModuleData(error=_("Giveaway is already ended."))
-            await asyncio.sleep(5)
-            continue
-        except login.LoginError:
-            yield utils.ModuleData(error=_("Login is lost. Trying to relogin."))
-            await asyncio.sleep(5)
-            joined = False
-            break
-        except steamgifts.NoLevelError:
-            yield utils.ModuleData(error=_("User don't have required level to join."))
-            await asyncio.sleep(5)
-            continue
-        except steamgifts.NoPointsError:
-            yield utils.ModuleData(error=_("User don't have required points to join."))
-            await asyncio.sleep(5)
+            return
 
-            if steamgifts_session.user_info.points <= 2:
+        wait_enabled = False
+
+        if giveaways:
+            sort_type = config.parser.get(strategy, "sort_type")
+            sort_name = sort_type[:-1]
+            sort_direction = sort_type[-1]
+
+            giveaways = sorted(
+                giveaways,
+                key=lambda giveaway_: getattr(giveaway_, sort_name),
+                reverse=True if sort_direction == '-' else False,
+            )
+        else:
+            yield utils.ModuleData(status=_("No giveaways to join."))
+            wait_enabled = True
+
+        restart = False
+
+        for index, giveaway in enumerate(giveaways):
+            if steamgifts_session.user_info.points <= points_to_preserve:
+                yield utils.ModuleData(status=_("Minimum points reached."))
+                wait_enabled = True
+
+                if mode == 'stop_after_minimum_and_restart':
+                    restart = True
+
                 break
 
-            continue
+            yield utils.ModuleData(level=(index, len(giveaway)))
 
-    if not joined:
-        await asyncio.sleep(10)
-        return
+            module_data = utils.ModuleData(display=giveaway.id, info=giveaway.name)
+            max_ban_wait = random.randint(5, 15)
 
-    wait_offset = random.randint(wait_for_giveaways, wait_for_giveaways + 400)
-    module_data = utils.ModuleData(info=_("Waiting Changes"))
+            async for data in utils.timed_module_data(max_ban_wait, module_data):
+                yield data
+
+            try:
+                if await steamgifts_session.join(giveaway):
+                    yield utils.ModuleData(
+                        display=giveaway.id,
+                        status=f"{_('Joined')} {giveaway.name} "
+                               f"(C:{giveaway.copies} P:{giveaway.points} L:{giveaway.level})",
+                    )
+                    wait_enabled = True
+                else:
+                    yield utils.ModuleData(display=giveaway.id, error=_("Unable to join {}."))
+                    await asyncio.sleep(5)
+                    continue
+            except aiohttp.ClientError:
+                yield utils.ModuleData(error=_("Check your connection. (server down?)"))
+                await asyncio.sleep(15)
+                wait_enabled = False
+                break
+            except steamgifts.NoGiveawaysError:
+                yield utils.ModuleData(error=_("No giveaways available to join."))
+                await asyncio.sleep(15)
+                continue
+            except steamgifts.GiveawayEndedError:
+                yield utils.ModuleData(error=_("Giveaway is already ended."))
+                await asyncio.sleep(5)
+                continue
+            except login.LoginError:
+                yield utils.ModuleData(error=_("Login is lost. Trying to relogin."))
+                await asyncio.sleep(5)
+                wait_enabled = False
+                break
+            except steamgifts.NoLevelError:
+                yield utils.ModuleData(error=_("User don't have required level to join."))
+                await asyncio.sleep(5)
+                continue
+            except steamgifts.NoPointsError:
+                yield utils.ModuleData(error=_("User don't have required points to join."))
+                await asyncio.sleep(5)
+
+                if steamgifts_session.user_info.points <= 2:
+                    break
+
+                continue
+
+        if not wait_enabled:
+            await asyncio.sleep(10)
+            return
+
+        wait_offset = random.randint(
+            wait_after_each_strategy,
+            wait_after_each_strategy + int(wait_after_each_strategy / 6),
+        )
+
+        module_data = utils.ModuleData(info=_("Waiting before next strategy"))
+
+        async for data in utils.timed_module_data(wait_offset, module_data):
+            yield data
+
+        if restart:
+            yield utils.ModuleData(info=_("Restarting due to mode selection"))
+            break
+
+    wait_offset = random.randint(
+        wait_after_full_cycle,
+        wait_after_full_cycle + int(wait_after_full_cycle / 6),
+    )
+
+    module_data = utils.ModuleData(info=_("Waiting for next cycle"))
 
     async for data in utils.timed_module_data(wait_offset, module_data):
         yield data
