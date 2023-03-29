@@ -140,6 +140,12 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
         restart = False
 
         for index, giveaway in enumerate(giveaways):
+            module_data = utils.ModuleData(display=giveaway.id, info=giveaway.name)
+            max_ban_wait = random.randint(5, 15)
+
+            async for data in utils.timed_module_data(max_ban_wait, module_data):
+                yield data
+
             if steamgifts_session.user_info.points <= points_to_preserve:
                 yield utils.ModuleData(status=_("Minimum points reached."))
                 wait_enabled = True
@@ -150,12 +156,6 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
                 break
 
             yield utils.ModuleData(level=(index, len(giveaway)))
-
-            module_data = utils.ModuleData(display=giveaway.id, info=giveaway.name)
-            max_ban_wait = random.randint(5, 15)
-
-            async for data in utils.timed_module_data(max_ban_wait, module_data):
-                yield data
 
             try:
                 if await steamgifts_session.join(giveaway):
