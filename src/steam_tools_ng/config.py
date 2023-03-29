@@ -206,7 +206,7 @@ for index in range(1, 6):
         'maximum_points': 50,
         'minimum_level': 0,
         'maximum_level': 100,
-        'minimum_copies': 0,
+        'minimum_copies': 1,
         'maximum_copies': 999999,
         'minimum_metascore': 0,
         'maximum_metascore': 100,
