@@ -130,8 +130,8 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
                 reverse=True if sort_direction == '-' else False,
             )
         else:
-            yield utils.ModuleData(status=_("No giveaways to join."))
-            wait_enabled = True
+            yield utils.ModuleData(status=_("No giveaways to join for strategy {}. Skipping.").format(strategy_index))
+            continue
 
         restart = False
 
