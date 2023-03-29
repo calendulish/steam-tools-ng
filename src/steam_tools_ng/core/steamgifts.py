@@ -102,6 +102,10 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
         minimum_entries = config.parser.getint(strategy, "minimum_entries")
         maximum_entries = config.parser.getint(strategy, "maximum_entries")
 
+        max_ban_wait = random.randint(5, 15)
+        async for data in utils.timed_module_data(max_ban_wait, utils.ModuleData()):
+            yield data
+
         try:
             giveaways = await steamgifts_session.get_giveaways(
                 type_,
