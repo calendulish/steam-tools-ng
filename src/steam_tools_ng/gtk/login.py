@@ -145,7 +145,7 @@ class LoginDialog(Gtk.Dialog):
             self.__password_item.set_text(raw.decode())
         except (binascii.Error, UnicodeError, TypeError):
             log.warning(_("Password decode failed. Trying RAW."))
-            self.__password.set_text(encrypted_password)
+            self.__password_item.set_text(encrypted_password)
 
     @property
     def mail_code(self) -> str:
