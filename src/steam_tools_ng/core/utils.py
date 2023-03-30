@@ -41,6 +41,11 @@ async def timed_module_data(wait_offset: int, module_data: ModuleData) -> AsyncG
     info = module_data.info
     assert module_data.level == (0, 0), "level should not be used here"
 
+    # Prevent action to being executed multiple times
+    if module_data.action:
+        yield module_data
+        module_data.action = ''
+
     module_data.suppress_logging = True
     caller = inspect.currentframe().f_back
     log = logging.getLogger(caller.f_globals['__name__'])
