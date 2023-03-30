@@ -237,4 +237,4 @@ class SteamToolsNG:
     def on_quit(exit_code: int = 0) -> None:
         loop = asyncio.get_running_loop()
         loop.stop()
-        #sys.exit(exit_code)
+        # sys.exit(exit_code)

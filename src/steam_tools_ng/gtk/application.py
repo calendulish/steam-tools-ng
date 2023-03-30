@@ -379,6 +379,7 @@ class SteamToolsNG(Gtk.Application):
         dialog = about.AboutDialog(self.main_window)
         dialog.show()
 
+    # noinspection PyMethodMayBeStatic
     def on_exit_activate(self, *args: Any) -> None:
         loop = asyncio.get_running_loop()
         loop.stop()

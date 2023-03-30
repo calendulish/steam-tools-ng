@@ -95,9 +95,9 @@ executors = {}
 total_cards_remaining = 0
 
 
-def safe_exit(*args: Any) -> None:
+def safe_exit(*args: Any, **kwargs: Any) -> None:
     for executor in executors.values():
-        executor.shutdown()
+        executor.shutdown(*args, **kwargs)
 
 
 async def while_has_cards(
@@ -176,9 +176,9 @@ async def while_has_cards(
             else:
                 break
 
-        # noinspection PyProtectedMember
         global total_cards_remaining
         total_cards_remaining -= badge.cards - cards
+        # noinspection PyProtectedMember
         badge = badge._replace(cards=cards)
 
     utils.ModuleData(
