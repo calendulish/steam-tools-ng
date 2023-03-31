@@ -1,3 +1,73 @@
 [build-system]
 requires = ["setuptools", "wheel", "certifi", "cx_Freeze; sys_platform == 'win32'"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "steam-tools-ng"
+version = "3.0"
+description = "Steam Tools NG"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "GPLv3"}
+keywords = ["steam", "valve"]
+authors = [{email = "dev@lara.monster"}, {name = "Lara Maia"}]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: End Users/Desktop",
+  "Topic :: Games/Entertainment",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: Microsoft :: Windows :: Windows 10",
+  "Environment :: X11 Applications :: GTK",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Typing :: Typed"
+]
+
+dependencies = [
+  "pywin32; sys_platform == 'win32'",
+  "psutil; sys_platform == 'win32'",
+  "stlib>=1.0.7",
+  "stlib-plugins>=1.1",
+  "aiohttp",
+  "certifi"
+]
+
+[project.urls]
+homepage = "https://github.com/calendulish/steam-tools-ng"
+repository = "https://github.com"
+changelog = "https://github.com/calendulish/steam-tools-ng/releases"
+
+[project.scripts]
+steam-tools-ng = "steam_tools_ng.cli:main"
+steam-tools-ng-gui = "steam_tools_ng.gui:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.distutils.build_exe]
+packages = ["steam_tools_ng", "stlib-plugins", "gi", "win32com.client"]
+excludes = [
+  "tkinter",
+  "distutils",
+  "pydoc_data",
+  "unittest",
+  "xmlrpc",
+  "doctest",
+  "ftplib",
+  "lzma",
+  "pdb",
+  "py_compile",
+  "tarfile",
+  "webbrowser",
+  "mypy",
+  "pytest"
+]
+optimize = 2
+zip_include_packages = "*"
+zip_exclude_packages = [""]
