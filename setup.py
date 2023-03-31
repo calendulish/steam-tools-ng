@@ -229,56 +229,10 @@ def freeze_options() -> Mapping[str, Any]:
         "executables": executables,
     }
 
-
-classifiers = [
-    'Development Status :: 5 - Production/Stable',
-    'Intended Audience :: End Users/Desktop',
-    'Topic :: Games/Entertainment',
-    'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-    'Operating System :: POSIX :: Linux',
-    'Operating System :: Microsoft :: Windows :: Windows 10',
-    'Environment :: X11 Applications :: GTK',
-    'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.9',
-    'Programming Language :: Python :: 3.10',
-    'Programming Language :: Python :: 3.11',
-    'Typing :: Typed',
-]
-
-try:
-    with open('README.md') as readme:
-        long_description = readme.read()
-except FileNotFoundError:
-    long_description = ''
-
 setup(
-    name='steam-tools-ng',
-    version='2.1.2',
-    description="Steam Tools NG",
-    long_description=long_description,
-    long_description_content_type='text/markdown',
-    author='Lara Maia',
-    author_email='dev@lara.monster',
-    url='https://github.com/calendulish/steam-tools-ng',
-    license='GPLv3',
-    classifiers=classifiers,
-    keywords='steam valve',
     packages=find_packages('src'),
     package_dir={'': 'src'},
     include_package_data=True,
-    entry_points={'console_scripts': [
-        'steam-tools-ng-gui=steam_tools_ng.gui:main',
-        'steam-tools-ng=steam_tools_ng.cli:main',
-    ]},
-    install_requires=[
-        "pywin32; sys_platform == 'win32'",
-        "psutil; sys_platform == 'win32'",
-        'stlib>=1.0.7',
-        'stlib-plugins>=1.1',
-        'aiohttp',
-        'certifi',
-    ],
-    python_requires='>=3.9',
     cmdclass={'build_py': BuildTranslations},
     **freeze_options()
 )
