@@ -18,8 +18,9 @@
 import asyncio
 import contextlib
 import logging
-from gi.repository import Gtk
 from typing import Any, Dict, List, Tuple, Union
+
+from gi.repository import Gtk
 
 from stlib import universe, community
 from . import utils
@@ -216,31 +217,23 @@ class FinalizeDialog(Gtk.Dialog):
 
     async def batch_finalize(self) -> List[Tuple[Gtk.TreeIter, Dict[str, Any]]]:
         results = []
-        batch_status = utils.Status(20)
-        batch_status.set_pausable(False)
-        self.content_area.append(batch_status)
-        batch_status.get_label_widget().hide()
-        batch_status.set_info(_("Waiting Steam Server response"))
-        batch_status.show()
-        self.status.hide()
+        self.status.set_info(_("Waiting Steam Server response"))
+        progress = Gtk.LevelBar()
+        self.content_area.append(progress)
 
         confirmation_count = len(self.model)
 
         for index in range(confirmation_count):
-            self.iter = self.model[index].iter
-
-            batch_status.set_display(self.model[self.iter][1])
-
             try:
-                batch_status.set_level(index, confirmation_count)
+                progress.set_value(index)
+                progress.set_max_value(confirmation_count)
             except KeyError:
-                batch_status.set_level(0, 0)
+                progress.set_value(0)
+                progress.set_max_value(0)
 
             result = await self.finalize(True)
             results.append((self.iter, result))
 
-        batch_status.hide()
-        self.status.show()
         self.status.info(_("Updating tree"))
         for iter_, result in results:
             self.model.remove(iter_)
