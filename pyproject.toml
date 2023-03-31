@@ -29,8 +29,8 @@ classifiers = [
 dependencies = [
   "pywin32; sys_platform == 'win32'",
   "psutil; sys_platform == 'win32'",
-  "stlib>=1.0.7",
-  "stlib-plugins>=1.1",
+  "stlib~=1.0.7",
+  "stlib-plugins~=1.1",
   "aiohttp",
   "certifi"
 ]
