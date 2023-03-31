@@ -112,19 +112,6 @@ class AsyncButton(Gtk.Button):
 class StatusBar(Gtk.Grid):
     def __init__(self) -> None:
         super().__init__()
-        self.display = Gdk.Display.get_default()
-        self._style_provider = Gtk.CssProvider()
-        self._style_provider.load_from_data(
-            b"label.warning { background-color: darkblue; color: white; }"
-            b"label.critical {background-color: darkred; color: white; }"
-        )
-        self._style_context = self.get_style_context()
-        self._style_context.add_provider_for_display(
-            self.display,
-            self._style_provider,
-            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
-        )
-
         _separator = Gtk.Separator()
         self.attach(_separator, 0, 0, 1, 1)
 
@@ -205,6 +192,23 @@ class SimpleTextTree(Gtk.Grid):
 
         self.attach(self._lock_label, 0, 0, 1, 1)
 
+        self._disabled = False
+        self._disabled_label = Gtk.Label()
+        self._disabled_label.hide()
+        self._disabled_label.set_vexpand(True)
+        self._disabled_label.set_hexpand(True)
+
+        self._disabled_label.set_markup(
+            markup(
+                _("Disabled"),
+                background="#FF000077",
+                color="white",
+                font_size="xx-large",
+            )
+        )
+
+        self.attach(self._disabled_label, 0, 0, 1, 1)
+
         renderer = Gtk.CellRendererText()
 
         for index, header in enumerate(elements):
@@ -237,6 +241,23 @@ class SimpleTextTree(Gtk.Grid):
             self.set_sensitive(True)
             self._lock_label.hide()
             self._lock = False
+
+    @property
+    def disabled(self) -> bool:
+        return self._disabled
+
+    @disabled.setter
+    def disabled(self, disabled: bool) -> None:
+        if disabled:
+            self.set_focusable(False)
+            self.set_sensitive(False)
+            self._disabled_label.show()
+            self._disabled = True
+        else:
+            self.set_focusable(True)
+            self.set_sensitive(True)
+            self._disabled_label.hide()
+            self._disabled = False
 
     @property
     def store(self) -> Union[Gtk.TreeStore, Gtk.ListStore]:
@@ -286,16 +307,18 @@ def when_running(function: Callable[..., Any]) -> Callable[..., Any]:
 
 
 class Status(Gtk.Frame):
-    def __init__(self, display_size: int, label_text: str) -> None:
+    def __init__(self, display_size: int) -> None:
         super().__init__()
+
         # noinspection PyUnusedLocal
         self._default_display_text = ' '.join(['_' for n in range(1, display_size)])
         self._gtk_settings = Gtk.Settings.get_default()
-
-        self.set_label(label_text)
-        self.set_label_align(0.03)
+        self.set_margin_top(0)
+        self.set_margin_bottom(0)
 
         self._grid = Gtk.Grid()
+        self._grid.set_margin_top(10)
+        self._grid.set_margin_bottom(0)
         self.set_child(self._grid)
 
         self._display = ClickableLabel()
@@ -435,11 +458,10 @@ class Status(Gtk.Frame):
 
 
 class Section(Gtk.Grid):
-    def __init__(self, name: str, label: str) -> None:
+    def __init__(self, name: str) -> None:
         super().__init__()
         # for backward compatibility
         self.grid = self
-        self.label = label
 
         self.set_name(name)
         self.set_row_spacing(10)
@@ -466,7 +488,7 @@ class Section(Gtk.Grid):
     def new_item(
             self,
             name: str,
-            label: str,
+            label: Optional[str],
             widget: Type[Gtk.Widget],
             *grid_position: int,
             items: Optional[OrderedDict[str, str]] = None,
@@ -474,13 +496,16 @@ class Section(Gtk.Grid):
         bases = (widget,)
 
         body = {
-            'label': Gtk.Label(),
+            'label': None,
             '_section_name': None,
             '__init__': lambda item_: super(item_.__class__, item_).__init__(),
             'get_section_name': self.__get_section_name,
             'show': self.__show,
             'hide': self.__hide,
         }
+
+        if label:
+            body['label'] = Gtk.Label()
 
         section = self.get_name()
         option = name
@@ -493,12 +518,15 @@ class Section(Gtk.Grid):
         item.set_name(name)
         item._section_name = section
 
-        item.label.set_name(name)
-        item.label.set_text(label)
-        item.label.set_halign(Gtk.Align.START)
+        if item.label:
+            item.label.set_name(name)
+            item.label.set_text(label)
+            item.label.set_halign(Gtk.Align.START)
 
-        self.grid.attach(item.label, *grid_position, 1, 1)
-        self.grid.attach_next_to(item, item.label, Gtk.PositionType.RIGHT, 1, 1)
+            self.grid.attach(item.label, *grid_position, 1, 1)
+            self.grid.attach_next_to(item, item.label, Gtk.PositionType.RIGHT, 1, 1)
+        else:
+            self.grid.attach(item, *grid_position, 1, 1)
 
         if name.startswith('_'):
             return item
@@ -527,7 +555,7 @@ class Section(Gtk.Grid):
 
             item.set_active(current_option)
 
-        if isinstance(item, Gtk.CheckButton):
+        if isinstance(item, Gtk.CheckButton) or isinstance(item, Gtk.Switch):
             value = config.parser.getboolean(section, option)
             item.set_active(value)
 
@@ -539,9 +567,16 @@ class Section(Gtk.Grid):
 
         return item
 
-    def stackup_section(self, stack: Gtk.Stack) -> None:
+    def stackup_section(self, text: str, stack: Gtk.Stack, *, scroll: bool = False) -> None:
         name = self.get_name()
-        stack.add_titled(self, name, self.label)
+
+        if scroll:
+            scroll = Gtk.ScrolledWindow()
+            scroll.set_overlay_scrolling(True)
+            scroll.set_child(self)
+            stack.add_titled(scroll, name, text)
+        else:
+            stack.add_titled(self, name, text)
 
 
 def markup(text: str, **kwargs: Any) -> str:
@@ -673,3 +708,39 @@ def safe_task_callback(task: asyncio.Task[Any]) -> None:
         application = Gtk.Application.get_default()
 
         fatal_error_dialog(exception, stack, application.get_active_window())
+
+
+def on_setting_state_set(switch: Gtk.Switch, state: bool) -> None:
+    section = switch.get_section_name()
+    option = switch.get_name()
+
+    config.new(section, option, state)
+
+
+def on_setting_changed(entry: Gtk.Entry) -> None:
+    current_value = entry.get_text()
+    section = entry.get_section_name()
+    option = entry.get_name()
+
+    config.new(section, option, current_value)
+
+
+def on_digit_only_setting_changed(entry: Gtk.Entry) -> None:
+    current_value = entry.get_text()
+    section = entry.get_section_name()
+    option = entry.get_name()
+
+    if current_value.isdigit():
+        config.new(section, option, int(current_value))
+    else:
+        entry.handler_block_by_func(on_digit_only_setting_changed)
+        entry.set_text(remove_letters(current_value))
+        entry.handler_unblock_by_func(on_digit_only_setting_changed)
+
+
+def on_combo_setting_changed(combo: Gtk.ComboBoxText, items: OrderedDict[str, str]) -> None:
+    current_value = list(items)[combo.get_active()]
+    section = combo.get_section_name()
+    option = combo.get_name()
+
+    config.new(section, option, current_value)

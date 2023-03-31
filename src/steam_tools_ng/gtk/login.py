@@ -70,7 +70,7 @@ class LoginDialog(Gtk.Dialog):
         self.status = utils.SimpleStatus()
         self.content_area.append(self.status)
 
-        self.user_details_section = utils.Section("login", _("User Details"))
+        self.user_details_section = utils.Section("login")
         self.content_area.append(self.user_details_section)
 
         self.username_item = self.user_details_section.new_item("account_name", _("Username:"), Gtk.Entry, 0, 0)
@@ -99,7 +99,7 @@ class LoginDialog(Gtk.Dialog):
         self.advanced_login.connect("clicked", self.on_advanced_login_clicked)
         self.content_area.append(self.advanced_login)
 
-        self.advanced_login_section = utils.Section("login", _("Advanced Login"))
+        self.advanced_login_section = utils.Section("login")
         self.content_area.append(self.advanced_login_section)
 
         self.identity_secret_item = self.advanced_login_section.new_item(

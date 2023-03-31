@@ -63,7 +63,7 @@ class NewAuthenticatorDialog(Gtk.Dialog):
         self.status = utils.SimpleStatus()
         self.content_area.append(self.status)
 
-        self.user_details_section = utils.Section("Login", _("User Details"))
+        self.user_details_section = utils.Section("Login")
         self.content_area.append(self.user_details_section)
 
         self.sms_code_item = self.user_details_section.new_item("_sms_code", _("SMS Code:"), Gtk.Entry, 0, 1)
@@ -195,7 +195,7 @@ class NewAuthenticatorDialog(Gtk.Dialog):
 
             self.add_authenticator_button.hide()
 
-            revocation_status = utils.Status(6, _("Recovery Code"))
+            revocation_status = utils.Status(6)
             revocation_status.set_pausable(False)
             revocation_status.set_display(revocation_code)
             revocation_status.set_status('')

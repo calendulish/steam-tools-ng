@@ -141,7 +141,7 @@ class FinalizeDialog(Gtk.Dialog):
 
         self.set_size_request(0, 0)
         self.header_bar.set_show_title_buttons(False)
-        self.parent_window.confirmation_tree.lock = True
+        self.parent_window.confirmations_tree.lock = True
         loop = asyncio.get_event_loop()
         task: asyncio.Task[Union[Dict[str, Any], List[Tuple[Gtk.TreeIter, Dict[str, Any]]]]]
 
@@ -153,7 +153,7 @@ class FinalizeDialog(Gtk.Dialog):
         task.add_done_callback(self.on_task_finish)
 
     def on_task_finish(self, task: asyncio.Task[Any]) -> None:
-        self.parent_window.confirmation_tree.lock = False
+        self.parent_window.confirmations_tree.lock = False
         exception = task.exception()
 
         if exception and not isinstance(exception, asyncio.CancelledError):
@@ -216,7 +216,7 @@ class FinalizeDialog(Gtk.Dialog):
 
     async def batch_finalize(self) -> List[Tuple[Gtk.TreeIter, Dict[str, Any]]]:
         results = []
-        batch_status = utils.Status(20, "")
+        batch_status = utils.Status(20)
         batch_status.set_pausable(False)
         self.content_area.append(batch_status)
         batch_status.get_label_widget().hide()
