@@ -15,17 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import aiohttp
 import asyncio
 import contextlib
 import functools
 import itertools
 import logging
-import ssl
-import sys
-from gi.repository import Gio, Gtk
-from pathlib import Path
 from typing import Any, Optional, Dict, Callable, List
+
+import aiohttp
+from gi.repository import Gio, Gtk
 
 from stlib import universe, login, community, webapi, internals, plugins
 from . import about, settings, window, utils
@@ -129,16 +127,8 @@ class SteamToolsNG(Gtk.Application):
                 await asyncio.sleep(1)
 
     async def async_activate(self) -> None:
-        ssl_context = ssl.SSLContext()
         assert isinstance(self.main_window, window.Main)
-
-        if hasattr(sys, 'frozen'):
-            _executable_path = Path(sys.executable).parent
-            ssl_context.load_verify_locations(cafile=_executable_path / 'etc' / 'cacert.pem')
-
-        tcp_connector = aiohttp.TCPConnector(ssl=ssl_context)
-        http_session = aiohttp.ClientSession(raise_for_status=True, connector=tcp_connector)
-        login_session = await login.Login.new_session(0, api_url=self.api_url, http_session=http_session)
+        login_session = await login.Login.new_session(0, api_url=self.api_url)
 
         self.main_window.statusbar.set_warning("steamguard", _("Logging on Steam. Please wait!"))
         log.info(_("Logging on Steam"))

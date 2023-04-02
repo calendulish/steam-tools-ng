@@ -15,15 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import aiohttp
 import asyncio
 import contextlib
 import functools
 import logging
-import ssl
 import sys
-from pathlib import Path
 from typing import Optional, Any, Callable
+
+import aiohttp
 
 import stlib
 from stlib import plugins, universe, login, community, webapi, internals
@@ -124,15 +123,7 @@ class SteamToolsNG:
         await login_session.do_login(auto)
 
     async def async_activate(self) -> None:
-        ssl_context = ssl.SSLContext()
-
-        if hasattr(sys, 'frozen'):
-            _executable_path = Path(sys.executable).parent
-            ssl_context.load_verify_locations(cafile=_executable_path / 'etc' / 'cacert.pem')
-
-        tcp_connector = aiohttp.TCPConnector(ssl=ssl_context)
-        http_session = aiohttp.ClientSession(raise_for_status=True, connector=tcp_connector)
-        login_session = await login.Login.new_session(0, api_url=self.api_url, http_session=http_session)
+        login_session = await login.Login.new_session(0, api_url=self.api_url)
 
         utils.set_console(info=_("Logging on Steam. Please wait!"))
 
