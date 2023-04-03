@@ -217,13 +217,15 @@ class FinalizeDialog(Gtk.Dialog):
 
     async def batch_finalize(self) -> List[Tuple[Gtk.TreeIter, Dict[str, Any]]]:
         results = []
-        self.status.set_info(_("Waiting Steam Server response"))
+        self.status.info(_("Waiting Steam Server response"))
         progress = Gtk.LevelBar()
         self.content_area.append(progress)
 
         confirmation_count = len(self.model)
 
         for index in range(confirmation_count):
+            self.iter = self.model[index].iter
+
             try:
                 progress.set_value(index)
                 progress.set_max_value(confirmation_count)
