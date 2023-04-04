@@ -33,7 +33,7 @@ Graphical User Interface
 -------------
 
 ```
-Just run and follow on-screen instructions
+Just run steam-tools-ng-gui and follow on-screen instructions
 ```
 
 Command Line Interface
