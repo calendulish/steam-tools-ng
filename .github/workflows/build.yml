@@ -33,6 +33,44 @@ jobs:
             dist/
           if-no-files-found: error
           retention-days: 90
+  rpi-build:
+    if: ${{ always() }}
+    needs: delete-old-artifacts
+    runs-on: ubuntu-latest
+    name: Build ${{ matrix.arch }} ${{ matrix.python-version }}
+    strategy:
+      matrix:
+        include:
+        - arch: 'armv7'
+          distro: 'archarm_latest'
+        - arch: 'aarch64'
+          distro: 'archarm_latest'
+    steps:
+      - uses: actions/checkout@v3
+      - uses: uraimo/run-on-arch-action@v2
+        id: build
+        with:
+          arch: ${{ matrix.arch }}
+          distro: ${{ matrix.distro }}
+          githubToken: ${{ github.token }}
+          setup: mkdir -p "${PWD}/artifacts"
+          dockerRunArgs: --volume "${PWD}/artifacts:/artifacts"
+          env: |
+            release_name: "steam-tools-ng-RPI-${{ matrix.arch }}"
+          shell: /bin/sh
+          install: |
+            pacman -Syu --noconfirm
+            pacman -S --noconfirm python python-build tar
+          run: |
+            python -m build
+            cp -rfv dist/ /artifacts/
+      - uses: actions/upload-artifact@v3
+        with:
+          name: rpi_${{ matrix.arch }}
+          path: |
+            artifacts/dist/
+          if-no-files-found: error
+          retention-days: 90
   windows-build:
     if: ${{ always() }}
     needs: delete-old-artifacts
@@ -61,7 +99,7 @@ jobs:
           retention-days: 90
   deploy:
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [linux-build, windows-build]
+    needs: [linux-build, windows-build, rpi-build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -74,6 +112,8 @@ jobs:
             windows_3.11/installer/build/*.exe
             windows_3.10/build/*.zip
             windows_3.11/build/*.zip
+            rpi_aarch64/dist/*.whl
+            rpi_armv7/dist/*.whl
   pypi-upload:
     if: startsWith(github.ref, 'refs/tags/')
     needs: [deploy]
@@ -92,11 +132,12 @@ jobs:
           print_hash: true
   generate-badges:
     if: ${{ always() }}
-    needs: [linux-build, windows-build]
+    needs: [linux-build, windows-build, rpi-build]
     runs-on: ubuntu-latest
     env:
       linux-badge-color: ${{ needs.linux-build.result == 'success' && 'green' || 'red' }}
       windows-badge-color: ${{ needs.windows-build.result == 'success' && 'green' || 'red' }}
+      rpi-badge-color: ${{ needs.rpi-build.result == 'success' && 'green' || 'red' }}
     steps:
       - uses: RubbaBoy/BYOB@v1.3.0
         with:
@@ -113,6 +154,15 @@ jobs:
           LABEL: 'Windows build'
           STATUS: ${{ needs.windows-build.result }}
           COLOR: ${{ env.windows-badge-color }}
+          GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
+          REPOSITORY: ShyPixie/.github
+          ACTOR: ShyPixie
+      - uses: RubbaBoy/BYOB@v1.3.0
+        with:
+          NAME: steam-tools-ng-rpi-build
+          LABEL: 'RPI build'
+          STATUS: ${{ needs.rpi-build.result }}
+          COLOR: ${{ env.rpi-badge-color }}
           GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
           REPOSITORY: ShyPixie/.github
           ACTOR: ShyPixie
