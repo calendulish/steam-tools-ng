@@ -16,8 +16,8 @@ pushd %~dp0..\\.. || exit 1
 :: You should have received a copy of the GNU General Public License
 :: along with this program. If not, see http://www.gnu.org/licenses/.
 ::
-for /f %%i in ('findstr /c:"version=" setup.py') do (set APP_VERSION=%%i)
-set APP_VERSION=%APP_VERSION:~9,-2%
+for /f "tokens=*" %%i in ('findstr /c:"version =" pyproject.toml') do (set APP_VERSION=%%i)
+set APP_VERSION=%APP_VERSION:~11,-1%
 set ISCC="C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe"
 for /d %%i in (%cd%) do (set project_name=%%~ni)
 call set project_name=%%project_name:-=_%%
