@@ -146,8 +146,8 @@ jobs:
           STATUS: ${{ needs.linux-build.result }}
           COLOR: ${{ env.linux-badge-color }}
           GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
-          REPOSITORY: ShyPixie/.github
-          ACTOR: ShyPixie
+          REPOSITORY: calendulish/.github
+          ACTOR: calendulish
       - uses: RubbaBoy/BYOB@v1.3.0
         with:
           NAME: steam-tools-ng-windows-build
@@ -155,8 +155,8 @@ jobs:
           STATUS: ${{ needs.windows-build.result }}
           COLOR: ${{ env.windows-badge-color }}
           GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
-          REPOSITORY: ShyPixie/.github
-          ACTOR: ShyPixie
+          REPOSITORY: calendulish/.github
+          ACTOR: calendulish
       - uses: RubbaBoy/BYOB@v1.3.0
         with:
           NAME: steam-tools-ng-rpi-build
@@ -164,5 +164,5 @@ jobs:
           STATUS: ${{ needs.rpi-build.result }}
           COLOR: ${{ env.rpi-badge-color }}
           GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
-          REPOSITORY: ShyPixie/.github
-          ACTOR: ShyPixie
+          REPOSITORY: calendulish/.github
+          ACTOR: calendulish
