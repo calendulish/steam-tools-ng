@@ -75,6 +75,9 @@ class FinalizeDialog(Gtk.Dialog):
         self.status = utils.SimpleStatus()
         self.content_area.append(self.status)
 
+        self.progress = Gtk.LevelBar()
+        self.content_area.append(self.progress)
+
         self.yes_button = Gtk.Button()
         self.yes_button.set_label(_("Continue"))
         self.yes_button.connect("clicked", self.on_yes_button_clicked)
@@ -105,7 +108,7 @@ class FinalizeDialog(Gtk.Dialog):
 
             self.give_label.set_markup(
                 utils.markup(
-                    _("You are trading the following items with {}:").format(self.model[self.iter][4]),
+                    _("You are trading the following items with {}:").format(utils.unmarkup(self.model[self.iter][4])),
                     color='blue',
                 )
             )
@@ -133,20 +136,17 @@ class FinalizeDialog(Gtk.Dialog):
     def on_yes_button_clicked(self, button: Gtk.Button) -> None:
         button.hide()
         self.no_button.hide()
-
-        with contextlib.suppress(AttributeError):
-            self.give_label.hide()
-            self.give_tree.hide()
-            self.arrow.hide()
-            self.receive_tree.hide()
-
-        self.set_size_request(0, 0)
+        self.set_size_request(300, 60)
         self.header_bar.set_show_title_buttons(False)
         self.parent_window.confirmations_tree.lock = True
+
         loop = asyncio.get_event_loop()
         task: asyncio.Task[Union[Dict[str, Any], List[Tuple[Gtk.TreeIter, Dict[str, Any]]]]]
 
         if self.iter:
+            self.content_area.remove(self.grid)
+            self.content_area.remove(self.give_label)
+            self.content_area.remove(self.receive_label)
             task = loop.create_task(self.finalize())
         else:
             task = loop.create_task(self.batch_finalize())
@@ -192,6 +192,7 @@ class FinalizeDialog(Gtk.Dialog):
             return {}
 
         self.status.info(_("Waiting Steam Server (OP: {})").format(self.model[self.iter][1]))
+        result: Dict[str, Any] = {}
 
         # steam confirmation server isn't reliable
         for i in range(2):
@@ -211,27 +212,19 @@ class FinalizeDialog(Gtk.Dialog):
             except IndexError:
                 log.debug(_("Unable to remove tree path %s (already removed?). Ignoring."), self.iter)
 
-        # noinspection PyUnboundLocalVariable
         assert isinstance(result, dict)
         return result
 
     async def batch_finalize(self) -> List[Tuple[Gtk.TreeIter, Dict[str, Any]]]:
         results = []
         self.status.info(_("Waiting Steam Server response"))
-        progress = Gtk.LevelBar()
-        self.content_area.append(progress)
-
         confirmation_count = len(self.model)
 
         for index in range(confirmation_count):
             self.iter = self.model[index].iter
 
-            try:
-                progress.set_value(index)
-                progress.set_max_value(confirmation_count)
-            except KeyError:
-                progress.set_value(0)
-                progress.set_max_value(0)
+            self.progress.set_value(index)
+            self.progress.set_max_value(confirmation_count)
 
             result = await self.finalize(True)
             results.append((self.iter, result))
