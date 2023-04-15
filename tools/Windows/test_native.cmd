@@ -16,16 +16,20 @@ pushd %~dp0..\\.. || exit 1
 :: You should have received a copy of the GNU General Public License
 :: along with this program. If not, see http://www.gnu.org/licenses/.
 ::
-set PATH=I:\\gvsbuild-release\\bin;%PATH%
+set GVSBUILD=I:\\gvsbuild-release
+set PATH=%GVSBUILD%\\bin;%PATH%
+set LIB=%GVSBUILD%\\lib;%LIB%
 set PYTHONPATH=src
 
 for /f %%i in (
-    'python -c "import sys;print(sys.winver)" 2^>nul'
+    'py -c "import sys;print(sys.winver)" 2^>nul'
 ) do (
     set PYTHON_VERSION=%%i
 )
 
-for %%i in (I:\\gvsbuild-release\\python\\pycairo-*-cp%PYTHON_VERSION:.=%-cp%PYTHON_VERSION:.=%-win_amd64.whl) do (python -m pip install --force-reinstall %%i) || exit 1
-for %%i in (release\\python\\PyGObject-*-cp%PYTHON_VERSION:.=%-cp%PYTHON_VERSION:.=%-win_amd64.whl) do (python -m pip install --force-reinstall --no-deps %%i) || exit 1
+for %%i in (%GVSBUILD%\\python\\pycairo-*-cp%PYTHON_VERSION:.=%-cp%PYTHON_VERSION:.=%-win_amd64.whl) do (py -m pip install --force-reinstall %%i) || exit 1
+for %%i in (%GVSBUILD%\\python\\PyGObject-*-cp%PYTHON_VERSION:.=%-cp%PYTHON_VERSION:.=%-win_amd64.whl) do (py -m pip install --force-reinstall --no-deps %%i) || exit 1
 
-python -m steam_tools_ng.gui
+py -m pip install wheel certifi psutil pywin32 cx_Freeze || exit 1
+
+py
