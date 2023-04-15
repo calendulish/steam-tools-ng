@@ -199,9 +199,7 @@ class SteamToolsNG(Gtk.Application):
                             with contextlib.suppress(IndexError):
                                 await plugin.Main.new_session(0)
 
-                        if module_name == "coupons":
-                            task = asyncio.create_task(module(self.main_window.fetch_coupon_event))
-                        elif module_name == "confirmations":
+                        if module_name in ["coupons", "confirmations"]:
                             task = asyncio.create_task(module())
                         else:
                             self.main_window.set_status(module_name, status=_("Loading"))
@@ -257,17 +255,16 @@ class SteamToolsNG(Gtk.Application):
 
     @while_window_realized
     async def run_confirmations(self) -> None:
-        confirmations = core.confirmations.main(self.steamid)
+        wait_available = self.main_window.confirmations_tree.wait_available
+        confirmations = core.confirmations.main(self.steamid, wait_available)
 
         async for module_data in confirmations:
+            await wait_available()
+
             if module_data.error:
                 self.main_window.statusbar.set_critical('confirmations', module_data.error)
             else:
                 self.main_window.statusbar.clear('confirmations')
-
-            if self.main_window.confirmations_tree.lock:
-                await self.main_window.confirmations_tree.wait_available()
-                continue
 
             if module_data.action == "login":
                 await self.do_login(auto=True)
@@ -304,12 +301,15 @@ class SteamToolsNG(Gtk.Application):
                 self.main_window.statusbar.clear('confirmations')
 
     @while_window_realized
-    async def run_coupons(self, play_event: asyncio.Event) -> None:
-        coupons = core.coupons.main(self.steamid, self.main_window.fetch_coupon_event)
+    async def run_coupons(self) -> None:
+        fetch_coupon_event = self.main_window.fetch_coupon_event
+        wait_available = self.main_window.coupons_tree.wait_available
+        coupons = core.coupons.main(self.steamid, fetch_coupon_event, wait_available)
 
         async for module_data in coupons:
             self.main_window.statusbar.clear("coupons")
-            await play_event.wait()
+            await wait_available()
+            await fetch_coupon_event.wait()
 
             if module_data.error:
                 self.main_window.statusbar.set_critical("coupons", module_data.error)

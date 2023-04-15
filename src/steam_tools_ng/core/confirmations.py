@@ -15,9 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import aiohttp
+
 import logging
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Callable, Awaitable
+
+import aiohttp
 
 from stlib import login, universe, community
 from . import utils
@@ -27,7 +29,12 @@ _ = i18n.get_translation
 log = logging.getLogger(__name__)
 
 
-async def main(steamid: universe.SteamId) -> AsyncGenerator[utils.ModuleData, None]:
+async def main(
+        steamid: universe.SteamId,
+        wait_available: Callable[[], Awaitable[None]],
+) -> AsyncGenerator[utils.ModuleData, None]:
+    await wait_available()
+
     identity_secret = config.parser.get("login", "identity_secret")
     session = community.Community.get_session(0)
 

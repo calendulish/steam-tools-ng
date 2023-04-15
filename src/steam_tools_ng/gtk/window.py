@@ -628,12 +628,12 @@ class Main(Gtk.ApplicationWindow):
         self.connect("destroy", self.application.on_exit_activate)
         self.connect("close-request", self.application.on_exit_activate)
 
-        loop = asyncio.get_event_loop()
+        self.loop = asyncio.get_event_loop()
 
-        plugin_status_task = loop.create_task(self.plugin_status())
+        plugin_status_task = self.loop.create_task(self.plugin_status())
         plugin_status_task.add_done_callback(utils.safe_task_callback)
 
-        user_info_task = loop.create_task(self.user_info())
+        user_info_task = self.loop.create_task(self.user_info())
         user_info_task.add_done_callback(utils.safe_task_callback)
 
     @property
@@ -711,9 +711,11 @@ class Main(Gtk.ApplicationWindow):
                     status = getattr(self, f'{plugin_name}_status')
 
                     if not enabled:
-                        await asyncio.sleep(5)
-                        status.set_status(_("Disabled"))
-                        status.set_info("")
+                        def disabled_callback(status_) -> None:
+                            status_.set_status(_("Disabled"))
+                            status_.set_info("")
+
+                        self.loop.call_later(3, disabled_callback, status)
 
             await asyncio.sleep(3)
 
@@ -746,6 +748,8 @@ class Main(Gtk.ApplicationWindow):
 
     def on_stop_fetching_coupons(self, button: Gtk.Button) -> None:
         self.fetch_coupon_event.clear()
+        self.coupon_progress.set_value(0)
+        self.coupon_progress.set_max_value(0)
 
     def on_coupon_action(self, button: Gtk.Button, model: Union[Gtk.TreeModel, Gtk.TreeSelection] = None) -> None:
         if model:
@@ -909,4 +913,4 @@ class Main(Gtk.ApplicationWindow):
             self.destroy()
 
         login_dialog.status.info(_("Successful!\nExiting..."))
-        asyncio.get_event_loop().call_later(3, reset_password_callback)
+        self.loop.call_later(3, reset_password_callback)

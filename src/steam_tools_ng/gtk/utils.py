@@ -221,7 +221,7 @@ class SimpleTextTree(Gtk.Grid):
             self._view.append_column(column)
 
     async def wait_available(self) -> None:
-        while self.lock:
+        while self.lock or self.disabled:
             await asyncio.sleep(1)
 
     @property

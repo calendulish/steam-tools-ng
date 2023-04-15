@@ -15,10 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import aiohttp
 import asyncio
 import logging
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Callable, Awaitable
+
+import aiohttp
 
 from stlib import universe, community, internals, webapi
 from . import utils
@@ -28,7 +29,12 @@ _ = i18n.get_translation
 log = logging.getLogger(__name__)
 
 
-async def main(steamid: universe.SteamId, fetch_coupon_event: asyncio.Event) -> AsyncGenerator[utils.ModuleData, None]:
+async def main(
+        steamid: universe.SteamId,
+        fetch_coupon_event: asyncio.Event,
+        wait_available: Callable[[], Awaitable[None]],
+) -> AsyncGenerator[utils.ModuleData, None]:
+    await wait_available()
     await fetch_coupon_event.wait()
 
     community_session = community.Community.get_session(0)
