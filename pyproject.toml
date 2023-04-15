@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "steam-tools-ng"
-version = "3.0"
+version = "3.0.1"
 description = "Steam Tools NG"
 readme = "README.md"
 requires-python = ">=3.9"
