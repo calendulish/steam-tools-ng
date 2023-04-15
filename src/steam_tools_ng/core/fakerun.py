@@ -15,14 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import aiohttp
 import asyncio
 from subprocess import call
 from typing import AsyncGenerator, Optional, List
 
-from stlib import webapi, client, universe, community
+import aiohttp
+
+from stlib import webapi, universe, community
 from . import utils
 from .. import i18n, config
+
+# TODO: Workaround for SteamAPIExecutor on Windows when freezed
+from .utils import client
 
 _ = i18n.get_translation
 

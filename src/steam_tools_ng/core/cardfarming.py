@@ -15,82 +15,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import aiohttp
 import asyncio
-import atexit
-import contextlib
 import random
-import sys
 import time
-from pathlib import Path
 from subprocess import call
 from typing import AsyncGenerator, Dict, Optional, Any
 
-from stlib import webapi, client, universe, community
+import aiohttp
+
+from stlib import webapi, universe, community
 from . import utils
 from .. import i18n, config
 
-if sys.platform == 'win32':
-    from psutil import Popen, NoSuchProcess
+# TODO: Workaround for SteamAPIExecutor on Windows when freezed
+from .utils import client
 
 _ = i18n.get_translation
-
-
-# FIXME: Workaround for keyboard lag when running games on GUI on Windows
-# FIXME: https://gitlab.gnome.org/GNOME/gtk/-/issues/2015
-# FIXME: L36:91
-def killall(process: 'Popen') -> None:
-    if not process.is_running():
-        return
-
-    for child in process.children(recursive=True):
-        with contextlib.suppress(NoSuchProcess):
-            child.kill()
-            child.wait()
-
-    process.kill()
-    process.wait()
-
-
-class SteamAPIExecutorWorkaround:
-    def __init__(self, appid: int, *args: Any, **kwargs: Any) -> None:
-        self.process = None
-        self.appid = appid
-        self._is_running = False
-
-        if sys.platform == 'win32':
-            if getattr(sys, 'frozen', False):
-                executor_path = [str(Path(sys.executable).parent / 'steam-api-executor.exe'), str(self.appid)]
-            else:
-                executor_path = [sys.executable, '-m', 'steam_tools_ng.steam_api_executor', str(self.appid)]
-
-            self.process = Popen(executor_path, creationflags=0x08000000)
-            self._is_running = True
-            atexit.register(killall, self.process)
-        else:
-            self.executor = _SteamAPIExecutor(appid, *args, **kwargs)
-
-    def is_running(self) -> bool:
-        if sys.platform == 'win32':
-            return self._is_running
-        else:
-            return self.executor.is_running()
-
-    def shutdown(self, *args: Any, **kwargs: Any) -> None:
-        if sys.platform == 'win32':
-            killall(self.process)
-            self._is_running = False
-        else:
-            self.executor.shutdown(*args, **kwargs)
-
-
-if 'gtk' in sys.modules:
-    _SteamAPIExecutor = client.SteamAPIExecutor
-    client.SteamAPIExecutor = SteamAPIExecutorWorkaround
-
-# FIXME: L36:91
-# FIXME: ---- #
-
 executors = {}
 total_cards_remaining = 0
 
@@ -243,6 +183,9 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> AsyncGener
 
     while True:
         for appid in generators.keys():
+            # TODO: On Windows processes can't answer too fast due executor workaround
+            await asyncio.sleep(1)
+
             progress_coro = anext(generators[appid])
             assert asyncio.iscoroutine(progress_coro)
 
