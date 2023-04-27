@@ -15,18 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-from collections import OrderedDict
-from xml.etree import ElementTree
-
 import asyncio
 import functools
 import html
 import logging
 import traceback
-from gi.repository import Gtk, Gdk
+from collections import OrderedDict
 from traceback import StackSummary
 from types import FrameType
 from typing import Any, Callable, List, Optional, Union, Type, Tuple
+from xml.etree import ElementTree
+
+from gi.repository import Gtk, Gdk
 
 from stlib import internals
 from . import async_gtk
@@ -660,13 +660,15 @@ def fatal_error_dialog(
         exception: BaseException,
         stack: Optional[Union[StackSummary, List[FrameType]]] = None,
         transient: Optional[Gtk.Window] = None,
+        title: str = _("Fatal Error"),
 ) -> None:
     log.critical("%s: %s", type(exception).__name__, str(exception))
 
     error_dialog = Gtk.MessageDialog()
+    error_dialog.set_size_request(700, 0)
     error_dialog.set_transient_for(transient)
-    error_dialog.set_title(_("Fatal Error"))
-    error_dialog.set_markup(f"{type(exception).__name__}: {str(exception)}")
+    error_dialog.set_title(title)
+    error_dialog.set_markup(f"{type(exception).__name__} > {str(exception)}")
     error_dialog.set_modal(True)
 
     message_area = error_dialog.get_message_area()

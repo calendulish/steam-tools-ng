@@ -16,12 +16,11 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-from multiprocessing import freeze_support
-
 import argparse
 import logging
 import sys
 import textwrap
+from multiprocessing import freeze_support
 from pathlib import Path
 
 from steam_tools_ng import config, i18n, __version__
@@ -53,6 +52,20 @@ def main() -> None:
         action='store',
         nargs='?',
         help='Start a module',
+    )
+
+    command_parser.add_argument(
+        '--config-dir',
+        action='store_true',
+        help='Shows directory used to save config files',
+        dest='config_dir'
+    )
+
+    command_parser.add_argument(
+        '--log-dir',
+        action='store_true',
+        help='Shows directory used to save log files',
+        dest='log_dir',
     )
 
     command_parser.add_argument(
@@ -95,6 +108,14 @@ def main() -> None:
 
     if console_params.version:
         print(__version__)
+        sys.exit(0)
+
+    if console_params.config_dir:
+        print(config.config_file_directory)
+        sys.exit(0)
+
+    if console_params.log_dir:
+        print(config.parser.get("logger", "log_directory"))
         sys.exit(0)
 
     if console_params.reset:

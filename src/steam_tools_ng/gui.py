@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-
+import asyncio
 import os
 import sys
 
@@ -38,8 +38,9 @@ from subprocess import call
 from typing import Optional, Any
 
 from steam_tools_ng import config, i18n
-from steam_tools_ng.gtk import application
+from steam_tools_ng.gtk import application, about
 from steam_tools_ng.gtk import async_gtk, utils
+from gi.repository import Gtk
 
 _ = i18n.get_translation
 log = logging.getLogger(__name__)
@@ -48,7 +49,7 @@ log = logging.getLogger(__name__)
 class GraphicalArgParser(argparse.ArgumentParser):
     def _print_message(self, message: str, file: Optional[Any] = None) -> None:
         if message:
-            utils.fatal_error_dialog(Exception(message), [])
+            utils.fatal_error_dialog(type('Info', (Exception,), {})(message), title="")
 
 
 def main() -> None:
@@ -89,7 +90,24 @@ def main() -> None:
         dest='reset_password',
     )
 
+    command_parser.add_argument(
+        '-v', '--version',
+        action='store_true',
+        help='Show version',
+        dest='version',
+    )
+
     console_params = command_parser.parse_args()
+
+    if console_params.version:
+        dialog = about.AboutDialog(None)
+        dialog.show()
+        dialog.connect("close-request", lambda widget: asyncio.get_event_loop().stop())
+
+        if not Gtk.Application.get_default():
+            async_gtk.run()
+
+        sys.exit(0)
 
     if console_params.config_dir:
         call(f'{config.file_manager} {config.config_file_directory}')
