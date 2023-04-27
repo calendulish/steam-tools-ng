@@ -757,7 +757,7 @@ class Main(Gtk.ApplicationWindow):
         else:
             coupon_dialog = coupon.CouponDialog(self, self.application)
 
-        coupon_dialog.show()
+        coupon_dialog.present()
 
     def on_validate_confirmations(
             self,
@@ -780,7 +780,7 @@ class Main(Gtk.ApplicationWindow):
                 *model.get_selected()
             )
 
-        finalize_dialog.show()
+        finalize_dialog.present()
 
     @staticmethod
     def on_coupon_double_clicked(view: Gtk.TreeView, path: Gtk.TreePath, column: Gtk.TreeViewColumn) -> None:
@@ -877,9 +877,9 @@ class Main(Gtk.ApplicationWindow):
         login_dialog = LoginDialog(self, self.application)
         login_dialog.status.info(_("Reseting... Please wait!"))
         login_dialog.set_deletable(False)
-        login_dialog.user_details_section.hide()
-        login_dialog.advanced_login.hide()
-        login_dialog.show()
+        login_dialog.user_details_section.set_visible(False)
+        login_dialog.advanced_login.set_visible(False)
+        login_dialog.present()
         await asyncio.sleep(3)
 
         config.config_file.unlink(missing_ok=True)
@@ -892,19 +892,19 @@ class Main(Gtk.ApplicationWindow):
         login_dialog = LoginDialog(self, self.application)
         login_dialog.shared_secret_item.set_text('')
         login_dialog.identity_secret_item.set_text('')
-        login_dialog.show()
+        login_dialog.present()
 
     def on_new_authenticator_clicked(self, button: Gtk.Button) -> None:
         new_authenticator_dialog = NewAuthenticatorDialog(self, self.application)
-        new_authenticator_dialog.show()
+        new_authenticator_dialog.present()
 
     def on_reset_password_clicked(self, button: Gtk.Button) -> None:
         login_dialog = LoginDialog(self, self.application)
         login_dialog.status.info(_("Removing saved password..."))
-        login_dialog.user_details_section.hide()
-        login_dialog.advanced_login.hide()
+        login_dialog.user_details_section.set_visible(False)
+        login_dialog.advanced_login.set_visible(False)
         login_dialog.set_deletable(False)
-        login_dialog.show()
+        login_dialog.present()
 
         config.new("login", "password", "")
 

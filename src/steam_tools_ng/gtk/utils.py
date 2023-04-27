@@ -177,7 +177,7 @@ class SimpleTextTree(Gtk.Grid):
 
         self._lock = False
         self._lock_label = Gtk.Label()
-        self._lock_label.hide()
+        self._lock_label.set_visible(False)
         self._lock_label.set_vexpand(True)
         self._lock_label.set_hexpand(True)
 
@@ -194,7 +194,7 @@ class SimpleTextTree(Gtk.Grid):
 
         self._disabled = False
         self._disabled_label = Gtk.Label()
-        self._disabled_label.hide()
+        self._disabled_label.set_visible(False)
         self._disabled_label.set_vexpand(True)
         self._disabled_label.set_hexpand(True)
 
@@ -234,12 +234,12 @@ class SimpleTextTree(Gtk.Grid):
             log.debug(_("Waiting another process"))
             self.set_focusable(False)
             self.set_sensitive(False)
-            self._lock_label.show()
+            self._lock_label.set_visible(True)
             self._lock = True
         else:
             self.set_focusable(True)
             self.set_sensitive(True)
-            self._lock_label.hide()
+            self._lock_label.set_visible(False)
             self._lock = False
 
     @property
@@ -251,12 +251,12 @@ class SimpleTextTree(Gtk.Grid):
         if disabled:
             self.set_focusable(False)
             self.set_sensitive(False)
-            self._disabled_label.show()
+            self._disabled_label.set_visible(True)
             self._disabled = True
         else:
             self.set_focusable(True)
             self.set_sensitive(True)
-            self._disabled_label.hide()
+            self._disabled_label.set_visible(False)
             self._disabled = False
 
     @property
@@ -405,9 +405,9 @@ class Status(Gtk.Frame):
 
     def set_pausable(self, value: bool = True) -> None:
         if value is True:
-            self._play_pause_button.show()
+            self._play_pause_button.set_visible(True)
         else:
-            self._play_pause_button.hide()
+            self._play_pause_button.set_visible(False)
 
     @when_running
     def set_display(self, text: str) -> None:
@@ -476,14 +476,9 @@ class Section(Gtk.Grid):
         return item._section_name
 
     @staticmethod
-    def __show(item: 'Item') -> None:
-        item.label.show()
-        super(item.__class__, item).show()
-
-    @staticmethod
-    def __hide(item: 'Item') -> None:
-        item.label.hide()
-        super(item.__class__, item).hide()
+    def __set_visible(item: 'Item', state: bool) -> None:
+        item.label.set_visible(state)
+        super(item.__class__, item).set_visible(state)
 
     def new_item(
             self,
@@ -500,8 +495,7 @@ class Section(Gtk.Grid):
             '_section_name': None,
             '__init__': lambda item_: super(item_.__class__, item_).__init__(),
             'get_section_name': self.__get_section_name,
-            'show': self.__show,
-            'hide': self.__hide,
+            'set_visible': self.__set_visible,
         }
 
         if label:
@@ -691,7 +685,7 @@ def fatal_error_dialog(
     error_dialog.add_button(_('Ok'), Gtk.ResponseType.OK)
     error_dialog.connect("response", callback)
 
-    error_dialog.show()
+    error_dialog.present()
 
     # main application can be not available (like on initialization process)
     if not Gtk.Application.get_default():

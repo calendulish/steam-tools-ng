@@ -103,7 +103,7 @@ class SteamToolsNG(Gtk.Application):
 
         current_window = window.Main(application=self, title="Steam Tools NG")
         self._main_window_id = current_window.get_id()
-        current_window.show()
+        current_window.present()
 
         loop = asyncio.get_event_loop()
         task = loop.create_task(self.async_activate())
@@ -112,7 +112,7 @@ class SteamToolsNG(Gtk.Application):
     async def do_login(self, *, block: bool = True, auto: bool = False) -> None:
         login_dialog = gtk_login.LoginDialog(self.main_window, self)
         login_dialog.set_deletable(False)
-        login_dialog.show()
+        login_dialog.present()
 
         if auto:
             encrypted_password = config.parser.get("login", "password")
@@ -363,11 +363,11 @@ class SteamToolsNG(Gtk.Application):
 
     def on_settings_activate(self, *args: Any) -> None:
         settings_dialog = settings.SettingsDialog(self.main_window, self)
-        settings_dialog.show()
+        settings_dialog.present()
 
     def on_about_activate(self, *args: Any) -> None:
         dialog = about.AboutDialog(self.main_window)
-        dialog.show()
+        dialog.present()
 
     # noinspection PyMethodMayBeStatic
     def on_exit_activate(self, *args: Any) -> None:

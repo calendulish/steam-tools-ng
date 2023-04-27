@@ -109,7 +109,7 @@ class NewAuthenticatorDialog(Gtk.Dialog):
     async def on_add_authenticator_clicked(self, button: Gtk.Button) -> None:
         self.status.info(_("Retrieving user data"))
         button.set_sensitive(False)
-        self.user_details_section.hide()
+        self.user_details_section.set_visible(False)
         self.set_size_request(0, 0)
 
         if not self.oauth_token or not self.steamid:
@@ -143,7 +143,7 @@ class NewAuthenticatorDialog(Gtk.Dialog):
                 self.application.on_exit_activate()
             else:
                 self.status.info(_("Enter bellow the code received by SMS\nand click on 'Add Authenticator' button"))
-                self.user_details_section.show()
+                self.user_details_section.set_visible(True)
                 self.sms_code_item.set_text('')
                 self.sms_code_item.grab_focus()
             finally:
@@ -162,12 +162,12 @@ class NewAuthenticatorDialog(Gtk.Dialog):
             )
         except webapi.SMSCodeError:
             self.status.info(_("Invalid SMS Code. Please,\ncheck the code and try again."))
-            self.user_details_section.show()
+            self.user_details_section.set_visible(True)
             self.sms_code_item.set_text('')
             self.sms_code_item.grab_focus()
         except aiohttp.ClientError:
             self.status.error(_("Check your connection. (server down?)"))
-            self.user_details_section.show()
+            self.user_details_section.set_visible(True)
             self.sms_code_item.set_text('')
             self.sms_code_item.grab_focus()
         except Exception as exception:
@@ -193,7 +193,7 @@ class NewAuthenticatorDialog(Gtk.Dialog):
 
             revocation_code = self._login_data.auth['revocation_code']
 
-            self.add_authenticator_button.hide()
+            self.add_authenticator_button.set_visible(False)
 
             revocation_status = utils.Status(6)
             revocation_status.set_pausable(False)
@@ -201,7 +201,7 @@ class NewAuthenticatorDialog(Gtk.Dialog):
             revocation_status.set_status('')
             self.content_area.append(revocation_status)
 
-            revocation_status.show()
+            revocation_status.set_visible(True)
 
             self.set_deletable(False)
 

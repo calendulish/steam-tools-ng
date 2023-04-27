@@ -116,7 +116,6 @@ class Login:
 
         if not self.shared_secret or not self.identity_secret:
             log.warning(_("No shared secret found. Trying to log-in without two-factor authentication."))
-            # self.code_item.show()
 
         kwargs['shared_secret'] = self.shared_secret
         kwargs['authenticator_code'] = self.steam_code

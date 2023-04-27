@@ -91,8 +91,8 @@ class FinalizeDialog(Gtk.Dialog):
         if self.iter is None or not model:
             self.status.error(_("You must select something"))
             self.header_bar.set_show_title_buttons(True)
-            self.yes_button.hide()
-            self.no_button.hide()
+            self.yes_button.set_visible(False)
+            self.no_button.set_visible(False)
         elif self.iter is False:
             self.status.info(
                 _("Do you really want to {} ALL confirmations?\nIt can't be undone!").format(self.action.upper())
@@ -134,8 +134,8 @@ class FinalizeDialog(Gtk.Dialog):
         self.connect('response', lambda dialog, response_id: self.destroy())
 
     def on_yes_button_clicked(self, button: Gtk.Button) -> None:
-        button.hide()
-        self.no_button.hide()
+        button.set_visible(False)
+        self.no_button.set_visible(False)
         self.set_size_request(300, 60)
         self.header_bar.set_show_title_buttons(False)
         self.parent_window.confirmations_tree.lock = True
@@ -175,7 +175,7 @@ class FinalizeDialog(Gtk.Dialog):
                 )
 
                 self.header_bar.set_show_title_buttons(True)
-                self.yes_button.hide()
+                self.yes_button.set_visible(False)
         else:
             self.destroy()
 

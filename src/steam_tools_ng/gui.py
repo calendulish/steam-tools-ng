@@ -101,7 +101,7 @@ def main() -> None:
 
     if console_params.version:
         dialog = about.AboutDialog(None)
-        dialog.show()
+        dialog.present()
         dialog.connect("close-request", lambda widget: asyncio.get_event_loop().stop())
 
         if not Gtk.Application.get_default():

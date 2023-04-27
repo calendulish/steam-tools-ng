@@ -82,15 +82,15 @@ class CouponDialog(Gtk.Dialog):
         if self.iter and trade_time < 120:
             self.status.error(_("You must wait {} seconds to get another coupon").format(120 - trade_time))
             self.header_bar.set_show_title_buttons(True)
-            self.yes_button.hide()
-            self.no_button.hide()
+            self.yes_button.set_visible(False)
+            self.no_button.set_visible(False)
             return
 
         if self.iter is None:
             self.status.error(_("You must select something"))
             self.header_bar.set_show_title_buttons(True)
-            self.yes_button.hide()
-            self.no_button.hide()
+            self.yes_button.set_visible(False)
+            self.no_button.set_visible(False)
         elif self.iter is False:
             self.status.info(
                 _(
@@ -112,8 +112,8 @@ class CouponDialog(Gtk.Dialog):
         self.connect('response', lambda dialog, response_id: self.destroy())
 
     def on_yes_button_clicked(self, button: Gtk.Button, mode: str) -> None:
-        button.hide()
-        self.no_button.hide()
+        button.set_visible(False)
+        self.no_button.set_visible(False)
 
         self.set_size_request(0, 0)
         self.header_bar.set_show_title_buttons(False)
@@ -152,7 +152,7 @@ class CouponDialog(Gtk.Dialog):
                 )
 
                 self.header_bar.set_show_title_buttons(True)
-                self.yes_button.hide()
+                self.yes_button.set_visible(False)
         else:
             config.new("coupons", "last_trade_time", int(time.time()))
 
@@ -179,7 +179,7 @@ class CouponDialog(Gtk.Dialog):
         except ValueError:
             self.status.info(_("Your steamid is invalid. (are you logged in?)"))
             self.header_bar.set_show_title_buttons(True)
-            self.yes_button.hide()
+            self.yes_button.set_visible(False)
             self.has_status = True
             return
 
@@ -207,7 +207,7 @@ class CouponDialog(Gtk.Dialog):
         except ValueError:
             self.status.info(_("botid to donation is invalid. Check your config."))
             self.header_bar.set_show_title_buttons(True)
-            self.yes_button.hide()
+            self.yes_button.set_visible(False)
             self.has_status = True
             return
 
@@ -219,7 +219,7 @@ class CouponDialog(Gtk.Dialog):
         if 'needs_email_confirmation' in json_data and json_data['needs_email_confirmation']:
             self.status.info(_('You will need to manually confirm the trade offer. Check your email.'))
             self.header_bar.set_show_title_buttons(True)
-            self.yes_button.hide()
+            self.yes_button.set_visible(False)
 
             # FIXME: track tradeoffer and wait for email confirmation
             self.has_status = True
@@ -233,7 +233,7 @@ class CouponDialog(Gtk.Dialog):
                 ))
 
                 self.header_bar.set_show_title_buttons(True)
-                self.yes_button.hide()
+                self.yes_button.set_visible(False)
                 # FIXME: track and wait for manual confirmation
                 self.has_status = True
                 return
@@ -263,5 +263,5 @@ class CouponDialog(Gtk.Dialog):
                 confirmation_store, target,
             )
 
-            finalize_dialog.show()
+            finalize_dialog.present()
             finalize_dialog.yes_button.emit('clicked')
