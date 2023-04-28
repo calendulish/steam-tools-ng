@@ -576,6 +576,30 @@ class Section(Gtk.Grid):
             stack.add_titled(self, name, text)
 
 
+class StatusWindowBase(Gtk.Window):
+    def __init__(self, parent_window: Gtk.Window, application: Gtk.Application) -> None:
+        super().__init__()
+        self.application = application
+        self.parent_window = parent_window
+        self.set_default_size(400, 100)
+        self.set_transient_for(parent_window)
+        self.set_modal(True)
+        self.set_destroy_with_parent(True)
+        self.set_resizable(False)
+
+        self.content_area = Gtk.Box()
+        self.content_area.set_orientation(Gtk.Orientation.VERTICAL)
+        self.content_area.set_spacing(10)
+        self.content_area.set_margin_start(10)
+        self.content_area.set_margin_end(10)
+        self.content_area.set_margin_top(10)
+        self.content_area.set_margin_bottom(10)
+        self.set_child(self.content_area)
+
+        self.status = SimpleStatus()
+        self.content_area.append(self.status)
+
+
 def markup(text: str, **kwargs: Any) -> str:
     markup_string = ['<span']
 

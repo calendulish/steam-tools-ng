@@ -32,15 +32,14 @@ _ = i18n.get_translation
 
 
 # noinspection PyUnusedLocal
-class LoginWindow(Gtk.Window):
+class LoginWindow(utils.StatusWindowBase):
     def __init__(
             self,
             parent_window: Gtk.Window,
             application: Gtk.Application,
             mobile_login: bool = True,
     ) -> None:
-        super().__init__()
-        self.application = application
+        super().__init__(parent_window, application)
         self.mobile_login = mobile_login
         self.has_user_data = False
 
@@ -51,26 +50,7 @@ class LoginWindow(Gtk.Window):
         self.login_button.connect("clicked", self.on_login_button_clicked)
         self.header_bar.pack_end(self.login_button)
         self.set_titlebar(self.header_bar)
-
-        self.parent_window = parent_window
-        self.set_default_size(400, 100)
         self.set_title(_('Login'))
-        self.set_transient_for(parent_window)
-        self.set_modal(True)
-        self.set_destroy_with_parent(True)
-        self.set_resizable(False)
-
-        self.content_area = Gtk.Box()
-        self.content_area.set_orientation(Gtk.Orientation.VERTICAL)
-        self.content_area.set_spacing(10)
-        self.content_area.set_margin_start(10)
-        self.content_area.set_margin_end(10)
-        self.content_area.set_margin_top(10)
-        self.content_area.set_margin_bottom(10)
-        self.set_child(self.content_area)
-
-        self.status = utils.SimpleStatus()
-        self.content_area.append(self.status)
 
         self.user_details_section = utils.Section("login")
         self.content_area.append(self.user_details_section)

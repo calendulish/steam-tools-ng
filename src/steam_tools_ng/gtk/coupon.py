@@ -32,7 +32,7 @@ _ = i18n.get_translation
 
 
 # noinspection PyUnusedLocal
-class CouponWindow(Gtk.Window):
+class CouponWindow(utils.StatusWindowBase):
     def __init__(
             self,
             parent_window: Gtk.Window,
@@ -40,9 +40,7 @@ class CouponWindow(Gtk.Window):
             model: Optional[Gtk.TreeModel] = None,
             iter_: Union[Gtk.TreeIter, bool, None] = False,
     ) -> None:
-        super().__init__()
-        self.parent_window = parent_window
-        self.application = application
+        super().__init__(parent_window, application)
         self.community_session = community.Community.get_session(0)
         self.model = model
         self.iter = iter_
@@ -51,25 +49,7 @@ class CouponWindow(Gtk.Window):
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(False)
         self.set_titlebar(self.header_bar)
-
-        self.set_default_size(300, 60)
         self.set_title(_('Get Coupon'))
-        self.set_transient_for(self.parent_window)
-        self.set_modal(True)
-        self.set_destroy_with_parent(True)
-        self.set_resizable(False)
-
-        self.content_area = Gtk.Box()
-        self.content_area.set_orientation(Gtk.Orientation.VERTICAL)
-        self.content_area.set_spacing(10)
-        self.content_area.set_margin_start(10)
-        self.content_area.set_margin_end(10)
-        self.content_area.set_margin_top(10)
-        self.content_area.set_margin_bottom(10)
-        self.set_child(self.content_area)
-
-        self.status = utils.SimpleStatus()
-        self.content_area.append(self.status)
 
         self.yes_button = Gtk.Button()
         self.yes_button.set_label(_("Continue"))
