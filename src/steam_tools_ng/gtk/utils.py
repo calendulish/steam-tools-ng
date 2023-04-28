@@ -525,12 +525,15 @@ class Section(Gtk.Grid):
         if name.startswith('_'):
             return item
 
-        if isinstance(item, Gtk.ComboBoxText):
-            assert isinstance(items, OrderedDict), "ComboBox needs items mapping"
+        if isinstance(item, Gtk.DropDown):
+            assert isinstance(items, OrderedDict), "DropDown needs items mapping"
             value = config.parser.get(section, option)
+            string_list = Gtk.StringList()
 
             for option_label in items.values():
-                item.append_text(_(option_label))
+                string_list.append(_(option_label))
+
+            item.set_model(string_list)
 
             try:
                 current_option = list(items).index(value)
@@ -547,7 +550,7 @@ class Section(Gtk.Grid):
                 # unset active item
                 current_option = -1
 
-            item.set_active(current_option)
+            item.set_selected(current_option)
 
         if isinstance(item, Gtk.CheckButton) or isinstance(item, Gtk.Switch):
             value = config.parser.getboolean(section, option)
@@ -724,9 +727,9 @@ def on_digit_only_setting_changed(entry: Gtk.Entry) -> None:
         entry.handler_unblock_by_func(on_digit_only_setting_changed)
 
 
-def on_combo_setting_changed(combo: Gtk.ComboBoxText, items: OrderedDict[str, str]) -> None:
-    current_value = list(items)[combo.get_active()]
-    section = combo.get_section_name()
-    option = combo.get_name()
+def on_dropdown_setting_changed(dropdown: 'Item', _spec: Any, items: OrderedDict[str, str]) -> None:
+    current_value = list(items)[dropdown.get_selected()]
+    section = dropdown.get_section_name()
+    option = dropdown.get_name()
 
     config.new(section, option, current_value)

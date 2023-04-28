@@ -19,7 +19,7 @@
 import logging
 from gi.repository import Gtk, Pango
 from subprocess import call
-from typing import Type
+from typing import Type, Any
 
 from . import utils
 from .. import config, i18n
@@ -84,17 +84,17 @@ class SettingsWindow(Gtk.Window):
         theme = general_section.new_item(
             "theme",
             _("Theme:"),
-            Gtk.ComboBoxText,
+            Gtk.DropDown,
             0, 3,
             items=config.gtk_themes,
         )
 
-        theme.connect('changed', self.on_theme_changed)
+        theme.connect('notify::selected', self.on_theme_changed)
 
         language_item = general_section.new_item(
-            "language", _("Language"), Gtk.ComboBoxText, 0, 4, items=config.translations
+            "language", _("Language"), Gtk.DropDown, 0, 4, items=config.translations
         )
-        language_item.connect("changed", self.update_language)
+        language_item.connect("notify::selected", self.update_language)
 
         show_close_button = general_section.new_item(
             "show_close_button",
@@ -112,7 +112,7 @@ class SettingsWindow(Gtk.Window):
         log_level_item = logger_section.new_item(
             "log_level",
             _("Level:"),
-            Gtk.ComboBoxText,
+            Gtk.DropDown,
             0, 0,
             items=config.log_levels,
         )
@@ -120,13 +120,13 @@ class SettingsWindow(Gtk.Window):
         log_console_level_item = logger_section.new_item(
             "log_console_level",
             _("Console level:"),
-            Gtk.ComboBoxText,
+            Gtk.DropDown,
             0, 1,
             items=config.log_levels,
         )
 
-        log_level_item.connect("changed", utils.on_combo_setting_changed, config.log_levels)
-        log_console_level_item.connect("changed", utils.on_combo_setting_changed, config.log_levels)
+        log_level_item.connect("notify::selected", utils.on_dropdown_setting_changed, config.log_levels)
+        log_console_level_item.connect("notify::selected", utils.on_dropdown_setting_changed, config.log_levels)
 
         log_color = logger_section.new_item("log_color", _("Log color:"), Gtk.Switch, 0, 2)
         log_color.set_halign(Gtk.Align.END)
@@ -151,8 +151,8 @@ class SettingsWindow(Gtk.Window):
 
         config.new('general', 'show_close_button', state)
 
-    def on_theme_changed(self, combo: Gtk.ComboBoxText) -> None:
-        theme = list(config.gtk_themes)[combo.get_active()]
+    def on_theme_changed(self, dropdown: Gtk.DropDown, *args: Any) -> None:
+        theme = list(config.gtk_themes)[dropdown.get_selected()]
 
         if theme == 'dark':
             self.gtk_settings_class.props.gtk_application_prefer_dark_theme = True
@@ -161,8 +161,8 @@ class SettingsWindow(Gtk.Window):
 
         config.new('general', 'theme', theme)
 
-    def update_language(self, combo: Gtk.ComboBoxText) -> None:
-        language = list(config.translations)[combo.get_active()]
+    def update_language(self, dropdown: Gtk.DropDown, *args: Any) -> None:
+        language = list(config.translations)[dropdown.get_selected()]
         config.new('general', 'language', language)
         refresh_widget_childrens(self)
         refresh_widget_childrens(self.parent_window)
@@ -181,21 +181,22 @@ def refresh_widget(widget: Type[Gtk.Widget]) -> None:
         refresh_widget(widget.get_popover())
         return
 
-    if isinstance(widget, Gtk.ComboBoxText):
+    if isinstance(widget, Gtk.DropDown):
         model = widget.get_model()
 
-        for index, row in enumerate(model):
-            combo_item_label = model.get_value(row.iter, 0)
+        for index in range(model.get_n_items()):
+            value = model.get_string(index)
 
             try:
-                cached_text = i18n.cache[i18n.new_hash(combo_item_label)]
+                cached_text = i18n.cache[i18n.new_hash(value)]
             except KeyError:
-                log.debug("it's not an i18n string: %s", combo_item_label)
+                log.debug("it's not an i18n string: %s", value)
                 return
 
-            model.set_value(row.iter, 0, _(cached_text))
+            model.splice(index, 1, [_(cached_text)])
 
-        log.debug('ComboBox refreshed: %s', widget)
+        log.debug('DropDown refreshed: %s', widget)
+        return
 
     if isinstance(widget, Gtk.Label):
         try:

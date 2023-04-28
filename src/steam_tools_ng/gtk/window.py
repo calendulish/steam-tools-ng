@@ -386,11 +386,11 @@ class Main(Gtk.ApplicationWindow):
 
         steamgifts_mode = steamgifts_settings.new_item(
             "mode", _("Mode:"),
-            Gtk.ComboBoxText,
+            Gtk.DropDown,
             0, 2,
             items=config.steamgifts_modes,
         )
-        steamgifts_mode.connect("changed", utils.on_combo_setting_changed, config.steamgifts_modes)
+        steamgifts_mode.connect("notify::selected", utils.on_dropdown_setting_changed, config.steamgifts_modes)
 
         wait_after_each_strategy = steamgifts_settings.new_item(
             "wait_after_each_strategy", _("Wait after each strategy:"),
@@ -443,20 +443,20 @@ class Main(Gtk.ApplicationWindow):
             restrict_type = strategy_section.new_item(
                 "restrict_type",
                 _("Restrict Type:"),
-                Gtk.ComboBoxText,
+                Gtk.DropDown,
                 0, 7,
                 items=config.giveaway_types,
             )
-            restrict_type.connect("changed", utils.on_combo_setting_changed, config.giveaway_types)
+            restrict_type.connect("notify::selected", utils.on_dropdown_setting_changed, config.giveaway_types)
 
             sort_type = strategy_section.new_item(
                 "sort_type",
                 _("Sort Type:"),
-                Gtk.ComboBoxText,
+                Gtk.DropDown,
                 0, 8,
                 items=config.giveaway_sort_types,
             )
-            sort_type.connect("changed", utils.on_combo_setting_changed, config.giveaway_sort_types)
+            sort_type.connect("notify::selected", utils.on_dropdown_setting_changed, config.giveaway_sort_types)
 
             # setattr(self, f"steamgifts_strategy{index}", strategy_section)
 
@@ -616,11 +616,11 @@ class Main(Gtk.ApplicationWindow):
         coupon_discount = coupons_settings.new_item(
             "minimum_discount",
             _("Minimum Discount:"),
-            Gtk.ComboBoxText,
+            Gtk.DropDown,
             0, 6,
             items=config.coupon_discounts,
         )
-        coupon_discount.connect("changed", utils.on_combo_setting_changed, config.coupon_discounts)
+        coupon_discount.connect("notify::selected", utils.on_dropdown_setting_changed, config.coupon_discounts)
 
         self.statusbar = utils.StatusBar()
         main_grid.attach(self.statusbar, 1, 3, 1, 1)
