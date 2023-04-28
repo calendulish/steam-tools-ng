@@ -165,3 +165,8 @@ class SettingsWindow(Gtk.Window):
     def update_language(self, dropdown: Gtk.DropDown, *args: Any) -> None:
         language = list(config.translations)[dropdown.get_selected()]
         config.new('general', 'language', language)
+
+        language_warning = utils.StatusWindowBase(self, self.application)
+        language_warning.set_title(_("Language"))
+        language_warning.status.info(_("You must restart the STNG to apply the new language"))
+        language_warning.present()
