@@ -19,9 +19,10 @@
 import asyncio
 import contextlib
 import logging
-from gi.repository import Gio, Gtk, Gdk
 from subprocess import call
-from typing import Union, Optional, Tuple, Any, List
+from typing import Union, Optional, Tuple, Any
+
+from gi.repository import Gio, Gtk, Gdk
 
 import stlib
 from stlib import login, universe, plugins
@@ -292,7 +293,7 @@ class Main(Gtk.ApplicationWindow):
         account_name = steamguard_advanced.new_item('account_name', _("Username:"), Gtk.Entry, 0, 7)
         account_name.connect('changed', utils.on_setting_changed)
 
-        reset_button = utils.AsyncButton()
+        reset_button = Gtk.Button()
         reset_button.set_label(_("Reset Everything (USE WITH CAUTION!!!)"))
         reset_button.set_name("reset_button")
         reset_button.connect("clicked", self.on_reset_clicked)
@@ -873,21 +874,6 @@ class Main(Gtk.ApplicationWindow):
         assert isinstance(_status, utils.Status)
         return _status.play_event
 
-    async def on_reset_clicked(self, button: Gtk.Button) -> None:
-        login_window = LoginWindow(self, self.application)
-        login_window.status.info(_("Reseting... Please wait!"))
-        login_window.set_deletable(False)
-        login_window.user_details_section.set_visible(False)
-        login_window.advanced_login.set_visible(False)
-        login_window.present()
-        await asyncio.sleep(3)
-
-        config.config_file.unlink(missing_ok=True)
-
-        config.parser.clear()
-        config.init()
-        self.destroy()
-
     def on_login_button_clicked(self, button: Gtk.Button) -> None:
         login_window = LoginWindow(self, self.application)
         login_window.shared_secret_item.set_text('')
@@ -897,6 +883,26 @@ class Main(Gtk.ApplicationWindow):
     def on_new_authenticator_clicked(self, button: Gtk.Button) -> None:
         new_authenticator_window = NewAuthenticatorWindow(self, self.application)
         new_authenticator_window.present()
+
+    def on_reset_clicked(self, button: Gtk.Button) -> None:
+        login_window = LoginWindow(self, self.application)
+        login_window.status.info(_("Reseting... Please wait!"))
+        login_window.set_deletable(False)
+        login_window.user_details_section.set_visible(False)
+        login_window.advanced_login.set_visible(False)
+        login_window.present()
+
+        config.config_file.unlink(missing_ok=True)
+
+        config.parser.clear()
+        config.init()
+
+        def reset_callback() -> None:
+            login_window.destroy()
+            self.destroy()
+
+        login_window.status.info(_("Successful!\nExiting..."))
+        self.loop.call_later(3, reset_callback)
 
     def on_reset_password_clicked(self, button: Gtk.Button) -> None:
         login_window = LoginWindow(self, self.application)
