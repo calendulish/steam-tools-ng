@@ -15,15 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import aiohttp
 import asyncio
-import atexit
 import contextlib
 import random
 import time
-from pathlib import Path
 from subprocess import call
 from typing import AsyncGenerator, Dict, Optional, Any
+
+import aiohttp
 
 from stlib import webapi, client, universe, community
 from . import utils
@@ -36,17 +35,21 @@ total_cards_remaining = 0
 
 def safe_exit(*args: Any, **kwargs: Any) -> None:
     for executor in executors.values():
-        executor.shutdown(*args, **kwargs)
+        with contextlib.suppress(RuntimeError):
+            executor.shutdown(*args, **kwargs)
 
 
 async def while_has_cards(
         steamid: universe.SteamId,
         badge: community.Badge,
+        play_event: asyncio.Event,
 ) -> AsyncGenerator[utils.ModuleData, None]:
     webapi_session = webapi.SteamWebAPI.get_session(0)
     community_session = community.Community.get_session(0)
 
     while badge.cards != 0:
+        await play_event.wait()
+
         mandatory_waiting = config.parser.getint("cardfarming", "mandatory_waiting")
         wait_while_running = config.parser.getint("cardfarming", "wait_while_running")
         wait_for_drops = config.parser.getint("cardfarming", "wait_for_drops")
@@ -89,6 +92,12 @@ async def while_has_cards(
         )
 
         async for data in utils.timed_module_data(wait_offset, module_data):
+            if not play_event.is_set():
+                executor.shutdown()
+                await asyncio.sleep(1)
+                await play_event.wait()
+                executor.__init__(executor.appid)
+
             yield data
 
         executor.shutdown()
@@ -126,7 +135,12 @@ async def while_has_cards(
     )
 
 
-async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> AsyncGenerator[utils.ModuleData, None]:
+async def main(
+        steamid: universe.SteamId,
+        play_event: asyncio.Event,
+        custom_game_id: int = 0,
+) -> AsyncGenerator[utils.ModuleData, None]:
+    await play_event.wait()
     asyncio.current_task().add_done_callback(safe_exit)
 
     reverse_sorting = config.parser.getboolean("cardfarming", "reverse_sorting")
@@ -173,7 +187,7 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> AsyncGener
             yield utils.ModuleData(info=_("Skipping {}").format(badge.appid))
             continue
 
-        generators[badge.appid] = while_has_cards(steamid, badge)
+        generators[badge.appid] = while_has_cards(steamid, badge, play_event)
         total_cards_remaining += badge.cards
 
     tasks: Dict[int, Optional[asyncio.Task[Any]]] = {}
