@@ -15,20 +15,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
+import aiohttp
 import asyncio
+import atexit
+import contextlib
 import random
 import time
+from pathlib import Path
 from subprocess import call
 from typing import AsyncGenerator, Dict, Optional, Any
 
-import aiohttp
-
-from stlib import webapi, universe, community
+from stlib import webapi, client, universe, community
 from . import utils
 from .. import i18n, config
-
-# TODO: Workaround for SteamAPIExecutor on Windows when freezed
-from .utils import client
 
 _ = i18n.get_translation
 executors = {}
@@ -183,9 +182,6 @@ async def main(steamid: universe.SteamId, custom_game_id: int = 0) -> AsyncGener
 
     while True:
         for appid in generators.keys():
-            # TODO: On Windows processes can't answer too fast due executor workaround
-            await asyncio.sleep(1)
-
             progress_coro = anext(generators[appid])
             assert asyncio.iscoroutine(progress_coro)
 

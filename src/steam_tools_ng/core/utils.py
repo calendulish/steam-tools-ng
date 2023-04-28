@@ -17,30 +17,13 @@
 #
 
 import asyncio
-import atexit
-import contextlib
 import inspect
 import logging
-import sys
 import time
 from dataclasses import dataclass
 from functools import cache, wraps
-from pathlib import Path
 from typing import Tuple, Any, Callable, AsyncGenerator
 
-from stlib import client
-
-if sys.platform == 'win32':
-    from psutil import Popen, NoSuchProcess
-    import win32api
-
-    processes = []
-
-    def __safe_exit(*args: Any, **kwargs: Any) -> None:
-        for process in processes:
-            killall(process)
-
-    win32api.SetConsoleCtrlHandler(__safe_exit, True)
 
 @dataclass
 class ModuleData:
@@ -52,59 +35,6 @@ class ModuleData:
     action: str = ''
     raw_data: Any = None
     suppress_logging: bool = False
-
-
-def killall(process: 'Popen') -> None:
-    if not process.is_running():
-        return
-
-    for child in process.children(recursive=True):
-        with contextlib.suppress(NoSuchProcess):
-            child.kill()
-            child.wait()
-
-    process.kill()
-    process.wait()
-
-
-class SteamAPIExecutorWorkaround:
-    def __init__(self, appid: int, *args: Any, **kwargs: Any) -> None:
-        self.process = None
-        self.appid = appid
-        self._is_running = False
-
-        if sys.platform == 'win32':
-            if getattr(sys, 'frozen', False):
-                executor_path = [str(Path(sys.executable).parent / 'steam-api-executor.exe'), str(self.appid)]
-            else:
-                executor_path = [sys.executable, '-m', 'steam_tools_ng.steam_api_executor', str(self.appid)]
-
-            self.process = Popen(executor_path, creationflags=0x08000000)
-            self._is_running = True
-
-            global processes
-            processes.append(self.process)
-
-            atexit.register(killall, self.process)
-        else:
-            self.executor = _SteamAPIExecutor(appid, *args, **kwargs)
-
-    def is_running(self) -> bool:
-        if sys.platform == 'win32':
-            return self._is_running
-        else:
-            return self.executor.is_running()
-
-    def shutdown(self, *args: Any, **kwargs: Any) -> None:
-        if sys.platform == 'win32':
-            killall(self.process)
-            self._is_running = False
-        else:
-            self.executor.shutdown(*args, **kwargs)
-
-
-_SteamAPIExecutor = client.SteamAPIExecutor
-client.SteamAPIExecutor = SteamAPIExecutorWorkaround
 
 
 async def timed_module_data(wait_offset: int, module_data: ModuleData) -> AsyncGenerator[ModuleData, None]:

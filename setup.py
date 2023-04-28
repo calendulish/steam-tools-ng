@@ -169,12 +169,6 @@ def freeze_options() -> Mapping[str, Any]:
             shortcut_name='Steam Tools NG GUI',
             copyright=copyright_,
         ),
-        Executable(
-            Path("src", "steam_tools_ng", "steam_api_executor.py"),
-            target_name='steam-api-executor',
-            base=None,
-            copyright=copyright_,
-        )
     ]
 
     paths = ['src']
