@@ -16,24 +16,13 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-from importlib import resources
-
 # Never use VHL methods in this file to avoid infinite recursion:
 # [method>get_translation->vhlm->get_translation->vhlm] IT'S NOT A BUG!
 import configparser
 import gettext
-import hashlib
-from typing import Dict
+from importlib import resources
 
 from . import config
-
-cache: Dict[bytes, str] = {}
-
-
-def new_hash(text: str) -> bytes:
-    sums = hashlib.sha256(text.encode())
-
-    return sums.digest()
 
 
 def get_translation(text: str) -> str:
@@ -46,6 +35,5 @@ def get_translation(text: str) -> str:
     with resources.as_file(resources.files('steam_tools_ng')) as path:
         translation = gettext.translation("steam-tools-ng", path / 'locale', languages=[language], fallback=True)
         translated_text = translation.gettext(text)
-        cache[new_hash(translated_text)] = text
 
     return translated_text

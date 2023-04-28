@@ -17,9 +17,10 @@
 #
 
 import logging
-from gi.repository import Gtk, Pango
 from subprocess import call
-from typing import Type, Any
+from typing import Any
+
+from gi.repository import Gtk
 
 from . import utils
 from .. import config, i18n
@@ -164,56 +165,3 @@ class SettingsWindow(Gtk.Window):
     def update_language(self, dropdown: Gtk.DropDown, *args: Any) -> None:
         language = list(config.translations)[dropdown.get_selected()]
         config.new('general', 'language', language)
-        refresh_widget_childrens(self)
-        refresh_widget_childrens(self.parent_window)
-
-
-def refresh_widget_childrens(widget: Type[Gtk.Widget]) -> None:
-    next_child = widget.get_first_child()
-
-    while next_child:
-        refresh_widget(next_child)
-        next_child = next_child.get_next_sibling()
-
-
-def refresh_widget(widget: Type[Gtk.Widget]) -> None:
-    if isinstance(widget, Gtk.MenuButton):
-        refresh_widget(widget.get_popover())
-        return
-
-    if isinstance(widget, Gtk.DropDown):
-        model = widget.get_model()
-
-        for index in range(model.get_n_items()):
-            value = model.get_string(index)
-
-            try:
-                cached_text = i18n.cache[i18n.new_hash(value)]
-            except KeyError:
-                log.debug("it's not an i18n string: %s", value)
-                return
-
-            model.splice(index, 1, [_(cached_text)])
-
-        log.debug('DropDown refreshed: %s', widget)
-        return
-
-    if isinstance(widget, Gtk.Label):
-        try:
-            cached_text = i18n.cache[i18n.new_hash(widget.get_text())]
-        except KeyError:
-            log.debug("it's not an i18n string: %s", widget.get_text())
-            return
-
-        if widget.get_use_markup():
-            old_attributes = Pango.Layout.get_attributes(widget.get_layout())
-            widget.set_text(_(cached_text))
-            widget.set_attributes(old_attributes)
-        else:
-            widget.set_text(_(cached_text))
-
-        log.debug('widget refreshed: %s', str(widget))
-        return
-
-    log.debug('widget not refresh: %s', str(widget))
-    refresh_widget_childrens(widget)
