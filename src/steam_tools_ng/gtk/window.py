@@ -26,8 +26,8 @@ from typing import Union, Optional, Tuple, Any, List
 import stlib
 from stlib import login, universe, plugins
 from . import confirmation, utils, coupon
-from .authenticator import NewAuthenticatorDialog
-from .login import LoginDialog
+from .authenticator import NewAuthenticatorWindow
+from .login import LoginWindow
 from .. import config, i18n, core
 
 _ = i18n.get_translation
@@ -753,11 +753,11 @@ class Main(Gtk.ApplicationWindow):
 
     def on_coupon_action(self, button: Gtk.Button, model: Union[Gtk.TreeModel, Gtk.TreeSelection] = None) -> None:
         if model:
-            coupon_dialog = coupon.CouponDialog(self, self.application, *model.get_selected())
+            coupon_window = coupon.CouponWindow(self, self.application, *model.get_selected())
         else:
-            coupon_dialog = coupon.CouponDialog(self, self.application)
+            coupon_window = coupon.CouponWindow(self, self.application)
 
-        coupon_dialog.present()
+        coupon_window.present()
 
     def on_validate_confirmations(
             self,
@@ -765,7 +765,7 @@ class Main(Gtk.ApplicationWindow):
             action: str,
             model: Union[Gtk.TreeModel, Gtk.TreeSelection]) -> None:
         if isinstance(model, Gtk.TreeModel):
-            finalize_dialog = confirmation.FinalizeDialog(
+            finalize_window = confirmation.FinalizeWindow(
                 self,
                 self.application,
                 action,
@@ -773,14 +773,14 @@ class Main(Gtk.ApplicationWindow):
                 False
             )
         else:
-            finalize_dialog = confirmation.FinalizeDialog(
+            finalize_window = confirmation.FinalizeWindow(
                 self,
                 self.application,
                 action,
                 *model.get_selected()
             )
 
-        finalize_dialog.present()
+        finalize_window.present()
 
     @staticmethod
     def on_coupon_double_clicked(view: Gtk.TreeView, path: Gtk.TreePath, column: Gtk.TreeViewColumn) -> None:
@@ -874,12 +874,12 @@ class Main(Gtk.ApplicationWindow):
         return _status.play_event
 
     async def on_reset_clicked(self, button: Gtk.Button) -> None:
-        login_dialog = LoginDialog(self, self.application)
-        login_dialog.status.info(_("Reseting... Please wait!"))
-        login_dialog.set_deletable(False)
-        login_dialog.user_details_section.set_visible(False)
-        login_dialog.advanced_login.set_visible(False)
-        login_dialog.present()
+        login_window = LoginWindow(self, self.application)
+        login_window.status.info(_("Reseting... Please wait!"))
+        login_window.set_deletable(False)
+        login_window.user_details_section.set_visible(False)
+        login_window.advanced_login.set_visible(False)
+        login_window.present()
         await asyncio.sleep(3)
 
         config.config_file.unlink(missing_ok=True)
@@ -889,28 +889,28 @@ class Main(Gtk.ApplicationWindow):
         self.destroy()
 
     def on_login_button_clicked(self, button: Gtk.Button) -> None:
-        login_dialog = LoginDialog(self, self.application)
-        login_dialog.shared_secret_item.set_text('')
-        login_dialog.identity_secret_item.set_text('')
-        login_dialog.present()
+        login_window = LoginWindow(self, self.application)
+        login_window.shared_secret_item.set_text('')
+        login_window.identity_secret_item.set_text('')
+        login_window.present()
 
     def on_new_authenticator_clicked(self, button: Gtk.Button) -> None:
-        new_authenticator_dialog = NewAuthenticatorDialog(self, self.application)
-        new_authenticator_dialog.present()
+        new_authenticator_window = NewAuthenticatorWindow(self, self.application)
+        new_authenticator_window.present()
 
     def on_reset_password_clicked(self, button: Gtk.Button) -> None:
-        login_dialog = LoginDialog(self, self.application)
-        login_dialog.status.info(_("Removing saved password..."))
-        login_dialog.user_details_section.set_visible(False)
-        login_dialog.advanced_login.set_visible(False)
-        login_dialog.set_deletable(False)
-        login_dialog.present()
+        login_window = LoginWindow(self, self.application)
+        login_window.status.info(_("Removing saved password..."))
+        login_window.user_details_section.set_visible(False)
+        login_window.advanced_login.set_visible(False)
+        login_window.set_deletable(False)
+        login_window.present()
 
         config.new("login", "password", "")
 
         def reset_password_callback() -> None:
-            login_dialog.destroy()
+            login_window.destroy()
             self.destroy()
 
-        login_dialog.status.info(_("Successful!\nExiting..."))
+        login_window.status.info(_("Successful!\nExiting..."))
         self.loop.call_later(3, reset_password_callback)

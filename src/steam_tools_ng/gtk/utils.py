@@ -653,27 +653,20 @@ def remove_letters(text: str) -> str:
 def fatal_error_dialog(
         exception: BaseException,
         stack: Optional[Union[StackSummary, List[FrameType]]] = None,
-        transient: Optional[Gtk.Window] = None,
-        title: str = _("Fatal Error"),
+        parent: Optional[Gtk.Window] = None,
 ) -> None:
     log.critical("%s: %s", type(exception).__name__, str(exception))
 
-    error_dialog = Gtk.MessageDialog()
-    error_dialog.set_size_request(700, 0)
-    error_dialog.set_transient_for(transient)
-    error_dialog.set_title(title)
-    error_dialog.set_markup(f"{type(exception).__name__} > {str(exception)}")
+    error_dialog = Gtk.AlertDialog()
+    error_dialog.set_buttons([_("Ok")])
+    error_dialog.set_message(f"{type(exception).__name__} > {str(exception)}")
     error_dialog.set_modal(True)
-
-    message_area = error_dialog.get_message_area()
-    secondary_text = Gtk.Label()
-    message_area.append(secondary_text)
 
     if stack:
         log.critical("\n".join([str(frame) for frame in stack]))
-        secondary_text.set_text("\n".join([str(frame) for frame in stack]))
+        error_dialog.set_detail("\n".join([str(frame) for frame in stack]))
 
-    def callback(dialog: Any, _action: Any) -> None:
+    def callback(*args: Any) -> None:
         loop = asyncio.get_event_loop()
         loop.stop()
 
@@ -682,10 +675,7 @@ def fatal_error_dialog(
         if application:
             application.quit()
 
-    error_dialog.add_button(_('Ok'), Gtk.ResponseType.OK)
-    error_dialog.connect("response", callback)
-
-    error_dialog.present()
+    error_dialog.choose(parent=parent, callback=callback)
 
     # main application can be not available (like on initialization process)
     if not Gtk.Application.get_default():

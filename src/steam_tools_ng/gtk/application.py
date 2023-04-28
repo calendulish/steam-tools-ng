@@ -110,18 +110,18 @@ class SteamToolsNG(Gtk.Application):
         task.add_done_callback(utils.safe_task_callback)
 
     async def do_login(self, *, block: bool = True, auto: bool = False) -> None:
-        login_dialog = gtk_login.LoginDialog(self.main_window, self)
-        login_dialog.set_deletable(False)
-        login_dialog.present()
+        login_window = gtk_login.LoginWindow(self.main_window, self)
+        login_window.set_deletable(False)
+        login_window.present()
 
         if auto:
             encrypted_password = config.parser.get("login", "password")
-            login_dialog.set_password(encrypted_password)
-            login_dialog.login_button.emit('clicked')
+            login_window.set_password(encrypted_password)
+            login_window.login_button.emit('clicked')
 
         if block:
             while self.main_window.get_realized():
-                if login_dialog.has_user_data:
+                if login_window.has_user_data:
                     break
 
                 await asyncio.sleep(1)
@@ -362,12 +362,12 @@ class SteamToolsNG(Gtk.Application):
                 continue
 
     def on_settings_activate(self, *args: Any) -> None:
-        settings_dialog = settings.SettingsDialog(self.main_window, self)
-        settings_dialog.present()
+        settings_window = settings.SettingsWindow(self.main_window, self)
+        settings_window.present()
 
     def on_about_activate(self, *args: Any) -> None:
-        dialog = about.AboutDialog(self.main_window)
-        dialog.present()
+        about_dialog = about.AboutDialog(self.main_window)
+        about_dialog.present()
 
     # noinspection PyMethodMayBeStatic
     def on_exit_activate(self, *args: Any) -> None:

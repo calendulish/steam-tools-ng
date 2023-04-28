@@ -30,19 +30,20 @@ _ = i18n.get_translation
 
 
 # noinspection PyUnusedLocal
-class NewAuthenticatorDialog(Gtk.Dialog):
+class NewAuthenticatorWindow(Gtk.Window):
     def __init__(self, parent_window: Gtk.Window, application: Gtk.Application) -> None:
-        super().__init__(use_header_bar=True)
+        super().__init__()
         self.application = application
         self._login_data = None
         self.webapi_session = webapi.SteamWebAPI.get_session(0)
 
-        self.header_bar = self.get_header_bar()
+        self.header_bar = Gtk.HeaderBar()
 
         self.add_authenticator_button = utils.AsyncButton()
         self.add_authenticator_button.set_label(_("Add Authenticator"))
         self.add_authenticator_button.connect("clicked", self.on_add_authenticator_clicked)
         self.header_bar.pack_end(self.add_authenticator_button)
+        self.set_titlebar(self.header_bar)
 
         self.parent_window = parent_window
         self.set_default_size(400, 100)
@@ -52,13 +53,14 @@ class NewAuthenticatorDialog(Gtk.Dialog):
         self.set_destroy_with_parent(True)
         self.set_resizable(False)
 
-        self.content_area = self.get_content_area()
+        self.content_area = Gtk.Box()
         self.content_area.set_orientation(Gtk.Orientation.VERTICAL)
         self.content_area.set_spacing(10)
         self.content_area.set_margin_start(10)
         self.content_area.set_margin_end(10)
         self.content_area.set_margin_top(10)
         self.content_area.set_margin_bottom(10)
+        self.set_child(self.content_area)
 
         self.status = utils.SimpleStatus()
         self.content_area.append(self.status)
@@ -68,7 +70,8 @@ class NewAuthenticatorDialog(Gtk.Dialog):
 
         self.sms_code_item = self.user_details_section.new_item("_sms_code", _("SMS Code:"), Gtk.Entry, 0, 1)
 
-        self.connect('response', lambda dialog, _action: dialog.destroy())
+        self.connect('destroy', lambda *args: self.destroy())
+        self.connect('close-request', lambda *args: self.destroy())
 
         key_event = Gtk.EventControllerKey()
         key_event.connect('key-released', self.on_key_release_event)

@@ -29,13 +29,13 @@ _ = i18n.get_translation
 
 
 # noinspection PyUnusedLocal
-class SettingsDialog(Gtk.Dialog):
+class SettingsWindow(Gtk.Window):
     def __init__(
             self,
             parent_window: Gtk.Window,
             application: Gtk.Application,
     ) -> None:
-        super().__init__(use_header_bar=True)
+        super().__init__()
         self.parent_window = parent_window
         self.application = application
 
@@ -48,11 +48,10 @@ class SettingsDialog(Gtk.Dialog):
 
         self.gtk_settings_class = Gtk.Settings.get_default()
 
-        content_area = self.get_content_area()
         content_grid = Gtk.Grid()
         content_grid.set_row_spacing(10)
         content_grid.set_column_spacing(10)
-        content_area.append(content_grid)
+        self.set_child(content_grid)
 
         stack = Gtk.Stack()
         stack.set_margin_end(10)
@@ -133,7 +132,8 @@ class SettingsDialog(Gtk.Dialog):
         log_color.set_halign(Gtk.Align.END)
         log_color.connect('state-set', utils.on_setting_state_set)
 
-        self.connect('response', lambda dialog, response_id: self.destroy())
+        self.connect('destroy', lambda *args: self.destroy())
+        self.connect('close-request', lambda *args: self.destroy())
 
     @staticmethod
     def on_log_button_clicked(button: Gtk.Button) -> None:

@@ -32,7 +32,7 @@ _ = i18n.get_translation
 
 
 # noinspection PyUnusedLocal
-class CouponDialog(Gtk.Dialog):
+class CouponWindow(Gtk.Window):
     def __init__(
             self,
             parent_window: Gtk.Window,
@@ -40,7 +40,7 @@ class CouponDialog(Gtk.Dialog):
             model: Optional[Gtk.TreeModel] = None,
             iter_: Union[Gtk.TreeIter, bool, None] = False,
     ) -> None:
-        super().__init__(use_header_bar=True)
+        super().__init__()
         self.parent_window = parent_window
         self.application = application
         self.community_session = community.Community.get_session(0)
@@ -48,8 +48,9 @@ class CouponDialog(Gtk.Dialog):
         self.iter = iter_
         self.has_status = False
 
-        self.header_bar = self.get_header_bar()
+        self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(False)
+        self.set_titlebar(self.header_bar)
 
         self.set_default_size(300, 60)
         self.set_title(_('Get Coupon'))
@@ -58,13 +59,14 @@ class CouponDialog(Gtk.Dialog):
         self.set_destroy_with_parent(True)
         self.set_resizable(False)
 
-        self.content_area = self.get_content_area()
+        self.content_area = Gtk.Box()
         self.content_area.set_orientation(Gtk.Orientation.VERTICAL)
         self.content_area.set_spacing(10)
         self.content_area.set_margin_start(10)
         self.content_area.set_margin_end(10)
         self.content_area.set_margin_top(10)
         self.content_area.set_margin_bottom(10)
+        self.set_child(self.content_area)
 
         self.status = utils.SimpleStatus()
         self.content_area.append(self.status)
@@ -109,7 +111,8 @@ class CouponDialog(Gtk.Dialog):
             )
             self.yes_button.connect("clicked", self.on_yes_button_clicked, 'get')
 
-        self.connect('response', lambda dialog, response_id: self.destroy())
+        self.connect('destroy', lambda *args: self.destroy())
+        self.connect('close-request', lambda *args: self.destroy())
 
     def on_yes_button_clicked(self, button: Gtk.Button, mode: str) -> None:
         button.set_visible(False)
@@ -256,12 +259,12 @@ class CouponDialog(Gtk.Dialog):
                     self.status.info(_('Waiting trade confirmation'))
                     await asyncio.sleep(5)
 
-            finalize_dialog = confirmation.FinalizeDialog(
+            finalize_window = confirmation.FinalizeWindow(
                 self.parent_window,
                 self.application,
                 'allow',
                 confirmation_store, target,
             )
 
-            finalize_dialog.present()
-            finalize_dialog.yes_button.emit('clicked')
+            finalize_window.present()
+            finalize_window.yes_button.emit('clicked')

@@ -31,7 +31,7 @@ _ = i18n.get_translation
 
 
 # noinspection PyUnusedLocal
-class FinalizeDialog(Gtk.Dialog):
+class FinalizeWindow(Gtk.Window):
     def __init__(
             self,
             parent_window: Gtk.Window,
@@ -40,7 +40,7 @@ class FinalizeDialog(Gtk.Dialog):
             model: Gtk.TreeModel,
             iter_: Union[Gtk.TreeIter, bool, None] = False,
     ) -> None:
-        super().__init__(use_header_bar=True)
+        super().__init__()
         self.parent_window = parent_window
         self.application = application
         self.community_session = community.Community.get_session(0)
@@ -54,8 +54,9 @@ class FinalizeDialog(Gtk.Dialog):
         self.model = model
         self.iter = iter_
 
-        self.header_bar = self.get_header_bar()
+        self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(False)
+        self.set_titlebar(self.header_bar)
 
         self.set_default_size(300, 60)
         self.set_title(_('Finalize Confirmation'))
@@ -64,13 +65,14 @@ class FinalizeDialog(Gtk.Dialog):
         self.set_destroy_with_parent(True)
         self.set_resizable(False)
 
-        self.content_area = self.get_content_area()
+        self.content_area = Gtk.Box()
         self.content_area.set_orientation(Gtk.Orientation.VERTICAL)
         self.content_area.set_spacing(10)
         self.content_area.set_margin_start(10)
         self.content_area.set_margin_end(10)
         self.content_area.set_margin_top(10)
         self.content_area.set_margin_bottom(10)
+        self.add_child(self.content_area)
 
         self.status = utils.SimpleStatus()
         self.content_area.append(self.status)
@@ -131,7 +133,8 @@ class FinalizeDialog(Gtk.Dialog):
             utils.copy_childrens(self.model, self.give_tree.store, self.iter, 3)
             utils.copy_childrens(self.model, self.receive_tree.store, self.iter, 5)
 
-        self.connect('response', lambda dialog, response_id: self.destroy())
+        self.connect('destroy', lambda *args: self.destroy())
+        self.connect('close-request', lambda *args: self.destroy())
 
     def on_yes_button_clicked(self, button: Gtk.Button) -> None:
         button.set_visible(False)

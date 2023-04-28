@@ -32,24 +32,25 @@ _ = i18n.get_translation
 
 
 # noinspection PyUnusedLocal
-class LoginDialog(Gtk.Dialog):
+class LoginWindow(Gtk.Window):
     def __init__(
             self,
             parent_window: Gtk.Window,
             application: Gtk.Application,
             mobile_login: bool = True,
     ) -> None:
-        super().__init__(use_header_bar=True)
+        super().__init__()
         self.application = application
         self.mobile_login = mobile_login
         self.has_user_data = False
 
-        self.header_bar = self.get_header_bar()
+        self.header_bar = Gtk.HeaderBar()
 
         self.login_button = utils.AsyncButton()
         self.login_button.set_label(_("Log-in"))
         self.login_button.connect("clicked", self.on_login_button_clicked)
         self.header_bar.pack_end(self.login_button)
+        self.set_titlebar(self.header_bar)
 
         self.parent_window = parent_window
         self.set_default_size(400, 100)
@@ -59,13 +60,14 @@ class LoginDialog(Gtk.Dialog):
         self.set_destroy_with_parent(True)
         self.set_resizable(False)
 
-        self.content_area = self.get_content_area()
+        self.content_area = Gtk.Box()
         self.content_area.set_orientation(Gtk.Orientation.VERTICAL)
         self.content_area.set_spacing(10)
         self.content_area.set_margin_start(10)
         self.content_area.set_margin_end(10)
         self.content_area.set_margin_top(10)
         self.content_area.set_margin_bottom(10)
+        self.set_child(self.content_area)
 
         self.status = utils.SimpleStatus()
         self.content_area.append(self.status)
@@ -116,7 +118,8 @@ class LoginDialog(Gtk.Dialog):
             0, 1,
         )
 
-        self.connect('response', self.on_quit)
+        self.connect('destroy', self.on_quit)
+        self.connect('close-request', self.on_quit)
 
         key_event = Gtk.EventControllerKey()
         key_event.connect('key-released', self.on_key_release_event)
