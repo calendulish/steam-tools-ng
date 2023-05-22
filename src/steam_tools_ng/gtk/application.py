@@ -277,25 +277,30 @@ class SteamToolsNG(Gtk.Application):
                     self.main_window.statusbar.clear('confirmations')
                     continue
 
-                self.main_window.confirmations_tree.store.clear()
+                self.main_window.confirmations_tree.clear()
 
                 for confirmation_ in module_data.raw_data:
                     # translatable strings
                     t_give = utils.sanitize_confirmation(confirmation_.give)
                     t_receive = utils.sanitize_confirmation(confirmation_.receive)
 
-                    iter_ = self.main_window.confirmations_tree.store.append(None, [
+                    row = self.main_window.confirmations_tree.append(
                         str(confirmation_.confid),
                         str(confirmation_.creatorid),
                         str(confirmation_.key),
                         utils.markup(t_give),
                         utils.markup(confirmation_.to),
                         utils.markup(t_receive),
-                    ])
+                    )
 
                     for item in itertools.zip_longest(confirmation_.give, confirmation_.receive):
-                        row = ['', '', '', item[0], '-->', item[1] if item[1] else 'Nothing']
-                        self.main_window.confirmations_tree.store.append(iter_, row)
+                        self.main_window.confirmations_tree.append(
+                            None, None, None,
+                            item[0],
+                            '-->',
+                            item[1] if item[1] else _('Nothing'),
+                            parent=row,
+                        )
 
                 self.old_confirmations = module_data.raw_data
                 self.main_window.statusbar.clear('confirmations')
@@ -321,17 +326,17 @@ class SteamToolsNG(Gtk.Application):
                 self.main_window.statusbar.clear("coupons")
 
             if module_data.action == "update":
-                iter_ = self.main_window.coupons_tree.store.append([
+                iter_ = self.main_window.coupons_tree.append(
                     f"{module_data.raw_data['price']:.2f}",
                     utils.markup(module_data.raw_data['name'], foreground='blue', underline='single'),
                     module_data.raw_data['link'],
                     module_data.raw_data['botid'],
                     module_data.raw_data['token'],
                     str(module_data.raw_data['assetid']),
-                ])
+                )
 
             if module_data.action == "clear":
-                self.main_window.coupons_tree.store.clear()
+                self.main_window.coupons_tree.clear()
 
             if module_data.action == "update_level":
                 self.main_window.coupon_progress.set_value(module_data.raw_data[0])
