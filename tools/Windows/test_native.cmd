@@ -30,6 +30,6 @@ for /f %%i in (
 for %%i in (%GVSBUILD%\\python\\pycairo-*-cp%PYTHON_VERSION:.=%-cp%PYTHON_VERSION:.=%-win_amd64.whl) do (py -m pip install --force-reinstall %%i) || exit 1
 for %%i in (%GVSBUILD%\\python\\PyGObject-*-cp%PYTHON_VERSION:.=%-cp%PYTHON_VERSION:.=%-win_amd64.whl) do (py -m pip install --force-reinstall --no-deps %%i) || exit 1
 
-py -m pip install wheel certifi psutil pywin32 cx_Freeze || exit 1
+py -m pip install stlib wheel certifi psutil pywin32 cx_Freeze || exit 1
 
 py

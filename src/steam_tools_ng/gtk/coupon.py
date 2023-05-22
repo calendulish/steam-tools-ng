@@ -18,7 +18,7 @@
 import asyncio
 import logging
 import time
-from typing import Union, Optional, Any
+from typing import Any
 
 from gi.repository import Gtk
 
@@ -37,19 +37,19 @@ class CouponWindow(utils.StatusWindowBase):
             self,
             parent_window: Gtk.Window,
             application: Gtk.Application,
-            model: Optional[Gtk.TreeModel] = None,
-            iter_: Union[Gtk.TreeIter, bool, None] = False,
+            coupons_tree: utils.SimpleTextTree,
+            action: str
     ) -> None:
         super().__init__(parent_window, application)
         self.community_session = community.Community.get_session(0)
-        self.model = model
-        self.iter = iter_
+        self.coupons_tree = coupons_tree
+        self.selection = self.coupons_tree.selection.get_selected_item()
         self.has_status = False
+        self.action = action
 
         self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(False)
         self.set_titlebar(self.header_bar)
-        self.set_title(_('Get Coupon'))
 
         self.yes_button = Gtk.Button()
         self.yes_button.set_label(_("Continue"))
@@ -60,52 +60,56 @@ class CouponWindow(utils.StatusWindowBase):
         self.no_button.connect("clicked", lambda button: self.destroy())
         self.header_bar.pack_start(self.no_button)
 
-        trade_time = int(time.time()) - config.parser.getint('coupons', 'last_trade_time')
-        if self.iter and trade_time < 120:
-            self.status.error(_("You must wait {} seconds to get another coupon").format(120 - trade_time))
-            self.header_bar.set_show_title_buttons(True)
-            self.yes_button.set_visible(False)
-            self.no_button.set_visible(False)
-            return
+        if self.action == 'get':
+            self.set_title(_('Get Coupon'))
 
-        if self.iter is None:
-            self.status.error(_("You must select something"))
-            self.header_bar.set_show_title_buttons(True)
-            self.yes_button.set_visible(False)
-            self.no_button.set_visible(False)
-        elif self.iter is False:
+            trade_time = int(time.time()) - config.parser.getint('coupons', 'last_trade_time')
+            if trade_time < 120:
+                self.status.error(_("You must wait {} seconds to get another coupon").format(120 - trade_time))
+                self.header_bar.set_show_title_buttons(True)
+                self.yes_button.set_visible(False)
+                self.no_button.set_visible(False)
+                return
+
+            if self.selection:
+                self.status.info(
+                    _(
+                        "You are about to request {}\n"
+                        "The item will be automatically added at your inventory in 1 minute"
+                    ).format(utils.unmarkup(self.selection.get_item().name))
+                )
+            else:
+                self.status.error(_("You must select something"))
+                self.header_bar.set_show_title_buttons(True)
+                self.yes_button.set_visible(False)
+                self.no_button.set_visible(False)
+        else:
+            self.set_title(_('Send Coupon'))
+
             self.status.info(
                 _(
                     "You are about to giveaway all coupons in your inventory\n"
-                    "The items will be automatically accepted and transfered in 1 minute"
+                    "The items will be automatically accepted and transferred in 1 minute"
                 )
             )
-            self.yes_button.connect("clicked", self.on_yes_button_clicked, 'give')
-        else:
-            assert isinstance(self.model, Gtk.TreeModel)
-            self.status.info(
-                _(
-                    "You are about to request {}\n"
-                    "The item will be automatically added at your inventory in 1 minute"
-                ).format(utils.unmarkup(self.model.get_value(self.iter, 1)))
-            )
-            self.yes_button.connect("clicked", self.on_yes_button_clicked, 'get')
 
+        self.yes_button.connect("clicked", self.on_yes_button_clicked)
         self.connect('destroy', lambda *args: self.destroy())
         self.connect('close-request', lambda *args: self.destroy())
 
-    def on_yes_button_clicked(self, button: Gtk.Button, mode: str) -> None:
+    def on_yes_button_clicked(self, button: Gtk.Button) -> None:
         button.set_visible(False)
         self.no_button.set_visible(False)
-
         self.set_size_request(0, 0)
         self.header_bar.set_show_title_buttons(False)
+        self.coupons_tree.lock = True
 
         loop = asyncio.get_event_loop()
-        task = loop.create_task(self.send_trade_offer(mode))
+        task = loop.create_task(self.send_trade_offer())
         task.add_done_callback(self.on_task_finish)
 
     def on_task_finish(self, task: asyncio.Task[Any]) -> None:
+        self.coupons_tree.lock = False
         exception = task.exception()
 
         if exception and not isinstance(exception, asyncio.CancelledError):
@@ -138,18 +142,17 @@ class CouponWindow(utils.StatusWindowBase):
                 self.yes_button.set_visible(False)
         else:
             config.new("coupons", "last_trade_time", int(time.time()))
+            item = self.selection.get_item()
 
             try:
-                if self.iter:
-                    assert isinstance(self.model, Gtk.TreeModel)
-                    self.model.remove(self.iter)
+                self.confirmations_tree.store.remove(item.get_position())
             except IndexError:
-                log.debug(_("Unable to remove tree path %s (already removed?). Ignoring."), self.iter)
+                log.debug(_("Unable to remove tree path %s (already removed?). Ignoring."), item)
 
             if not self.has_status:
                 self.destroy()
 
-    async def send_trade_offer(self, mode: str) -> None:
+    async def send_trade_offer(self) -> None:
         self.status.info(_("Waiting Steam Server"))
         contextid = config.parser.getint('coupons', 'contextid')
         appid = config.parser.getint('coupons', 'appid')
@@ -169,18 +172,13 @@ class CouponWindow(utils.StatusWindowBase):
         give = []
         receive = []
 
-        if mode == 'get':
-            assert isinstance(self.model, Gtk.TreeModel)
-            botid_raw = self.model.get_value(self.iter, 3)
-            token = self.model.get_value(self.iter, 4)
-            assetid = int(self.model.get_value(self.iter, 5))
+        if self.action == 'get':
+            botid_raw = self.selection.get_item().botid
+            token = self.selection.get_item().token
+            assetid = int(self.selection.get_item().assetid)
             receive = [(appid, assetid, 1)]
         else:
-            json_data = await self.community_session.get_inventory(
-                steamid,
-                appid,
-                contextid,
-            )
+            json_data = await self.community_session.get_inventory(steamid, appid, contextid)
 
             for coupon in json_data:
                 give.append((coupon.appid, coupon.assetid, coupon.amount))
@@ -221,16 +219,15 @@ class CouponWindow(utils.StatusWindowBase):
                 self.has_status = True
                 return
 
-            confirmation_store = self.parent_window.confirmations_tree.store
+            confirmations_tree = self.parent_window.confirmations_tree
             target = None
 
             while True:
-                confirmation_count = confirmation_store.iter_n_children()
+                for index in range(confirmations_tree.store.get_n_items()):
+                    item = confirmations_tree.store.get_item(index)
 
-                for index in range(confirmation_count):
-                    iter_ = confirmation_store[index].iter
-                    if confirmation_store.get_value(iter_, 1) == json_data['tradeofferid']:
-                        target = iter_
+                    if item.creatorid == json_data['tradeofferid']:
+                        confirmations_tree.selection.set_selected(index)
                         break
 
                 if target:
@@ -242,8 +239,8 @@ class CouponWindow(utils.StatusWindowBase):
             finalize_window = confirmation.FinalizeWindow(
                 self.parent_window,
                 self.application,
+                confirmations_tree,
                 'allow',
-                confirmation_store, target,
             )
 
             finalize_window.present()

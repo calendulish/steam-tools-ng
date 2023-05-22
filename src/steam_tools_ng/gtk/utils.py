@@ -26,7 +26,7 @@ from types import FrameType
 from typing import Any, Callable, List, Optional, Union, Type, Tuple
 from xml.etree import ElementTree
 
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk, Gdk, Gio, GObject
 
 from stlib import internals
 from . import async_gtk
@@ -153,27 +153,68 @@ class StatusBar(Gtk.Grid):
         self.messages[module] = {"warning": "", "critical": ""}
 
 
+class SimpleTextTreeItem(GObject.Object):
+    def __init__(self, *args: str, headers: Tuple[str]) -> None:
+        for index, arg in enumerate(args):
+            name = headers[index].replace(' ', '_').lower()
+            setattr(self, name, arg)
+
+        super(GObject.Object, self).__init__()
+        self.children = []
+
+
 class SimpleTextTree(Gtk.Grid):
     def __init__(
             self,
-            *elements: str,
-            overlay_scrolling: bool = True,
+            *headers: str,
+            overlay_scrolling: bool = False,
             resizable: bool = True,
             fixed_width: int = 0,
-            model: Callable[..., Union[Gtk.TreeStore, Gtk.ListStore]] = Gtk.TreeStore,
     ) -> None:
         super().__init__()
+        self.headers = headers
+
         self._scrolled_window = Gtk.ScrolledWindow()
         self._scrolled_window.set_overlay_scrolling(overlay_scrolling)
         self.attach(self._scrolled_window, 0, 0, 1, 1)
 
-        # noinspection PyUnusedLocal
-        self._store = model(*[str for header in elements])
-        self._view = Gtk.TreeView()
-        self._view.set_model(self._store)
+        self._view = Gtk.ColumnView()
+        self._view.set_show_column_separators(True)
         self._view.set_hexpand(True)
         self._view.set_vexpand(True)
         self._scrolled_window.set_child(self._view)
+
+        expander_column = Gtk.ColumnViewColumn()
+        expander_column.set_resizable(False)
+        expander_column.set_fixed_width(25)
+        expander_factory = Gtk.SignalListItemFactory()
+        expander_factory.connect('setup', self.setup, False)
+        expander_factory.connect('bind', self.bind)
+        expander_column.set_factory(expander_factory)
+        self._view.append_column(expander_column)
+
+        for element in self.headers:
+            column = Gtk.ColumnViewColumn()
+            column.set_title(element)
+            column.set_resizable(resizable)
+
+            if fixed_width:
+                column.set_fixed_width(fixed_width)
+
+            factory = Gtk.SignalListItemFactory()
+            factory.connect('setup', self.setup)
+            factory.connect('bind', self.bind, element)
+            column.set_factory(factory)
+            self._view.append_column(column)
+
+        self._store = Gio.ListStore.new(SimpleTextTreeItem)
+        self._tree = Gtk.TreeListModel.new(self._store, False, False, self.item_factory)
+        self._tree_sort = Gtk.TreeListRowSorter()
+        self._list_sort = Gtk.SortListModel()
+        self._list_sort.set_sorter(self._tree_sort)
+        self._list_sort.set_model(self._tree)
+        self._model = Gtk.SingleSelection.new(self._list_sort)
+        self._view.set_model(self._model)
 
         self._lock = False
         self._lock_label = Gtk.Label()
@@ -209,16 +250,58 @@ class SimpleTextTree(Gtk.Grid):
 
         self.attach(self._disabled_label, 0, 0, 1, 1)
 
-        renderer = Gtk.CellRendererText()
+    def setup(self, view: Gtk.ListView, item: Gtk.ListItem, hide_expander: bool = True) -> None:
+        expander = Gtk.TreeExpander()
+        expander.set_hide_expander(hide_expander)
+        label = Gtk.Label()
+        expander.set_child(label)
+        item.set_child(expander)
 
-        for index, header in enumerate(elements):
-            column = Gtk.TreeViewColumn(header, renderer, markup=index)
-            column.set_resizable(resizable)
+    def bind(self, view: Gtk.ListView, item: Gtk.ListItem, element: Optional[str] = None) -> None:
+        expander = item.get_child()
+        assert isinstance(expander, Gtk.TreeExpander)
 
-            if fixed_width:
-                column.set_fixed_width(fixed_width)
+        label = expander.get_child()
+        assert isinstance(label, Gtk.Label)
 
-            self._view.append_column(column)
+        list_row = item.get_item()
+        expander.set_list_row(list_row)
+        data = list_row.get_item()
+
+        if isinstance(data, Gtk.TreeListRow):
+            data = data.get_item()
+
+        if element:
+            column_text = getattr(data, element.replace(' ', '_').lower())
+            label.set_markup(column_text)
+            label.set_hexpand(True)
+
+    def item_factory(self, item: Gtk.ListItem) -> Optional[Gtk.TreeListModel]:
+        store = Gio.ListStore.new(SimpleTextTreeItem)
+
+        if type(item) == Gtk.TreeListRow:
+            item = item.get_item()
+
+        if item.children:
+            for child in item.children:
+                store.append(child)
+
+            return Gtk.TreeListModel.new(store, False, False, self.item_factory)
+
+        return None
+
+    def append(self, *data: List[str], parent: Optional[SimpleTextTreeItem] = None) -> SimpleTextTreeItem:
+        row = SimpleTextTreeItem(*data, headers=self.headers)
+
+        if parent:
+            parent.children.append(row)
+        else:
+            self._store.append(row)
+
+        return row
+
+    def clear(self) -> None:
+        self._store.remove_all()
 
     async def wait_available(self) -> None:
         while self.lock or self.disabled:
@@ -260,12 +343,20 @@ class SimpleTextTree(Gtk.Grid):
             self._disabled = False
 
     @property
-    def store(self) -> Union[Gtk.TreeStore, Gtk.ListStore]:
+    def tree(self) -> Gtk.TreeListModel:
+        return self._tree
+
+    @property
+    def store(self) -> Gio.ListStore:
         return self._store
 
     @property
-    def view(self) -> Gtk.TreeView:
+    def view(self) -> Gtk.ColumnView:
         return self._view
+
+    @property
+    def selection(self) -> Gtk.SingleSelection:
+        return self._model
 
 
 class SimpleStatus(Gtk.Frame):
@@ -615,29 +706,6 @@ def unmarkup(text: str) -> str:
     tree = ElementTree.fromstring(text)
     assert isinstance(tree.text, str)
     return tree.text
-
-
-def copy_childrens(from_model: Gtk.TreeModel, to_model: Gtk.TreeModel, iter_: Gtk.TreeIter, column: int) -> None:
-    childrens = from_model.iter_n_children(iter_)
-
-    if childrens:
-        for index in range(childrens):
-            children_iter = from_model.iter_nth_child(iter_, index)
-            value = from_model.get_value(children_iter, column)
-
-            if value:
-                to_model.append([value])
-            else:
-                log.debug(
-                    _("Ignoring value from {} on column {} item {} because value is empty").format(
-                        children_iter,
-                        column,
-                        index
-                    )
-                )
-    else:
-        value = from_model.get_value(iter_, column)
-        to_model.append([value])
 
 
 def sanitize_confirmation(value: Optional[List[str]]) -> str:

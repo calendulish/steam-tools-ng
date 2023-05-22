@@ -20,7 +20,7 @@ import asyncio
 import contextlib
 import logging
 from subprocess import call
-from typing import Union, Optional, Tuple, Any
+from typing import Optional, Tuple, Any
 
 from gi.repository import Gio, Gtk, Gdk
 
@@ -139,54 +139,50 @@ class Main(Gtk.ApplicationWindow):
         self.confirmations_grid.set_row_spacing(10)
         steamguard_stack.add_titled(self.confirmations_grid, "confirmations", _("Confirmations"))
 
-        self.confirmations_tree = utils.SimpleTextTree(
-            _('confid'), _('creatorid'), _('key'), _('give'), _('to'), _('receive'),
-            overlay_scrolling=False,
-        )
-
+        confirmation_tree_headers = _('confid'), _('creatorid'), _('key'), _('give'), _('to'), _('receive')
+        self.confirmations_tree = utils.SimpleTextTree(*confirmation_tree_headers)
         self.confirmations_grid.attach(self.confirmations_tree, 0, 0, 4, 1)
 
         for index, column in enumerate(self.confirmations_tree.view.get_columns()):
-            if index in (0, 1, 2):
+            column.set_resizable(True)
+
+            if index in (1, 2, 3):
                 column.set_visible(False)
 
-            if index == 4:
+            if index in (4, 6):
+                column.set_fixed_width(190)
+
+            if index == 5:
                 column.set_fixed_width(100)
-            else:
-                column.set_fixed_width(200)
 
-        self.confirmations_tree.view.set_has_tooltip(True)
-        self.confirmations_tree.view.connect('query-tooltip', self.on_query_confirmations_tooltip)
-
-        confirmation_tree_selection = self.confirmations_tree.view.get_selection()
-        confirmation_tree_selection.connect("changed", self.on_tree_selection_changed)
+        self.confirmations_tree.selection.connect("selection-changed", self.on_tree_selection_changed)
 
         accept_button = Gtk.Button()
         accept_button.set_margin_start(3)
         accept_button.set_margin_end(3)
         accept_button.set_label(_('Accept'))
-        accept_button.connect('clicked', self.on_validate_confirmations, "allow", confirmation_tree_selection)
+        accept_button.connect('clicked', self.on_validate_confirmations, "allow")
         self.confirmations_grid.attach(accept_button, 0, 1, 1, 1)
 
         cancel_button = Gtk.Button()
         cancel_button.set_margin_start(3)
         cancel_button.set_margin_end(3)
         cancel_button.set_label(_('Cancel'))
-        cancel_button.connect('clicked', self.on_validate_confirmations, "cancel", confirmation_tree_selection)
+        cancel_button.connect('clicked', self.on_validate_confirmations, "cancel")
         self.confirmations_grid.attach(cancel_button, 1, 1, 1, 1)
 
         accept_all_button = Gtk.Button()
         accept_all_button.set_margin_start(3)
         accept_all_button.set_margin_end(3)
         accept_all_button.set_label(_('Accept All'))
-        accept_all_button.connect('clicked', self.on_validate_confirmations, "allow", self.confirmations_tree.store)
+        accept_all_button.connect('clicked', self.on_validate_confirmations, "allow", True)
         self.confirmations_grid.attach(accept_all_button, 2, 1, 1, 1)
 
         cancel_all_button = Gtk.Button()
         cancel_all_button.set_margin_start(3)
         cancel_all_button.set_margin_end(3)
         cancel_all_button.set_label(_('Cancel All'))
-        cancel_all_button.connect('clicked', self.on_validate_confirmations, "cancel", self.confirmations_tree.store)
+        cancel_all_button.connect('clicked', self.on_validate_confirmations, "cancel", True)
         self.confirmations_grid.attach(cancel_all_button, 3, 1, 1, 1)
 
         steamguard_settings = utils.Section("steamguard")
@@ -358,7 +354,6 @@ class Main(Gtk.ApplicationWindow):
             _cardfarming_disabled.set_markup(utils.markup(_message, color="hotpink", background="black"))
             cardfarming_section.attach(_cardfarming_disabled, 0, 0, 2, 1)
 
-        # TODO: Maintain plugin switch?
         steamgifts_section.grid.attach(self.steamgifts_status, 0, 0, 2, 1)
 
         steamgifts_stack = Gtk.Stack()
@@ -542,24 +537,27 @@ class Main(Gtk.ApplicationWindow):
         self.coupons_grid.set_row_spacing(10)
         coupons_stack.add_titled(self.coupons_grid, "coupons_list", _("Coupon List"))
 
-        self.coupons_tree = utils.SimpleTextTree(
-            _('price'), _('name'), 'link', 'botid', 'token', 'assetid',
-            overlay_scrolling=False,
-            model=Gtk.ListStore,
-        )
+        coupons_tree_headers = _('price'), _('name'), 'link', 'botid', 'token', 'assetid'
+        self.coupons_tree = utils.SimpleTextTree(*coupons_tree_headers)
 
-        self.coupons_tree.store.set_sort_column_id(0, Gtk.SortType.ASCENDING)
-        self.coupons_tree.store.set_sort_func(0, self.coupon_sorting)
+        # self.coupons_tree.store.set_sort_column_id(0, Gtk.SortType.ASCENDING)
+        # self.coupons_tree.store.set_sort_func(0, self.coupon_sorting)
         self.coupons_grid.attach(self.coupons_tree, 0, 0, 4, 2)
 
         for index, column in enumerate(self.coupons_tree.view.get_columns()):
-            if index in (2, 3, 4, 5):
+            column.set_resizable(True)
+
+            if index in (0, 3, 4, 5, 6):
                 column.set_visible(False)
 
-        self.coupons_tree.view.connect('row-activated', self.on_coupon_double_clicked)
+            if index == 1:
+                column.set_fixed_width(80)
 
-        coupon_tree_selection = self.coupons_tree.view.get_selection()
-        coupon_tree_selection.connect("changed", self.on_tree_selection_changed)
+            if index == 2:
+                column.set_fixed_width(400)
+
+        self.coupons_tree.view.connect("activate", self.on_coupon_double_clicked)
+        self.coupons_tree.selection.connect("selection-changed", self.on_tree_selection_changed)
 
         self.coupon_progress = Gtk.LevelBar()
         self.coupons_grid.attach(self.coupon_progress, 0, 3, 4, 1)
@@ -584,14 +582,14 @@ class Main(Gtk.ApplicationWindow):
         get_coupon_button.set_margin_start(3)
         get_coupon_button.set_margin_end(3)
         get_coupon_button.set_label(_('Get selected'))
-        get_coupon_button.connect('clicked', self.on_coupon_action, coupon_tree_selection)
+        get_coupon_button.connect('clicked', self.on_coupon_action, 'get')
         self.coupons_grid.attach(get_coupon_button, 2, 4, 1, 1)
 
         give_coupon_button = Gtk.Button()
         give_coupon_button.set_margin_start(3)
         give_coupon_button.set_margin_end(3)
         give_coupon_button.set_label(_('Send'))
-        give_coupon_button.connect('clicked', self.on_coupon_action)
+        give_coupon_button.connect('clicked', self.on_coupon_action, 'give')
         self.coupons_grid.attach(give_coupon_button, 3, 4, 1, 1)
 
         coupons_settings = utils.Section("coupons")
@@ -720,30 +718,6 @@ class Main(Gtk.ApplicationWindow):
 
             await asyncio.sleep(3)
 
-    @staticmethod
-    def on_query_confirmations_tooltip(
-            tree_view: Gtk.TreeView,
-            x_coord: int,
-            y_coord: int,
-            keyboard_tip: bool,
-            tooltip: Gtk.Tooltip,
-    ) -> bool:
-        context = tree_view.get_tooltip_context(x_coord, y_coord, keyboard_tip)
-
-        if context[0]:
-            if context.model.iter_depth(context.iter) != 0:
-                return False
-
-            tooltip.set_text(
-                f'ConfID:{context.model.get_value(context.iter, 0)}\n'
-                f'CreatorID{context.model.get_value(context.iter, 1)}\n'
-                f'Key:{context.model.get_value(context.iter, 2)}'
-            )
-
-            return True
-
-        return False
-
     def on_fetch_coupons(self, button: Gtk.Button) -> None:
         self.fetch_coupon_event.set()
 
@@ -752,41 +726,17 @@ class Main(Gtk.ApplicationWindow):
         self.coupon_progress.set_value(0)
         self.coupon_progress.set_max_value(0)
 
-    def on_coupon_action(self, button: Gtk.Button, model: Union[Gtk.TreeModel, Gtk.TreeSelection] = None) -> None:
-        if model:
-            coupon_window = coupon.CouponWindow(self, self.application, *model.get_selected())
-        else:
-            coupon_window = coupon.CouponWindow(self, self.application)
-
+    def on_coupon_action(self, button: Gtk.Button, action: str) -> None:
+        coupon_window = coupon.CouponWindow(self, self.application, self.coupons_tree, action)
         coupon_window.present()
 
-    def on_validate_confirmations(
-            self,
-            button: Gtk.Button,
-            action: str,
-            model: Union[Gtk.TreeModel, Gtk.TreeSelection]) -> None:
-        if isinstance(model, Gtk.TreeModel):
-            finalize_window = confirmation.FinalizeWindow(
-                self,
-                self.application,
-                action,
-                model,
-                False
-            )
-        else:
-            finalize_window = confirmation.FinalizeWindow(
-                self,
-                self.application,
-                action,
-                *model.get_selected()
-            )
-
+    def on_validate_confirmations(self, button: Gtk.Button, action: str, batch: bool = False) -> None:
+        finalize_window = confirmation.FinalizeWindow(self, self.application, self.confirmations_tree, action, batch)
         finalize_window.present()
 
-    @staticmethod
-    def on_coupon_double_clicked(view: Gtk.TreeView, path: Gtk.TreePath, column: Gtk.TreeViewColumn) -> None:
-        model = view.get_model()
-        url = model[path][2]
+    def on_coupon_double_clicked(self, view: Gtk.ColumnView, position: int) -> None:
+        item = self.coupons_tree.store.get_item(position)
+        url = f"steam://openurl/{item.link}"
         steam_running = False
 
         if stlib.steamworks_available:
@@ -794,20 +744,18 @@ class Main(Gtk.ApplicationWindow):
                 with client.SteamGameServer() as server:
                     steam_running = True
 
-        if steam_running:
-            url = f"steam://openurl/{url}"
+        if not steam_running:
+            url = item.link
 
         call(f'{config.file_manager} "{url}"')
 
     @staticmethod
-    def on_tree_selection_changed(selection: Gtk.TreeSelection) -> None:
-        model, iter_ = selection.get_selected()
+    def on_tree_selection_changed(view: Gtk.SingleSelection, position, item_count: int) -> None:
+        item = view.get_selected_item()
+        parent = item.get_parent()
 
-        if iter_:
-            parent = model.iter_parent(iter_)
-
-            if parent:
-                selection.select_iter(parent)
+        if parent:
+            view.set_selected(parent.get_position())
 
     @staticmethod
     def coupon_sorting(model: Gtk.TreeModel, iter1: Gtk.TreeIter, iter2: Gtk.TreeIter, user_data: Any) -> Any:
