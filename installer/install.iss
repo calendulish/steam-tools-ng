@@ -38,7 +38,6 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "..\build\{#ReleaseName}\steam-tools-ng.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\{#ReleaseName}\steam-tools-ng-gui.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\build\{#ReleaseName}\steam-api-executor.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\{#ReleaseName}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\{#ReleaseName}\share\*"; DestDir: "{app}\share"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\build\{#ReleaseName}\etc\*"; DestDir: "{app}\etc"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -58,6 +57,7 @@ Name: "{commondesktop}\Steam Tools NG"; Filename: "{app}\steam-tools-ng-gui.exe"
 [InstallDelete]
 Type: files; Name: "{group}\(console) authenticator.lnk"
 Type: files; Name: "{app}\steam_tools_ng.exe"
+Type: files; Name: "{app}\steam-api-executor.exe"
 Type: files; Name: "{app}\share\icons\steam-tools-ng*"
 Type: filesandordirs; Name: "{app}\lib"
 Type: filesandordirs; Name: "{app}\plugins"

@@ -28,7 +28,6 @@ classifiers = [
 
 dependencies = [
   "pywin32; sys_platform == 'win32'",
-  "psutil; sys_platform == 'win32'",
   "stlib~=1.3.0",
   "stlib-plugins~=1.2.0",
   "aiohttp",
@@ -46,6 +45,7 @@ steam-tools-ng-gui = "steam_tools_ng.gui:main"
 
 [tool.setuptools]
 include-package-data = true
+zip-safe = false
 
 [tool.setuptools.packages.find]
 where = ["src"]
