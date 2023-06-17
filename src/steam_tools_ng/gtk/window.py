@@ -540,8 +540,13 @@ class Main(Gtk.ApplicationWindow):
         coupons_tree_headers = _('price'), _('name'), 'link', 'botid', 'token', 'assetid'
         self.coupons_tree = utils.SimpleTextTree(*coupons_tree_headers)
 
-        # self.coupons_tree.store.set_sort_column_id(0, Gtk.SortType.ASCENDING)
-        # self.coupons_tree.store.set_sort_func(0, self.coupon_sorting)
+        price_sorter = Gtk.CustomSorter()
+        price_sorter.set_sort_func(self.coupon_sorting)
+
+        price_column = self.coupons_tree.view.get_columns()[1]
+        price_column.set_sorter(price_sorter)
+
+        self.coupons_tree.view.sort_by_column(price_column, Gtk.SortType.ASCENDING)
         self.coupons_grid.attach(self.coupons_tree, 0, 0, 4, 2)
 
         for index, column in enumerate(self.coupons_tree.view.get_columns()):
@@ -758,15 +763,11 @@ class Main(Gtk.ApplicationWindow):
             view.set_selected(parent.get_position())
 
     @staticmethod
-    def coupon_sorting(model: Gtk.TreeModel, iter1: Gtk.TreeIter, iter2: Gtk.TreeIter, user_data: Any) -> Any:
-        column, _ = model.get_sort_column_id()
-        price1 = model.get_value(iter1, column)
-        price2 = model.get_value(iter2, column)
-
-        if float(price1) < float(price2):
+    def coupon_sorting(item1: utils.SimpleTextTreeItem, item2: utils.SimpleTextTreeItem, *data: Any) -> Any:
+        if float(item1.price) < float(item2.price):
             return -1
 
-        if price1 == price2:
+        if item1.price == item2.price:
             return 0
 
         return 1

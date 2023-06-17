@@ -210,6 +210,7 @@ class SimpleTextTree(Gtk.Grid):
         self._store = Gio.ListStore.new(SimpleTextTreeItem)
         self._tree = Gtk.TreeListModel.new(self._store, False, False, self.item_factory)
         self._tree_sort = Gtk.TreeListRowSorter()
+        self._tree_sort.set_sorter(self._view.get_sorter())
         self._list_sort = Gtk.SortListModel()
         self._list_sort.set_sorter(self._tree_sort)
         self._list_sort.set_model(self._tree)
