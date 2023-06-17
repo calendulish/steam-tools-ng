@@ -15,11 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import aiohttp
 import asyncio
 import logging
-from gi.repository import Gtk, Gdk
 from typing import Optional
+
+import aiohttp
+from gi.repository import Gtk, Gdk
 
 from stlib import universe, webapi
 from . import utils
@@ -30,45 +31,27 @@ _ = i18n.get_translation
 
 
 # noinspection PyUnusedLocal
-class NewAuthenticatorDialog(Gtk.Dialog):
+class NewAuthenticatorWindow(utils.StatusWindowBase):
     def __init__(self, parent_window: Gtk.Window, application: Gtk.Application) -> None:
-        super().__init__(use_header_bar=True)
-        self.application = application
+        super().__init__(parent_window, application)
         self._login_data = None
         self.webapi_session = webapi.SteamWebAPI.get_session(0)
 
-        self.header_bar = self.get_header_bar()
-
+        self.header_bar = Gtk.HeaderBar()
         self.add_authenticator_button = utils.AsyncButton()
         self.add_authenticator_button.set_label(_("Add Authenticator"))
         self.add_authenticator_button.connect("clicked", self.on_add_authenticator_clicked)
         self.header_bar.pack_end(self.add_authenticator_button)
-
-        self.parent_window = parent_window
-        self.set_default_size(400, 100)
+        self.set_titlebar(self.header_bar)
         self.set_title(_('New Authenticator'))
-        self.set_transient_for(parent_window)
-        self.set_modal(True)
-        self.set_destroy_with_parent(True)
-        self.set_resizable(False)
-
-        self.content_area = self.get_content_area()
-        self.content_area.set_orientation(Gtk.Orientation.VERTICAL)
-        self.content_area.set_spacing(10)
-        self.content_area.set_margin_start(10)
-        self.content_area.set_margin_end(10)
-        self.content_area.set_margin_top(10)
-        self.content_area.set_margin_bottom(10)
-
-        self.status = utils.SimpleStatus()
-        self.content_area.append(self.status)
 
         self.user_details_section = utils.Section("Login")
         self.content_area.append(self.user_details_section)
 
         self.sms_code_item = self.user_details_section.new_item("_sms_code", _("SMS Code:"), Gtk.Entry, 0, 1)
 
-        self.connect('response', lambda dialog, _action: dialog.destroy())
+        self.connect('destroy', lambda *args: self.destroy())
+        self.connect('close-request', lambda *args: self.destroy())
 
         key_event = Gtk.EventControllerKey()
         key_event.connect('key-released', self.on_key_release_event)
@@ -109,7 +92,7 @@ class NewAuthenticatorDialog(Gtk.Dialog):
     async def on_add_authenticator_clicked(self, button: Gtk.Button) -> None:
         self.status.info(_("Retrieving user data"))
         button.set_sensitive(False)
-        self.user_details_section.hide()
+        self.user_details_section.set_visible(False)
         self.set_size_request(0, 0)
 
         if not self.oauth_token or not self.steamid:
@@ -143,7 +126,7 @@ class NewAuthenticatorDialog(Gtk.Dialog):
                 self.application.on_exit_activate()
             else:
                 self.status.info(_("Enter bellow the code received by SMS\nand click on 'Add Authenticator' button"))
-                self.user_details_section.show()
+                self.user_details_section.set_visible(True)
                 self.sms_code_item.set_text('')
                 self.sms_code_item.grab_focus()
             finally:
@@ -162,12 +145,12 @@ class NewAuthenticatorDialog(Gtk.Dialog):
             )
         except webapi.SMSCodeError:
             self.status.info(_("Invalid SMS Code. Please,\ncheck the code and try again."))
-            self.user_details_section.show()
+            self.user_details_section.set_visible(True)
             self.sms_code_item.set_text('')
             self.sms_code_item.grab_focus()
         except aiohttp.ClientError:
             self.status.error(_("Check your connection. (server down?)"))
-            self.user_details_section.show()
+            self.user_details_section.set_visible(True)
             self.sms_code_item.set_text('')
             self.sms_code_item.grab_focus()
         except Exception as exception:
@@ -193,7 +176,7 @@ class NewAuthenticatorDialog(Gtk.Dialog):
 
             revocation_code = self._login_data.auth['revocation_code']
 
-            self.add_authenticator_button.hide()
+            self.add_authenticator_button.set_visible(False)
 
             revocation_status = utils.Status(6)
             revocation_status.set_pausable(False)
@@ -201,7 +184,7 @@ class NewAuthenticatorDialog(Gtk.Dialog):
             revocation_status.set_status('')
             self.content_area.append(revocation_status)
 
-            revocation_status.show()
+            revocation_status.set_visible(True)
 
             self.set_deletable(False)
 

@@ -17,9 +17,10 @@
 #
 
 import logging
-from gi.repository import Gtk, Pango
 from subprocess import call
-from typing import Type
+from typing import Any
+
+from gi.repository import Gtk
 
 from . import utils
 from .. import config, i18n
@@ -29,13 +30,13 @@ _ = i18n.get_translation
 
 
 # noinspection PyUnusedLocal
-class SettingsDialog(Gtk.Dialog):
+class SettingsWindow(Gtk.Window):
     def __init__(
             self,
             parent_window: Gtk.Window,
             application: Gtk.Application,
     ) -> None:
-        super().__init__(use_header_bar=True)
+        super().__init__()
         self.parent_window = parent_window
         self.application = application
 
@@ -48,11 +49,10 @@ class SettingsDialog(Gtk.Dialog):
 
         self.gtk_settings_class = Gtk.Settings.get_default()
 
-        content_area = self.get_content_area()
         content_grid = Gtk.Grid()
         content_grid.set_row_spacing(10)
         content_grid.set_column_spacing(10)
-        content_area.append(content_grid)
+        self.set_child(content_grid)
 
         stack = Gtk.Stack()
         stack.set_margin_end(10)
@@ -85,17 +85,17 @@ class SettingsDialog(Gtk.Dialog):
         theme = general_section.new_item(
             "theme",
             _("Theme:"),
-            Gtk.ComboBoxText,
+            Gtk.DropDown,
             0, 3,
             items=config.gtk_themes,
         )
 
-        theme.connect('changed', self.on_theme_changed)
+        theme.connect('notify::selected', self.on_theme_changed)
 
         language_item = general_section.new_item(
-            "language", _("Language"), Gtk.ComboBoxText, 0, 4, items=config.translations
+            "language", _("Language"), Gtk.DropDown, 0, 4, items=config.translations
         )
-        language_item.connect("changed", self.update_language)
+        language_item.connect("notify::selected", self.update_language)
 
         show_close_button = general_section.new_item(
             "show_close_button",
@@ -113,7 +113,7 @@ class SettingsDialog(Gtk.Dialog):
         log_level_item = logger_section.new_item(
             "log_level",
             _("Level:"),
-            Gtk.ComboBoxText,
+            Gtk.DropDown,
             0, 0,
             items=config.log_levels,
         )
@@ -121,19 +121,20 @@ class SettingsDialog(Gtk.Dialog):
         log_console_level_item = logger_section.new_item(
             "log_console_level",
             _("Console level:"),
-            Gtk.ComboBoxText,
+            Gtk.DropDown,
             0, 1,
             items=config.log_levels,
         )
 
-        log_level_item.connect("changed", utils.on_combo_setting_changed, config.log_levels)
-        log_console_level_item.connect("changed", utils.on_combo_setting_changed, config.log_levels)
+        log_level_item.connect("notify::selected", utils.on_dropdown_setting_changed, config.log_levels)
+        log_console_level_item.connect("notify::selected", utils.on_dropdown_setting_changed, config.log_levels)
 
         log_color = logger_section.new_item("log_color", _("Log color:"), Gtk.Switch, 0, 2)
         log_color.set_halign(Gtk.Align.END)
         log_color.connect('state-set', utils.on_setting_state_set)
 
-        self.connect('response', lambda dialog, response_id: self.destroy())
+        self.connect('destroy', lambda *args: self.destroy())
+        self.connect('close-request', lambda *args: self.destroy())
 
     @staticmethod
     def on_log_button_clicked(button: Gtk.Button) -> None:
@@ -151,8 +152,8 @@ class SettingsDialog(Gtk.Dialog):
 
         config.new('general', 'show_close_button', state)
 
-    def on_theme_changed(self, combo: Gtk.ComboBoxText) -> None:
-        theme = list(config.gtk_themes)[combo.get_active()]
+    def on_theme_changed(self, dropdown: Gtk.DropDown, *args: Any) -> None:
+        theme = list(config.gtk_themes)[dropdown.get_selected()]
 
         if theme == 'dark':
             self.gtk_settings_class.props.gtk_application_prefer_dark_theme = True
@@ -161,58 +162,11 @@ class SettingsDialog(Gtk.Dialog):
 
         config.new('general', 'theme', theme)
 
-    def update_language(self, combo: Gtk.ComboBoxText) -> None:
-        language = list(config.translations)[combo.get_active()]
+    def update_language(self, dropdown: Gtk.DropDown, *args: Any) -> None:
+        language = list(config.translations)[dropdown.get_selected()]
         config.new('general', 'language', language)
-        refresh_widget_childrens(self)
-        refresh_widget_childrens(self.parent_window)
 
-
-def refresh_widget_childrens(widget: Type[Gtk.Widget]) -> None:
-    next_child = widget.get_first_child()
-
-    while next_child:
-        refresh_widget(next_child)
-        next_child = next_child.get_next_sibling()
-
-
-def refresh_widget(widget: Type[Gtk.Widget]) -> None:
-    if isinstance(widget, Gtk.MenuButton):
-        refresh_widget(widget.get_popover())
-        return
-
-    if isinstance(widget, Gtk.ComboBoxText):
-        model = widget.get_model()
-
-        for index, row in enumerate(model):
-            combo_item_label = model.get_value(row.iter, 0)
-
-            try:
-                cached_text = i18n.cache[i18n.new_hash(combo_item_label)]
-            except KeyError:
-                log.debug("it's not an i18n string: %s", combo_item_label)
-                return
-
-            model.set_value(row.iter, 0, _(cached_text))
-
-        log.debug('ComboBox refreshed: %s', widget)
-
-    if isinstance(widget, Gtk.Label):
-        try:
-            cached_text = i18n.cache[i18n.new_hash(widget.get_text())]
-        except KeyError:
-            log.debug("it's not an i18n string: %s", widget.get_text())
-            return
-
-        if widget.get_use_markup():
-            old_attributes = Pango.Layout.get_attributes(widget.get_layout())
-            widget.set_text(_(cached_text))
-            widget.set_attributes(old_attributes)
-        else:
-            widget.set_text(_(cached_text))
-
-        log.debug('widget refreshed: %s', str(widget))
-        return
-
-    log.debug('widget not refresh: %s', str(widget))
-    refresh_widget_childrens(widget)
+        language_warning = utils.StatusWindowBase(self, self.application)
+        language_warning.set_title(_("Language"))
+        language_warning.status.info(_("You must restart the STNG to apply the new language"))
+        language_warning.present()

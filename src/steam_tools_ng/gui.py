@@ -49,7 +49,7 @@ log = logging.getLogger(__name__)
 class GraphicalArgParser(argparse.ArgumentParser):
     def _print_message(self, message: str, file: Optional[Any] = None) -> None:
         if message:
-            utils.fatal_error_dialog(type('Info', (Exception,), {})(message), title="")
+            utils.fatal_error_dialog(type('Info', (Exception,), {})(message))
 
 
 def main() -> None:
@@ -100,9 +100,10 @@ def main() -> None:
     console_params = command_parser.parse_args()
 
     if console_params.version:
-        dialog = about.AboutDialog(None)
-        dialog.show()
-        dialog.connect("close-request", lambda widget: asyncio.get_event_loop().stop())
+        about_dialog = about.AboutDialog(parent_window=None)
+        about_dialog.present()
+        about_dialog.connect("close-request", lambda *args: asyncio.get_event_loop().stop())
+        about_dialog.connect("destroy", lambda *args: asyncio.get_event_loop().stop())
 
         if not Gtk.Application.get_default():
             async_gtk.run()

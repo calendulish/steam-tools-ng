@@ -103,25 +103,25 @@ class SteamToolsNG(Gtk.Application):
 
         current_window = window.Main(application=self, title="Steam Tools NG")
         self._main_window_id = current_window.get_id()
-        current_window.show()
+        current_window.present()
 
         loop = asyncio.get_event_loop()
         task = loop.create_task(self.async_activate())
         task.add_done_callback(utils.safe_task_callback)
 
     async def do_login(self, *, block: bool = True, auto: bool = False) -> None:
-        login_dialog = gtk_login.LoginDialog(self.main_window, self)
-        login_dialog.set_deletable(False)
-        login_dialog.show()
+        login_window = gtk_login.LoginWindow(self.main_window, self)
+        login_window.set_deletable(False)
+        login_window.present()
 
         if auto:
             encrypted_password = config.parser.get("login", "password")
-            login_dialog.set_password(encrypted_password)
-            login_dialog.login_button.emit('clicked')
+            login_window.set_password(encrypted_password)
+            login_window.login_button.emit('clicked')
 
         if block:
             while self.main_window.get_realized():
-                if login_dialog.has_user_data:
+                if login_window.has_user_data:
                     break
 
                 await asyncio.sleep(1)
@@ -277,25 +277,30 @@ class SteamToolsNG(Gtk.Application):
                     self.main_window.statusbar.clear('confirmations')
                     continue
 
-                self.main_window.confirmations_tree.store.clear()
+                self.main_window.confirmations_tree.clear()
 
                 for confirmation_ in module_data.raw_data:
                     # translatable strings
                     t_give = utils.sanitize_confirmation(confirmation_.give)
                     t_receive = utils.sanitize_confirmation(confirmation_.receive)
 
-                    iter_ = self.main_window.confirmations_tree.store.append(None, [
+                    row = self.main_window.confirmations_tree.append(
                         str(confirmation_.confid),
                         str(confirmation_.creatorid),
                         str(confirmation_.key),
                         utils.markup(t_give),
                         utils.markup(confirmation_.to),
                         utils.markup(t_receive),
-                    ])
+                    )
 
                     for item in itertools.zip_longest(confirmation_.give, confirmation_.receive):
-                        row = ['', '', '', item[0], '-->', item[1] if item[1] else 'Nothing']
-                        self.main_window.confirmations_tree.store.append(iter_, row)
+                        self.main_window.confirmations_tree.append(
+                            None, None, None,
+                            item[0],
+                            '-->',
+                            item[1] if item[1] else _('Nothing'),
+                            parent=row,
+                        )
 
                 self.old_confirmations = module_data.raw_data
                 self.main_window.statusbar.clear('confirmations')
@@ -321,17 +326,17 @@ class SteamToolsNG(Gtk.Application):
                 self.main_window.statusbar.clear("coupons")
 
             if module_data.action == "update":
-                iter_ = self.main_window.coupons_tree.store.append([
+                iter_ = self.main_window.coupons_tree.append(
                     f"{module_data.raw_data['price']:.2f}",
                     utils.markup(module_data.raw_data['name'], foreground='blue', underline='single'),
                     module_data.raw_data['link'],
                     module_data.raw_data['botid'],
                     module_data.raw_data['token'],
                     str(module_data.raw_data['assetid']),
-                ])
+                )
 
             if module_data.action == "clear":
-                self.main_window.coupons_tree.store.clear()
+                self.main_window.coupons_tree.clear()
 
             if module_data.action == "update_level":
                 self.main_window.coupon_progress.set_value(module_data.raw_data[0])
@@ -362,12 +367,12 @@ class SteamToolsNG(Gtk.Application):
                 continue
 
     def on_settings_activate(self, *args: Any) -> None:
-        settings_dialog = settings.SettingsDialog(self.main_window, self)
-        settings_dialog.show()
+        settings_window = settings.SettingsWindow(self.main_window, self)
+        settings_window.present()
 
     def on_about_activate(self, *args: Any) -> None:
-        dialog = about.AboutDialog(self.main_window)
-        dialog.show()
+        about_dialog = about.AboutDialog(self.main_window)
+        about_dialog.present()
 
     # noinspection PyMethodMayBeStatic
     def on_exit_activate(self, *args: Any) -> None:

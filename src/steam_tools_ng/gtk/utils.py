@@ -26,7 +26,7 @@ from types import FrameType
 from typing import Any, Callable, List, Optional, Union, Type, Tuple
 from xml.etree import ElementTree
 
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk, Gdk, Gio, GObject
 
 from stlib import internals
 from . import async_gtk
@@ -153,31 +153,73 @@ class StatusBar(Gtk.Grid):
         self.messages[module] = {"warning": "", "critical": ""}
 
 
+class SimpleTextTreeItem(GObject.Object):
+    def __init__(self, *args: str, headers: Tuple[str]) -> None:
+        for index, arg in enumerate(args):
+            name = headers[index].replace(' ', '_').lower()
+            setattr(self, name, arg)
+
+        super(GObject.Object, self).__init__()
+        self.children = []
+
+
 class SimpleTextTree(Gtk.Grid):
     def __init__(
             self,
-            *elements: str,
-            overlay_scrolling: bool = True,
+            *headers: str,
+            overlay_scrolling: bool = False,
             resizable: bool = True,
             fixed_width: int = 0,
-            model: Callable[..., Union[Gtk.TreeStore, Gtk.ListStore]] = Gtk.TreeStore,
     ) -> None:
         super().__init__()
+        self.headers = headers
+
         self._scrolled_window = Gtk.ScrolledWindow()
         self._scrolled_window.set_overlay_scrolling(overlay_scrolling)
         self.attach(self._scrolled_window, 0, 0, 1, 1)
 
-        # noinspection PyUnusedLocal
-        self._store = model(*[str for header in elements])
-        self._view = Gtk.TreeView()
-        self._view.set_model(self._store)
+        self._view = Gtk.ColumnView()
+        self._view.set_show_column_separators(True)
         self._view.set_hexpand(True)
         self._view.set_vexpand(True)
         self._scrolled_window.set_child(self._view)
 
+        expander_column = Gtk.ColumnViewColumn()
+        expander_column.set_resizable(False)
+        expander_column.set_fixed_width(25)
+        expander_factory = Gtk.SignalListItemFactory()
+        expander_factory.connect('setup', self.setup, False)
+        expander_factory.connect('bind', self.bind)
+        expander_column.set_factory(expander_factory)
+        self._view.append_column(expander_column)
+
+        for element in self.headers:
+            column = Gtk.ColumnViewColumn()
+            column.set_title(element)
+            column.set_resizable(resizable)
+
+            if fixed_width:
+                column.set_fixed_width(fixed_width)
+
+            factory = Gtk.SignalListItemFactory()
+            factory.connect('setup', self.setup)
+            factory.connect('bind', self.bind, element)
+            column.set_factory(factory)
+            self._view.append_column(column)
+
+        self._store = Gio.ListStore.new(SimpleTextTreeItem)
+        self._tree = Gtk.TreeListModel.new(self._store, False, False, self.item_factory)
+        self._tree_sort = Gtk.TreeListRowSorter()
+        self._tree_sort.set_sorter(self._view.get_sorter())
+        self._list_sort = Gtk.SortListModel()
+        self._list_sort.set_sorter(self._tree_sort)
+        self._list_sort.set_model(self._tree)
+        self._model = Gtk.SingleSelection.new(self._list_sort)
+        self._view.set_model(self._model)
+
         self._lock = False
         self._lock_label = Gtk.Label()
-        self._lock_label.hide()
+        self._lock_label.set_visible(False)
         self._lock_label.set_vexpand(True)
         self._lock_label.set_hexpand(True)
 
@@ -194,7 +236,7 @@ class SimpleTextTree(Gtk.Grid):
 
         self._disabled = False
         self._disabled_label = Gtk.Label()
-        self._disabled_label.hide()
+        self._disabled_label.set_visible(False)
         self._disabled_label.set_vexpand(True)
         self._disabled_label.set_hexpand(True)
 
@@ -209,16 +251,58 @@ class SimpleTextTree(Gtk.Grid):
 
         self.attach(self._disabled_label, 0, 0, 1, 1)
 
-        renderer = Gtk.CellRendererText()
+    def setup(self, view: Gtk.ListView, item: Gtk.ListItem, hide_expander: bool = True) -> None:
+        expander = Gtk.TreeExpander()
+        expander.set_hide_expander(hide_expander)
+        label = Gtk.Label()
+        expander.set_child(label)
+        item.set_child(expander)
 
-        for index, header in enumerate(elements):
-            column = Gtk.TreeViewColumn(header, renderer, markup=index)
-            column.set_resizable(resizable)
+    def bind(self, view: Gtk.ListView, item: Gtk.ListItem, element: Optional[str] = None) -> None:
+        expander = item.get_child()
+        assert isinstance(expander, Gtk.TreeExpander)
 
-            if fixed_width:
-                column.set_fixed_width(fixed_width)
+        label = expander.get_child()
+        assert isinstance(label, Gtk.Label)
 
-            self._view.append_column(column)
+        list_row = item.get_item()
+        expander.set_list_row(list_row)
+        data = list_row.get_item()
+
+        if isinstance(data, Gtk.TreeListRow):
+            data = data.get_item()
+
+        if element:
+            column_text = getattr(data, element.replace(' ', '_').lower())
+            label.set_markup(column_text)
+            label.set_hexpand(True)
+
+    def item_factory(self, item: Gtk.ListItem) -> Optional[Gtk.TreeListModel]:
+        store = Gio.ListStore.new(SimpleTextTreeItem)
+
+        if type(item) == Gtk.TreeListRow:
+            item = item.get_item()
+
+        if item.children:
+            for child in item.children:
+                store.append(child)
+
+            return Gtk.TreeListModel.new(store, False, False, self.item_factory)
+
+        return None
+
+    def append(self, *data: List[str], parent: Optional[SimpleTextTreeItem] = None) -> SimpleTextTreeItem:
+        row = SimpleTextTreeItem(*data, headers=self.headers)
+
+        if parent:
+            parent.children.append(row)
+        else:
+            self._store.append(row)
+
+        return row
+
+    def clear(self) -> None:
+        self._store.remove_all()
 
     async def wait_available(self) -> None:
         while self.lock or self.disabled:
@@ -234,12 +318,12 @@ class SimpleTextTree(Gtk.Grid):
             log.debug(_("Waiting another process"))
             self.set_focusable(False)
             self.set_sensitive(False)
-            self._lock_label.show()
+            self._lock_label.set_visible(True)
             self._lock = True
         else:
             self.set_focusable(True)
             self.set_sensitive(True)
-            self._lock_label.hide()
+            self._lock_label.set_visible(False)
             self._lock = False
 
     @property
@@ -251,21 +335,29 @@ class SimpleTextTree(Gtk.Grid):
         if disabled:
             self.set_focusable(False)
             self.set_sensitive(False)
-            self._disabled_label.show()
+            self._disabled_label.set_visible(True)
             self._disabled = True
         else:
             self.set_focusable(True)
             self.set_sensitive(True)
-            self._disabled_label.hide()
+            self._disabled_label.set_visible(False)
             self._disabled = False
 
     @property
-    def store(self) -> Union[Gtk.TreeStore, Gtk.ListStore]:
+    def tree(self) -> Gtk.TreeListModel:
+        return self._tree
+
+    @property
+    def store(self) -> Gio.ListStore:
         return self._store
 
     @property
-    def view(self) -> Gtk.TreeView:
+    def view(self) -> Gtk.ColumnView:
         return self._view
+
+    @property
+    def selection(self) -> Gtk.SingleSelection:
+        return self._model
 
 
 class SimpleStatus(Gtk.Frame):
@@ -405,9 +497,9 @@ class Status(Gtk.Frame):
 
     def set_pausable(self, value: bool = True) -> None:
         if value is True:
-            self._play_pause_button.show()
+            self._play_pause_button.set_visible(True)
         else:
-            self._play_pause_button.hide()
+            self._play_pause_button.set_visible(False)
 
     @when_running
     def set_display(self, text: str) -> None:
@@ -476,14 +568,9 @@ class Section(Gtk.Grid):
         return item._section_name
 
     @staticmethod
-    def __show(item: 'Item') -> None:
-        item.label.show()
-        super(item.__class__, item).show()
-
-    @staticmethod
-    def __hide(item: 'Item') -> None:
-        item.label.hide()
-        super(item.__class__, item).hide()
+    def __set_visible(item: 'Item', state: bool) -> None:
+        item.label.set_visible(state)
+        super(item.__class__, item).set_visible(state)
 
     def new_item(
             self,
@@ -500,8 +587,7 @@ class Section(Gtk.Grid):
             '_section_name': None,
             '__init__': lambda item_: super(item_.__class__, item_).__init__(),
             'get_section_name': self.__get_section_name,
-            'show': self.__show,
-            'hide': self.__hide,
+            'set_visible': self.__set_visible,
         }
 
         if label:
@@ -531,12 +617,15 @@ class Section(Gtk.Grid):
         if name.startswith('_'):
             return item
 
-        if isinstance(item, Gtk.ComboBoxText):
-            assert isinstance(items, OrderedDict), "ComboBox needs items mapping"
+        if isinstance(item, Gtk.DropDown):
+            assert isinstance(items, OrderedDict), "DropDown needs items mapping"
             value = config.parser.get(section, option)
+            string_list = Gtk.StringList()
 
             for option_label in items.values():
-                item.append_text(_(option_label))
+                string_list.append(_(option_label))
+
+            item.set_model(string_list)
 
             try:
                 current_option = list(items).index(value)
@@ -553,7 +642,7 @@ class Section(Gtk.Grid):
                 # unset active item
                 current_option = -1
 
-            item.set_active(current_option)
+            item.set_selected(current_option)
 
         if isinstance(item, Gtk.CheckButton) or isinstance(item, Gtk.Switch):
             value = config.parser.getboolean(section, option)
@@ -579,6 +668,30 @@ class Section(Gtk.Grid):
             stack.add_titled(self, name, text)
 
 
+class StatusWindowBase(Gtk.Window):
+    def __init__(self, parent_window: Gtk.Window, application: Gtk.Application) -> None:
+        super().__init__()
+        self.application = application
+        self.parent_window = parent_window
+        self.set_default_size(400, 100)
+        self.set_transient_for(parent_window)
+        self.set_modal(True)
+        self.set_destroy_with_parent(True)
+        self.set_resizable(False)
+
+        self.content_area = Gtk.Box()
+        self.content_area.set_orientation(Gtk.Orientation.VERTICAL)
+        self.content_area.set_spacing(10)
+        self.content_area.set_margin_start(10)
+        self.content_area.set_margin_end(10)
+        self.content_area.set_margin_top(10)
+        self.content_area.set_margin_bottom(10)
+        self.set_child(self.content_area)
+
+        self.status = SimpleStatus()
+        self.content_area.append(self.status)
+
+
 def markup(text: str, **kwargs: Any) -> str:
     markup_string = ['<span']
 
@@ -594,29 +707,6 @@ def unmarkup(text: str) -> str:
     tree = ElementTree.fromstring(text)
     assert isinstance(tree.text, str)
     return tree.text
-
-
-def copy_childrens(from_model: Gtk.TreeModel, to_model: Gtk.TreeModel, iter_: Gtk.TreeIter, column: int) -> None:
-    childrens = from_model.iter_n_children(iter_)
-
-    if childrens:
-        for index in range(childrens):
-            children_iter = from_model.iter_nth_child(iter_, index)
-            value = from_model.get_value(children_iter, column)
-
-            if value:
-                to_model.append([value])
-            else:
-                log.debug(
-                    _("Ignoring value from {} on column {} item {} because value is empty").format(
-                        children_iter,
-                        column,
-                        index
-                    )
-                )
-    else:
-        value = from_model.get_value(iter_, column)
-        to_model.append([value])
 
 
 def sanitize_confirmation(value: Optional[List[str]]) -> str:
@@ -659,27 +749,20 @@ def remove_letters(text: str) -> str:
 def fatal_error_dialog(
         exception: BaseException,
         stack: Optional[Union[StackSummary, List[FrameType]]] = None,
-        transient: Optional[Gtk.Window] = None,
-        title: str = _("Fatal Error"),
+        parent: Optional[Gtk.Window] = None,
 ) -> None:
     log.critical("%s: %s", type(exception).__name__, str(exception))
 
-    error_dialog = Gtk.MessageDialog()
-    error_dialog.set_size_request(700, 0)
-    error_dialog.set_transient_for(transient)
-    error_dialog.set_title(title)
-    error_dialog.set_markup(f"{type(exception).__name__} > {str(exception)}")
+    error_dialog = Gtk.AlertDialog()
+    error_dialog.set_buttons([_("Ok")])
+    error_dialog.set_message(f"{type(exception).__name__} > {str(exception)}")
     error_dialog.set_modal(True)
-
-    message_area = error_dialog.get_message_area()
-    secondary_text = Gtk.Label()
-    message_area.append(secondary_text)
 
     if stack:
         log.critical("\n".join([str(frame) for frame in stack]))
-        secondary_text.set_text("\n".join([str(frame) for frame in stack]))
+        error_dialog.set_detail("\n".join([str(frame) for frame in stack]))
 
-    def callback(dialog: Any, _action: Any) -> None:
+    def callback(*args: Any) -> None:
         loop = asyncio.get_event_loop()
         loop.stop()
 
@@ -688,10 +771,7 @@ def fatal_error_dialog(
         if application:
             application.quit()
 
-    error_dialog.add_button(_('Ok'), Gtk.ResponseType.OK)
-    error_dialog.connect("response", callback)
-
-    error_dialog.show()
+    error_dialog.choose(parent=parent, callback=callback)
 
     # main application can be not available (like on initialization process)
     if not Gtk.Application.get_default():
@@ -740,9 +820,9 @@ def on_digit_only_setting_changed(entry: Gtk.Entry) -> None:
         entry.handler_unblock_by_func(on_digit_only_setting_changed)
 
 
-def on_combo_setting_changed(combo: Gtk.ComboBoxText, items: OrderedDict[str, str]) -> None:
-    current_value = list(items)[combo.get_active()]
-    section = combo.get_section_name()
-    option = combo.get_name()
+def on_dropdown_setting_changed(dropdown: 'Item', _spec: Any, items: OrderedDict[str, str]) -> None:
+    current_value = list(items)[dropdown.get_selected()]
+    section = dropdown.get_section_name()
+    option = dropdown.get_name()
 
     config.new(section, option, current_value)

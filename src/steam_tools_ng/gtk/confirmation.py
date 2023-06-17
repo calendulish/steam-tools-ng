@@ -16,9 +16,8 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
-import contextlib
 import logging
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple
 
 from gi.repository import Gtk
 
@@ -31,19 +30,20 @@ _ = i18n.get_translation
 
 
 # noinspection PyUnusedLocal
-class FinalizeDialog(Gtk.Dialog):
+class FinalizeWindow(utils.StatusWindowBase):
     def __init__(
             self,
             parent_window: Gtk.Window,
             application: Gtk.Application,
+            confirmations_tree: utils.SimpleTextTree,
             action: str,
-            model: Gtk.TreeModel,
-            iter_: Union[Gtk.TreeIter, bool, None] = False,
+            batch: bool = False,
     ) -> None:
-        super().__init__(use_header_bar=True)
-        self.parent_window = parent_window
-        self.application = application
+        super().__init__(parent_window, application)
         self.community_session = community.Community.get_session(0)
+        self.confirmations_tree = confirmations_tree
+        self.selection = self.confirmations_tree.selection.get_selected_item()
+        self.batch = batch
 
         if action == "allow":
             self.action = _("accept")
@@ -51,29 +51,11 @@ class FinalizeDialog(Gtk.Dialog):
             self.action = _("cancel")
 
         self.raw_action = action
-        self.model = model
-        self.iter = iter_
 
-        self.header_bar = self.get_header_bar()
+        self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(False)
-
-        self.set_default_size(300, 60)
+        self.set_titlebar(self.header_bar)
         self.set_title(_('Finalize Confirmation'))
-        self.set_transient_for(self.parent_window)
-        self.set_modal(True)
-        self.set_destroy_with_parent(True)
-        self.set_resizable(False)
-
-        self.content_area = self.get_content_area()
-        self.content_area.set_orientation(Gtk.Orientation.VERTICAL)
-        self.content_area.set_spacing(10)
-        self.content_area.set_margin_start(10)
-        self.content_area.set_margin_end(10)
-        self.content_area.set_margin_top(10)
-        self.content_area.set_margin_bottom(10)
-
-        self.status = utils.SimpleStatus()
-        self.content_area.append(self.status)
 
         self.progress = Gtk.LevelBar()
         self.content_area.append(self.progress)
@@ -88,73 +70,50 @@ class FinalizeDialog(Gtk.Dialog):
         self.no_button.connect("clicked", lambda button: self.destroy())
         self.header_bar.pack_start(self.no_button)
 
-        if self.iter is None or not model:
-            self.status.error(_("You must select something"))
-            self.header_bar.set_show_title_buttons(True)
-            self.yes_button.hide()
-            self.no_button.hide()
-        elif self.iter is False:
+        if self.batch:
             self.status.info(
                 _("Do you really want to {} ALL confirmations?\nIt can't be undone!").format(self.action.upper())
             )
         else:
-            self.set_size_request(600, 400)
-
-            self.give_label = Gtk.Label()
-            self.content_area.append(self.give_label)
-
-            self.receive_label = Gtk.Label()
-            self.content_area.append(self.receive_label)
-
-            self.give_label.set_markup(
-                utils.markup(
-                    _("You are trading the following items with {}:").format(utils.unmarkup(self.model[self.iter][4])),
-                    color='blue',
+            if self.selection:
+                self.status.info(
+                    _("Do you want to {} the offer (to {})?\nIt can't be undone!").format(
+                        self.action.upper(),
+                        utils.unmarkup(self.selection.get_item().to),
+                    )
                 )
-            )
+            else:
+                self.status.error(_("You must select something"))
+                self.header_bar.set_show_title_buttons(True)
+                self.yes_button.set_visible(False)
+                self.no_button.set_visible(False)
 
-            self.status.info(_("Do you really want to {} that?\nIt can't be undone!").format(self.action.upper()))
-
-            self.grid = Gtk.Grid()
-            self.content_area.append(self.grid)
-
-            self.give_tree = utils.SimpleTextTree(_("You will give"), fixed_width=300, model=Gtk.ListStore)
-            self.grid.attach(self.give_tree, 0, 0, 1, 1)
-
-            self.arrow = Gtk.Image()
-            self.arrow.set_from_icon_name('emblem-synchronizing-symbolic')
-            self.grid.attach(self.arrow, 1, 0, 1, 1)
-
-            self.receive_tree = utils.SimpleTextTree(_("You will receive"), fixed_width=300, model=Gtk.ListStore)
-            self.grid.attach(self.receive_tree, 2, 0, 1, 1)
-
-            utils.copy_childrens(self.model, self.give_tree.store, self.iter, 3)
-            utils.copy_childrens(self.model, self.receive_tree.store, self.iter, 5)
-
-        self.connect('response', lambda dialog, response_id: self.destroy())
+        self.connect('destroy', lambda *args: self.destroy())
+        self.connect('close-request', lambda *args: self.destroy())
 
     def on_yes_button_clicked(self, button: Gtk.Button) -> None:
-        button.hide()
-        self.no_button.hide()
-        self.set_size_request(300, 60)
+        button.set_visible(False)
+        self.no_button.set_visible(False)
+        self.set_size_request(0, 0)
         self.header_bar.set_show_title_buttons(False)
-        self.parent_window.confirmations_tree.lock = True
+        self.confirmations_tree.lock = True
 
         loop = asyncio.get_event_loop()
-        task: asyncio.Task[Union[Dict[str, Any], List[Tuple[Gtk.TreeIter, Dict[str, Any]]]]]
 
-        if self.iter:
-            self.content_area.remove(self.grid)
-            self.content_area.remove(self.give_label)
-            self.content_area.remove(self.receive_label)
-            task = loop.create_task(self.finalize())
-        else:
+        if self.batch:
             task = loop.create_task(self.batch_finalize())
+        else:
+            task = loop.create_task(
+                self.finalize(
+                    self.selection.get_item(),
+                    self.selection.get_position(),
+                )
+            )
 
         task.add_done_callback(self.on_task_finish)
 
     def on_task_finish(self, task: asyncio.Task[Any]) -> None:
-        self.parent_window.confirmations_tree.lock = False
+        self.confirmations_tree.lock = False
         exception = task.exception()
 
         if exception and not isinstance(exception, asyncio.CancelledError):
@@ -171,15 +130,21 @@ class FinalizeDialog(Gtk.Dialog):
                 log.error("Steam Server is slow. (%s)", str(exception))
 
                 self.status.error(
-                    _("Steam Server is slow. Please, try again.")
+                    _(
+                        "Unable to complete this trade. The reason is one of the following:\n\n"
+                        "1. The item you choose already gone. Try another one.\n"
+                        "2. You wrote a wrong token in config. Update you config.\n"
+                        "3. The Steam server is slow. Wait a minute and try again.\n\n"
+                        "If you keep seeing this error, please update the coupon list."
+                    )
                 )
 
                 self.header_bar.set_show_title_buttons(True)
-                self.yes_button.hide()
+                self.yes_button.set_visible(False)
         else:
             self.destroy()
 
-    async def finalize(self, keep_iter: bool = False) -> Dict[str, Any]:
+    async def do_finalize(self, item: Gtk.ListItem) -> Dict[str, Any]:
         identity_secret = config.parser.get("login", "identity_secret")
         deviceid = config.parser.get("login", "deviceid")
         steamid_raw = config.parser.getint("login", "steamid")
@@ -191,7 +156,7 @@ class FinalizeDialog(Gtk.Dialog):
             await asyncio.sleep(5)
             return {}
 
-        self.status.info(_("Waiting Steam Server (OP: {})").format(self.model[self.iter][1]))
+        self.status.info(_("Waiting Steam Server (OP: {})").format(item.creatorid))
         result: Dict[str, Any] = {}
 
         # steam confirmation server isn't reliable
@@ -200,37 +165,44 @@ class FinalizeDialog(Gtk.Dialog):
                 identity_secret,
                 steamid,
                 deviceid,
-                self.model[self.iter][0],
-                self.model[self.iter][2],
+                item.confid,
+                item.key,
                 self.raw_action,
             )
             await asyncio.sleep(0.5)
 
-        if not keep_iter:
-            try:
-                self.model.remove(self.iter)
-            except IndexError:
-                log.debug(_("Unable to remove tree path %s (already removed?). Ignoring."), self.iter)
+        assert isinstance(result, dict)
+        return result
+
+    async def single_finalize(self, item: Gtk.ListItem, index: int) -> Dict[str, Any]:
+        result = await self.do_finalize(item)
+
+        try:
+            self.confirmations_tree.store.remove(index)
+        except IndexError:
+            log.debug(_("Unable to remove tree path %s (already removed?). Ignoring."), item)
 
         assert isinstance(result, dict)
         return result
 
     async def batch_finalize(self) -> List[Tuple[Gtk.TreeIter, Dict[str, Any]]]:
         results = []
+        n_items = self.confirmations_tree.store.get_n_items()
         self.status.info(_("Waiting Steam Server response"))
-        confirmation_count = len(self.model)
 
-        for index in range(confirmation_count):
-            self.iter = self.model[index].iter
-
+        for index in range(n_items):
             self.progress.set_value(index)
-            self.progress.set_max_value(confirmation_count)
+            self.progress.set_max_value(n_items)
+            item = self.confirmations_tree.store.get_item(index)
+            result = await self.do_finalize(item)
+            results.append((item, result))
 
-            result = await self.finalize(True)
-            results.append((self.iter, result))
-
-        self.status.info(_("Updating tree"))
-        for iter_, result in results:
-            self.model.remove(iter_)
+        # warning: it must be done after done finalizing entries
+        # don't try to modify the tree while processing entries
+        for index in range(n_items):
+            try:
+                self.confirmations_tree.store.remove(index)
+            except IndexError:
+                log.debug(_("Unable to remove tree path %s (already removed?). Ignoring."), item)
 
         return results

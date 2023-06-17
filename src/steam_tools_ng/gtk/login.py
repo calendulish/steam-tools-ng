@@ -32,43 +32,25 @@ _ = i18n.get_translation
 
 
 # noinspection PyUnusedLocal
-class LoginDialog(Gtk.Dialog):
+class LoginWindow(utils.StatusWindowBase):
     def __init__(
             self,
             parent_window: Gtk.Window,
             application: Gtk.Application,
             mobile_login: bool = True,
     ) -> None:
-        super().__init__(use_header_bar=True)
-        self.application = application
+        super().__init__(parent_window, application)
         self.mobile_login = mobile_login
         self.has_user_data = False
 
-        self.header_bar = self.get_header_bar()
+        self.header_bar = Gtk.HeaderBar()
 
         self.login_button = utils.AsyncButton()
         self.login_button.set_label(_("Log-in"))
         self.login_button.connect("clicked", self.on_login_button_clicked)
         self.header_bar.pack_end(self.login_button)
-
-        self.parent_window = parent_window
-        self.set_default_size(400, 100)
+        self.set_titlebar(self.header_bar)
         self.set_title(_('Login'))
-        self.set_transient_for(parent_window)
-        self.set_modal(True)
-        self.set_destroy_with_parent(True)
-        self.set_resizable(False)
-
-        self.content_area = self.get_content_area()
-        self.content_area.set_orientation(Gtk.Orientation.VERTICAL)
-        self.content_area.set_spacing(10)
-        self.content_area.set_margin_start(10)
-        self.content_area.set_margin_end(10)
-        self.content_area.set_margin_top(10)
-        self.content_area.set_margin_bottom(10)
-
-        self.status = utils.SimpleStatus()
-        self.content_area.append(self.status)
 
         self.user_details_section = utils.Section("login")
         self.content_area.append(self.user_details_section)
@@ -116,17 +98,18 @@ class LoginDialog(Gtk.Dialog):
             0, 1,
         )
 
-        self.connect('response', self.on_quit)
+        self.connect('destroy', self.on_quit)
+        self.connect('close-request', self.on_quit)
 
         key_event = Gtk.EventControllerKey()
         key_event.connect('key-released', self.on_key_release_event)
         self.add_controller(key_event)
 
-        self.steam_code_item.hide()
-        self.mail_code_item.hide()
-        self.captcha_item.hide()
-        self.captcha_text_item.hide()
-        self.advanced_login_section.hide()
+        self.steam_code_item.set_visible(False)
+        self.mail_code_item.set_visible(False)
+        self.captcha_item.set_visible(False)
+        self.captcha_text_item.set_visible(False)
+        self.advanced_login_section.set_visible(False)
 
         self.check_login_availability()
 
@@ -219,16 +202,16 @@ class LoginDialog(Gtk.Dialog):
 
         if not self.shared_secret or not self.identity_secret:
             log.warning(_("No shared secret found. Trying to log-in without two-factor authentication."))
-            # self.code_item.show()
+            # self.code_item.set_visible(True)
 
         kwargs['shared_secret'] = self.shared_secret
         kwargs['authenticator_code'] = self.steam_code
 
         self.status.info(_("Logging in"))
-        self.captcha_item.hide()
-        self.captcha_text_item.hide()
-        self.steam_code_item.hide()
-        self.mail_code_item.hide()
+        self.captcha_item.set_visible(False)
+        self.captcha_text_item.set_visible(False)
+        self.steam_code_item.set_visible(False)
+        self.mail_code_item.set_visible(False)
 
         try_count = 3
 
@@ -238,7 +221,7 @@ class LoginDialog(Gtk.Dialog):
             except login.MailCodeError:
                 self.status.info(_("Write code received by email\nand click on 'Log-in' button"))
                 self.mail_code_item.set_text("")
-                self.mail_code_item.show()
+                self.mail_code_item.set_visible(True)
                 self.mail_code_item.grab_focus()
             except login.TwoFactorCodeError:
                 if self.shared_secret:
@@ -256,17 +239,17 @@ class LoginDialog(Gtk.Dialog):
 
                 self.status.error(_("Write Steam Code bellow and click on 'Log-in'"))
                 self.steam_code_item.set_text("")
-                self.steam_code_item.show()
+                self.steam_code_item.set_visible(True)
                 self.steam_code_item.grab_focus()
             except login.LoginBlockedError:
                 self.status.error(_(
                     "Your network is blocked!\n"
                     "It'll take some time until unblocked. Please, try again later\n"
                 ))
-                self.user_details_section.hide()
-                self.advanced_login.hide()
-                self.advanced_login_section.hide()
-                self.login_button.hide()
+                self.user_details_section.set_visible(False)
+                self.advanced_login.set_visible(False)
+                self.advanced_login_section.set_visible(False)
+                self.login_button.set_visible(False)
                 self.set_deletable(True)
             except login.CaptchaError as exception:
                 self.status.info(_("Write captcha code as shown bellow\nand click on 'Log-in' button"))
@@ -278,9 +261,9 @@ class LoginDialog(Gtk.Dialog):
                 pixbuf_loader.close()
                 self.captcha_item.set_from_pixbuf(pixbuf_loader.get_pixbuf())
 
-                self.captcha_item.show()
+                self.captcha_item.set_visible(True)
                 self.captcha_text_item.set_text("")
-                self.captcha_text_item.show()
+                self.captcha_text_item.set_visible(True)
                 self.captcha_text_item.grab_focus()
             except (login.LoginError, AttributeError) as exception:
                 log.error(str(exception))
@@ -353,7 +336,7 @@ class LoginDialog(Gtk.Dialog):
         if self.advanced_login_section.props.visible:
             self.identity_secret_item.set_text('')
             self.shared_secret_item.set_text('')
-            self.advanced_login_section.hide()
+            self.advanced_login_section.set_visible(False)
             self.set_size_request(400, 100)
         else:
-            self.advanced_login_section.show()
+            self.advanced_login_section.set_visible(True)
