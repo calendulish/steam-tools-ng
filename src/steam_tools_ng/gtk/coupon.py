@@ -43,7 +43,7 @@ class CouponWindow(utils.StatusWindowBase):
         super().__init__(parent_window, application)
         self.community_session = community.Community.get_session(0)
         self.coupons_tree = coupons_tree
-        self.selection = self.coupons_tree.selection.get_selected_item()
+        self.selection = self.coupons_tree.model.get_selected_item()
         self.has_status = False
         self.action = action
 
@@ -142,12 +142,7 @@ class CouponWindow(utils.StatusWindowBase):
                 self.yes_button.set_visible(False)
         else:
             config.new("coupons", "last_trade_time", int(time.time()))
-            item = self.selection.get_item()
-
-            try:
-                self.confirmations_tree.store.remove(item.get_position())
-            except IndexError:
-                log.debug(_("Unable to remove tree path %s (already removed?). Ignoring."), item)
+            self.confirmations_tree.remove_row(self.selection)
 
             if not self.has_status:
                 self.destroy()
@@ -227,7 +222,7 @@ class CouponWindow(utils.StatusWindowBase):
                     item = confirmations_tree.store.get_item(index)
 
                     if item.creatorid == json_data['tradeofferid']:
-                        confirmations_tree.selection.set_selected(index)
+                        confirmations_tree.model.set_selected(index)
                         break
 
                 if target:

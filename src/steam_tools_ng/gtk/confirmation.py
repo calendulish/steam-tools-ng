@@ -42,7 +42,7 @@ class FinalizeWindow(utils.StatusWindowBase):
         super().__init__(parent_window, application)
         self.community_session = community.Community.get_session(0)
         self.confirmations_tree = confirmations_tree
-        self.selection = self.confirmations_tree.selection.get_selected_item()
+        self.selection = self.confirmations_tree.model.get_selected_item()
         self.batch = batch
 
         if action == "allow":
@@ -103,12 +103,7 @@ class FinalizeWindow(utils.StatusWindowBase):
         if self.batch:
             task = loop.create_task(self.batch_finalize())
         else:
-            task = loop.create_task(
-                self.finalize(
-                    self.selection.get_item(),
-                    self.selection.get_position(),
-                )
-            )
+            task = loop.create_task(self.single_finalize())
 
         task.add_done_callback(self.on_task_finish)
 
@@ -165,8 +160,8 @@ class FinalizeWindow(utils.StatusWindowBase):
                 identity_secret,
                 steamid,
                 deviceid,
-                item.confid,
-                item.key,
+                item.id,
+                item.nonce,
                 self.raw_action,
             )
             await asyncio.sleep(0.5)
@@ -174,35 +169,27 @@ class FinalizeWindow(utils.StatusWindowBase):
         assert isinstance(result, dict)
         return result
 
-    async def single_finalize(self, item: Gtk.ListItem, index: int) -> Dict[str, Any]:
+    async def single_finalize(self) -> Dict[str, Any]:
+        item = self.selection.get_item()
         result = await self.do_finalize(item)
-
-        try:
-            self.confirmations_tree.store.remove(index)
-        except IndexError:
-            log.debug(_("Unable to remove tree path %s (already removed?). Ignoring."), item)
+        self.confirmations_tree.remove_row(self.selection)
 
         assert isinstance(result, dict)
         return result
 
     async def batch_finalize(self) -> List[Tuple[Gtk.TreeIter, Dict[str, Any]]]:
         results = []
-        n_items = self.confirmations_tree.store.get_n_items()
+        n_rows = self.confirmations_tree.model.get_n_items()
         self.status.info(_("Waiting Steam Server response"))
 
-        for index in range(n_items):
+        for index in range(n_rows):
             self.progress.set_value(index)
-            self.progress.set_max_value(n_items)
-            item = self.confirmations_tree.store.get_item(index)
+            self.progress.set_max_value(n_rows)
+            row = self.confirmations_tree.model.get_item(index)
+            item = row.get_item()
             result = await self.do_finalize(item)
             results.append((item, result))
 
-        # warning: it must be done after done finalizing entries
-        # don't try to modify the tree while processing entries
-        for index in range(n_items):
-            try:
-                self.confirmations_tree.store.remove(index)
-            except IndexError:
-                log.debug(_("Unable to remove tree path %s (already removed?). Ignoring."), item)
+        self.confirmations_tree.clear()
 
         return results

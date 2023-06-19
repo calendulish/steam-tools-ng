@@ -139,7 +139,7 @@ class Main(Gtk.ApplicationWindow):
         self.confirmations_grid.set_row_spacing(10)
         steamguard_stack.add_titled(self.confirmations_grid, "confirmations", _("Confirmations"))
 
-        confirmation_tree_headers = _('confid'), _('creatorid'), _('key'), _('give'), _('to'), _('receive')
+        confirmation_tree_headers = _('id'), _('creatorid'), _('nonce'), _('give'), _('to'), _('receive')
         self.confirmations_tree = utils.SimpleTextTree(*confirmation_tree_headers)
         self.confirmations_grid.attach(self.confirmations_tree, 0, 0, 4, 1)
 
@@ -155,7 +155,7 @@ class Main(Gtk.ApplicationWindow):
             if index == 5:
                 column.set_fixed_width(100)
 
-        self.confirmations_tree.selection.connect("selection-changed", self.on_tree_selection_changed)
+        self.confirmations_tree.model.connect("selection-changed", self.on_tree_selection_changed)
 
         accept_button = Gtk.Button()
         accept_button.set_margin_start(3)
@@ -562,7 +562,7 @@ class Main(Gtk.ApplicationWindow):
                 column.set_fixed_width(400)
 
         self.coupons_tree.view.connect("activate", self.on_coupon_double_clicked)
-        self.coupons_tree.selection.connect("selection-changed", self.on_tree_selection_changed)
+        self.coupons_tree.model.connect("selection-changed", self.on_tree_selection_changed)
 
         self.coupon_progress = Gtk.LevelBar()
         self.coupons_grid.attach(self.coupon_progress, 0, 3, 4, 1)
@@ -740,7 +740,8 @@ class Main(Gtk.ApplicationWindow):
         finalize_window.present()
 
     def on_coupon_double_clicked(self, view: Gtk.ColumnView, position: int) -> None:
-        item = self.coupons_tree.store.get_item(position)
+        row = self.coupons_tree.model.get_item(position)
+        item = row.get_item()
         url = f"steam://openurl/{item.link}"
         steam_running = False
 

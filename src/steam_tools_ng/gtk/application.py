@@ -284,23 +284,26 @@ class SteamToolsNG(Gtk.Application):
                     t_give = utils.sanitize_confirmation(confirmation_.give)
                     t_receive = utils.sanitize_confirmation(confirmation_.receive)
 
-                    row = self.main_window.confirmations_tree.append(
-                        str(confirmation_.confid),
+                    item = self.main_window.confirmations_tree.new_item(
+                        str(confirmation_.id),
                         str(confirmation_.creatorid),
-                        str(confirmation_.key),
+                        str(confirmation_.nonce),
                         utils.markup(t_give),
                         utils.markup(confirmation_.to),
                         utils.markup(t_receive),
                     )
 
-                    for item in itertools.zip_longest(confirmation_.give, confirmation_.receive):
-                        self.main_window.confirmations_tree.append(
+                    for trade_item in itertools.zip_longest(confirmation_.give, confirmation_.receive):
+                        child = self.main_window.confirmations_tree.new_item(
                             None, None, None,
-                            item[0],
+                            trade_item[0] if trade_item[0] else _('Nothing'),
                             '-->',
-                            item[1] if item[1] else _('Nothing'),
-                            parent=row,
+                            trade_item[1] if trade_item[1] else _('Nothing'),
                         )
+
+                        item.children.append(child)
+
+                    self.main_window.confirmations_tree.append_row(item)
 
                 self.old_confirmations = module_data.raw_data
                 self.main_window.statusbar.clear('confirmations')
@@ -326,7 +329,7 @@ class SteamToolsNG(Gtk.Application):
                 self.main_window.statusbar.clear("coupons")
 
             if module_data.action == "update":
-                iter_ = self.main_window.coupons_tree.append(
+                item = self.main_window.coupons_tree.new_item(
                     f"{module_data.raw_data['price']:.2f}",
                     utils.markup(module_data.raw_data['name'], foreground='blue', underline='single'),
                     module_data.raw_data['link'],
@@ -334,6 +337,8 @@ class SteamToolsNG(Gtk.Application):
                     module_data.raw_data['token'],
                     str(module_data.raw_data['assetid']),
                 )
+
+                self.main_window.coupons_tree.append_row(item)
 
             if module_data.action == "clear":
                 self.main_window.coupons_tree.clear()

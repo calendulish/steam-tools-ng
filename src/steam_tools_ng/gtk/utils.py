@@ -291,15 +291,21 @@ class SimpleTextTree(Gtk.Grid):
 
         return None
 
-    def append(self, *data: List[str], parent: Optional[SimpleTextTreeItem] = None) -> SimpleTextTreeItem:
-        row = SimpleTextTreeItem(*data, headers=self.headers)
+    def new_item(self, *data: List[str]) -> SimpleTextTreeItem:
+        return SimpleTextTreeItem(*data, headers=self.headers)
 
-        if parent:
-            parent.children.append(row)
+    def append_row(self, row: Gtk.TreeListRow) -> None:
+        self._store.append(row)
+
+    def remove_row(self, row: Gtk.TreeListRow) -> bool:
+        item = row.get_item()
+        position = self._store.find(item)
+
+        if position:
+            self._store.remove(position)
+            return True
         else:
-            self._store.append(row)
-
-        return row
+            return False
 
     def clear(self) -> None:
         self._store.remove_all()
@@ -356,7 +362,7 @@ class SimpleTextTree(Gtk.Grid):
         return self._view
 
     @property
-    def selection(self) -> Gtk.SingleSelection:
+    def model(self) -> Gtk.SingleSelection:
         return self._model
 
 
