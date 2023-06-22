@@ -77,7 +77,8 @@ class FinalizeWindow(utils.StatusWindowBase):
         else:
             if self.selection:
                 self.status.info(
-                    _("Do you want to {} the offer (to {})?\nIt can't be undone!").format(
+                    _("{}\nDo you want to {} the offer?\nIt can't be undone!").format(
+                        self.selection.get_item().summary,
                         self.action.upper(),
                         utils.unmarkup(self.selection.get_item().to),
                     )

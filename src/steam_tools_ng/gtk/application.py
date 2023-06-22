@@ -291,6 +291,7 @@ class SteamToolsNG(Gtk.Application):
                         utils.markup(t_give),
                         utils.markup(confirmation_.to),
                         utils.markup(t_receive),
+                        '. '.join(confirmation_.summary),
                     )
 
                     for trade_item in itertools.zip_longest(confirmation_.give, confirmation_.receive):
@@ -299,6 +300,7 @@ class SteamToolsNG(Gtk.Application):
                             trade_item[0] if trade_item[0] else _('Nothing'),
                             '-->',
                             trade_item[1] if trade_item[1] else _('Nothing'),
+                            None,
                         )
 
                         item.children.append(child)
