@@ -309,9 +309,9 @@ class SimpleTextTree(Gtk.Grid):
 
     def remove_row(self, row: Gtk.TreeListRow) -> bool:
         item = row.get_item()
-        position = self._store.find(item)
+        found, position = self._store.find(item)
 
-        if position:
+        if found:
             self._store.remove(position)
             return True
         else:
