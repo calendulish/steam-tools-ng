@@ -139,7 +139,7 @@ class Main(Gtk.ApplicationWindow):
         self.confirmations_grid.set_row_spacing(10)
         steamguard_stack.add_titled(self.confirmations_grid, "confirmations", _("Confirmations"))
 
-        confirmation_tree_headers = _('id'), _('creatorid'), _('nonce'), _('give'), _('to'), _('receive'), 'summary',
+        confirmation_tree_headers = 'id', 'creatorid', 'nonce', '_give', '_to', '_receive', 'summary',
         self.confirmations_tree = utils.SimpleTextTree(*confirmation_tree_headers)
         self.confirmations_grid.attach(self.confirmations_tree, 0, 0, 4, 1)
 
@@ -537,7 +537,7 @@ class Main(Gtk.ApplicationWindow):
         self.coupons_grid.set_row_spacing(10)
         coupons_stack.add_titled(self.coupons_grid, "coupons_list", _("Coupon List"))
 
-        coupons_tree_headers = _('price'), _('name'), 'link', 'botid', 'token', 'assetid'
+        coupons_tree_headers = '_price', '_name', 'link', 'botid', 'token', 'assetid'
         self.coupons_tree = utils.SimpleTextTree(*coupons_tree_headers)
 
         price_sorter = Gtk.CustomSorter()

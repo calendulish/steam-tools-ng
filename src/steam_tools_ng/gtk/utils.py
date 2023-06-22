@@ -159,7 +159,7 @@ class SimpleTextTreeItem(GObject.Object):
             setattr(self, name, value)
 
         for index, header in enumerate(headers):
-            name = header.replace(' ', '_').lower()
+            name = header.replace('_', '').replace(' ', '_').lower()
 
             try:
                 setattr(self, name, args[index])
@@ -202,8 +202,11 @@ class SimpleTextTree(Gtk.Grid):
 
         for element in self.headers:
             column = Gtk.ColumnViewColumn()
-            column.set_title(element)
             column.set_resizable(resizable)
+
+            if element.startswith('_'):
+                column.set_title(_(element))
+                element = element[1:]
 
             if fixed_width:
                 column.set_fixed_width(fixed_width)
