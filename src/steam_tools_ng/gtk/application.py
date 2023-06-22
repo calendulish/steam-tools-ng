@@ -294,13 +294,11 @@ class SteamToolsNG(Gtk.Application):
                         '. '.join(confirmation_.summary),
                     )
 
-                    for trade_item in itertools.zip_longest(confirmation_.give, confirmation_.receive):
+                    for give, receive in itertools.zip_longest(confirmation_.give, confirmation_.receive):
                         child = self.main_window.confirmations_tree.new_item(
-                            None, None, None,
-                            trade_item[0] if trade_item[0] else _('Nothing'),
-                            '-->',
-                            trade_item[1] if trade_item[1] else _('Nothing'),
-                            None,
+                            give=give if give else _("Nothing"),
+                            to='-->',
+                            receive=receive if receive else _("Nothing"),
                         )
 
                         item.children.append(child)

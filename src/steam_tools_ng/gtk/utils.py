@@ -154,10 +154,17 @@ class StatusBar(Gtk.Grid):
 
 
 class SimpleTextTreeItem(GObject.Object):
-    def __init__(self, *args: str, headers: Tuple[str]) -> None:
-        for index, arg in enumerate(args):
-            name = headers[index].replace(' ', '_').lower()
-            setattr(self, name, arg)
+    def __init__(self, *args: str, headers: Tuple[str], **kwargs) -> None:
+        for name, value in kwargs.items():
+            setattr(self, name, value)
+
+        for index, header in enumerate(headers):
+            name = header.replace(' ', '_').lower()
+
+            try:
+                setattr(self, name, args[index])
+            except IndexError:
+                log.debug(f'{name} param not set in {self}')
 
         super(GObject.Object, self).__init__()
         self.children = []
@@ -291,8 +298,8 @@ class SimpleTextTree(Gtk.Grid):
 
         return None
 
-    def new_item(self, *data: List[str]) -> SimpleTextTreeItem:
-        return SimpleTextTreeItem(*data, headers=self.headers)
+    def new_item(self, *data: List[str], **kwargs) -> SimpleTextTreeItem:
+        return SimpleTextTreeItem(*data, headers=self.headers, **kwargs)
 
     def append_row(self, row: Gtk.TreeListRow) -> None:
         self._store.append(row)
