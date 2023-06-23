@@ -189,54 +189,50 @@ class Main(Gtk.ApplicationWindow):
         steamguard_settings.stackup_section(_("Settings"), steamguard_stack)
         steamguard_settings.grid.set_halign(Gtk.Align.CENTER)
 
-        steamguard_enable = steamguard_settings.new_item("enable", _("Enable:"), Gtk.Switch, 0, 0)
-        steamguard_enable.set_margin_top(40)
-        steamguard_enable.label.set_margin_top(40)
-        steamguard_enable.set_halign(Gtk.Align.END)
-        steamguard_enable.connect("state-set", utils.on_setting_state_set)
+        self.steamguard_enable = steamguard_settings.new_item("enable", _("Enable:"), Gtk.Switch, 0, 0)
+        self.steamguard_enable.set_margin_top(40)
+        self.steamguard_enable.label.set_margin_top(40)
+        self.steamguard_enable.set_halign(Gtk.Align.END)
+        self.steamguard_enable.connect("state-set", utils.on_setting_state_set)
 
-        if not config.parser.get("login", "shared_secret"):
-            self.steamguard_status.set_sensitive(False)
-            steamguard_enable.set_active(False)
-            _steamguard_disabled = Gtk.Label()
-            _steamguard_disabled.set_justify(Gtk.Justification.CENTER)
-            _steamguard_disabled.set_halign(Gtk.Align.CENTER)
+        self.steamguard_disabled = Gtk.Label()
+        self.steamguard_disabled.set_justify(Gtk.Justification.CENTER)
+        self.steamguard_disabled.set_halign(Gtk.Align.CENTER)
 
-            _message = _(
-                "steamguard module has been disabled because you have\n"
-                "logged in but no shared secret is found. To enable it again,\n"
-                "go to Advanced and add a valid shared secret\n"
-                "or use STNG as your Steam Authenticator\n"
-            )
+        _message = _(
+            "steamguard module has been disabled because you have\n"
+            "logged in but no shared secret is found. To enable it again,\n"
+            "go to Advanced and add a valid shared secret\n"
+            "or use STNG as your Steam Authenticator\n"
+        )
 
-            _steamguard_disabled.set_markup(utils.markup(_message, color="hotpink", background="black"))
-            steamguard_section.grid.attach(_steamguard_disabled, 0, 0, 2, 1)
+        self.steamguard_disabled.set_markup(utils.markup(_message, color="hotpink", background="black"))
+        self.steamguard_disabled.set_visible(False)
+        steamguard_section.grid.attach(self.steamguard_disabled, 0, 0, 2, 1)
 
-        confirmations_enable = steamguard_settings.new_item(
+        self.confirmations_enable = steamguard_settings.new_item(
             "enable_confirmations", _("Enable Confirmations:"),
             Gtk.Switch,
             0, 1,
         )
 
-        confirmations_enable.set_halign(Gtk.Align.END)
-        confirmations_enable.connect("state-set", utils.on_setting_state_set)
+        self.confirmations_enable.set_halign(Gtk.Align.END)
+        self.confirmations_enable.connect("state-set", utils.on_setting_state_set)
 
-        if not config.parser.get("login", "identity_secret"):
-            self.confirmations_grid.set_sensitive(False)
-            confirmations_enable.set_active(False)
-            _confirmations_disabled = Gtk.Label()
-            _confirmations_disabled.set_justify(Gtk.Justification.CENTER)
-            _confirmations_disabled.set_halign(Gtk.Align.CENTER)
+        self.confirmations_disabled = Gtk.Label()
+        self.confirmations_disabled.set_justify(Gtk.Justification.CENTER)
+        self.confirmations_disabled.set_halign(Gtk.Align.CENTER)
 
-            _message = _(
-                "confirmations module has been disabled because you have\n"
-                "logged in but no identity secret is found. To enable it again,\n"
-                "go to login -> advanced and add a valid identity secret\n"
-                "or use STNG as your Steam Authenticator\n"
-            )
+        _message = _(
+            "confirmations module has been disabled because you have\n"
+            "logged in but no identity secret is found. To enable it again,\n"
+            "go to login -> advanced and add a valid identity secret\n"
+            "or use STNG as your Steam Authenticator\n"
+        )
 
-            _confirmations_disabled.set_markup(utils.markup(_message, color="hotpink", background="black"))
-            self.confirmations_grid.attach(_confirmations_disabled, 0, 0, 4, 1)
+        self.confirmations_disabled.set_markup(utils.markup(_message, color="hotpink", background="black"))
+        self.confirmations_disabled.set_visible(False)
+        self.confirmations_grid.attach(self.confirmations_disabled, 0, 0, 4, 1)
 
         login_button = Gtk.Button()
         login_button.set_margin_top(40)
@@ -689,6 +685,24 @@ class Main(Gtk.ApplicationWindow):
                     size='small',
                 )
             )
+
+            if config.parser.get("login", "shared_secret"):
+                self.steamguard_disabled.set_visible(False)
+                self.steamguard_status.set_sensitive(True)
+                self.steamguard_enable.set_active(True)
+            else:
+                self.steamguard_disabled.set_visible(True)
+                self.steamguard_status.set_sensitive(False)
+                self.steamguard_enable.set_active(False)
+
+            if config.parser.get("login", "identity_secret"):
+                self.confirmations_disabled.set_visible(False)
+                self.confirmations_grid.set_sensitive(True)
+                self.confirmations_enable.set_active(True)
+            else:
+                self.confirmations_disabled.set_visible(True)
+                self.confirmations_grid.set_sensitive(False)
+                self.confirmations_enable.set_active(False)
 
             await asyncio.sleep(30)
 
