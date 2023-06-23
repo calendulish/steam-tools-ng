@@ -62,7 +62,7 @@ async def main(
         owned_games = await webapi_session.get_owned_games(steamid)
     except aiohttp.ClientError:
         yield utils.ModuleData(error=_("Failed when trying to get owned games"))
-        await asyncio.sleep(15)
+        await asyncio.sleep(30)
         return
 
     yield utils.ModuleData(action="clear")
@@ -81,14 +81,14 @@ async def main(
         except AttributeError:
             module_data = utils.ModuleData(error=_("Error when fetch inventory"), info=_("Waiting Changes"))
 
-            async for data in utils.timed_module_data(15, module_data):
+            async for data in utils.timed_module_data(30, module_data):
                 yield data
 
             return
         except aiohttp.ClientError:
             module_data = utils.ModuleData(error=_("Check your connection. (server down?)"), info=_("Waiting Changes"))
 
-            async for data in utils.timed_module_data(60, module_data):
+            async for data in utils.timed_module_data(120, module_data):
                 yield data
 
             return
@@ -96,7 +96,7 @@ async def main(
         if not inventory:
             module_data = utils.ModuleData(error=_("The botid {} has no coupons available"), info=_("Skipping"))
 
-            async for data in utils.timed_module_data(15, module_data):
+            async for data in utils.timed_module_data(30, module_data):
                 yield data
 
             continue
