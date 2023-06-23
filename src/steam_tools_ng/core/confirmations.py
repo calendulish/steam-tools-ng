@@ -68,5 +68,5 @@ async def main(
     else:
         module_data = utils.ModuleData(action="update", raw_data=confirmations)
 
-    async for data in utils.timed_module_data(20, module_data):
+    async for data in utils.timed_module_data(30, module_data):
         yield data
