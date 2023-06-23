@@ -15,13 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import aiohttp
 import asyncio
 import binascii
 import codecs
 import logging
-from gi.repository import Gtk, Gdk, GdkPixbuf
 from typing import Any
+
+import aiohttp
+from gi.repository import Gtk, Gdk, GdkPixbuf
 
 from stlib import login, universe
 from . import utils
@@ -196,9 +197,6 @@ class LoginWindow(utils.StatusWindowBase):
         if self.captcha_gid != -1:
             kwargs['captcha_text'] = self.captcha_text
             kwargs['captcha_gid'] = self.captcha_gid
-            # if login fails for any reason, gid must be unset
-            # CaptchaError exception will reset it if needed
-            self.captcha_gid = -1
 
         if not self.shared_secret or not self.identity_secret:
             log.warning(_("No shared secret found. Trying to log-in without two-factor authentication."))
@@ -273,7 +271,14 @@ class LoginWindow(utils.StatusWindowBase):
                 config.remove('login', 'token_secure')
                 config.remove('login', 'oauth_token')
 
-                self.status.error(':\n'.join(str(exception).split(': ')))
+                self.status.error(
+                    ':\n'.join(str(exception).split(': ')) +
+                    _(
+                        '\n\nIf your previous authenticator has been removed,'
+                        '\nopen advanced login bellow and remove the old secrets.'
+                    ),
+                )
+
                 self.username_item.set_sensitive(True)
                 self.__password_item.set_sensitive(True)
                 self.__password_item.grab_focus()
@@ -283,20 +288,25 @@ class LoginWindow(utils.StatusWindowBase):
                 self.__password_item.set_sensitive(True)
                 self.shared_secret_item.grab_focus()
             except (aiohttp.ClientError, ValueError):
-                self.status.error(_("Check your connection. (server down?)"))
-                await asyncio.sleep(15)
-                continue
+                for count in range(20, 0):
+                    self.status.error(_("Check your connection. (server down? blocked?)\nWaiting {}").format(count))
+                    await asyncio.sleep(1)
+
+                self.captcha_gid = -1
+                self.username_item.set_sensitive(True)
+                self.__password_item.set_sensitive(True)
+                self.login_button.grab_focus()
             else:
                 new_configs = {"account_name": self.username}
 
                 if "shared_secret" in login_data.auth:
                     new_configs["shared_secret"] = login_data.auth["shared_secret"]
-                elif self.shared_secret:
+                else:
                     new_configs["shared_secret"] = self.shared_secret
 
                 if "identity_secret" in login_data.auth:
                     new_configs['identity_secret'] = login_data.auth['identity_secret']
-                elif self.identity_secret:
+                else:
                     new_configs["identity_secret"] = self.identity_secret
 
                 if self.save_password_item.get_active():
@@ -324,6 +334,7 @@ class LoginWindow(utils.StatusWindowBase):
                 self.application.main_window.statusbar.clear('steamguard')
 
                 self.has_user_data = True
+                self.captcha_gid = -1
                 self.destroy()
             finally:
                 self.save_password_item.set_sensitive(True)
