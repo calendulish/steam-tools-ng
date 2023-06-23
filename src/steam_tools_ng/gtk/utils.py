@@ -205,8 +205,8 @@ class SimpleTextTree(Gtk.Grid):
             column.set_resizable(resizable)
 
             if element.startswith('_'):
-                column.set_title(_(element))
                 element = element[1:]
+                column.set_title(_(element))
 
             if fixed_width:
                 column.set_fixed_width(fixed_width)
