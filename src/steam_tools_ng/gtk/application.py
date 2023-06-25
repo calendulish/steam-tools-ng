@@ -182,7 +182,12 @@ class SteamToolsNG(Gtk.Application):
             for module_name in config.plugins.keys():
                 task = modules.get(module_name, None)
 
-                if config.parser.getboolean(module_name, "enable"):
+                if module_name == "confirmations":
+                    enabled = config.parser.getboolean("steamguard", "enable_confirmations")
+                else:
+                    enabled = config.parser.getboolean(module_name, "enable")
+
+                if enabled:
                     if task:
                         if task.cancelled() and not task._exception:  # why task.exception() is raising?
                             log.debug(_("%s is requesting a reinitialization."), module_name)
