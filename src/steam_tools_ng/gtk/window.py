@@ -689,7 +689,6 @@ class Main(Gtk.ApplicationWindow):
             if config.parser.get("login", "shared_secret"):
                 self.steamguard_disabled.set_visible(False)
                 self.steamguard_status.set_sensitive(True)
-                self.steamguard_enable.set_active(True)
             else:
                 self.steamguard_disabled.set_visible(True)
                 self.steamguard_status.set_sensitive(False)
@@ -698,7 +697,6 @@ class Main(Gtk.ApplicationWindow):
             if config.parser.get("login", "identity_secret"):
                 self.confirmations_disabled.set_visible(False)
                 self.confirmations_grid.set_sensitive(True)
-                self.confirmations_enable.set_active(True)
             else:
                 self.confirmations_disabled.set_visible(True)
                 self.confirmations_grid.set_sensitive(False)
