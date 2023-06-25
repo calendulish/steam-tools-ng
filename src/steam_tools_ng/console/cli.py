@@ -163,6 +163,9 @@ class SteamToolsNG:
 
             if not api_key:
                 raise ValueError(_('Something wrong with your SteamAPI dev key'))
+        except PermissionError:
+            log.error(_("Limited account! Using dummy API key"))
+            api_key = (0, 'Steam Tools NG')
 
         await webapi.SteamWebAPI.new_session(0, api_key=api_key[0], api_url=self.api_url)
         await internals.Internals.new_session(0)

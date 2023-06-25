@@ -91,6 +91,17 @@ class Main(Gtk.ApplicationWindow):
         main_grid.set_margin_bottom(10)
         self.set_child(main_grid)
 
+        self.limited_label = Gtk.Label()
+        self.limited_label.set_visible(False)
+        self.limited_label.set_markup(
+            utils.markup(
+                _("Limited Account! Some modules will not work!"),
+                background='red',
+                color='white',
+            )
+        )
+        main_grid.attach(self.limited_label, 1, 0, 1, 1)
+
         self.user_info_label = Gtk.Label()
         self.user_info_label.set_halign(Gtk.Align.END)
         header_bar.pack_start(self.user_info_label)

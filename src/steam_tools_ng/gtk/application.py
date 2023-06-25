@@ -172,6 +172,10 @@ class SteamToolsNG(Gtk.Application):
 
             if not api_key:
                 utils.fatal_error_dialog(ValueError(_('Something wrong with your SteamAPI dev key')), [])
+        except PermissionError:
+            log.error(_("Limited account! Using dummy API key"))
+            self.main_window.limited_label.set_visible(True)
+            api_key = (0, 'Steam Tools NG')
 
         webapi_session = await webapi.SteamWebAPI.new_session(0, api_key=api_key[0], api_url=self.api_url)
         internals_session = await internals.Internals.new_session(0)
