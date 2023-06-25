@@ -180,14 +180,13 @@ class FinalizeWindow(utils.StatusWindowBase):
 
     async def batch_finalize(self) -> List[Tuple[Gtk.TreeIter, Dict[str, Any]]]:
         results = []
-        n_rows = self.confirmations_tree.model.get_n_items()
+        n_items = self.confirmations_tree.store.get_n_items()
         self.status.info(_("Waiting Steam Server response"))
 
-        for index in range(n_rows):
+        for index in range(n_items):
             self.progress.set_value(index)
-            self.progress.set_max_value(n_rows)
-            row = self.confirmations_tree.model.get_item(index)
-            item = row.get_item()
+            self.progress.set_max_value(n_items)
+            item = self.confirmations_tree.store.get_item(index)
             result = await self.do_finalize(item)
             results.append((item, result))
 
