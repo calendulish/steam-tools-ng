@@ -224,8 +224,10 @@ class LoginWindow(utils.PopupWindowBase):
             except login.TwoFactorCodeError:
                 if self.shared_secret:
                     if try_count > 0:
-                        log.warning(_("Retrying login in 10 seconds"))
-                        await asyncio.sleep(10)
+                        for count in range(10, 0):
+                            self.status.info(_("Retrying login in {} seconds").format(count))
+                            await asyncio.sleep(1)
+
                         try_count -= 1
                         continue
                     else:
