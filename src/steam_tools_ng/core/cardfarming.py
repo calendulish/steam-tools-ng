@@ -30,7 +30,6 @@ from .. import i18n, config
 
 _ = i18n.get_translation
 executors = {}
-total_cards_remaining = 0
 
 
 def safe_exit(*args: Any, **kwargs: Any) -> None:
@@ -124,8 +123,8 @@ async def while_has_cards(
             else:
                 break
 
-        global total_cards_remaining
-        total_cards_remaining -= badge.cards - cards
+        yield utils.ModuleData(action="update_drops", raw_data=badge.cards - cards)
+
         # noinspection PyProtectedMember
         badge = badge._replace(cards=cards)
 
@@ -147,7 +146,7 @@ async def main(
     max_concurrency = config.parser.getint("cardfarming", "max_concurrency")
     invisible = config.parser.getboolean("cardfarming", "invisible")
     community_session = community.Community.get_session(0)
-    global total_cards_remaining
+    total_cards_remaining = 0
 
     try:
         badges = sorted(
@@ -239,6 +238,9 @@ async def main(
 
                 if data.action == 'check':
                     executors[appid] = data.raw_data
+
+                if data.action == "update_drops":
+                    total_cards_remaining -= data.raw_data
 
                 if int(time.time()) > last_update + 3:
                     current_running_limit = len(tasks)
