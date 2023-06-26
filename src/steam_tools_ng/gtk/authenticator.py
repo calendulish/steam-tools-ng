@@ -31,31 +31,30 @@ _ = i18n.get_translation
 
 
 # noinspection PyUnusedLocal
-class NewAuthenticatorWindow(utils.StatusWindowBase):
+class NewAuthenticatorWindow(utils.PopupWindowBase):
     def __init__(self, parent_window: Gtk.Window, application: Gtk.Application) -> None:
         super().__init__(parent_window, application)
         self._login_data = None
         self.webapi_session = webapi.SteamWebAPI.get_session(0)
 
-        self.header_bar = Gtk.HeaderBar()
         self.add_authenticator_button = utils.AsyncButton()
         self.add_authenticator_button.set_label(_("Add Authenticator"))
         self.add_authenticator_button.connect("clicked", self.on_add_authenticator_clicked)
         self.header_bar.pack_end(self.add_authenticator_button)
-        self.set_titlebar(self.header_bar)
         self.set_title(_('New Authenticator'))
 
+        self.status = utils.SimpleStatus()
+        self.content_grid.attach(self.status, 0, 0, 1, 1)
+
         self.user_details_section = utils.Section("Login")
-        self.content_area.append(self.user_details_section)
+        self.content_grid.attach(self.user_details_section, 0, 1, 1, 1)
 
         self.sms_code_item = self.user_details_section.new_item("_sms_code", _("SMS Code:"), Gtk.Entry, 0, 1)
 
-        self.connect('destroy', lambda *args: self.destroy())
-        self.connect('close-request', lambda *args: self.destroy())
-
-        key_event = Gtk.EventControllerKey()
-        key_event.connect('key-released', self.on_key_release_event)
-        self.add_controller(key_event)
+        self.revocation_status = utils.Status(6)
+        self.revocation_status.set_pausable(False)
+        self.revocation_status.set_visible(False)
+        self.content_grid.attach(self.revocation_status, 0, 2, 1, 1)
 
         self.add_authenticator_button.emit('clicked')
 
@@ -86,6 +85,8 @@ class NewAuthenticatorWindow(utils.StatusWindowBase):
             keycode: int,
             state: Gdk.ModifierType,
     ) -> None:
+        super().on_key_released_event(controller, keyval, keycode, state)
+
         if keyval == Gdk.KEY_Return:
             self.add_authenticator_button.emit('clicked')
 
@@ -95,7 +96,7 @@ class NewAuthenticatorWindow(utils.StatusWindowBase):
         self.user_details_section.set_visible(False)
         self.set_size_request(0, 0)
 
-        if not self.oauth_token or not self.steamid:
+        if not self.oauth_token and not self.steamid:
             self.status.error(_(
                 "Some login data is missing. If the problem persists, go to:\n"
                 "Settings -> Login -> Advanced -> and click on RESET Everything."
@@ -177,20 +178,15 @@ class NewAuthenticatorWindow(utils.StatusWindowBase):
             revocation_code = self._login_data.auth['revocation_code']
 
             self.add_authenticator_button.set_visible(False)
-
-            revocation_status = utils.Status(6)
-            revocation_status.set_pausable(False)
-            revocation_status.set_display(revocation_code)
-            revocation_status.set_status('')
-            self.content_area.append(revocation_status)
-
-            revocation_status.set_visible(True)
+            self.revocation_status.set_display(revocation_code)
+            self.revocation_status.set_status('')
+            self.revocation_status.set_visible(True)
 
             self.set_deletable(False)
 
             max_value = 30 * 3
             for offset in range(max_value):
-                revocation_status.set_level(offset, max_value)
+                self.revocation_status.set_level(offset, max_value)
                 await asyncio.sleep(0.3)
 
             self.set_deletable(True)

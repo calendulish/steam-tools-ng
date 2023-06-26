@@ -73,7 +73,7 @@ class Main(Gtk.ApplicationWindow):
         menu_button.set_menu_model(menu)
         header_bar.pack_end(menu_button)
 
-        self.set_default_size(650, 10)
+        self.set_default_size(750, 10)
         self.set_resizable(False)
 
         if config.parser.getboolean("general", "show_close_button"):
@@ -878,18 +878,20 @@ class Main(Gtk.ApplicationWindow):
         self.loop.call_later(3, reset_callback)
 
     def on_reset_password_clicked(self, button: Gtk.Button) -> None:
-        login_window = LoginWindow(self, self.application)
-        login_window.status.info(_("Removing saved password..."))
-        login_window.user_details_section.set_visible(False)
-        login_window.advanced_login.set_visible(False)
-        login_window.set_deletable(False)
-        login_window.present()
+        reseting_window = utils.PopupWindowBase(self, self.application)
+
+        reseting_status = utils.SimpleStatus()
+        reseting_status.info(_("Removing saved password..."))
+
+        reseting_window.content_grid.attach(reseting_status, 0, 0, 1, 1)
+        reseting_window.set_deletable(False)
+        reseting_window.present()
 
         config.new("login", "password", "")
 
         def reset_password_callback() -> None:
-            login_window.destroy()
+            reseting_window.destroy()
             self.destroy()
 
-        login_window.status.info(_("Successful!\nExiting..."))
+        reseting_status.info(_("Successful!\nExiting..."))
         self.loop.call_later(3, reset_password_callback)

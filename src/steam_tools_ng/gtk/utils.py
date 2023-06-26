@@ -396,7 +396,7 @@ class SimpleStatus(Gtk.Frame):
         self._grid.attach(self._label, 0, 0, 1, 1)
 
         self.info(_("Waiting"))
-        self.set_size_request(100, 60)
+        self.set_hexpand(True)
 
     def error(self, text: str) -> None:
         self._label.set_markup(markup(text, color='hotpink', face='monospace'))
@@ -576,6 +576,8 @@ class Section(Gtk.Grid):
         self.set_column_spacing(10)
         self.set_margin_top(10)
         self.set_margin_bottom(10)
+        self.set_margin_start(10)
+        self.set_margin_end(10)
 
     # noinspection PyProtectedMember
     @staticmethod
@@ -684,28 +686,45 @@ class Section(Gtk.Grid):
             stack.add_titled(self, name, text)
 
 
-class StatusWindowBase(Gtk.Window):
+class PopupWindowBase(Gtk.Window):
     def __init__(self, parent_window: Gtk.Window, application: Gtk.Application) -> None:
         super().__init__()
-        self.application = application
         self.parent_window = parent_window
-        self.set_default_size(400, 100)
+        self.application = application
+
+        self.set_default_size(400, 50)
         self.set_transient_for(parent_window)
-        self.set_modal(True)
         self.set_destroy_with_parent(True)
+        self.set_modal(True)
         self.set_resizable(False)
 
-        self.content_area = Gtk.Box()
-        self.content_area.set_orientation(Gtk.Orientation.VERTICAL)
-        self.content_area.set_spacing(10)
-        self.content_area.set_margin_start(10)
-        self.content_area.set_margin_end(10)
-        self.content_area.set_margin_top(10)
-        self.content_area.set_margin_bottom(10)
-        self.set_child(self.content_area)
+        self.header_bar = Gtk.HeaderBar()
+        self.set_titlebar(self.header_bar)
 
-        self.status = SimpleStatus()
-        self.content_area.append(self.status)
+        self.gtk_settings_class = Gtk.Settings.get_default()
+
+        self.content_grid = Gtk.Grid()
+        self.content_grid.set_row_spacing(10)
+        self.content_grid.set_column_spacing(10)
+        self.set_child(self.content_grid)
+
+        self.connect('destroy', lambda *args: self.destroy())
+        self.connect('close-request', lambda *args: self.destroy())
+
+        self.key_event = Gtk.EventControllerKey()
+        self.add_controller(self.key_event)
+
+        self.key_event.connect('key-released', self.on_key_released_event)
+
+    def on_key_released_event(
+            self,
+            controller: Gtk.EventControllerKey,
+            keyval: int,
+            keycode: int,
+            state: Gdk.ModifierType
+    ) -> None:
+        if keyval == Gdk.KEY_Escape:
+            self.destroy()
 
 
 def markup(text: str, **kwargs: Any) -> str:

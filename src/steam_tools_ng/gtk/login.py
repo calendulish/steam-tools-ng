@@ -33,7 +33,7 @@ _ = i18n.get_translation
 
 
 # noinspection PyUnusedLocal
-class LoginWindow(utils.StatusWindowBase):
+class LoginWindow(utils.PopupWindowBase):
     def __init__(
             self,
             parent_window: Gtk.Window,
@@ -44,17 +44,17 @@ class LoginWindow(utils.StatusWindowBase):
         self.mobile_login = mobile_login
         self.has_user_data = False
 
-        self.header_bar = Gtk.HeaderBar()
-
         self.login_button = utils.AsyncButton()
         self.login_button.set_label(_("Log-in"))
         self.login_button.connect("clicked", self.on_login_button_clicked)
         self.header_bar.pack_end(self.login_button)
-        self.set_titlebar(self.header_bar)
         self.set_title(_('Login'))
 
+        self.status = utils.SimpleStatus()
+        self.content_grid.attach(self.status, 0, 0, 1, 1)
+
         self.user_details_section = utils.Section("login")
-        self.content_area.append(self.user_details_section)
+        self.content_grid.attach(self.user_details_section, 0, 1, 1, 1)
 
         self.username_item = self.user_details_section.new_item("account_name", _("Username:"), Gtk.Entry, 0, 0)
 
@@ -79,11 +79,13 @@ class LoginWindow(utils.StatusWindowBase):
         self.advanced_login = utils.ClickableLabel()
         self.advanced_login.set_markup(utils.markup(_("Advanced Login"), font_size='x-small', color='blue'))
         self.advanced_login.set_halign(Gtk.Align.END)
+        self.advanced_login.set_margin_end(10)
+        self.advanced_login.set_margin_bottom(10)
         self.advanced_login.connect("clicked", self.on_advanced_login_clicked)
-        self.content_area.append(self.advanced_login)
+        self.content_grid.attach(self.advanced_login, 0, 2, 1, 1)
 
         self.advanced_login_section = utils.Section("login")
-        self.content_area.append(self.advanced_login_section)
+        self.content_grid.attach(self.advanced_login_section, 0, 3, 1, 1)
 
         self.identity_secret_item = self.advanced_login_section.new_item(
             'identity_secret',
@@ -101,10 +103,6 @@ class LoginWindow(utils.StatusWindowBase):
 
         self.connect('destroy', self.on_quit)
         self.connect('close-request', self.on_quit)
-
-        key_event = Gtk.EventControllerKey()
-        key_event.connect('key-released', self.on_key_release_event)
-        self.add_controller(key_event)
 
         self.steam_code_item.set_visible(False)
         self.mail_code_item.set_visible(False)
@@ -164,13 +162,15 @@ class LoginWindow(utils.StatusWindowBase):
         )
         self.destroy()
 
-    def on_key_release_event(
+    def on_key_released_event(
             self,
             controller: Gtk.EventControllerKey,
             keyval: int,
             keycode: int,
             state: Gdk.ModifierType
     ) -> None:
+        super().on_key_released_event(controller, keyval, keycode, state)
+
         self.check_login_availability()
 
         if keyval == Gdk.KEY_Return:

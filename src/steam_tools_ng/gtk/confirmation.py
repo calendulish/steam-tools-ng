@@ -30,7 +30,7 @@ _ = i18n.get_translation
 
 
 # noinspection PyUnusedLocal
-class FinalizeWindow(utils.StatusWindowBase):
+class FinalizeWindow(utils.PopupWindowBase):
     def __init__(
             self,
             parent_window: Gtk.Window,
@@ -51,14 +51,15 @@ class FinalizeWindow(utils.StatusWindowBase):
             self.action = _("cancel")
 
         self.raw_action = action
-
-        self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(False)
-        self.set_titlebar(self.header_bar)
         self.set_title(_('Finalize Confirmation'))
 
+        self.status = utils.SimpleStatus()
+        self.content_grid.attach(self.status, 0, 0, 1, 1)
+
         self.progress = Gtk.LevelBar()
-        self.content_area.append(self.progress)
+        self.progress.set_visible(False)
+        self.content_grid.attach(self.progress, 0, 1, 1, 1)
 
         self.yes_button = Gtk.Button()
         self.yes_button.set_label(_("Continue"))
@@ -89,12 +90,10 @@ class FinalizeWindow(utils.StatusWindowBase):
                 self.yes_button.set_visible(False)
                 self.no_button.set_visible(False)
 
-        self.connect('destroy', lambda *args: self.destroy())
-        self.connect('close-request', lambda *args: self.destroy())
-
     def on_yes_button_clicked(self, button: Gtk.Button) -> None:
         button.set_visible(False)
         self.no_button.set_visible(False)
+        self.progress.set_visible(True)
         self.set_size_request(0, 0)
         self.header_bar.set_show_title_buttons(False)
         self.confirmations_tree.lock = True
@@ -109,6 +108,7 @@ class FinalizeWindow(utils.StatusWindowBase):
         task.add_done_callback(self.on_task_finish)
 
     def on_task_finish(self, task: asyncio.Task[Any]) -> None:
+        self.progress.set_visible(False)
         self.confirmations_tree.lock = False
         exception = task.exception()
 

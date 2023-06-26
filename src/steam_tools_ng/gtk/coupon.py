@@ -32,7 +32,7 @@ _ = i18n.get_translation
 
 
 # noinspection PyUnusedLocal
-class CouponWindow(utils.StatusWindowBase):
+class CouponWindow(utils.PopupWindowBase):
     def __init__(
             self,
             parent_window: Gtk.Window,
@@ -46,10 +46,7 @@ class CouponWindow(utils.StatusWindowBase):
         self.selection = self.coupons_tree.model.get_selected_item()
         self.has_status = False
         self.action = action
-
-        self.header_bar = Gtk.HeaderBar()
         self.header_bar.set_show_title_buttons(False)
-        self.set_titlebar(self.header_bar)
 
         self.yes_button = Gtk.Button()
         self.yes_button.set_label(_("Continue"))
@@ -59,6 +56,9 @@ class CouponWindow(utils.StatusWindowBase):
         self.no_button.set_label(_("Cancel"))
         self.no_button.connect("clicked", lambda button: self.destroy())
         self.header_bar.pack_start(self.no_button)
+
+        self.status = utils.SimpleStatus()
+        self.content_grid.attach(self.status, 0, 0, 1, 1)
 
         if self.action == 'get':
             self.set_title(_('Get Coupon'))
@@ -94,8 +94,6 @@ class CouponWindow(utils.StatusWindowBase):
             )
 
         self.yes_button.connect("clicked", self.on_yes_button_clicked)
-        self.connect('destroy', lambda *args: self.destroy())
-        self.connect('close-request', lambda *args: self.destroy())
 
     def on_yes_button_clicked(self, button: Gtk.Button) -> None:
         button.set_visible(False)
