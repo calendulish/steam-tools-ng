@@ -17,6 +17,7 @@
 #
 
 import asyncio
+import codecs
 import inspect
 import logging
 import time
@@ -89,3 +90,15 @@ def time_offset_cache(ttl: int = 60) -> Callable[[Callable[[], int]], Callable[[
         return wrapped
 
     return wrapper
+
+
+def encode_password(__password: str) -> str:
+    password_key = codecs.encode(__password.encode(), 'base64')
+    encrypted_password = codecs.encode(password_key.decode(), 'rot13')
+    return encrypted_password.replace('\n', '')
+
+
+def decode_password(encrypted_password: str) -> str:
+    password_key = codecs.decode(encrypted_password, 'rot13')
+    __password_raw = codecs.decode(password_key.encode(), 'base64')
+    return __password_raw.decode()

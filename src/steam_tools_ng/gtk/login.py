@@ -26,7 +26,7 @@ from gi.repository import Gtk, Gdk, GdkPixbuf
 
 from stlib import login, universe
 from . import utils
-from .. import i18n, config
+from .. import i18n, config, core
 
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
@@ -122,9 +122,8 @@ class LoginWindow(utils.PopupWindowBase):
 
     def set_password(self, encrypted_password: str) -> None:
         try:
-            key = codecs.decode(encrypted_password, 'rot13')
-            raw = codecs.decode(key.encode(), 'base64')
-            self.__password_item.set_text(raw.decode())
+            __password = core.utils.decode_password(encrypted_password)
+            self.__password_item.set_text(__password)
         except (binascii.Error, UnicodeError, TypeError):
             log.warning(_("Password decode failed. Trying RAW."))
             self.__password_item.set_text(encrypted_password)
@@ -312,10 +311,8 @@ class LoginWindow(utils.PopupWindowBase):
                     new_configs["identity_secret"] = self.identity_secret
 
                 if self.save_password_item.get_active():
-                    # Just for curious people. It's not even safe.
-                    key = codecs.encode(self.__password.encode(), 'base64')
-                    out = codecs.encode(key.decode(), 'rot13')
-                    new_configs["password"] = out.replace('\n', '')
+                    encrypted_password = core.utils.encode_password(self.__password)
+                    new_configs["password"] = encrypted_password
 
                 if login_data.oauth:
                     new_configs['steamid'] = login_data.oauth['steamid']

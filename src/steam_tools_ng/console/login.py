@@ -26,7 +26,7 @@ from typing import TYPE_CHECKING
 
 from stlib import login, universe
 from . import utils
-from .. import i18n, config
+from .. import i18n, config, core
 
 if TYPE_CHECKING:
     from . import cli
@@ -54,9 +54,8 @@ class Login:
 
     def set_password(self, encrypted_password: str) -> None:
         try:
-            key = codecs.decode(encrypted_password, 'rot13')
-            raw = codecs.decode(key.encode(), 'base64')
-            self.__password = raw.decode()
+            __password = core.utils.decode_password(encrypted_password)
+            self.__password = __password
         except (binascii.Error, UnicodeError, TypeError):
             log.warning(_("Password decode failed. Trying RAW."))
             self.__password = encrypted_password
@@ -96,9 +95,8 @@ class Login:
             self._username = user_input
 
             self.__password = getpass.getpass(_("Please, write your password (IT'S HIDDEN, and will be encrypted)"))
-            password_key = codecs.encode(self.__password.encode(), 'base64')
-            encrypted_password = codecs.encode(password_key.decode(), 'rot13')
-            config.new("login", "password", encrypted_password.replace('\n', ''))
+            encrypted_password = core.utils.encode_password(self.__password)
+            config.new("login", "password", encrypted_password)
 
         _login_session = login.Login.get_session(0)
         _login_session.username = self.username
