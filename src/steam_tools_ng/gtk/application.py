@@ -133,24 +133,38 @@ class SteamToolsNG(Gtk.Application):
         self.main_window.statusbar.set_warning("steamguard", _("Logging on Steam. Please wait!"))
         log.info(_("Logging on Steam"))
 
-        token = config.parser.get("login", "token")
-        token_secure = config.parser.get("login", "token_secure")
+        #token = config.parser.get("login", "token")
+        #token_secure = config.parser.get("login", "token_secure")
 
-        if not token or not token_secure or not self.steamid:
-            await self.do_login()
+        #if not token or not token_secure or not self.steamid:
+        #    await self.do_login()
 
-        login_session.restore_login(self.steamid, token, token_secure)
+        #login_session.restore_login(self.steamid, token, token_secure)
 
-        try:
-            if await login_session.is_logged_in(self.steamid):
+        try_count = 3
+
+        for login_count in range(try_count):
+            try:
+                if login_count == 0:
+                    await self.do_login(auto=True)
+                else:
+                    await self.do_login()
+            except aiohttp.ClientError as error:
+                log.exception(str(error))
+                self.main_window.statusbar.set_critical(
+                    "steamguard",
+                    _("Check your connection. (server down?)"),
+                )
+
+                if login_count == 2:
+                    return
+                else:
+                    log.error(_("Waiting 10 seconds to try again"))
+                    await asyncio.sleep(10)
+
+            if await login_session.is_logged_in():
                 log.info("Steam login Successful")
-            else:
-                await self.do_login(auto=True)
-        except aiohttp.ClientError as error:
-            log.exception(str(error))
-            self.main_window.statusbar.set_critical("steamguard", _("Check your connection. (server down?)"))
-            await asyncio.sleep(10)
-            return  # FIXME: RETRY ###
+                break
 
         self.main_window.statusbar.clear("steamguard")
 

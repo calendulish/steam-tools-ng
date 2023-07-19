@@ -17,14 +17,14 @@
 #
 import asyncio
 import binascii
-import codecs
 import logging
-from typing import Any
+from typing import Any, Optional
 
 import aiohttp
-from gi.repository import Gtk, Gdk, GdkPixbuf
+from gi.repository import Gtk, Gdk
 
-from stlib import login, universe
+from stlib import login
+from stlib.login import AuthCodeType
 from . import utils
 from .. import i18n, config, core
 
@@ -62,18 +62,14 @@ class LoginWindow(utils.PopupWindowBase):
         self.__password_item.set_visibility(False)
         self.__password_item.set_invisible_char('*')
 
-        self.steam_code_item = self.user_details_section.new_item("_steam_code", _("Steam Code:"), Gtk.Entry, 0, 2)
-        self.mail_code_item = self.user_details_section.new_item("_mail_code", _("Mail Code:"), Gtk.Entry, 0, 2)
+        self.auth_code_item = self.user_details_section.new_item("_auth_code", _("Code:"), Gtk.Entry, 0, 2)
 
-        self.captcha_gid = -1
-        self.captcha_item = self.user_details_section.new_item("_captcha", _("Code:"), Gtk.Image, 0, 3)
-        self.captcha_item.set_size_request(140, 140)
-        self.captcha_text_item = self.user_details_section.new_item(
-            "_captcha_text", _("Captcha Text:"), Gtk.Entry, 0, 4,
+        self.save_password_item = self.user_details_section.new_item(
+            "_savepwd",
+            _("Save Password:"),
+            Gtk.CheckButton,
+            0, 5,
         )
-
-        self.save_password_item = self.user_details_section.new_item("_savepwd", _("Save Password:"), Gtk.CheckButton,
-                                                                     0, 5)
         self.save_password_item.set_active(True)
 
         self.advanced_login = utils.ClickableLabel()
@@ -104,12 +100,8 @@ class LoginWindow(utils.PopupWindowBase):
         self.connect('destroy', self.on_quit)
         self.connect('close-request', self.on_quit)
 
-        self.steam_code_item.set_visible(False)
-        self.mail_code_item.set_visible(False)
-        self.captcha_item.set_visible(False)
-        self.captcha_text_item.set_visible(False)
+        self.auth_code_item.set_visible(False)
         self.advanced_login_section.set_visible(False)
-
         self.check_login_availability()
 
     @property
@@ -129,16 +121,8 @@ class LoginWindow(utils.PopupWindowBase):
             self.__password_item.set_text(encrypted_password)
 
     @property
-    def mail_code(self) -> str:
-        return self.mail_code_item.get_text()
-
-    @property
-    def steam_code(self) -> str:
-        return self.steam_code_item.get_text()
-
-    @property
-    def captcha_text(self) -> str:
-        return self.captcha_text_item.get_text()
+    def auth_code(self) -> str:
+        return self.auth_code_item.get_text()
 
     @property
     def shared_secret(self) -> str:
@@ -178,7 +162,12 @@ class LoginWindow(utils.PopupWindowBase):
             else:
                 self.login_button.emit('clicked')
 
-    async def on_login_button_clicked(self, *args: Any) -> None:
+    async def on_login_button_clicked(
+            self,
+            auto: bool,
+            auth_code: str = '',
+            auth_code_type: Optional[AuthCodeType] = AuthCodeType.device,
+    ) -> None:
         self.status.info(_("Retrieving user data"))
         self.application.main_window.statusbar.set_warning("steamguard", _("Not logged in"))
         self.username_item.set_sensitive(False)
@@ -190,36 +179,29 @@ class LoginWindow(utils.PopupWindowBase):
         _login_session.username = self.username
         _login_session.password = self.__password
 
-        kwargs = {'emailauth': self.mail_code, 'mobile_login': self.mobile_login}
-
-        # no reason to send captcha_text if no gid is found
-        if self.captcha_gid != -1:
-            kwargs['captcha_text'] = self.captcha_text
-            kwargs['captcha_gid'] = self.captcha_gid
-
-        if not self.shared_secret or not self.identity_secret:
+        if not self.shared_secret:
             log.warning(_("No shared secret found. Trying to log-in without two-factor authentication."))
             # self.code_item.set_visible(True)
 
-        kwargs['shared_secret'] = self.shared_secret
-        kwargs['authenticator_code'] = self.steam_code
-
         self.status.info(_("Logging in"))
-        self.captcha_item.set_visible(False)
-        self.captcha_text_item.set_visible(False)
-        self.steam_code_item.set_visible(False)
-        self.mail_code_item.set_visible(False)
+        self.auth_code_item.set_visible(False)
 
         try_count = 3
 
         while True:
             try:
-                login_data = await _login_session.do_login(**kwargs)
+                login_data = await _login_session.do_login(
+                    self.shared_secret,
+                    self.auth_code if self.auth_code else auth_code,
+                    auth_code_type,
+                    self.mobile_login,
+                )
             except login.MailCodeError:
                 self.status.info(_("Write code received by email\nand click on 'Log-in' button"))
-                self.mail_code_item.set_text("")
-                self.mail_code_item.set_visible(True)
-                self.mail_code_item.grab_focus()
+                self.auth_code_item.set_text("")
+                self.auth_code_item.set_visible(True)
+                self.auth_code_item.grab_focus()
+                auth_code_type = AuthCodeType.email
             except login.TwoFactorCodeError:
                 if self.shared_secret:
                     if try_count > 0:
@@ -237,9 +219,10 @@ class LoginWindow(utils.PopupWindowBase):
                         break
 
                 self.status.error(_("Write Steam Code bellow and click on 'Log-in'"))
-                self.steam_code_item.set_text("")
-                self.steam_code_item.set_visible(True)
-                self.steam_code_item.grab_focus()
+                self.auth_code_item.set_text("")
+                self.auth_code_item.set_visible(True)
+                self.auth_code_item.grab_focus()
+                auth_code_type = AuthCodeType.device
             except login.LoginBlockedError:
                 self.status.error(_(
                     "Your network is blocked!\n"
@@ -251,16 +234,16 @@ class LoginWindow(utils.PopupWindowBase):
                 self.login_button.set_visible(False)
                 self.set_deletable(True)
             except login.CaptchaError as exception:
+                # TODO: Captcha gid?? (where did you go? where did you go?)
                 self.status.info(_("Write captcha code as shown bellow\nand click on 'Log-in' button"))
-                self.captcha_gid = exception.captcha_gid
 
-                pixbuf_loader = GdkPixbuf.PixbufLoader()
-                pixbuf_loader.set_size(140, 50)
-                pixbuf_loader.write(exception.captcha)
-                pixbuf_loader.close()
-                self.captcha_item.set_from_pixbuf(pixbuf_loader.get_pixbuf())
+                # pixbuf_loader = GdkPixbuf.PixbufLoader()
+                # pixbuf_loader.set_size(140, 50)
+                # pixbuf_loader.write(exception.captcha)
+                # pixbuf_loader.close()
+                # self.captcha_item.set_from_pixbuf(pixbuf_loader.get_pixbuf())
 
-                self.captcha_item.set_visible(True)
+                # self.captcha_item.set_visible(True)
                 self.captcha_text_item.set_text("")
                 self.captcha_text_item.set_visible(True)
                 self.captcha_text_item.grab_focus()
@@ -268,9 +251,8 @@ class LoginWindow(utils.PopupWindowBase):
                 log.error(str(exception))
                 # self.__password_item.set_text('')
                 self.__password_item.grab_focus()
-                config.remove('login', 'token')
-                config.remove('login', 'token_secure')
-                config.remove('login', 'oauth_token')
+                config.remove('login', 'refresh_token')
+                config.remove('login', 'access_token')
 
                 self.status.error(
                     ':\n'.join(str(exception).split(': ')) +
@@ -293,47 +275,30 @@ class LoginWindow(utils.PopupWindowBase):
                     self.status.error(_("Check your connection. (server down? blocked?)\nWaiting {}").format(count))
                     await asyncio.sleep(1)
 
-                self.captcha_gid = -1
                 self.username_item.set_sensitive(True)
                 self.__password_item.set_sensitive(True)
                 self.login_button.grab_focus()
             else:
-                new_configs = {"account_name": self.username}
-
-                if "shared_secret" in login_data.auth:
-                    new_configs["shared_secret"] = login_data.auth["shared_secret"]
-                else:
-                    new_configs["shared_secret"] = self.shared_secret
-
-                if "identity_secret" in login_data.auth:
-                    new_configs['identity_secret'] = login_data.auth['identity_secret']
-                else:
-                    new_configs["identity_secret"] = self.identity_secret
+                new_configs = {
+                    "account_name": self.username,
+                    'steamid': login_data.steamid,
+                    'refresh_token': login_data.refresh_token,
+                    'access_token': login_data.access_token,
+                }
 
                 if self.save_password_item.get_active():
                     encrypted_password = core.utils.encode_password(self.__password)
                     new_configs["password"] = encrypted_password
 
-                if login_data.oauth:
-                    new_configs['steamid'] = login_data.oauth['steamid']
-                    new_configs['token'] = login_data.oauth['wgtoken']
-                    new_configs['token_secure'] = login_data.oauth['wgtoken_secure']
-                    new_configs['oauth_token'] = login_data.oauth['oauth_token']
-                else:
-                    new_configs['steamid'] = login_data.auth['transfer_parameters']['steamid']
-                    new_configs['token'] = login_data.auth['transfer_parameters']['webcookie']
-                    new_configs['token_secure'] = login_data.auth['transfer_parameters']['token_secure']
-
                 for key_, value_ in new_configs.items():
                     config.new("login", key_, value_)
 
-                steamid = universe.generate_steamid(new_configs['steamid'])
-                _login_session.restore_login(steamid, new_configs['token'], new_configs['token_secure'])
+                # steamid = universe.generate_steamid(new_configs['steamid'])
+                # _login_session.restore_login(steamid, new_configs['token'], new_configs['token_secure'])
 
                 self.application.main_window.statusbar.clear('steamguard')
 
                 self.has_user_data = True
-                self.captcha_gid = -1
                 self.destroy()
             finally:
                 self.save_password_item.set_sensitive(True)

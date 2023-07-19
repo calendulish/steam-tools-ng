@@ -15,16 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import aiohttp
 import asyncio
 import binascii
-import codecs
 import getpass
 import logging
-import tempfile
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from stlib import login, universe
+import aiohttp
+
+from stlib import login
+from stlib.login import AuthCodeType
 from . import utils
 from .. import i18n, config, core
 
@@ -41,12 +41,8 @@ class Login:
         self.cli = cli_
         self.mobile_login = mobile_login
         self.has_user_data = False
-        self.captcha_gid = -1
         self._username = ''
         self.__password = ''
-        self._mail_code = ''
-        self._steam_code = ''
-        self._captcha_text = ''
 
     @property
     def username(self) -> str:
@@ -61,18 +57,6 @@ class Login:
             self.__password = encrypted_password
 
     @property
-    def mail_code(self) -> str:
-        return self._mail_code
-
-    @property
-    def steam_code(self) -> str:
-        return self._steam_code
-
-    @property
-    def captcha_text(self) -> str:
-        return self._captcha_text
-
-    @property
     def shared_secret(self) -> str:
         return config.parser.get("login", "shared_secret")
 
@@ -80,7 +64,12 @@ class Login:
     def identity_secret(self) -> str:
         return config.parser.get("login", "identity_secret")
 
-    async def do_login(self, auto: bool) -> None:
+    async def do_login(
+            self,
+            auto: bool,
+            auth_code: str = '',
+            auth_code_type: Optional[AuthCodeType] = AuthCodeType.device,
+    ) -> None:
         utils.set_console(info=_("Retrieving user data"))
 
         if auto:
@@ -102,33 +91,24 @@ class Login:
         _login_session.username = self.username
         _login_session.password = self.__password
 
-        kwargs = {'emailauth': self.mail_code, 'mobile_login': self.mobile_login}
-
-        # no reason to send captcha_text if no gid is found
-        if self.captcha_gid != -1:
-            kwargs['captcha_text'] = self.captcha_text
-            kwargs['captcha_gid'] = self.captcha_gid
-            # if login fails for any reason, gid must be unset
-            # CaptchaError exception will reset it if needed
-            self.captcha_gid = -1
-
-        if not self.shared_secret or not self.identity_secret:
+        if not self.shared_secret:
             log.warning(_("No shared secret found. Trying to log-in without two-factor authentication."))
-
-        kwargs['shared_secret'] = self.shared_secret
-        kwargs['authenticator_code'] = self.steam_code
 
         utils.set_console(info=_("Logging in"))
         try_count = 3
 
         while True:
             try:
-                login_data = await _login_session.do_login(**kwargs)
+                login_data = await _login_session.do_login(
+                    self.shared_secret,
+                    auth_code,
+                    auth_code_type,
+                    self.mobile_login,
+                )
             except login.MailCodeError:
                 user_input = utils.safe_input(_("Write code received by email"))
                 assert isinstance(user_input, str), "safe_input is returning bool when it should return str"
-                self._mail_code = user_input
-                await self.do_login(True)
+                await self.do_login(True, user_input, AuthCodeType.email)
             except login.TwoFactorCodeError:
                 if self.shared_secret:
                     if try_count > 0:
@@ -142,8 +122,7 @@ class Login:
 
                 user_input = utils.safe_input(_("Write Steam Code"))
                 assert isinstance(user_input, str), "safe_input is returning bool when it should return str"
-                self._steam_code = user_input
-                await self.do_login(True)
+                await self.do_login(True, user_input)
             except login.LoginBlockedError:
                 log.error(_(
                     "Your network is blocked!\n"
@@ -151,62 +130,43 @@ class Login:
                 ))
                 self.cli.on_quit()
             except login.CaptchaError as exception:
-                self.captcha_gid = exception.captcha_gid
-
                 utils.set_console(info=_("Steam server is requesting a captcha code."))
-
-                with tempfile.NamedTemporaryFile(buffering=0, prefix='stng_', suffix='.captcha.png') as temp_file:
-                    temp_file.write(exception.captcha)
-                    temp_file.flush()
-
-                    user_input = utils.safe_input(
-                        _("Open {} in an image view and write captcha code that it shows").format(temp_file.name),
-                    )
-
+                # TODO: Captcha gid?? (where did you go? where did you go?)
+                # with tempfile.NamedTemporaryFile(buffering=0, prefix='stng_', suffix='.captcha.png') as temp_file:
+                #    temp_file.write(exception.captcha)
+                #    temp_file.flush()
+                user_input = utils.safe_input(_("Write Captcha Code"))
                 assert isinstance(user_input, str)
-                self._captcha_text = user_input
-                await self.do_login(True)
+                await self.do_login(True, user_input, AuthCodeType.machine)
             except binascii.Error:
                 log.error(_("shared secret is invalid!"))
                 self.cli.on_quit()
             except login.LoginError as exception:
                 log.error(str(exception))
-                config.remove('login', 'token')
-                config.remove('login', 'token_secure')
-                config.remove('login', 'oauth_token')
+                config.remove('login', 'refresh_token')
+                config.remove('login', 'access_token')
+                log.warning(_(
+                    "If your previous authenticator has been removed,"
+                    "\nopen your config file and remove the old secrets."
+                ))
                 self.cli.on_quit()
             except (aiohttp.ClientError, ValueError):
                 log.error(_("Check your connection. (server down?)"))
                 await asyncio.sleep(15)
                 continue
             else:
-                new_configs = {}
-
-                if "shared_secret" in login_data.auth:
-                    new_configs["shared_secret"] = login_data.auth["shared_secret"]
-                elif self.shared_secret:
-                    new_configs["shared_secret"] = self.shared_secret
-
-                if "identity_secret" in login_data.auth:
-                    new_configs['identity_secret'] = login_data.auth['identity_secret']
-                elif self.identity_secret:
-                    new_configs["identity_secret"] = self.identity_secret
-
-                if login_data.oauth:
-                    new_configs['steamid'] = login_data.oauth['steamid']
-                    new_configs['token'] = login_data.oauth['wgtoken']
-                    new_configs['token_secure'] = login_data.oauth['wgtoken_secure']
-                    new_configs['oauth_token'] = login_data.oauth['oauth_token']
-                else:
-                    new_configs['steamid'] = login_data.auth['transfer_parameters']['steamid']
-                    new_configs['token'] = login_data.auth['transfer_parameters']['webcookie']
-                    new_configs['token_secure'] = login_data.auth['transfer_parameters']['token_secure']
+                new_configs = {
+                    "account_name": self.username,
+                    'steamid': login_data.steamid,
+                    'refresh_token': login_data.refresh_token,
+                    'access_token': login_data.access_token,
+                }
 
                 for key, value in new_configs.items():
                     config.new("login", key, value)
 
-                steamid = universe.generate_steamid(new_configs['steamid'])
-                _login_session.restore_login(steamid, new_configs['token'], new_configs['token_secure'])
+                # steamid = universe.generate_steamid(new_configs['steamid'])
+                # _login_session.restore_login(steamid, new_configs['token'], new_configs['token_secure'])
                 self.has_user_data = True
 
             break

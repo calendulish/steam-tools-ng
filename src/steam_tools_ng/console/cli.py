@@ -127,24 +127,35 @@ class SteamToolsNG:
 
         utils.set_console(info=_("Logging on Steam. Please wait!"))
 
-        token = config.parser.get("login", "token")
-        token_secure = config.parser.get("login", "token_secure")
+        #token = config.parser.get("login", "token")
+        #token_secure = config.parser.get("login", "token_secure")
 
-        if not token or not token_secure or not self.steamid:
-            await self.do_login()
+        #if not token or not token_secure or not self.steamid:
+        #await self.do_login()
 
-        login_session.restore_login(self.steamid, token, token_secure)
+        #login_session.restore_login(self.steamid, token, token_secure)
 
-        try:
-            if await login_session.is_logged_in(self.steamid):
+        try_count = 3
+
+        for login_count in range(try_count):
+            try:
+                if login_count == 0:
+                    await self.do_login(auto=True)
+                else:
+                    await self.do_login()
+            except aiohttp.ClientError as exception:
+                log.exception(str(exception))
+                log.error(_("Check your connection. (server down?)"))
+
+                if login_count == 2:
+                    return
+                else:
+                    log.error(_("Waiting 10 seconds to try again"))
+                    await asyncio.sleep(10)
+
+            if await login_session.is_logged_in():
                 utils.set_console(info=_("Steam login Successful"))
-            else:
-                await self.do_login(auto=True)
-        except aiohttp.ClientError as exception:
-            log.exception(str(exception))
-            log.error(_("Check your connection. (server down?)"))
-            await asyncio.sleep(10)
-            return  # FIXME: RETRY ###
+                break
 
         community_session = await community.Community.new_session(0, api_url=self.api_url)
 

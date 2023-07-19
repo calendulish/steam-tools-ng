@@ -277,11 +277,11 @@ class Main(Gtk.ApplicationWindow):
         shared_secret = steamguard_advanced.new_item('shared_secret', _("Shared Secret:"), Gtk.Entry, 0, 1)
         shared_secret.connect('changed', utils.on_setting_changed)
 
-        token_item = steamguard_advanced.new_item("token", _("Token:"), Gtk.Entry, 0, 2)
-        token_item.connect("changed", utils.on_setting_changed)
+        access_token_item = steamguard_advanced.new_item("access_token", _("Access Token:"), Gtk.Entry, 0, 2)
+        access_token_item.connect("changed", utils.on_setting_changed)
 
-        token_secure_item = steamguard_advanced.new_item("token_secure", _("Token Secure:"), Gtk.Entry, 0, 3)
-        token_secure_item.connect("changed", utils.on_setting_changed)
+        refresh_token_item = steamguard_advanced.new_item("refresh_token", _("Refresh Token:"), Gtk.Entry, 0, 3)
+        refresh_token_item.connect("changed", utils.on_setting_changed)
 
         identity_secret = steamguard_advanced.new_item('identity_secret', _("Identity Secret:"), Gtk.Entry, 0, 4)
         identity_secret.connect('changed', utils.on_setting_changed)
@@ -655,19 +655,12 @@ class Main(Gtk.ApplicationWindow):
         while self.get_realized():
             account_name = config.parser.get('login', 'account_name')
             steamid_raw = config.parser.get('login', 'steamid')
-
-            try:
-                steamid = universe.generate_steamid(steamid_raw)
-            except ValueError:
-                log.warning(_("SteamId is invalid"))
-                steamid = None
-
             login_session = None
 
             with contextlib.suppress(IndexError):
                 login_session = login.Login.get_session(0)
 
-            if not steamid or not login_session or not await login_session.is_logged_in(steamid):
+            if not login_session or not await login_session.is_logged_in():
                 self.application.main_window.user_info_label.set_markup(
                     utils.markup(
                         _('Not logged in'),
