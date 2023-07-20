@@ -612,7 +612,6 @@ class Section(Gtk.Grid):
             body['label'] = Gtk.Label()
 
         section = self.get_name()
-        option = name
         value: Union[str, bool, int]
 
         item = type('Item', bases, body)()
@@ -637,7 +636,7 @@ class Section(Gtk.Grid):
 
         if isinstance(item, Gtk.DropDown):
             assert isinstance(items, OrderedDict), "DropDown needs items mapping"
-            value = config.parser.get(section, option)
+            value = config.parser.get(section, name)
             string_list = Gtk.StringList()
 
             for option_label in items.values():
@@ -651,7 +650,7 @@ class Section(Gtk.Grid):
                 import sys
 
                 error_message = _("Please, fix your config file. Accepted values for {} are:\n{}").format(
-                    option,
+                    name,
                     ', '.join(items.keys()),
                 )
                 log.exception(error_message)
@@ -663,11 +662,11 @@ class Section(Gtk.Grid):
             item.set_selected(current_option)
 
         if isinstance(item, Gtk.CheckButton) or isinstance(item, Gtk.Switch):
-            value = config.parser.getboolean(section, option)
+            value = config.parser.getboolean(section, name)
             item.set_active(value)
 
         if isinstance(item, Gtk.Entry):
-            value = config.parser.get(section, option)
+            value = config.parser.get(section, name)
 
             if value:
                 item.set_text(value)
