@@ -90,6 +90,13 @@ def main() -> None:
     )
 
     command_parser.add_argument(
+        '--remove-authenticator',
+        action='store_true',
+        help='Remove STNG Autenticator from your account',
+        dest='remove_authenticator',
+    )
+
+    command_parser.add_argument(
         '-v', '--version',
         action='store_true',
         help='Show version',
@@ -137,15 +144,15 @@ def main() -> None:
     print(f'Steam Tools NG version {__version__} (Made with Girl Power <33)')
     print('Copyright (C) 2015 ~ 2023 Lara Maia - <dev@lara.monster>')
 
-    if console_params.add_authenticator:
-        app = cli.SteamToolsNG('add_authenticator', '')
-        app.run()
-        sys.exit(0)
-
     if not console_params.module:
-        log.critical('No module has scheduled to run.')
-        log.critical("Use 'steam-tools-ng-gui' for the graphical user interface.")
-        sys.exit(1)
+        if console_params.add_authenticator:
+            console_params.module = "add_authenticator"
+        elif console_params.remove_authenticator:
+            console_params.module = "remove_authenticator"
+        else:
+            log.critical('No module has scheduled to run.')
+            log.critical("Use 'steam-tools-ng-gui' for the graphical user interface.")
+            sys.exit(1)
 
     module_name = console_params.module
     module_options = console_params.options

@@ -26,8 +26,7 @@ from gi.repository import Gio, Gtk, Gdk
 
 import stlib
 from stlib import login, plugins
-from . import confirmation, utils, coupon
-from .authenticator import NewAuthenticatorWindow
+from . import confirmation, utils, coupon, authenticator
 from .login import LoginWindow
 from .. import config, i18n, core
 
@@ -253,16 +252,22 @@ class Main(Gtk.ApplicationWindow):
         steamguard_settings.grid.attach(login_button, 0, 2, 2, 1)
 
         new_authenticator_button = Gtk.Button()
-        new_authenticator_button.set_label(_("Use STNG as your Steam Authenticator"))
+        new_authenticator_button.set_label(_("Add STNG as your Steam Authenticator"))
         new_authenticator_button.set_name("new_authenticator_button")
         new_authenticator_button.connect("clicked", self.on_new_authenticator_clicked)
         steamguard_settings.grid.attach(new_authenticator_button, 0, 3, 2, 1)
+
+        remove_authenticator_button = Gtk.Button()
+        remove_authenticator_button.set_label(_("Remove STNG Authenticator from your Steam Account"))
+        remove_authenticator_button.set_name("remove_authenticator_button")
+        remove_authenticator_button.connect("clicked", self.on_remove_authenticator_clicked)
+        steamguard_settings.grid.attach(remove_authenticator_button, 0, 4, 2, 1)
 
         reset_password_button = Gtk.Button()
         reset_password_button.set_label(_("Remove Saved Password"))
         reset_password_button.set_name("reset_password_button")
         reset_password_button.connect("clicked", self.on_reset_password_clicked)
-        steamguard_settings.grid.attach(reset_password_button, 0, 4, 2, 1)
+        steamguard_settings.grid.attach(reset_password_button, 0, 5, 2, 1)
 
         steamguard_advanced = utils.Section("login")
         steamguard_advanced.stackup_section(_("Advanced"), steamguard_stack, scroll=True)
@@ -847,8 +852,16 @@ class Main(Gtk.ApplicationWindow):
         login_window.present()
 
     def on_new_authenticator_clicked(self, button: Gtk.Button) -> None:
-        new_authenticator_window = NewAuthenticatorWindow(self, self.application)
-        new_authenticator_window.present()
+        authenticator_window = authenticator.AuthenticatorWindow(self, self.application)
+        authenticator_window.present()
+
+        self.loop.create_task(authenticator_window.on_add_authenticator())
+
+    def on_remove_authenticator_clicked(self, button: Gtk.Button) -> None:
+        authenticator_window = authenticator.AuthenticatorWindow(self, self.application)
+        authenticator_window.present()
+
+        self.loop.create_task(authenticator_window.on_remove_authenticator())
 
     def on_reset_clicked(self, button: Gtk.Button) -> None:
         login_window = LoginWindow(self, self.application)

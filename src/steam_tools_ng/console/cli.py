@@ -182,8 +182,12 @@ class SteamToolsNG:
         task.add_done_callback(utils.safe_task_callback)
 
     async def run_add_authenticator(self) -> None:
-        authenticator_config = authenticator.NewAuthenticator(self)
-        await authenticator_config.add_authenticator()
+        authenticator_manage = authenticator.ManageAuthenticator(self)
+        await authenticator_manage.add_authenticator()
+
+    async def run_remove_authenticator(self) -> None:
+        authenticator_manage = authenticator.ManageAuthenticator(self)
+        await authenticator_manage.remove_authenticator()
 
     @while_running
     async def run_steamguard(self) -> None:

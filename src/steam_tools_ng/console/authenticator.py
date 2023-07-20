@@ -34,7 +34,7 @@ _ = i18n.get_translation
 
 
 # noinspection PyUnusedLocal
-class NewAuthenticator:
+class ManageAuthenticator:
     def __init__(self, cli_: 'cli.SteamToolsNG') -> None:
         self.cli = cli_
         self.webapi_session = webapi.SteamWebAPI.get_session(0)
@@ -135,3 +135,37 @@ class NewAuthenticator:
 
         utils.set_console(info=self.authenticator_data.revocation_code)
         await asyncio.sleep(30)
+
+    async def remove_authenticator(self) -> None:
+        utils.set_console(info=_("Retrieving user data"))
+
+        if not self.access_token or not self.steamid:
+            log.error(_(
+                "Some login data is missing. If the problem persists, run:\n"
+                "{} --reset"
+            ).format(sys.argv[0]))
+
+            self.cli.on_quit(1)
+
+        user_input = utils.safe_input(_("Enter the revocation code"))
+        assert isinstance(user_input, str)
+
+        utils.set_console(info=_("Removing authenticator"))
+
+        try:
+            removed = await self.webapi_session.remove_authenticator(
+                self.steamid,
+                self.access_token,
+                user_input,
+            )
+        except aiohttp.ClientError:
+            log.error(_("Check your connection. (server down?)"))
+            self.cli.on_quit(1)
+        except webapi.RevocationError:
+            log.error(_("Too many attempts, try again later."))
+            self.cli.on_quit(1)
+        else:
+            if removed:
+                utils.set_console(info=_("Authenticator has been removed."))
+            else:
+                utils.set_console(error=_("Unable to remove the authenticator."))

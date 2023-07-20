@@ -31,17 +31,16 @@ _ = i18n.get_translation
 
 
 # noinspection PyUnusedLocal
-class NewAuthenticatorWindow(utils.PopupWindowBase):
+class AuthenticatorWindow(utils.PopupWindowBase):
     def __init__(self, parent_window: Gtk.Window, application: Gtk.Application) -> None:
         super().__init__(parent_window, application)
         self.authenticator_data: Optional[webapi.AuthenticatorData] = None
         self.webapi_session = webapi.SteamWebAPI.get_session(0)
+        self.set_title(_('Manage Steam Authenticator'))
 
-        self.add_authenticator_button = utils.AsyncButton()
-        self.add_authenticator_button.set_label(_("Add Authenticator"))
-        self.add_authenticator_button.connect("clicked", self.on_add_authenticator_clicked)
-        self.header_bar.pack_end(self.add_authenticator_button)
-        self.set_title(_('New Authenticator'))
+        self.action_button = utils.AsyncButton()
+        self.action_button.set_visible(False)
+        self.header_bar.pack_end(self.action_button)
 
         self.status = utils.SimpleStatus()
         self.content_grid.attach(self.status, 0, 0, 1, 1)
@@ -50,17 +49,28 @@ class NewAuthenticatorWindow(utils.PopupWindowBase):
         self.content_grid.attach(self.user_details_section, 0, 1, 1, 1)
 
         self.sms_code_item = self.user_details_section.new_item("_sms_code", _("SMS Code:"), Gtk.Entry, 0, 1)
+        self.sms_code_item.set_visible(False)
+
+        self.revocation_code_item = self.user_details_section.new_item(
+            "_revocation_code",
+            _("Revocation Code:"),
+            Gtk.Entry,
+            0, 1,
+        )
+        self.revocation_code_item.set_visible(False)
 
         self.revocation_status = utils.Status(6)
         self.revocation_status.set_pausable(False)
         self.revocation_status.set_visible(False)
         self.content_grid.attach(self.revocation_status, 0, 2, 1, 1)
 
-        self.add_authenticator_button.emit('clicked')
-
     @property
     def sms_code(self) -> str:
         return self.sms_code_item.get_text()
+
+    @property
+    def revocation_code(self) -> str:
+        return self.revocation_code_item.get_text()
 
     @property
     def access_token(self) -> str:
@@ -90,9 +100,8 @@ class NewAuthenticatorWindow(utils.PopupWindowBase):
         if keyval == Gdk.KEY_Return:
             self.add_authenticator_button.emit('clicked')
 
-    async def on_add_authenticator_clicked(self, button: Gtk.Button) -> None:
+    async def on_add_authenticator(self) -> None:
         self.status.info(_("Retrieving user data"))
-        button.set_sensitive(False)
         self.user_details_section.set_visible(False)
         self.set_size_request(0, 0)
 
@@ -128,10 +137,14 @@ class NewAuthenticatorWindow(utils.PopupWindowBase):
             else:
                 self.status.info(_("Enter bellow the code received by SMS\nand click on 'Add Authenticator' button"))
                 self.user_details_section.set_visible(True)
+                self.revocation_code_item.set_visible(False)
+                self.sms_code_item.set_visible(True)
                 self.sms_code_item.set_text('')
                 self.sms_code_item.grab_focus()
             finally:
-                button.set_sensitive(True)
+                self.action_button.set_label(_("Add Authenticator"))
+                self.action_button.connect("clicked", lambda button: self.on_add_authenticator())
+                self.action_button.set_visible(True)
 
             return
 
@@ -147,11 +160,15 @@ class NewAuthenticatorWindow(utils.PopupWindowBase):
         except webapi.SMSCodeError:
             self.status.info(_("Invalid SMS Code. Please,\ncheck the code and try again."))
             self.user_details_section.set_visible(True)
+            self.revocation_code_item.set_visible(False)
+            self.sms_code_item.set_visible(True)
             self.sms_code_item.set_text('')
             self.sms_code_item.grab_focus()
         except aiohttp.ClientError:
             self.status.error(_("Check your connection. (server down?)"))
             self.user_details_section.set_visible(True)
+            self.revocation_code_item.set_visible(False)
+            self.sms_code_item.set_visible(True)
             self.sms_code_item.set_text('')
             self.sms_code_item.grab_focus()
         except Exception as exception:
@@ -189,4 +206,66 @@ class NewAuthenticatorWindow(utils.PopupWindowBase):
 
             self.set_deletable(True)
         finally:
-            button.set_sensitive(True)
+            self.action_button.set_label(_("Add Authenticator"))
+            self.action_button.connect("clicked", lambda button: self.on_add_authenticator())
+            self.action_button.set_visible(True)
+
+    async def on_remove_authenticator(self) -> None:
+        self.status.info(_("Retrieving user data"))
+        self.user_details_section.set_visible(False)
+        self.set_size_request(0, 0)
+
+        if not self.access_token and not self.steamid:
+            self.status.error(_(
+                "Some login data is missing. If the problem persists, go to:\n"
+                "Settings -> Login -> Advanced -> and click on RESET Everything."
+            ))
+
+            return
+
+        if not self.revocation_code:
+            self.status.info(_("Enter bellow the revocation code and click on 'Remove Authenticator' button"))
+            self.user_details_section.set_visible(True)
+            self.sms_code_item.set_visible(False)
+            self.revocation_code_item.set_visible(True)
+            self.revocation_code_item.set_text('')
+            self.revocation_code_item.grab_focus()
+
+            self.action_button.set_label(_("Remove Authenticator"))
+            self.action_button.connect("clicked", lambda button: self.on_remove_authenticator())
+            self.action_button.set_visible(True)
+
+            return
+
+        try:
+            removed = await self.webapi_session.remove_authenticator(
+                self.steamid,
+                self.access_token,
+                self.revocation_code,
+            )
+        except aiohttp.ClientError:
+            self.status.error(_("Check your connection. (server down?)"))
+            self.user_details_section.set_visible(True)
+            self.sms_code_item.set_visible(False)
+            self.revocation_code_item.set_visible(True)
+            self.revocation_code_item.set_text('')
+            self.revocation_code_item.grab_focus()
+
+            self.action_button.set_label(_("Remove Authenticator"))
+            self.action_button.connect("clicked", lambda button: self.on_remove_authenticator())
+            self.action_button.set_visible(True)
+            self.set_deletable(True)
+        except webapi.RevocationError:
+            self.status.error(_("Too many attempts, try again later."))
+            self.user_details_section.set_visible(False)
+            self.action_button.set_visible(False)
+            self.set_deletable(True)
+        else:
+            if removed:
+                self.status.info(_("Authenticator has been removed."))
+            else:
+                self.status.error(_("Unable to remove the authenticator."))
+
+            self.user_details_section.set_visible(False)
+            self.action_button.set_visible(False)
+            self.set_deletable(True)
