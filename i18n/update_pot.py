@@ -36,11 +36,7 @@ Lara Maia <dev@lara.monster> (C) 2015 ~ 2023
 if __name__ == "__main__":
     output_file = Path('i18n', 'steam-tools-ng.pot')
     output_file.write_text("")
-    translatable_files = []
-
-    for file in Path('src').glob('**/*.py'):
-        translatable_files.append(file)
-
+    translatable_files = list(Path('src').glob('**/*.py'))
     for file in translatable_files:
         process_info = subprocess.run(
             [
@@ -48,7 +44,7 @@ if __name__ == "__main__":
                 '-jo',
                 output_file,
                 file,
-                '--copyright-holder=' + copyright_,
+                f'--copyright-holder={copyright_}',
                 '--package-name=steam-tools-ng',
                 '--msgid-bugs-address=dev@lara.monster',
             ]

@@ -51,9 +51,7 @@ class ManageAuthenticator:
 
     @property
     def steamid(self) -> Optional[universe.SteamId]:
-        steamid = config.parser.getint("login", "steamid")
-
-        if steamid:
+        if steamid := config.parser.getint("login", "steamid"):
             try:
                 return universe.generate_steamid(steamid)
             except ValueError:

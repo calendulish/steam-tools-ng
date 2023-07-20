@@ -32,12 +32,11 @@ log = logging.getLogger(__name__)
 async def main() -> AsyncGenerator[utils.ModuleData, None]:
     yield utils.ModuleData(status=_("Loading"))
 
-    if plugins.has_plugin("steamtrades"):
-        steamtrades = plugins.get_plugin("steamtrades")
-        steamtrades_session = steamtrades.Main.get_session(0)
-    else:
+    if not plugins.has_plugin("steamtrades"):
         raise ImportError(_("Unable to find Steamtrades plugin"))
 
+    steamtrades = plugins.get_plugin("steamtrades")
+    steamtrades_session = steamtrades.Main.get_session(0)
     trade_ids = config.parser.get("steamtrades", "trade_ids")
     wait_for_bump = config.parser.getint("steamtrades", "wait_for_bump")
 

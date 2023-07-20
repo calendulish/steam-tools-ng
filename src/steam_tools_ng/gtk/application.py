@@ -58,15 +58,11 @@ class SteamToolsNG(Gtk.Application):
 
     @property
     def main_window(self) -> Optional[window.Main]:
-        current_window = self.get_window_by_id(self._main_window_id)
-
-        return current_window
+        return self.get_window_by_id(self._main_window_id)
 
     @property
     def steamid(self) -> Optional[universe.SteamId]:
-        steamid = config.parser.getint("login", "steamid")
-
-        if steamid:
+        if steamid := config.parser.getint("login", "steamid"):
             try:
                 return universe.generate_steamid(steamid)
             except ValueError:
@@ -91,10 +87,7 @@ class SteamToolsNG(Gtk.Application):
 
         theme = config.parser.get("general", "theme")
 
-        if theme == 'dark':
-            self.gtk_settings.props.gtk_application_prefer_dark_theme = True
-        else:
-            self.gtk_settings.props.gtk_application_prefer_dark_theme = False
+        self.gtk_settings.props.gtk_application_prefer_dark_theme = theme == 'dark'
 
     def do_activate(self) -> None:
         if self._main_window_id != 0:
@@ -149,9 +142,8 @@ class SteamToolsNG(Gtk.Application):
 
                 if login_count == 2:
                     return
-                else:
-                    log.error(_("Waiting 10 seconds to try again"))
-                    await asyncio.sleep(10)
+                log.error(_("Waiting 10 seconds to try again"))
+                await asyncio.sleep(10)
 
             if await login_session.is_logged_in():
                 log.info("Steam login Successful")

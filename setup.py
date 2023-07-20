@@ -73,14 +73,10 @@ def fix_gtk() -> List[Tuple[str, str]]:
         'freetype2-2.0',
     ]
 
-    includes = []
-
     if 'MSC ' in sys.version:
         # windows
         from gi.repository import Gtk
         lib_path = Path(Gtk.__path__[0]).parent.parent.resolve()
-        bin_path = lib_path.parent.resolve() / 'bin'
-
         required_dlls = [
             'gtk-4-1',
             'pango-1.0-0',
@@ -97,8 +93,6 @@ def fix_gtk() -> List[Tuple[str, str]]:
     else:
         # mingw
         lib_path = Path(sysconfig.get_path('platlib')).parent.parent.resolve()
-        bin_path = lib_path.parent.resolve() / 'bin'
-
         required_dlls = [
             'libgtk-4-1',
             'libpango-1.0-0',
@@ -114,34 +108,37 @@ def fix_gtk() -> List[Tuple[str, str]]:
             'libpixbufloader-svg',
         ]
 
-    for package in namespace_packages:
-        includes.append((
+    bin_path = lib_path.parent.resolve() / 'bin'
+
+    includes = [
+        (
             str(lib_path / 'girepository-1.0' / f'{package}.typelib'),
             str(Path('lib', 'girepository-1.0', f'{package}.typelib')),
-        ))
-
-    for dll in required_dlls:
-        includes.append((
-            str(bin_path / f'{dll}.dll'),
-            f'{dll}.dll',
-        ))
-
-    for loader in pixbuf_loaders:
-        includes.append((
+        )
+        for package in namespace_packages
+    ]
+    includes.extend(
+        (str(bin_path / f'{dll}.dll'), f'{dll}.dll') for dll in required_dlls
+    )
+    includes.extend(
+        (
             str(lib_path / 'gdk-pixbuf-2.0' / '2.10.0' / 'loaders' / f'{loader}.dll'),
             str(Path('lib', 'gdk-pixbuf-2.0', '2.10.0', 'loaders', f'{loader}.dll')),
-        ))
-
-    includes.append((
-        str(lib_path / 'gdk-pixbuf-2.0' / '2.10.0' / 'loaders.cache'),
-        str(Path('lib', 'gdk-pixbuf-2.0', '2.10.0', 'loaders.cache')),
-    ))
-
-    includes.append((
-        str(Path('src', 'steam_tools_ng', 'icons', 'settings.ini')),
-        str(Path('etc', 'gtk-4.0', 'settings.ini')),
-    ))
-
+        )
+        for loader in pixbuf_loaders
+    )
+    includes.extend(
+        (
+            (
+                str(lib_path / 'gdk-pixbuf-2.0' / '2.10.0' / 'loaders.cache'),
+                str(Path('lib', 'gdk-pixbuf-2.0', '2.10.0', 'loaders.cache')),
+            ),
+            (
+                str(Path('src', 'steam_tools_ng', 'icons', 'settings.ini')),
+                str(Path('etc', 'gtk-4.0', 'settings.ini')),
+            ),
+        )
+    )
     return includes
 
 
@@ -176,10 +173,11 @@ def freeze_options() -> Mapping[str, Any]:
 
     includes = [*fix_gtk(), (certifi.where(), Path('etc', 'cacert.pem'))]
 
-    for file in Path(icons_path, 'Default').iterdir():
-        if file != 'settings.ini':
-            includes.append((file, Path('share', 'icons', 'Default', file.name)))
-
+    includes.extend(
+        (file, Path('share', 'icons', 'Default', file.name))
+        for file in Path(icons_path, 'Default').iterdir()
+        if file != 'settings.ini'
+    )
     for language in ['fr', 'pt_BR']:
         language_directory = Path('lib', 'steam_tools_ng', 'locale', language, 'LC_MESSAGES')
         includes.append((

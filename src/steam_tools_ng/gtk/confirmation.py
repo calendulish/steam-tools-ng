@@ -45,11 +45,7 @@ class FinalizeWindow(utils.PopupWindowBase):
         self.selection = self.confirmations_tree.model.get_selected_item()
         self.batch = batch
 
-        if action == "allow":
-            self.action = _("accept")
-        else:
-            self.action = _("cancel")
-
+        self.action = _("accept") if action == "allow" else _("cancel")
         self.raw_action = action
         self.header_bar.set_show_title_buttons(False)
         self.set_title(_('Finalize Confirmation'))
@@ -75,20 +71,19 @@ class FinalizeWindow(utils.PopupWindowBase):
             self.status.info(
                 _("Do you really want to {} ALL confirmations?\nIt can't be undone!").format(self.action.upper())
             )
-        else:
-            if self.selection:
-                self.status.info(
-                    _("{}\nDo you want to {} the offer?\nIt can't be undone!").format(
-                        self.selection.get_item().summary,
-                        self.action.upper(),
-                        utils.unmarkup(self.selection.get_item().to),
-                    )
+        elif self.selection:
+            self.status.info(
+                _("{}\nDo you want to {} the offer?\nIt can't be undone!").format(
+                    self.selection.get_item().summary,
+                    self.action.upper(),
+                    utils.unmarkup(self.selection.get_item().to),
                 )
-            else:
-                self.status.error(_("You must select something"))
-                self.header_bar.set_show_title_buttons(True)
-                self.yes_button.set_visible(False)
-                self.no_button.set_visible(False)
+            )
+        else:
+            self.status.error(_("You must select something"))
+            self.header_bar.set_show_title_buttons(True)
+            self.yes_button.set_visible(False)
+            self.no_button.set_visible(False)
 
     def on_yes_button_clicked(self, button: Gtk.Button) -> None:
         button.set_visible(False)

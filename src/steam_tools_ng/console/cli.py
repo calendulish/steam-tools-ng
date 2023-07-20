@@ -55,7 +55,10 @@ class SteamToolsNG:
         self.custom_gameid = 0
         self.extra_gameid = None
 
-        if module_name in ['cardfarming', 'fakerun'] and not stlib.steamworks_available:
+        if (
+            module_name in {'cardfarming', 'fakerun'}
+            and not stlib.steamworks_available
+        ):
             log.critical(_(
                 "{} module has been disabled because you have "
                 "a stlib built without SteamWorks support. To enable it again, "
@@ -63,7 +66,7 @@ class SteamToolsNG:
             ).format(module_name))
             sys.exit(1)
 
-        if module_name in ['steamtrades', 'steamgifts']:
+        if module_name in {'steamtrades', 'steamgifts'}:
             if not plugins.has_plugin(module_name):
                 log.critical(_(
                     "{0} module has been disabled because you don't "
@@ -76,9 +79,9 @@ class SteamToolsNG:
             if module_name == 'fakerun' and not module_options:
                 raise ValueError
 
-            for index, option in enumerate(module_options):
-                self.stop = True
+            self.stop = True
 
+            for index, option in enumerate(module_options):
                 if option != 'oneshot':
                     self.custom_gameid = int(option)
 
@@ -98,9 +101,7 @@ class SteamToolsNG:
 
     @property
     def steamid(self) -> Optional[universe.SteamId]:
-        steamid = config.parser.getint("login", "steamid")
-
-        if steamid:
+        if steamid := config.parser.getint("login", "steamid"):
             try:
                 return universe.generate_steamid(steamid)
             except ValueError:
@@ -139,9 +140,8 @@ class SteamToolsNG:
 
                 if login_count == 2:
                     return
-                else:
-                    log.error(_("Waiting 10 seconds to try again"))
-                    await asyncio.sleep(10)
+                log.error(_("Waiting 10 seconds to try again"))
+                await asyncio.sleep(10)
 
             if await login_session.is_logged_in():
                 utils.set_console(info=_("Steam login Successful"))

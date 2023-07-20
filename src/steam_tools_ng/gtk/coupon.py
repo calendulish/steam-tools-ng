@@ -173,9 +173,10 @@ class CouponWindow(utils.PopupWindowBase):
         else:
             json_data = await self.community_session.get_inventory(steamid, appid, contextid)
 
-            for coupon in json_data:
-                give.append((coupon.appid, coupon.assetid, coupon.amount))
-
+            give.extend(
+                (coupon.appid, coupon.assetid, coupon.amount)
+                for coupon in json_data
+            )
         try:
             botid = universe.generate_steamid(botid_raw)
         except ValueError:
@@ -225,9 +226,8 @@ class CouponWindow(utils.PopupWindowBase):
 
                 if target:
                     break
-                else:
-                    self.status.info(_('Waiting trade confirmation'))
-                    await asyncio.sleep(5)
+                self.status.info(_('Waiting trade confirmation'))
+                await asyncio.sleep(5)
 
             finalize_window = confirmation.FinalizeWindow(
                 self.parent_window,

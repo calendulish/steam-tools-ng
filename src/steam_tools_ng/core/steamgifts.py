@@ -33,12 +33,11 @@ log = logging.getLogger(__name__)
 async def main() -> AsyncGenerator[utils.ModuleData, None]:
     yield utils.ModuleData(status=_("Loading"))
 
-    if plugins.has_plugin("steamgifts"):
-        steamgifts = plugins.get_plugin("steamgifts")
-        steamgifts_session = steamgifts.Main.get_session(0)
-    else:
+    if not plugins.has_plugin("steamgifts"):
         raise ImportError(_("Unable to find Steamgifts plugin."))
 
+    steamgifts = plugins.get_plugin("steamgifts")
+    steamgifts_session = steamgifts.Main.get_session(0)
     try:
         await steamgifts_session.do_login()
     except aiohttp.ClientError:
@@ -131,7 +130,7 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
             giveaways = sorted(
                 giveaways,
                 key=lambda giveaway_: getattr(giveaway_, sort_name),
-                reverse=True if sort_direction == '-' else False,
+                reverse=sort_direction == '-',
             )
         else:
             yield utils.ModuleData(status=_("No giveaways to join for strategy {}. Skipping.").format(strategy_index))

@@ -779,9 +779,7 @@ class Main(Gtk.ApplicationWindow):
     @staticmethod
     def on_tree_selection_changed(view: Gtk.SingleSelection, position, item_count: int) -> None:
         item = view.get_selected_item()
-        parent = item.get_parent()
-
-        if parent:
+        if parent := item.get_parent():
             view.set_selected(parent.get_position())
 
     @staticmethod
@@ -789,10 +787,7 @@ class Main(Gtk.ApplicationWindow):
         if float(item1.price) < float(item2.price):
             return -1
 
-        if item1.price == item2.price:
-            return 0
-
-        return 1
+        return 0 if item1.price == item2.price else 1
 
     def set_status(
             self,

@@ -464,17 +464,14 @@ class Status(Gtk.Frame):
 
     @play_event.setter
     def play_event(self, value: bool) -> None:
-        if value is True:
+        if value:
             self._play_event.set()
         else:
             self._play_event.clear()
 
     @staticmethod
     def __sanitize_text(text: str, max_length: int) -> str:
-        if len(text) >= max_length:
-            return text[:max_length] + '...'
-
-        return text
+        return f'{text[:max_length]}...' if len(text) >= max_length else text
 
     def __disable_tooltip(self, event_status: Gtk.Label) -> None:
         self._grid.remove(event_status)
@@ -512,7 +509,7 @@ class Status(Gtk.Frame):
             self.play_event.clear()
 
     def set_pausable(self, value: bool = True) -> None:
-        if value is True:
+        if value:
             self._play_pause_button.set_visible(True)
         else:
             self._play_pause_button.set_visible(False)
@@ -661,14 +658,12 @@ class Section(Gtk.Grid):
 
             item.set_selected(current_option)
 
-        if isinstance(item, Gtk.CheckButton) or isinstance(item, Gtk.Switch):
+        if isinstance(item, (Gtk.CheckButton, Gtk.Switch)):
             value = config.parser.getboolean(section, name)
             item.set_active(value)
 
         if isinstance(item, Gtk.Entry):
-            value = config.parser.get(section, name)
-
-            if value:
+            if value := config.parser.get(section, name):
                 item.set_text(value)
 
         return item
@@ -729,9 +724,7 @@ class PopupWindowBase(Gtk.Window):
 def markup(text: str, **kwargs: Any) -> str:
     markup_string = ['<span']
 
-    for key, value in kwargs.items():
-        markup_string.append(f'{key}="{value}"')
-
+    markup_string.extend(f'{key}="{value}"' for key, value in kwargs.items())
     markup_string.append(f'>{html.escape(text)}</span>')
 
     return ' '.join(markup_string)
@@ -745,13 +738,11 @@ def unmarkup(text: str) -> str:
 
 def sanitize_confirmation(value: Optional[List[str]]) -> str:
     if not value:
-        result = _("Nothing")
+        return _("Nothing")
     elif len(value) == 1:
-        result = value[0]
+        return value[0]
     else:
-        result = _("Various")
-
-    return result
+        return _("Various")
 
 
 def sanitize_package_details(package_details: List[internals.Package]) -> List[internals.Package]:
@@ -771,12 +762,7 @@ def sanitize_package_details(package_details: List[internals.Package]) -> List[i
 
 
 def remove_letters(text: str) -> str:
-    new_text = []
-
-    for char in text:
-        if char.isdigit():
-            new_text.append(char)
-
+    new_text = [char for char in text if char.isdigit()]
     return ''.join(new_text)
 
 
