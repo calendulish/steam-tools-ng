@@ -137,11 +137,9 @@ class SettingsWindow(utils.PopupWindowBase):
     def on_theme_changed(self, dropdown: Gtk.DropDown, *args: Any) -> None:
         theme = list(config.gtk_themes)[dropdown.get_selected()]
 
-        if theme == 'dark':
-            self.gtk_settings_class.props.gtk_application_prefer_dark_theme = True
-        else:
-            self.gtk_settings_class.props.gtk_application_prefer_dark_theme = False
-
+        self.gtk_settings_class.props.gtk_application_prefer_dark_theme = (
+            theme == 'dark'
+        )
         config.new('general', 'theme', theme)
 
     def update_language(self, dropdown: Gtk.DropDown, *args: Any) -> None:

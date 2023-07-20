@@ -157,10 +157,10 @@ class LoginWindow(utils.PopupWindowBase):
         self.check_login_availability()
 
         if keyval == Gdk.KEY_Return:
-            if not self.username or not self.__password:
-                self.status.error(_("Username or Password is blank!"))
-            else:
+            if self.username and self.__password:
                 self.login_button.emit('clicked')
+            else:
+                self.status.error(_("Username or Password is blank!"))
 
     async def on_login_button_clicked(
             self,

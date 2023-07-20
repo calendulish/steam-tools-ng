@@ -197,7 +197,7 @@ async def main(
     last_update = 0
 
     while True:
-        for appid in generators.keys():
+        for appid in generators:
             progress_coro = anext(generators[appid])
             assert asyncio.iscoroutine(progress_coro)
 
@@ -251,9 +251,7 @@ async def main(
                     running_executors = [executor for executor in executors.values() if executor.is_running()]
                     extra_info = ''
 
-                    if current_running_limit > total_remaining:
-                        current_running_limit = total_remaining
-
+                    current_running_limit = min(current_running_limit, total_remaining)
                     if current_running_limit == 2:
                         extra_info = _(" +{} other").format(current_running_limit - 1)
                     elif current_running_limit > 2:

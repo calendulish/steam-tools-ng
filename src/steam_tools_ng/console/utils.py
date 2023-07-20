@@ -119,11 +119,7 @@ def set_console(
         total = module_data.level[1]
         bar_size = 20
 
-        if total > 0:
-            total = int(progress * bar_size / total)
-        else:
-            total = bar_size
-
+        total = int(progress * bar_size / total) if total > 0 else bar_size
         print(f"┌{'█' * total:{bar_size}}┐", end=' ')
 
     if module_data.info:
