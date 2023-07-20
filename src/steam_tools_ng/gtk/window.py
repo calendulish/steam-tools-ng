@@ -25,7 +25,7 @@ from typing import Optional, Tuple, Any
 from gi.repository import Gio, Gtk, Gdk
 
 import stlib
-from stlib import login, universe, plugins
+from stlib import login, plugins
 from . import confirmation, utils, coupon
 from .authenticator import NewAuthenticatorWindow
 from .login import LoginWindow

@@ -337,7 +337,7 @@ def new(section: str, option: str, value: Any) -> None:
 
 
 def remove(section: str, option: str) -> None:
-    # Some GUI checks will fail if option doesn't exists
+    # Some GUI checks will fail if option doesn't exist
     new(section, option, '')
     # parser.remove_option(section, option)
 

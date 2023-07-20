@@ -124,17 +124,7 @@ class SteamToolsNG:
 
     async def async_activate(self) -> None:
         login_session = await login.Login.new_session(0, api_url=self.api_url)
-
         utils.set_console(info=_("Logging on Steam. Please wait!"))
-
-        #token = config.parser.get("login", "token")
-        #token_secure = config.parser.get("login", "token_secure")
-
-        #if not token or not token_secure or not self.steamid:
-        #await self.do_login()
-
-        #login_session.restore_login(self.steamid, token, token_secure)
-
         try_count = 3
 
         for login_count in range(try_count):

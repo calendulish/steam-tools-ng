@@ -16,15 +16,15 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
-import certifi
 import os
 import subprocess
 import sys
 import sysconfig
 from pathlib import Path
-from setuptools import find_packages
-from setuptools.command.build_py import build_py
 from typing import Any, List, Mapping, Tuple
+
+import certifi
+from setuptools.command.build_py import build_py
 
 if os.name == 'nt' and not os.getenv('NO_FREEZE'):
     # noinspection PyPackageRequirements
@@ -200,5 +200,6 @@ def freeze_options() -> Mapping[str, Any]:
         "options": options,
         "executables": executables,
     }
+
 
 setup(cmdclass={'build_py': BuildTranslations}, **freeze_options())

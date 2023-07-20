@@ -132,15 +132,6 @@ class SteamToolsNG(Gtk.Application):
 
         self.main_window.statusbar.set_warning("steamguard", _("Logging on Steam. Please wait!"))
         log.info(_("Logging on Steam"))
-
-        #token = config.parser.get("login", "token")
-        #token_secure = config.parser.get("login", "token_secure")
-
-        #if not token or not token_secure or not self.steamid:
-        #    await self.do_login()
-
-        #login_session.restore_login(self.steamid, token, token_secure)
-
         try_count = 3
 
         for login_count in range(try_count):
