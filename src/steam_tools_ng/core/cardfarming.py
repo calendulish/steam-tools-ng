@@ -41,13 +41,14 @@ def safe_exit(*args: Any, **kwargs: Any) -> None:
 async def while_has_cards(
         steamid: universe.SteamId,
         badge: community.Badge,
-        play_event: asyncio.Event,
+        play_event: Optional[asyncio.Event] = None,
 ) -> AsyncGenerator[utils.ModuleData, None]:
     webapi_session = webapi.SteamWebAPI.get_session(0)
     community_session = community.Community.get_session(0)
 
     while badge.cards != 0:
-        await play_event.wait()
+        if play_event:
+            await play_event.wait()
 
         mandatory_waiting = config.parser.getint("cardfarming", "mandatory_waiting")
         wait_while_running = config.parser.getint("cardfarming", "wait_while_running")
@@ -91,7 +92,7 @@ async def while_has_cards(
         )
 
         async for data in utils.timed_module_data(wait_offset, module_data):
-            if not play_event.is_set():
+            if play_event and not play_event.is_set():
                 executor.shutdown()
                 await asyncio.sleep(1)
                 await play_event.wait()
@@ -136,10 +137,12 @@ async def while_has_cards(
 
 async def main(
         steamid: universe.SteamId,
-        play_event: asyncio.Event,
+        play_event: Optional[asyncio.Event] = None,
         custom_game_id: int = 0,
 ) -> AsyncGenerator[utils.ModuleData, None]:
-    await play_event.wait()
+    if play_event:
+        await play_event.wait()
+
     asyncio.current_task().add_done_callback(safe_exit)
 
     reverse_sorting = config.parser.getboolean("cardfarming", "reverse_sorting")

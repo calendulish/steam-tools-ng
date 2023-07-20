@@ -204,7 +204,7 @@ class SteamToolsNG:
 
     @while_running
     async def run_cardfarming(self) -> None:
-        cardfarming = core.cardfarming.main(self.steamid, self.custom_gameid)
+        cardfarming = core.cardfarming.main(self.steamid, custom_game_id=self.custom_gameid)
 
         async for module_data in cardfarming:
             utils.set_console(module_data)
