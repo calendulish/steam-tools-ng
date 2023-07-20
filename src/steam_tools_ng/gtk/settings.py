@@ -20,7 +20,7 @@ import logging
 from subprocess import call
 from typing import Any
 
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk
 
 from . import utils
 from .. import config, i18n
@@ -148,7 +148,11 @@ class SettingsWindow(utils.PopupWindowBase):
         language = list(config.translations)[dropdown.get_selected()]
         config.new('general', 'language', language)
 
-        language_warning = utils.StatusWindowBase(self, self.application)
-        language_warning.set_title(_("Language"))
-        language_warning.status.info(_("You must restart the STNG to apply the new language"))
-        language_warning.present()
+        language_popup = utils.PopupWindowBase(self, self.application)
+        language_popup.set_title(_("Language"))
+
+        language_status = utils.SimpleStatus()
+        language_status.info(_("You must restart the STNG to apply the new language"))
+
+        language_popup.content_grid.attach(language_status, 0, 0, 1, 1)
+        language_popup.present()
