@@ -15,13 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import aiohttp
 import asyncio
 import logging
 import sys
 from typing import Optional, TYPE_CHECKING
 
-from stlib import universe, webapi, login
+import aiohttp
+
+from stlib import universe, webapi
 from . import utils
 from .. import i18n, config
 
@@ -37,7 +38,7 @@ class NewAuthenticator:
     def __init__(self, cli_: 'cli.SteamToolsNG') -> None:
         self.cli = cli_
         self.webapi_session = webapi.SteamWebAPI.get_session(0)
-        self._login_data: Optional[login.LoginData] = None
+        self.authenticator_data: Optional[webapi.AuthenticatorData] = None
         self._sms_code = ''
 
     @property
@@ -45,8 +46,8 @@ class NewAuthenticator:
         return self._sms_code
 
     @property
-    def oauth_token(self) -> str:
-        return config.parser.get("login", "oauth_token")
+    def access_token(self) -> str:
+        return config.parser.get("login", "access_token")
 
     @property
     def steamid(self) -> Optional[universe.SteamId]:
@@ -63,7 +64,7 @@ class NewAuthenticator:
     async def add_authenticator(self) -> None:
         utils.set_console(info=_("Retrieving user data"))
 
-        if not self.oauth_token or not self.steamid:
+        if not self.access_token or not self.steamid:
             log.error(_(
                 "Some login data is missing. If the problem persists, run:\n"
                 "{} --reset"
@@ -72,12 +73,10 @@ class NewAuthenticator:
             self.cli.on_quit(1)
 
         assert isinstance(self.steamid, universe.SteamId)
-        oauth = {'steamid': self.steamid.id64, 'oauth_token': self.oauth_token}
-        login_data = login.LoginData(auth={}, oauth=oauth)
 
-        if not self._login_data or not self.sms_code:
+        if not self.authenticator_data or not self.sms_code:
             try:
-                self._login_data = await self.webapi_session.new_authenticator(self.steamid, self.oauth_token)
+                self.authenticator_data = await self.webapi_session.new_authenticator(self.steamid, self.access_token)
             except aiohttp.ClientError:
                 log.error(_("Check your connection. (server down?)"))
                 self.cli.on_quit(1)
@@ -102,13 +101,12 @@ class NewAuthenticator:
                 self._sms_code = user_input
 
         utils.set_console(info=_("Adding authenticator"))
-        assert isinstance(self._login_data, login.LoginData)
 
         try:
             await self.webapi_session.add_authenticator(
                 self.steamid,
-                self.oauth_token,
-                self._login_data.auth['shared_secret'],
+                self.access_token,
+                self.authenticator_data.shared_secret,
                 self.sms_code,
             )
         except webapi.SMSCodeError:
@@ -122,8 +120,8 @@ class NewAuthenticator:
             self.cli.on_quit(1)
 
         utils.set_console(info=_("Saving new secrets"))
-        config.new("login", "shared_secret", self._login_data.auth['shared_secret'])
-        config.new("login", "identity_secret", self._login_data.auth['identity_secret'])
+        config.new("login", "shared_secret", self.authenticator_data.shared_secret)
+        config.new("login", "identity_secret", self.authenticator_data.identity_secret)
         config.new("steamguard", "enable", True)
         config.new("confirmations", "enable", True)
 
@@ -135,6 +133,5 @@ class NewAuthenticator:
             "YOU WILL NOT ABLE TO VIEW IT AGAIN!\n"
         ))
 
-        revocation_code = self._login_data.auth['revocation_code']
-        utils.set_console(info=revocation_code)
+        utils.set_console(info=self.authenticator_data.revocation_code)
         await asyncio.sleep(30)

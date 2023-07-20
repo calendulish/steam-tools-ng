@@ -34,7 +34,7 @@ _ = i18n.get_translation
 class NewAuthenticatorWindow(utils.PopupWindowBase):
     def __init__(self, parent_window: Gtk.Window, application: Gtk.Application) -> None:
         super().__init__(parent_window, application)
-        self._login_data = None
+        self.authenticator_data: Optional[webapi.AuthenticatorData] = None
         self.webapi_session = webapi.SteamWebAPI.get_session(0)
 
         self.add_authenticator_button = utils.AsyncButton()
@@ -63,8 +63,8 @@ class NewAuthenticatorWindow(utils.PopupWindowBase):
         return self.sms_code_item.get_text()
 
     @property
-    def oauth_token(self) -> str:
-        return config.parser.get("login", "oauth_token")
+    def access_token(self) -> str:
+        return config.parser.get("login", "access_token")
 
     @property
     def steamid(self) -> Optional[universe.SteamId]:
@@ -96,7 +96,7 @@ class NewAuthenticatorWindow(utils.PopupWindowBase):
         self.user_details_section.set_visible(False)
         self.set_size_request(0, 0)
 
-        if not self.oauth_token and not self.steamid:
+        if not self.access_token and not self.steamid:
             self.status.error(_(
                 "Some login data is missing. If the problem persists, go to:\n"
                 "Settings -> Login -> Advanced -> and click on RESET Everything."
@@ -104,9 +104,9 @@ class NewAuthenticatorWindow(utils.PopupWindowBase):
 
             return
 
-        if not self._login_data or not self.sms_code:
+        if not self.authenticator_data or not self.sms_code:
             try:
-                self._login_data = await self.webapi_session.new_authenticator(self.steamid, self.oauth_token)
+                self.authenticator_data = await self.webapi_session.new_authenticator(self.steamid, self.access_token)
             except aiohttp.ClientError:
                 self.status.error(_("Check your connection. (server down?)"))
             except webapi.AuthenticatorExists:
@@ -140,8 +140,8 @@ class NewAuthenticatorWindow(utils.PopupWindowBase):
         try:
             await self.webapi_session.add_authenticator(
                 self.steamid,
-                self.oauth_token,
-                self._login_data.auth['shared_secret'],
+                self.access_token,
+                self.authenticator_data.shared_secret,
                 self.sms_code,
             )
         except webapi.SMSCodeError:
@@ -162,8 +162,8 @@ class NewAuthenticatorWindow(utils.PopupWindowBase):
             self.application.on_exit_activate()
         else:
             self.status.info(_("Saving new secrets"))
-            config.new("login", "shared_secret", self._login_data.auth['shared_secret'])
-            config.new("login", "identity_secret", self._login_data.auth['identity_secret'])
+            config.new("login", "shared_secret", self.authenticator_data.shared_secret)
+            config.new("login", "identity_secret", self.authenticator_data.identity_secret)
             config.new("steamguard", "enable", True)
             config.new("confirmations", "enable", True)
 
@@ -175,10 +175,8 @@ class NewAuthenticatorWindow(utils.PopupWindowBase):
                 "YOU WILL NOT ABLE TO VIEW IT AGAIN!\n"
             ))
 
-            revocation_code = self._login_data.auth['revocation_code']
-
             self.add_authenticator_button.set_visible(False)
-            self.revocation_status.set_display(revocation_code)
+            self.revocation_status.set_display(self.authenticator_data.revocation_code)
             self.revocation_status.set_status('')
             self.revocation_status.set_visible(True)
 
