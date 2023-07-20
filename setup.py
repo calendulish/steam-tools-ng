@@ -122,22 +122,8 @@ def fix_gtk() -> List[Tuple[str, str]]:
     )
     includes.extend(
         (
-            str(
-                lib_path
-                / 'gdk-pixbuf-2.0'
-                / '2.10.0'
-                / 'loaders'
-                / f'{loader}.dll'
-            ),
-            str(
-                Path(
-                    'lib',
-                    'gdk-pixbuf-2.0',
-                    '2.10.0',
-                    'loaders',
-                    f'{loader}.dll',
-                )
-            ),
+            str(lib_path / 'gdk-pixbuf-2.0' / '2.10.0' / 'loaders' / f'{loader}.dll'),
+            str(Path('lib', 'gdk-pixbuf-2.0', '2.10.0', 'loaders', f'{loader}.dll')),
         )
         for loader in pixbuf_loaders
     )
