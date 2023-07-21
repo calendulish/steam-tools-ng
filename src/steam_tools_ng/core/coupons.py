@@ -106,15 +106,25 @@ async def main(
             package_link = coupon_.actions[0]['link']
             packageids = [int(id_) for id_ in package_link.split('=')[1].split(',')]
             blacklist = config.parser.get('coupons', 'blacklist')
-            ignored_list = [coupon.split('% OFF')[-1].split('- Coupon')[0].strip() for coupon in blacklist.split(',')]
-            ignored_list += [game.name for game in owned_games]
+            ignored_list = [name.split('% OFF')[-1].split('- Coupon')[0].strip() for name in blacklist.split(',')]
+            ignored_list.extend([game.name for game in owned_games])
             minimum_discount = config.parser.getint('coupons', 'minimum_discount')
+            game_name = coupon_.name.split('% OFF')[-1].split('- Coupon')[0].strip()
 
             for package_id in packageids:
                 if not fetch_coupon_event.is_set():
                     log.warning(_("Stopping fetching coupons (requested by user)"))
                     yield utils.ModuleData(action="update_level", raw_data=(0, 0))
                     return
+
+                if any(
+                        ignored == game_name or
+                        (ignored.startswith('*') and game_name.endswith(ignored[1:])) or
+                        (ignored.endswith('*') and game_name.startswith(ignored[:-1]))
+                        for ignored in blacklist
+                ):
+                    log.info(_('Ignoring coupon %s due blacklist'), coupon_.name)
+                    continue
 
                 if coupon_.name.split('% OFF')[-1].split('- Coupon')[0].strip() in ignored_list:
                     log.info(_('Ignoring coupon %s due blacklist'), coupon_.name)
