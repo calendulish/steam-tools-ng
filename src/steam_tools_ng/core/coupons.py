@@ -171,4 +171,5 @@ async def main(
                 async for data in utils.timed_module_data(120, module_data):
                     yield data
 
+    yield utils.ModuleData(action="update_level", raw_data=(0, 0))
     fetch_coupon_event.clear()
