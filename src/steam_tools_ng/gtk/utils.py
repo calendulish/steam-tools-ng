@@ -563,6 +563,8 @@ class Status(Gtk.Frame):
 
 
 class Section(Gtk.Grid):
+    items = []
+
     def __init__(self, name: str) -> None:
         super().__init__()
         # for backward compatibility
@@ -587,6 +589,43 @@ class Section(Gtk.Grid):
         item.label.set_visible(state)
         super(item.__class__, item).set_visible(state)
 
+    @staticmethod
+    def __update_values(item: 'Item', items: Optional[OrderedDict[str, str]] = None) -> None:
+        if isinstance(item, Gtk.DropDown):
+            assert isinstance(items, OrderedDict), "DropDown needs items mapping"
+            value = config.parser.get(item.get_section_name(), item.get_name())
+            string_list = Gtk.StringList()
+
+            for option_label in items.values():
+                string_list.append(_(option_label))
+
+            item.set_model(string_list)
+
+            try:
+                current_option = list(items).index(value)
+            except ValueError:
+                import sys
+
+                error_message = _("Please, fix your config file. Accepted values for {} are:\n{}").format(
+                    item.get_name(),
+                    ', '.join(items.keys()),
+                )
+                log.exception(error_message)
+                traceback_info = sys.exc_info()[2]
+                fatal_error_dialog(ValueError(error_message), traceback.extract_tb(traceback_info))
+                # unset active item
+                current_option = -1
+
+            item.set_selected(current_option)
+
+        if isinstance(item, (Gtk.CheckButton, Gtk.Switch)):
+            value = config.parser.getboolean(item.get_section_name(), item.get_name())
+            item.set_active(value)
+
+        if isinstance(item, Gtk.Entry):
+            if value := config.parser.get(item.get_section_name(), item.get_name()):
+                item.set_text(value)
+
     def new_item(
             self,
             name: str,
@@ -603,6 +642,7 @@ class Section(Gtk.Grid):
             '__init__': lambda item_: super(item_.__class__, item_).__init__(),
             'get_section_name': self.__get_section_name,
             'set_visible': self.__set_visible,
+            'update_values': lambda item_: self.__update_values(item_, items)
         }
 
         if label:
@@ -628,43 +668,10 @@ class Section(Gtk.Grid):
         else:
             self.grid.attach(item, *grid_position, 1, 1)
 
-        if name.startswith('_'):
-            return item
+        self.items.append(item)
 
-        if isinstance(item, Gtk.DropDown):
-            assert isinstance(items, OrderedDict), "DropDown needs items mapping"
-            value = config.parser.get(section, name)
-            string_list = Gtk.StringList()
-
-            for option_label in items.values():
-                string_list.append(_(option_label))
-
-            item.set_model(string_list)
-
-            try:
-                current_option = list(items).index(value)
-            except ValueError:
-                import sys
-
-                error_message = _("Please, fix your config file. Accepted values for {} are:\n{}").format(
-                    name,
-                    ', '.join(items.keys()),
-                )
-                log.exception(error_message)
-                traceback_info = sys.exc_info()[2]
-                fatal_error_dialog(ValueError(error_message), traceback.extract_tb(traceback_info))
-                # unset active item
-                current_option = -1
-
-            item.set_selected(current_option)
-
-        if isinstance(item, (Gtk.CheckButton, Gtk.Switch)):
-            value = config.parser.getboolean(section, name)
-            item.set_active(value)
-
-        if isinstance(item, Gtk.Entry):
-            if value := config.parser.get(section, name):
-                item.set_text(value)
+        if not name.startswith('_'):
+            item.update_values()
 
         return item
 

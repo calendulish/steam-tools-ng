@@ -105,28 +105,29 @@ class Main(Gtk.ApplicationWindow):
         self.user_info_label.set_halign(Gtk.Align.END)
         header_bar.pack_start(self.user_info_label)
 
-        main_tabs = Gtk.Stack()
-        main_tabs.set_hhomogeneous(True)
-        main_grid.attach(main_tabs, 1, 2, 1, 1)
+        self.main_tabs = Gtk.Stack()
+        self.main_tabs.set_hhomogeneous(True)
+        self.main_tabs.connect("notify::visible-child", self.on_stack_child_changed)
+        main_grid.attach(self.main_tabs, 1, 2, 1, 1)
 
         switcher = Gtk.StackSwitcher()
-        switcher.set_stack(main_tabs)
+        switcher.set_stack(self.main_tabs)
         main_grid.attach(switcher, 1, 1, 1, 1)
 
         steamguard_section = utils.Section("steamguard")
-        steamguard_section.stackup_section("SteamGuard", main_tabs)
+        steamguard_section.stackup_section("SteamGuard", self.main_tabs)
 
         cardfarming_section = utils.Section("cardfarming")
-        cardfarming_section.stackup_section("CardFarming", main_tabs)
+        cardfarming_section.stackup_section("CardFarming", self.main_tabs)
 
         steamgifts_section = utils.Section("steamgifts")
-        steamgifts_section.stackup_section("SteamGifts", main_tabs)
+        steamgifts_section.stackup_section("SteamGifts", self.main_tabs)
 
         steamtrades_section = utils.Section("steamtrades")
-        steamtrades_section.stackup_section("SteamTrades", main_tabs)
+        steamtrades_section.stackup_section("SteamTrades", self.main_tabs)
 
         coupons_section = utils.Section("coupons")
-        coupons_section.stackup_section(_("Coupons"), main_tabs)
+        coupons_section.stackup_section(_("Coupons"), self.main_tabs)
 
         # grid managed by plugin switch
         self.steamguard_status = utils.Status(4)
@@ -711,6 +712,7 @@ class Main(Gtk.ApplicationWindow):
                 self.confirmations_grid.set_sensitive(False)
                 self.confirmations_enable.set_active(False)
 
+            self.on_stack_child_changed(self.main_tabs)
             await asyncio.sleep(30)
 
     async def plugin_status(self) -> None:
@@ -781,6 +783,17 @@ class Main(Gtk.ApplicationWindow):
         item = view.get_selected_item()
         if parent := item.get_parent():
             view.set_selected(parent.get_position())
+
+    @staticmethod
+    def on_stack_child_changed(stack: Gtk.Stack, *args) -> None:
+        section = stack.get_visible_child()
+
+        for item in section.items:
+            if item.get_name().startswith('_'):
+                continue
+
+            log.debug(f'Reading {section.get_name()}:{item.get_name()} from config file')
+            item.update_values()
 
     @staticmethod
     def coupon_sorting(item1: utils.SimpleTextTreeItem, item2: utils.SimpleTextTreeItem, *data: Any) -> Any:
