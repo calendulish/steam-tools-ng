@@ -58,14 +58,14 @@ class SettingsWindow(utils.PopupWindowBase):
 
         if config.parser.get("logger", "log_directory") == str(config.config_file_directory):
             config_button.set_label(_("Config / Log file Directory"))
-            general_section.grid.attach(config_button, 0, 1, 2, 1)
+            general_section.attach(config_button, 0, 1, 2, 1)
         else:
             log_button = Gtk.Button()
             log_button.set_label(_("Log File Directory"))
             log_button.set_name("log_button")
             log_button.connect("clicked", self.on_log_button_clicked)
-            general_section.grid.attach(config_button, 0, 1, 1, 1)
-            general_section.grid.attach(log_button, 1, 1, 1, 1)
+            general_section.attach(config_button, 0, 1, 1, 1)
+            general_section.attach(log_button, 1, 1, 1, 1)
 
         theme = general_section.new_item(
             "theme",

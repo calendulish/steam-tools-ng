@@ -562,69 +562,106 @@ class Status(Gtk.Frame):
         self._level_bar.set_max_value(0)
 
 
-class Section(Gtk.Grid):
-    items = []
-
-    def __init__(self, name: str) -> None:
+class _SectionItem(Gtk.Grid):
+    def __init__(self,
+                 section: 'Section',
+                 name: str,
+                 label: Optional[str],
+                 widget: Type[Gtk.Widget],
+                 items: Optional[OrderedDict[str, str]] = None,
+                 ) -> None:
         super().__init__()
-        # for backward compatibility
-        self.grid = self
+        self.set_column_homogeneous(True)
 
+        self.section = section
+        self.items = items
         self.set_name(name)
-        self.set_row_spacing(10)
-        self.set_column_spacing(10)
-        self.set_margin_top(10)
-        self.set_margin_bottom(10)
-        self.set_margin_start(10)
-        self.set_margin_end(10)
 
-    # noinspection PyProtectedMember
-    @staticmethod
-    def __get_section_name(item: 'Item') -> str:
-        assert isinstance(item._section_name, str)
-        return item._section_name
+        self.widget = widget()
+        self.widget.set_hexpand(True)
 
-    @staticmethod
-    def __set_visible(item: 'Item', state: bool) -> None:
-        item.label.set_visible(state)
-        super(item.__class__, item).set_visible(state)
+        if isinstance(self.widget, Gtk.Switch):
+            self.widget.set_halign(Gtk.Align.END)
 
-    @staticmethod
-    def __update_values(item: 'Item', items: Optional[OrderedDict[str, str]] = None) -> None:
-        if isinstance(item, Gtk.DropDown):
-            assert isinstance(items, OrderedDict), "DropDown needs items mapping"
-            value = config.parser.get(item.get_section_name(), item.get_name())
+        if label:
+            self.label = Gtk.Label()
+            self.label.set_name(name)
+            self.label.set_text(label)
+            self.label.set_halign(Gtk.Align.START)
+
+            self.attach(self.label, 0, 0, 1, 1)
+            self.attach_next_to(self.widget, self.label, Gtk.PositionType.RIGHT, 1, 1)
+        else:
+            self.attach(self.widget, 0, 0, 1, 1)
+
+        if items:
             string_list = Gtk.StringList()
 
             for option_label in items.values():
                 string_list.append(_(option_label))
 
-            item.set_model(string_list)
+            self.widget.set_model(string_list)
 
-            try:
-                current_option = list(items).index(value)
-            except ValueError:
-                import sys
+    def __getattr__(self, item: str) -> Any:
+        return getattr(self.widget, item)
 
-                error_message = _("Please, fix your config file. Accepted values for {} are:\n{}").format(
-                    item.get_name(),
-                    ', '.join(items.keys()),
-                )
-                log.exception(error_message)
-                traceback_info = sys.exc_info()[2]
-                fatal_error_dialog(ValueError(error_message), traceback.extract_tb(traceback_info))
-                # unset active item
-                current_option = -1
+    def __update_dropdown(self) -> None:
+        value = config.parser.get(self.section.get_name(), self.get_name())
 
-            item.set_selected(current_option)
+        try:
+            current_option = list(self.items).index(value)
+        except ValueError:
+            import sys
 
-        if isinstance(item, (Gtk.CheckButton, Gtk.Switch)):
-            value = config.parser.getboolean(item.get_section_name(), item.get_name())
-            item.set_active(value)
+            error_message = _("Please, fix your config file. Accepted values for {} are:\n{}").format(
+                self.name,
+                ', '.join(self.items.keys()),
+            )
+            log.exception(error_message)
+            traceback_info = sys.exc_info()[2]
+            fatal_error_dialog(ValueError(error_message), traceback.extract_tb(traceback_info))
+            # unset active item
+            current_option = -1
 
-        if isinstance(item, Gtk.Entry):
-            if value := config.parser.get(item.get_section_name(), item.get_name()):
-                item.set_text(value)
+        self.widget.set_selected(current_option)
+
+    def __update_switch(self) -> None:
+        value = config.parser.getboolean(self.section.get_name(), self.get_name())
+
+        self.widget.set_active(value)
+
+    def __update_entry(self) -> None:
+        value = config.parser.get(self.section.get_name(), self.get_name())
+
+        self.widget.get_buffer().set_text(value, -1)
+
+    def update_values(self) -> None:
+        if isinstance(self.widget, Gtk.DropDown):
+            self.__update_dropdown()
+        elif isinstance(self.widget, Gtk.Switch):
+            self.__update_switch()
+        else:
+            self.__update_entry()
+
+    def set_visible(self, state: bool) -> None:
+        self.label.set_visible(state)
+        super(self.__class__, self).set_visible(state)
+
+    def connect(self, name: str, callback: Callable[..., Any], *args, **kwargs) -> None:
+        self.widget.connect(name, lambda widget, *data: callback(self, *data, *args, **kwargs))
+
+
+class Section(Gtk.Grid):
+    def __init__(self, name: str) -> None:
+        super().__init__()
+        self.items = []
+
+        self.set_name(name)
+        self.set_row_spacing(10)
+        self.set_margin_top(10)
+        self.set_margin_bottom(10)
+        self.set_margin_start(10)
+        self.set_margin_end(10)
 
     def new_item(
             self,
@@ -634,40 +671,8 @@ class Section(Gtk.Grid):
             *grid_position: int,
             items: Optional[OrderedDict[str, str]] = None,
     ) -> Gtk.Widget:
-        bases = (widget,)
-
-        body = {
-            'label': None,
-            '_section_name': None,
-            '__init__': lambda item_: super(item_.__class__, item_).__init__(),
-            'get_section_name': self.__get_section_name,
-            'set_visible': self.__set_visible,
-            'update_values': lambda item_: self.__update_values(item_, items)
-        }
-
-        if label:
-            body['label'] = Gtk.Label()
-
-        section = self.get_name()
-        value: Union[str, bool, int]
-
-        item = type('Item', bases, body)()
-        assert isinstance(item, Gtk.Widget)
-
-        item.set_hexpand(True)
-        item.set_name(name)
-        item._section_name = section
-
-        if item.label:
-            item.label.set_name(name)
-            item.label.set_text(label)
-            item.label.set_halign(Gtk.Align.START)
-
-            self.grid.attach(item.label, *grid_position, 1, 1)
-            self.grid.attach_next_to(item, item.label, Gtk.PositionType.RIGHT, 1, 1)
-        else:
-            self.grid.attach(item, *grid_position, 1, 1)
-
+        item = _SectionItem(self, name, label, widget, items=items)
+        self.attach(item, *grid_position, 1, 1)
         self.items.append(item)
 
         if not name.startswith('_'):
@@ -819,37 +824,24 @@ def safe_task_callback(task: asyncio.Task[Any]) -> None:
         fatal_error_dialog(exception, stack, application.get_active_window())
 
 
-def on_setting_state_set(switch: Gtk.Switch, state: bool) -> None:
-    section = switch.get_section_name()
-    option = switch.get_name()
-
-    config.new(section, option, state)
+def on_setting_state_set(item: _SectionItem, state: bool) -> None:
+    config.new(item.section.get_name(), item.get_name(), state)
 
 
-def on_setting_changed(entry: Gtk.Entry) -> None:
-    current_value = entry.get_text()
-    section = entry.get_section_name()
-    option = entry.get_name()
-
-    config.new(section, option, current_value)
+def on_setting_changed(item: _SectionItem) -> None:
+    current_value = item.get_text()
+    config.new(item.section.get_name(), item.get_name(), current_value)
 
 
-def on_digit_only_setting_changed(entry: Gtk.Entry) -> None:
-    current_value = entry.get_text()
-    section = entry.get_section_name()
-    option = entry.get_name()
+def on_digit_only_setting_changed(item: _SectionItem) -> None:
+    current_value = item.get_text()
 
     if current_value.isdigit():
-        config.new(section, option, int(current_value))
+        config.new(item.section.get_name(), item.get_name(), int(current_value))
     else:
-        entry.handler_block_by_func(on_digit_only_setting_changed)
-        entry.set_text(remove_letters(current_value))
-        entry.handler_unblock_by_func(on_digit_only_setting_changed)
+        item.get_buffer().set_text(remove_letters(current_value), -1)
 
 
-def on_dropdown_setting_changed(dropdown: 'Item', _spec: Any, items: OrderedDict[str, str]) -> None:
-    current_value = list(items)[dropdown.get_selected()]
-    section = dropdown.get_section_name()
-    option = dropdown.get_name()
-
-    config.new(section, option, current_value)
+def on_dropdown_setting_changed(item: _SectionItem, _spec: Any, items: OrderedDict[str, str]) -> None:
+    current_value = list(items)[item.get_selected()]
+    config.new(item.section.get_name(), item.get_name(), current_value)

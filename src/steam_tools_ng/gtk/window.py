@@ -135,16 +135,16 @@ class Main(Gtk.ApplicationWindow):
         self.steamgifts_status = utils.Status(5)
         self.steamtrades_status = utils.Status(5)
 
-        steamguard_section.grid.attach(self.steamguard_status, 0, 0, 2, 1)
+        steamguard_section.attach(self.steamguard_status, 0, 0, 2, 1)
 
         steamguard_stack = Gtk.Stack()
         steamguard_stack.set_vexpand(True)
-        steamguard_section.grid.attach(steamguard_stack, 1, 1, 1, 1)
+        steamguard_section.attach(steamguard_stack, 1, 1, 1, 1)
 
         steamguard_sidebar = Gtk.StackSidebar()
         steamguard_sidebar.set_stack(steamguard_stack)
         steamguard_sidebar.set_size_request(150, -1)
-        steamguard_section.grid.attach(steamguard_sidebar, 0, 1, 1, 1)
+        steamguard_section.attach(steamguard_sidebar, 0, 1, 1, 1)
 
         self.confirmations_grid = Gtk.Grid()
         self.confirmations_grid.set_row_spacing(10)
@@ -198,12 +198,11 @@ class Main(Gtk.ApplicationWindow):
 
         steamguard_settings = utils.Section("steamguard")
         steamguard_settings.stackup_section(_("Settings"), steamguard_stack)
-        steamguard_settings.grid.set_halign(Gtk.Align.CENTER)
+        steamguard_settings.set_halign(Gtk.Align.CENTER)
 
         self.steamguard_enable = steamguard_settings.new_item("enable", _("Enable:"), Gtk.Switch, 0, 0)
-        self.steamguard_enable.set_margin_top(40)
+        self.steamguard_enable.widget.set_margin_top(40)
         self.steamguard_enable.label.set_margin_top(40)
-        self.steamguard_enable.set_halign(Gtk.Align.END)
         self.steamguard_enable.connect("state-set", utils.on_setting_state_set)
 
         self.steamguard_disabled = Gtk.Label()
@@ -219,15 +218,13 @@ class Main(Gtk.ApplicationWindow):
 
         self.steamguard_disabled.set_markup(utils.markup(_message, color="hotpink", background="black"))
         self.steamguard_disabled.set_visible(False)
-        steamguard_section.grid.attach(self.steamguard_disabled, 0, 0, 2, 1)
+        steamguard_section.attach(self.steamguard_disabled, 0, 0, 2, 1)
 
         self.confirmations_enable = steamguard_settings.new_item(
             "enable_confirmations", _("Enable Confirmations:"),
             Gtk.Switch,
             0, 1,
         )
-
-        self.confirmations_enable.set_halign(Gtk.Align.END)
         self.confirmations_enable.connect("state-set", utils.on_setting_state_set)
 
         self.confirmations_disabled = Gtk.Label()
@@ -250,25 +247,25 @@ class Main(Gtk.ApplicationWindow):
         login_button.set_label(_("Login with another account"))
         login_button.set_name("login_button")
         login_button.connect('clicked', self.on_login_button_clicked)
-        steamguard_settings.grid.attach(login_button, 0, 2, 2, 1)
+        steamguard_settings.attach(login_button, 0, 2, 2, 1)
 
         new_authenticator_button = Gtk.Button()
         new_authenticator_button.set_label(_("Add STNG as your Steam Authenticator"))
         new_authenticator_button.set_name("new_authenticator_button")
         new_authenticator_button.connect("clicked", self.on_new_authenticator_clicked)
-        steamguard_settings.grid.attach(new_authenticator_button, 0, 3, 2, 1)
+        steamguard_settings.attach(new_authenticator_button, 0, 3, 2, 1)
 
         remove_authenticator_button = Gtk.Button()
         remove_authenticator_button.set_label(_("Remove STNG Authenticator from your Steam Account"))
         remove_authenticator_button.set_name("remove_authenticator_button")
         remove_authenticator_button.connect("clicked", self.on_remove_authenticator_clicked)
-        steamguard_settings.grid.attach(remove_authenticator_button, 0, 4, 2, 1)
+        steamguard_settings.attach(remove_authenticator_button, 0, 4, 2, 1)
 
         reset_password_button = Gtk.Button()
         reset_password_button.set_label(_("Remove Saved Password"))
         reset_password_button.set_name("reset_password_button")
         reset_password_button.connect("clicked", self.on_reset_password_clicked)
-        steamguard_settings.grid.attach(reset_password_button, 0, 5, 2, 1)
+        steamguard_settings.attach(reset_password_button, 0, 5, 2, 1)
 
         steamguard_advanced = utils.Section("login")
         steamguard_advanced.stackup_section(_("Advanced"), steamguard_stack, scroll=True)
@@ -278,7 +275,7 @@ class Main(Gtk.ApplicationWindow):
             _("Warning: Don't mess up these settings unless you know what you are doing!"),
             color='darkred' if self.theme == 'light' else 'red',
         ))
-        steamguard_advanced.grid.attach(warning_label, 0, 0, 2, 1)
+        steamguard_advanced.attach(warning_label, 0, 0, 2, 1)
 
         shared_secret = steamguard_advanced.new_item('shared_secret', _("Shared Secret:"), Gtk.Entry, 0, 1)
         shared_secret.connect('changed', utils.on_setting_changed)
@@ -306,24 +303,23 @@ class Main(Gtk.ApplicationWindow):
         reset_button.set_label(_("Reset Everything (USE WITH CAUTION!!!)"))
         reset_button.set_name("reset_button")
         reset_button.connect("clicked", self.on_reset_clicked)
-        steamguard_advanced.grid.attach(reset_button, 0, 8, 2, 1)
+        steamguard_advanced.attach(reset_button, 0, 8, 2, 1)
 
-        cardfarming_section.grid.attach(self.cardfarming_status, 0, 0, 2, 1)
+        cardfarming_section.attach(self.cardfarming_status, 0, 0, 2, 1)
 
         cardfarming_stack = Gtk.Stack()
         cardfarming_stack.set_vexpand(True)
-        cardfarming_section.grid.attach(cardfarming_stack, 1, 1, 1, 1)
+        cardfarming_section.attach(cardfarming_stack, 1, 1, 1, 1)
 
         cardfarming_sidebar = Gtk.StackSidebar()
         cardfarming_sidebar.set_stack(cardfarming_stack)
         cardfarming_sidebar.set_size_request(150, -1)
-        cardfarming_section.grid.attach(cardfarming_sidebar, 0, 1, 1, 1)
+        cardfarming_section.attach(cardfarming_sidebar, 0, 1, 1, 1)
 
         cardfarming_settings = utils.Section("cardfarming")
         cardfarming_settings.stackup_section(_("Settings"), cardfarming_stack, scroll=True)
 
         cardfarming_enable = cardfarming_settings.new_item("enable", _("Enable:"), Gtk.Switch, 0, 1)
-        cardfarming_enable.set_halign(Gtk.Align.END)
         cardfarming_enable.connect("state-set", utils.on_setting_state_set)
 
         mandatory_waiting = cardfarming_settings.new_item("mandatory_waiting", _("Mandatory waiting:"), Gtk.Entry, 0, 2)
@@ -344,11 +340,9 @@ class Main(Gtk.ApplicationWindow):
         max_concurrency.connect("changed", utils.on_digit_only_setting_changed)
 
         cardfarming_invisible = cardfarming_settings.new_item("invisible", _("Invisible:"), Gtk.Switch, 0, 6)
-        cardfarming_invisible.set_halign(Gtk.Align.END)
         cardfarming_invisible.connect("state-set", utils.on_setting_state_set)
 
         reverse_sorting = cardfarming_settings.new_item("reverse_sorting", _("Reverse Sorting:"), Gtk.Switch, 0, 7)
-        reverse_sorting.set_halign(Gtk.Align.END)
         reverse_sorting.connect("state-set", utils.on_setting_state_set)
 
         if not stlib.steamworks_available:
@@ -367,22 +361,21 @@ class Main(Gtk.ApplicationWindow):
             _cardfarming_disabled.set_markup(utils.markup(_message, color="hotpink", background="black"))
             cardfarming_section.attach(_cardfarming_disabled, 0, 0, 2, 1)
 
-        steamgifts_section.grid.attach(self.steamgifts_status, 0, 0, 2, 1)
+        steamgifts_section.attach(self.steamgifts_status, 0, 0, 2, 1)
 
         steamgifts_stack = Gtk.Stack()
         steamgifts_stack.set_vexpand(True)
-        steamgifts_section.grid.attach(steamgifts_stack, 1, 1, 1, 1)
+        steamgifts_section.attach(steamgifts_stack, 1, 1, 1, 1)
 
         steamgifts_sidebar = Gtk.StackSidebar()
         steamgifts_sidebar.set_stack(steamgifts_stack)
         steamgifts_sidebar.set_size_request(150, -1)
-        steamgifts_section.grid.attach(steamgifts_sidebar, 0, 1, 1, 1)
+        steamgifts_section.attach(steamgifts_sidebar, 0, 1, 1, 1)
 
         steamgifts_settings = utils.Section("steamgifts")
         steamgifts_settings.stackup_section(_("Settings"), steamgifts_stack)
 
         steamgifts_enable = steamgifts_settings.new_item("enable", _("Enable:"), Gtk.Switch, 0, 0)
-        steamgifts_enable.set_halign(Gtk.Align.END)
         steamgifts_enable.connect('state-set', utils.on_setting_state_set)
 
         developer_giveaways = steamgifts_settings.new_item(
@@ -390,7 +383,6 @@ class Main(Gtk.ApplicationWindow):
             Gtk.Switch,
             0, 1,
         )
-        developer_giveaways.set_halign(Gtk.Align.END)
         developer_giveaways.connect("state-set", utils.on_setting_state_set)
 
         steamgifts_mode = steamgifts_settings.new_item(
@@ -424,24 +416,23 @@ class Main(Gtk.ApplicationWindow):
 
             label = Gtk.Label()
             label.set_text(_("Strategy {}").format(index))
-            strategy_section.grid.attach(label, 0, 0, 1, 1)
+            strategy_section.attach(label, 0, 0, 1, 1)
 
             enable = strategy_section.new_item("enable", None, Gtk.Switch, 2, 0)
-            enable.set_halign(Gtk.Align.END)
             enable.connect("state-set", utils.on_setting_state_set)
 
             minimum_label = Gtk.Label()
             minimum_label.set_text(_("Minimum"))
-            strategy_section.grid.attach(minimum_label, 1, 1, 1, 1)
+            strategy_section.attach(minimum_label, 1, 1, 1, 1)
 
             maximum_label = Gtk.Label()
             maximum_label.set_text(_("Maximum"))
-            strategy_section.grid.attach(maximum_label, 2, 1, 1, 1)
+            strategy_section.attach(maximum_label, 2, 1, 1, 1)
 
             for tree_level, item in enumerate(["points", "level", "copies", "metascore", "entries"]):
                 label = Gtk.Label()
                 label.set_text(_(item))
-                strategy_section.grid.attach(label, 0, tree_level + 2, 1, 1)
+                strategy_section.attach(label, 0, tree_level + 2, 1, 1)
 
                 minimum = strategy_section.new_item(f"minimum_{item}", None, Gtk.Entry, 1, tree_level + 2)
                 minimum.connect("changed", utils.on_digit_only_setting_changed)
@@ -483,26 +474,25 @@ class Main(Gtk.ApplicationWindow):
             )
 
             _steamgifts_disabled.set_markup(utils.markup(_message, color="hotpink", background="black"))
-            steamgifts_section.grid.attach(_steamgifts_disabled, 0, 0, 2, 2)
+            steamgifts_section.attach(_steamgifts_disabled, 0, 0, 2, 2)
 
-        steamtrades_section.grid.attach(self.steamtrades_status, 0, 0, 2, 1)
+        steamtrades_section.attach(self.steamtrades_status, 0, 0, 2, 1)
 
         steamtrades_stack = Gtk.Stack()
         steamtrades_stack.set_vexpand(True)
-        steamtrades_section.grid.attach(steamtrades_stack, 1, 1, 1, 1)
+        steamtrades_section.attach(steamtrades_stack, 1, 1, 1, 1)
 
         steamtrades_sidebar = Gtk.StackSidebar()
         steamtrades_sidebar.set_stack(steamtrades_stack)
         steamtrades_sidebar.set_size_request(150, -1)
-        steamtrades_section.grid.attach(steamtrades_sidebar, 0, 1, 1, 1)
+        steamtrades_section.attach(steamtrades_sidebar, 0, 1, 1, 1)
 
         steamtrades_settings = utils.Section("steamtrades")
         steamtrades_settings.stackup_section(_("Settings"), steamtrades_stack)
 
         steamtrades_enable = steamtrades_settings.new_item("enable", _("Enable:"), Gtk.Switch, 0, 1)
         steamtrades_enable.label.set_margin_top(40)
-        steamtrades_enable.set_margin_top(40)
-        steamtrades_enable.set_halign(Gtk.Align.END)
+        steamtrades_enable.widget.set_margin_top(40)
         steamtrades_enable.connect("state-set", utils.on_setting_state_set)
 
         trade_ids = steamtrades_settings.new_item("trade_ids", _("Trade IDs:"), Gtk.Entry, 0, 2)
@@ -526,7 +516,7 @@ class Main(Gtk.ApplicationWindow):
             )
 
             _steamtrades_disabled.set_markup(utils.markup(_message, color="hotpink", background="black"))
-            steamtrades_settings.grid.attach(_steamtrades_disabled, 0, 1, 2, 2)
+            steamtrades_settings.attach(_steamtrades_disabled, 0, 1, 2, 2)
 
         self.coupon_warning = Gtk.Label()
         self.coupon_warning.set_markup(utils.markup(
@@ -535,16 +525,16 @@ class Main(Gtk.ApplicationWindow):
         ))
         self.coupon_warning.set_margin_top(37)
         self.coupon_warning.set_margin_bottom(37)
-        coupons_section.grid.attach(self.coupon_warning, 0, 0, 2, 1)
+        coupons_section.attach(self.coupon_warning, 0, 0, 2, 1)
 
         coupons_stack = Gtk.Stack()
         coupons_stack.set_vexpand(True)
-        coupons_section.grid.attach(coupons_stack, 1, 1, 1, 1)
+        coupons_section.attach(coupons_stack, 1, 1, 1, 1)
 
         coupons_sidebar = Gtk.StackSidebar()
         coupons_sidebar.set_stack(coupons_stack)
         coupons_sidebar.set_size_request(150, -1)
-        coupons_section.grid.attach(coupons_sidebar, 0, 1, 1, 1)
+        coupons_section.attach(coupons_sidebar, 0, 1, 1, 1)
 
         self.coupons_grid = Gtk.Grid()
         self.coupons_grid.set_row_spacing(10)
@@ -785,15 +775,28 @@ class Main(Gtk.ApplicationWindow):
             view.set_selected(parent.get_position())
 
     @staticmethod
-    def on_stack_child_changed(stack: Gtk.Stack, *args) -> None:
-        section = stack.get_visible_child()
+    def on_stack_child_changed(tabs: Gtk.Stack, *args) -> None:
+        main_section = tabs.get_visible_child()
 
-        for item in section.items:
-            if item.get_name().startswith('_'):
+        if not (config_stack := main_section.get_child_at(1, 1)):
+            log.debug("Not reading config values cause GUI didn't finish loading")
+            return
+
+        for config_section in config_stack.observe_children():
+            if isinstance(config_section, Gtk.ScrolledWindow):
+                # ScrolledWindow > ViewPort > Section
+                config_section = config_section.get_child().get_child()
+
+            if not isinstance(config_section, utils.Section):
+                log.debug(f"Not reading config for {config_section} cause there's no config section")
                 continue
 
-            log.debug(f'Reading {section.get_name()}:{item.get_name()} from config file')
-            item.update_values()
+            for item in config_section.items:
+                if item.get_name().startswith('_'):
+                    continue
+
+                log.debug(f'Reading {item.section.get_name()}:{item.get_name()} from config file')
+                item.update_values()
 
     @staticmethod
     def coupon_sorting(item1: utils.SimpleTextTreeItem, item2: utils.SimpleTextTreeItem, *data: Any) -> Any:
