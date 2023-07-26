@@ -97,9 +97,9 @@ giveaway_sort_types = OrderedDict([
 ])
 
 steamgifts_modes = OrderedDict([
-    ('run_all_and_restart', _('Run all and restart')),
-    ('stop_after_minimum_and_wait', _('Stop after reach minimum points and wait')),
-    ('stop_after_minimum_and_restart', _('Stop after reach minimum points and restart')),
+    ('run_all_and_restart', _('Run all and restart\nRun all strategies and restart')),
+    ('stop_after_minimum_and_wait', _('Stop and wait\nafter minimum points')),
+    ('stop_after_minimum_and_restart', _('Stop and restart\nafter minimum points')),
 ])
 
 plugins = OrderedDict([
