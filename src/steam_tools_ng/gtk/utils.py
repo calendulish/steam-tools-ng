@@ -636,6 +636,11 @@ class _SectionItem(Gtk.Grid):
         self.widget.get_buffer().set_text(value, -1)
 
     def update_values(self) -> None:
+        if config.config_file.is_file():
+            config.parser.read(config.config_file)
+        else:
+            log.debug("Config file not read")
+
         if isinstance(self.widget, Gtk.DropDown):
             self.__update_dropdown()
         elif isinstance(self.widget, Gtk.Switch):
