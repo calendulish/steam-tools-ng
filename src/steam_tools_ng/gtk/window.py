@@ -155,16 +155,12 @@ class Main(Gtk.ApplicationWindow):
         self.confirmations_grid.attach(self.confirmations_tree, 0, 0, 4, 1)
 
         for index, column in enumerate(self.confirmations_tree.view.get_columns()):
-            column.set_resizable(True)
+            if index != 0:
+                column.set_resizable(True)
+                column.set_expand(True)
 
             if index in (1, 2, 3, 7):
                 column.set_visible(False)
-
-            if index in (4, 6):
-                column.set_fixed_width(190)
-
-            if index == 5:
-                column.set_fixed_width(100)
 
         self.confirmations_tree.model.connect("selection-changed", self.on_tree_selection_changed)
 
@@ -553,16 +549,12 @@ class Main(Gtk.ApplicationWindow):
         self.coupons_grid.attach(self.coupons_tree, 0, 0, 4, 2)
 
         for index, column in enumerate(self.coupons_tree.view.get_columns()):
-            column.set_resizable(True)
+            if column != 0:
+                column.set_resizable(True)
+                column.set_expand(True)
 
             if index in (0, 3, 4, 5, 6):
                 column.set_visible(False)
-
-            if index == 1:
-                column.set_fixed_width(80)
-
-            if index == 2:
-                column.set_fixed_width(400)
 
         self.coupons_tree.view.connect("activate", self.on_coupon_double_clicked)
         self.coupons_tree.model.connect("selection-changed", self.on_tree_selection_changed)
