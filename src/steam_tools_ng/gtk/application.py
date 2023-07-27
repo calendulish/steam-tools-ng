@@ -120,6 +120,9 @@ class SteamToolsNG(Gtk.Application):
                 await asyncio.sleep(1)
 
     async def async_activate(self) -> None:
+        # TODO: Wait for window manager catch the main window position and size
+        await asyncio.sleep(3)
+
         assert isinstance(self.main_window, window.Main)
         login_session = await login.Login.new_session(0, api_url=self.api_url)
 
