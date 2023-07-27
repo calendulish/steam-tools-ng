@@ -66,6 +66,12 @@ tar -vvcf "%RELEASE_NAME%.zip" "%RELEASE_NAME%" || exit 1
 popd || exit 1
 
 pushd installer || exit 1
+
+if not exist vc_redist.x64.exe (
+    set vc_redist="https://aka.ms/vs/17/release/vc_redist.x64.exe"
+    !curl! -o vc_redist.x64.exe -L !vc_redist! || !certutil! -urlcache -split -f !vc_redist! vc_redist.x64.exe || exit 1
+)
+
 %ISCC% /dAppVersion="%APP_VERSION%" /dReleaseName="%RELEASE_NAME%" install.iss || exit 1
 %ISCC% netinstall.iss || exit 1
 

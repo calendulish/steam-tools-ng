@@ -42,6 +42,7 @@ Source: "..\build\{#ReleaseName}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\{#ReleaseName}\share\*"; DestDir: "{app}\share"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\build\{#ReleaseName}\etc\*"; DestDir: "{app}\etc"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\build\{#ReleaseName}\lib\*"; DestDir: "{app}\lib"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "vc_redist.x64.exe"; DestDir: {tmp}; Flags: deleteafterinstall
 
 [Icons]
 Name: "{group}\Steam Tools NG"; Filename: "{app}\steam-tools-ng-gui.exe"; IconFilename: "{app}\lib\steam_tools_ng\icons\stng.ico"
@@ -63,4 +64,5 @@ Type: filesandordirs; Name: "{app}\lib"
 Type: filesandordirs; Name: "{app}\plugins"
 
 [Run]
+Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/q"; StatusMsg: "Installing VC++ Redistributables..."
 Filename: "{app}\steam-tools-ng-gui.exe"; Description: "{cm:LaunchProgram,Steam Tools NG}"; Flags: nowait postinstall skipifsilent
