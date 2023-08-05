@@ -46,11 +46,20 @@ class Main(Gtk.ApplicationWindow):
         _display = Gdk.Display.get_default()
         _style_provider = Gtk.CssProvider()
 
-        _style_provider.load_from_data(
-            b"* { border-radius: 2px; }"
-            b"label.warning { background-color: darkblue; color: white; }"
-            b"label.critical { background-color: darkred; color: white; }"
-        )
+        # TODO: Temporary fix for pygobject (#27)
+        if (Gtk.get_major_version(), Gtk.get_minor_version()) >= (4, 9):
+            _style_provider.load_from_data(
+                "* { border-radius: 2px; }"
+                "label.warning { background-color: darkblue; color: white; }"
+                "label.critical { background-color: darkred; color: white; }",
+                -1,
+            )
+        else:
+            _style_provider.load_from_data(
+                b"* { border-radius: 2px; }"
+                b"label.warning { background-color: darkblue; color: white; }"
+                b"label.critical { background-color: darkred; color: white; }"
+            )
 
         _style_context = self.get_style_context()
 

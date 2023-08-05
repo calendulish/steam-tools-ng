@@ -381,7 +381,13 @@ class SimpleStatus(Gtk.Frame):
         super().__init__()
         self._style_context = self.get_style_context()
         self._style_provider = Gtk.CssProvider()
-        self._style_provider.load_from_data(b"frame { background-color: black; }")
+
+        # TODO: Temporary fix for pygobject (#27)
+        if (Gtk.get_major_version(), Gtk.get_minor_version()) >= (4, 9):
+            self._style_provider.load_from_data("frame { background-color: black; }", -1)
+        else:
+            self._style_provider.load_from_data(b"frame { background-color: black; }")
+
         self._style_context.add_provider(self._style_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
         self._grid = Gtk.Grid()
