@@ -5,7 +5,12 @@ jobs:
   delete-old-artifacts:
     runs-on: ubuntu-latest
     steps:
-      - uses: kolpav/purge-artifacts-action@v1
+      - name: Harden Runner
+        uses: step-security/harden-runner@cba0d00b1fc9a034e1e642ea0f1103c282990604 # v2.5.0
+        with:
+          egress-policy: audit
+
+      - uses: kolpav/purge-artifacts-action@04c636a505f26ebc82f8d070b202fb87ff572b10 # v1.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           expire-in: 0
@@ -18,14 +23,19 @@ jobs:
         python-version: ['3.9', '3.10', '3.11']
     name: Python ${{ matrix.python-version }} linux build
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - name: Harden Runner
+        uses: step-security/harden-runner@cba0d00b1fc9a034e1e642ea0f1103c282990604 # v2.5.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # v4.7.0
         with:
           python-version: ${{ matrix.python-version }}
       - run: sudo apt-fast -y install gettext
       - run: python -m pip install build
       - run: python -m build
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: linux_${{ matrix.python-version }}
           path: |
@@ -46,8 +56,13 @@ jobs:
         - arch: 'aarch64'
           distro: 'archarm_latest'
     steps:
-      - uses: actions/checkout@v3
-      - uses: uraimo/run-on-arch-action@v2
+      - name: Harden Runner
+        uses: step-security/harden-runner@cba0d00b1fc9a034e1e642ea0f1103c282990604 # v2.5.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: uraimo/run-on-arch-action@213f9061987de116e4221ec1ea239a9fc61c4102 # v2
         id: build
         with:
           arch: ${{ matrix.arch }}
@@ -64,7 +79,7 @@ jobs:
           run: |
             python -m build
             cp -rfv dist/ /artifacts/
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: rpi_${{ matrix.arch }}
           path: |
@@ -83,13 +98,18 @@ jobs:
         shell: cmd
         working-directory: .\\tools\Windows
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - name: Harden Runner
+        uses: step-security/harden-runner@cba0d00b1fc9a034e1e642ea0f1103c282990604 # v2.5.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # v4.7.0
         with:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install certifi aiohttp cx_freeze pywin32 psutil stlib stlib-plugins
       - run: dist_script_native.cmd
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: windows_${{ matrix.python-version }}
           path: |
@@ -102,9 +122,14 @@ jobs:
     needs: [linux-build, windows-build, rpi-build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
-      - uses: softprops/action-gh-release@v1
+      - name: Harden Runner
+        uses: step-security/harden-runner@cba0d00b1fc9a034e1e642ea0f1103c282990604 # v2.5.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+      - uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
         with:
           draft: true
           files: |
@@ -122,9 +147,14 @@ jobs:
       matrix:
         python-version: [ '3.11' ]
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Harden Runner
+        uses: step-security/harden-runner@cba0d00b1fc9a034e1e642ea0f1103c282990604 # v2.5.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+      - uses: pypa/gh-action-pypi-publish@f8c70e705ffc13c3b4d1221169b84f12a75d6ca8 # release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
           packages_dir: linux_${{ matrix.python-version }}/dist/
@@ -139,7 +169,12 @@ jobs:
       windows-badge-color: ${{ needs.windows-build.result == 'success' && 'green' || 'red' }}
       rpi-badge-color: ${{ needs.rpi-build.result == 'success' && 'green' || 'red' }}
     steps:
-      - uses: RubbaBoy/BYOB@v1.3.0
+      - name: Harden Runner
+        uses: step-security/harden-runner@cba0d00b1fc9a034e1e642ea0f1103c282990604 # v2.5.0
+        with:
+          egress-policy: audit
+
+      - uses: RubbaBoy/BYOB@24f464284c1fd32028524b59607d417a2e36fee7 # v1.3.0
         with:
           NAME: steam-tools-ng-linux-build
           LABEL: 'Linux build'
@@ -148,7 +183,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
           REPOSITORY: calendulish/.github
           ACTOR: calendulish
-      - uses: RubbaBoy/BYOB@v1.3.0
+      - uses: RubbaBoy/BYOB@24f464284c1fd32028524b59607d417a2e36fee7 # v1.3.0
         with:
           NAME: steam-tools-ng-windows-build
           LABEL: 'Windows build'
@@ -157,7 +192,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.ACTIONS_TOKEN }}
           REPOSITORY: calendulish/.github
           ACTOR: calendulish
-      - uses: RubbaBoy/BYOB@v1.3.0
+      - uses: RubbaBoy/BYOB@24f464284c1fd32028524b59607d417a2e36fee7 # v1.3.0
         with:
           NAME: steam-tools-ng-rpi-build
           LABEL: 'RPI build'
