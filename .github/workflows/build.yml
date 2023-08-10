@@ -52,16 +52,14 @@ jobs:
         with:
           arch: ${{ matrix.arch }}
           distro: ${{ matrix.distro }}
-          githubToken: ${{ github.token }}
           setup: mkdir -p "${PWD}/artifacts"
           dockerRunArgs: --volume "${PWD}/artifacts:/artifacts"
           env: |
             release_name: "steam-tools-ng-RPI-${{ matrix.arch }}"
           shell: /bin/sh
-          install: |
+          run: |
             pacman -Syu --noconfirm
             pacman -S --noconfirm python python-build tar
-          run: |
             python -m build
             cp -rfv dist/ /artifacts/
       - uses: actions/upload-artifact@v3
