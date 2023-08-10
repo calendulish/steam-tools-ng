@@ -46,7 +46,7 @@ async def fix_ssl():
         _executable_path = Path(sys.executable).parent
         ssl_context.load_verify_locations(cafile=_executable_path / 'etc' / 'cacert.pem')
 
-    tcp_connector = aiohttp.TCPConnector(ssl=ssl_context)
+    tcp_connector = aiohttp.TCPConnector(ssl=ssl_context, force_close=True)
     await stlib.set_default_http_params(0, connector=tcp_connector)
 
 
