@@ -88,8 +88,12 @@ class Login:
             config.new("login", "password", encrypted_password)
 
         _login_session = login.Login.get_session(0)
+        _login_session.http_session.cookie_jar.clear()
         _login_session.username = self.username
         _login_session.password = self.__password
+
+        config.remove('login', 'refresh_token')
+        config.remove('login', 'access_token')
 
         if not self.shared_secret:
             log.warning(_("No shared secret found. Trying to log-in without two-factor authentication."))
