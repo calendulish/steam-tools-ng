@@ -202,27 +202,6 @@ class LoginWindow(utils.PopupWindowBase):
                 self.auth_code_item.set_visible(True)
                 self.auth_code_item.grab_focus()
                 auth_code_type = AuthCodeType.email
-            except login.TwoFactorCodeError:
-                if self.shared_secret:
-                    if try_count > 0:
-                        for count in range(10, 0):
-                            self.status.info(_("Retrying login in {} seconds").format(count))
-                            await asyncio.sleep(1)
-
-                        try_count -= 1
-                        continue
-                    else:
-                        self.status.error(_("shared secret is invalid!"))
-                        self.username_item.set_sensitive(True)
-                        self.__password_item.set_sensitive(True)
-                        self.shared_secret_item.grab_focus()
-                        break
-
-                self.status.error(_("Write Steam Code bellow and click on 'Log-in'"))
-                self.auth_code_item.set_text("")
-                self.auth_code_item.set_visible(True)
-                self.auth_code_item.grab_focus()
-                auth_code_type = AuthCodeType.device
             except login.LoginBlockedError:
                 self.status.error(_(
                     "Your network is blocked!\n"
@@ -247,29 +226,49 @@ class LoginWindow(utils.PopupWindowBase):
                 self.captcha_text_item.set_text("")
                 self.captcha_text_item.set_visible(True)
                 self.captcha_text_item.grab_focus()
-            except (login.LoginError, AttributeError) as exception:
-                log.error(str(exception))
-                # self.__password_item.set_text('')
-                self.__password_item.grab_focus()
-                config.remove('login', 'refresh_token')
-                config.remove('login', 'access_token')
-
-                self.status.error(
-                    ':\n'.join(str(exception).split(': ')) +
-                    _(
-                        '\n\nIf your previous authenticator has been removed,'
-                        '\nopen advanced login bellow and remove the old secrets.'
-                    ),
-                )
-
-                self.username_item.set_sensitive(True)
-                self.__password_item.set_sensitive(True)
-                self.__password_item.grab_focus()
             except binascii.Error:
                 self.status.error(_("shared secret is invalid!"))
                 self.username_item.set_sensitive(True)
                 self.__password_item.set_sensitive(True)
                 self.shared_secret_item.grab_focus()
+            except AttributeError as exception:
+                log.error(str(exception))
+                self.status.error(':\n'.join(str(exception).split(': ')))
+
+                self.username_item.set_sensitive(True)
+                self.__password_item.set_sensitive(True)
+                self.__password_item.grab_focus()
+                break
+            except login.LoginError as exception:
+                if self.shared_secret:
+                    if try_count > 0:
+                        for count in range(10, 0):
+                            self.status.info(_("Retrying login in {} seconds ({} left)").format(count, try_count))
+                            await asyncio.sleep(1)
+
+                        try_count -= 1
+                        continue
+                    else:
+                        log.error(str(exception))
+
+                        self.status.error(
+                            ':\n'.join(str(exception).split(': ')) +
+                            _(
+                                '\n\nIf your previous authenticator has been removed,'
+                                '\nopen advanced login bellow and remove the old secrets.'
+                            ),
+                        )
+
+                        self.username_item.set_sensitive(True)
+                        self.__password_item.set_sensitive(True)
+                        self.__password_item.grab_focus()
+                        break
+
+                self.status.error(_("Write Steam Code bellow and click on 'Log-in'"))
+                self.auth_code_item.set_text("")
+                self.auth_code_item.set_visible(True)
+                self.auth_code_item.grab_focus()
+                auth_code_type = AuthCodeType.device
             except (aiohttp.ClientError, ValueError):
                 for count in range(20, 0):
                     self.status.error(_("Check your connection. (server down? blocked?)\nWaiting {}").format(count))

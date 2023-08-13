@@ -109,20 +109,6 @@ class Login:
                 user_input = utils.safe_input(_("Write code received by email"))
                 assert isinstance(user_input, str), "safe_input is returning bool when it should return str"
                 await self.do_login(True, user_input, AuthCodeType.email)
-            except login.TwoFactorCodeError:
-                if self.shared_secret:
-                    if try_count > 0:
-                        log.warning(_("Retrying login in 10 seconds"))
-                        await asyncio.sleep(10)
-                        try_count -= 1
-                        continue
-                    else:
-                        log.error(_("shared secret is invalid!"))
-                        self.cli.on_quit()
-
-                user_input = utils.safe_input(_("Write Steam Code"))
-                assert isinstance(user_input, str), "safe_input is returning bool when it should return str"
-                await self.do_login(True, user_input)
             except login.LoginBlockedError:
                 log.error(_(
                     "Your network is blocked!\n"
@@ -141,15 +127,28 @@ class Login:
             except binascii.Error:
                 log.error(_("shared secret is invalid!"))
                 self.cli.on_quit()
-            except login.LoginError as exception:
+            except AttributeError as exception:
                 log.error(str(exception))
-                config.remove('login', 'refresh_token')
-                config.remove('login', 'access_token')
-                log.warning(_(
-                    "If your previous authenticator has been removed,"
-                    "\nopen your config file and remove the old secrets."
-                ))
                 self.cli.on_quit()
+            except login.LoginError as exception:
+                if self.shared_secret:
+                    if try_count > 0:
+                        log.warning(_("Retrying login in 10 seconds ({} left)").format(try_count))
+                        await asyncio.sleep(10)
+                        try_count -= 1
+                        continue
+                    else:
+                        log.error(str(exception))
+
+                        log.warning(_(
+                            "If your previous authenticator has been removed,"
+                            "\nopen your config file and remove the old secrets."
+                        ))
+                        self.cli.on_quit()
+
+                user_input = utils.safe_input(_("Write Steam Code"))
+                assert isinstance(user_input, str), "safe_input is returning bool when it should return str"
+                await self.do_login(True, user_input)
             except (aiohttp.ClientError, ValueError):
                 log.error(_("Check your connection. (server down?)"))
                 await asyncio.sleep(15)
