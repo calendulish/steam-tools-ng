@@ -308,9 +308,7 @@ class LoginWindow(utils.PopupWindowBase):
             break
 
     def on_advanced_login_clicked(self, *args: Any) -> None:
-        if self.advanced_login_section.props.visible:
-            self.identity_secret_item.set_text('')
-            self.shared_secret_item.set_text('')
+        if self.advanced_login_section.get_visible():
             self.advanced_login_section.set_visible(False)
             self.set_size_request(400, 100)
         else:
