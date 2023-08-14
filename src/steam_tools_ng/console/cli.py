@@ -76,23 +76,27 @@ class SteamToolsNG:
                 sys.exit(1)
 
         try:
-            if module_name == 'fakerun' and not module_options:
-                raise ValueError
+            if module_name == 'fakerun':
+                self.stop = True
 
-            self.stop = True
+                if not module_options:
+                    raise ValueError
 
             for index, option in enumerate(module_options):
-                if option != 'oneshot':
+                if option == 'oneshot':
+                    self.stop = True
+                    continue
+
+                if module_name in {'cardfarming', 'fakerun'}:
                     self.custom_gameid = int(option)
 
-                    if module_name == 'fakerun':
-                        if self.custom_gameid == 34:
-                            if len(module_options) < 2:
-                                raise ValueError
+                    if self.custom_gameid == 34:
+                        if len(module_options) < 2:
+                            raise ValueError
 
-                            self.extra_gameid = int(module_options[index + 1])
+                        self.extra_gameid = int(module_options[index + 1])
 
-                            break
+                        break
         except ValueError:
             logging.critical("Wrong command line params!")
             sys.exit(1)
