@@ -6,6 +6,9 @@ on:
     tags-ignore:
       - '**'
 
+permissions:
+  contents: read
+
 jobs:
   coverage:
     runs-on: ubuntu-latest
@@ -15,8 +18,13 @@ jobs:
         python-version: ['3.9', '3.10', '3.11']
     name: Python ${{ matrix.python-version }} coverage
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - name: Harden Runner
+        uses: step-security/harden-runner@cba0d00b1fc9a034e1e642ea0f1103c282990604 # v2.5.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # v4.7.0
         with:
           python-version: ${{ matrix.python-version }}
       - run: |
@@ -24,7 +32,7 @@ jobs:
           pip install pytest
           pip install pytest-cov
           pytest --cov=./ --cov-report=xml
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # v3.1.4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
