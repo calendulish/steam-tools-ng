@@ -111,7 +111,6 @@ def main() -> None:
     )
 
     console_params = command_parser.parse_args()
-    config.init_logger()
 
     if console_params.version:
         print(__version__)
@@ -124,6 +123,8 @@ def main() -> None:
     if console_params.log_dir:
         print(config.parser.get("logger", "log_directory"))
         sys.exit(0)
+
+    config.init_logger()
 
     if console_params.reset:
         config.config_file.unlink(missing_ok=True)
