@@ -83,13 +83,16 @@ async def cake(
         if last_played_game == game_id:
             yield utils.ModuleData(display=str(34), status=_("getting cake out of pan"))
 
+            # Prevent pan to fall out of hands
+            await asyncio.sleep(3)
+
             async for slice_ in mixing_igredients(ids):
                 yield slice_
 
             yield utils.ModuleData(display=str(34), status=_("Cake is ready"))
             break
 
-        await asyncio.sleep(30)
+        await asyncio.sleep(10)
 
 
 async def main(
