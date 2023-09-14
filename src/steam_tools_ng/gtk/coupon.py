@@ -139,10 +139,12 @@ class CouponWindow(utils.PopupWindowBase):
                 self.header_bar.set_show_title_buttons(True)
                 self.yes_button.set_visible(False)
         else:
-            config.new("coupons", "last_trade_time", int(time.time()))
-            self.confirmations_tree.remove_row(self.selection)
-
             if not self.has_status:
+                if self.action == 'get':
+                    config.new("coupons", "last_trade_time", int(time.time()))
+                else:
+                    self.parent_window.confirmations_tree.remove_row(self.selection)
+
                 self.destroy()
 
     async def send_trade_offer(self) -> None:
