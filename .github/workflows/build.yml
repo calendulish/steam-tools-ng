@@ -3,6 +3,7 @@ on: [push, workflow_dispatch]
 
 jobs:
   delete-old-artifacts:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
@@ -10,11 +11,10 @@ jobs:
         with:
           egress-policy: audit
 
-      - uses: kolpav/purge-artifacts-action@04c636a505f26ebc82f8d070b202fb87ff572b10 # v1.0
+      - uses: calendulish/purge-artifacts-action@7f45b429560cfdf0ae26758e1b069b806489e094 # v1.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           expire-in: 0
-        if: github.event_name != 'pull_request'
   linux-build:
     if: ${{ always() }}
     needs: delete-old-artifacts
