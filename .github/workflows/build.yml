@@ -3,7 +3,7 @@ on: [push, workflow_dispatch]
 
 jobs:
   delete-old-artifacts:
-    if: github.event_name != 'pull_request'
+    if: github.actor == 'calendulish'
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
@@ -44,7 +44,7 @@ jobs:
             dist/
           if-no-files-found: error
           retention-days: 90
-        if: github.event_name != 'pull_request'
+        if: github.actor == 'calendulish'
   rpi-build:
     if: ${{ always() }}
     needs: delete-old-artifacts
@@ -86,7 +86,7 @@ jobs:
             artifacts/dist/
           if-no-files-found: error
           retention-days: 90
-        if: github.event_name != 'pull_request'
+        if: github.actor == 'calendulish'
   windows-build:
     if: ${{ always() }}
     needs: delete-old-artifacts
@@ -118,7 +118,7 @@ jobs:
             installer/build/*.exe
           if-no-files-found: error
           retention-days: 90
-        if: github.event_name != 'pull_request'
+        if: github.actor == 'calendulish'
   deploy:
     if: startsWith(github.ref, 'refs/tags/')
     needs: [linux-build, windows-build, rpi-build]
@@ -163,7 +163,7 @@ jobs:
           verbose: true
           print_hash: true
   generate-badges:
-    if: ${{ always() && github.event_name != 'pull_request' }}
+    if: ${{ always() && github.actor == 'calendulish' }}
     needs: [linux-build, windows-build, rpi-build]
     runs-on: ubuntu-latest
     env:
