@@ -28,9 +28,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: |
-          pip install -r requirements.txt
-          pip install pytest
-          pip install pytest-cov
+          pip install -r dev-requirements.txt
           pytest --cov=./ --cov-report=xml
       - uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # v3.1.4
         with:

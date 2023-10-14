@@ -1,1 +1,8 @@
--e .
+aiohttp~=3.8
+certifi>=2023.7.22
+cx_Freeze~=6.15; sys_platform == 'win32'
+setuptools~=68.1
+pywin32==306; sys_platform == 'win32'
+stlib~=2.0
+stlib-plugins~=1.2
+build~=1.0
