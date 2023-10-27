@@ -1,8 +1,12 @@
 name: Build
 on: [push, workflow_dispatch]
 
+permissions: read-all
+
 jobs:
   delete-old-artifacts:
+    permissions:
+      actions: write
     if: github.actor == 'calendulish'
     runs-on: ubuntu-latest
     steps:
@@ -120,6 +124,8 @@ jobs:
           retention-days: 90
         if: github.actor == 'calendulish'
   deploy:
+    permissions:
+      contents: write
     if: startsWith(github.ref, 'refs/tags/')
     needs: [linux-build, windows-build, rpi-build]
     runs-on: ubuntu-latest
@@ -163,6 +169,8 @@ jobs:
           verbose: true
           print_hash: true
   generate-badges:
+    permissions:
+      contents: write
     if: ${{ always() && github.actor == 'calendulish' }}
     needs: [linux-build, windows-build, rpi-build]
     runs-on: ubuntu-latest
