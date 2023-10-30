@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.9', '3.10', '3.11']
+        python-version: ['3.9', '3.10', '3.11', '3.12']
     name: Python ${{ matrix.python-version }} linux build
     steps:
       - name: Harden Runner
@@ -97,7 +97,7 @@ jobs:
     runs-on: windows-2022
     strategy:
       matrix:
-        python-version: ['3.10', '3.11']
+        python-version: ['3.10', '3.11', '3.12']
     defaults:
       run:
         shell: cmd
@@ -141,10 +141,11 @@ jobs:
         with:
           draft: true
           files: |
-            linux_3.11/dist/*
-            windows_3.11/installer/build/*.exe
+            linux_3.12/dist/*
+            windows_3.12/installer/build/*.exe
             windows_3.10/build/*.zip
             windows_3.11/build/*.zip
+            windows_3.12/build/*.zip
             rpi_aarch64/dist/*.whl
             rpi_armv7/dist/*.whl
   pypi-upload:
@@ -153,7 +154,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.11' ]
+        python-version: [ '3.12' ]
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1b05615854632b887b69ae1be8cbefe72d3ae423 # v2.6.0

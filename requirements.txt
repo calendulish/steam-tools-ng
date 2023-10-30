@@ -1,4 +1,4 @@
-aiohttp~=3.8
+aiohttp~=3.9b
 certifi>=2023.7.22
 cx_Freeze~=6.15; sys_platform == 'win32'
 setuptools~=68.1
