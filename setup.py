@@ -17,13 +17,13 @@
 #
 
 import os
-import subprocess
 import sys
 import sysconfig
 from pathlib import Path
 from typing import Any, List, Mapping, Tuple
 
 import certifi
+from pythongettext.msgfmt import Msgfmt
 from setuptools.command.build_py import build_py
 
 if os.name == 'nt' and not os.getenv('NO_FREEZE'):
@@ -40,19 +40,13 @@ class BuildTranslations(build_py):
         po_build_path = Path('build', 'lib', 'steam_tools_ng', 'locale')
         po_build_path.mkdir(exist_ok=True)
 
-        if 'MSC ' in sys.version:
-            # windows
-            msgfmt_path = Path(sysconfig.get_path('platlib')).parent.parent.resolve() / 'Tools' / 'i18n' / 'msgfmt.py'
-            msgfmt_executor = [sys.executable, msgfmt_path]
-        else:
-            # mingw/linux
-            msgfmt_executor = ['msgfmt']
-
         for path in Path('i18n').glob('*.po'):
             language = path.stem
             output_directory = po_build_path / language / 'LC_MESSAGES'
             output_directory.mkdir(exist_ok=True, parents=True)
-            subprocess.run(msgfmt_executor + ['-o', output_directory / 'steam-tools-ng.mo', path], check=True)
+
+            with open(output_directory / 'steam-tools-ng.mo', 'wb') as mo:
+                mo.write(Msgfmt(str(path)).get())
 
 
 def fix_gtk() -> List[Tuple[str, str]]:

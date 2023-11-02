@@ -6,3 +6,4 @@ pywin32==306; sys_platform == 'win32'
 stlib~=2.0
 stlib-plugins~=1.2
 build~=1.0
+python-gettext~=5.0
