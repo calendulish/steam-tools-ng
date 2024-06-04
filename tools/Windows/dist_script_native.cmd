@@ -53,7 +53,7 @@ for %%i in (release\\python\\pycairo-*-cp%PYTHON_VERSION:.=%-cp%PYTHON_VERSION:.
 for %%i in (release\\python\\PyGObject-*-cp%PYTHON_VERSION:.=%-cp%PYTHON_VERSION:.=%-win_amd64.whl) do (python -m pip install --force-reinstall --no-deps %%i) || exit 1
 
 set NO_FREEZE=1
-python -m pip install . --no-build-isolation || exit 1
+python -m pip install . || exit 1
 
 set NO_FREEZE=
 python ./setup.py -v build || exit 1
