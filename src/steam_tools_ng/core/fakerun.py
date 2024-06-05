@@ -47,7 +47,7 @@ async def cake(
 ) -> AsyncGenerator[utils.ModuleData, None]:
     yield utils.ModuleData(display=str(34), status=_("Loading a delicious cake"))
     ids = config.parser.get('fakerun', 'cakes').strip().split(',')
-    call(f'{config.file_manager} "steam://friends/status/invisible"')
+    call([config.file_manager, "steam://friends/status/invisible"])
 
     if len(ids) < 3:
         yield utils.ModuleData(error=_("Not enough ingredients"))
@@ -69,7 +69,7 @@ async def cake(
         yield utils.ModuleData(error=_("Some ingredients are missing from your cuisine"))
         return
 
-    call(f'{config.file_manager} "steam://run/{game_id}"')
+    call([config.file_manager, "steam://run/{game_id}"])
     await asyncio.sleep(3)
 
     async for slice_ in mixing_igredients(ids):

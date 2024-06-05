@@ -758,7 +758,7 @@ class Main(Gtk.ApplicationWindow):
         if not steam_running:
             url = item.link
 
-        call(f'{config.file_manager} "{url}"')
+        call([config.file_manager, url])
 
     @staticmethod
     def on_tree_selection_changed(view: Gtk.SingleSelection, position, item_count: int) -> None:

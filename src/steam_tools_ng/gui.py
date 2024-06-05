@@ -111,11 +111,11 @@ def main() -> None:
         sys.exit(0)
 
     if console_params.config_dir:
-        call(f'{config.file_manager} {config.config_file_directory}')
+        call([config.file_manager, config.config_file_directory])
         sys.exit(0)
 
     if console_params.log_dir:
-        call(f'{config.file_manager} {config.parser.get("logger", "log_directory")}')
+        call([config.file_manager, config.parser.get("logger", "log_directory")])
         sys.exit(0)
 
     try:

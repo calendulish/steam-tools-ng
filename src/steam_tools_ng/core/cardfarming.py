@@ -177,7 +177,7 @@ async def main(
     generators = {}
 
     if invisible:
-        call(f'{config.file_manager} "steam://friends/status/invisible"')
+        call([config.file_manager, "steam://friends/status/invisible"])
 
     for badge in badges:
         yield utils.ModuleData(
