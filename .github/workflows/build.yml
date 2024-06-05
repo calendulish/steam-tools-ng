@@ -15,7 +15,7 @@ jobs:
         with:
           egress-policy: audit
 
-      - uses: calendulish/purge-artifacts-action@7f45b429560cfdf0ae26758e1b069b806489e094 # v1.0
+      - uses: calendulish/purge-artifacts-action@2e8a85a677ea67a31edfe3e348d9379ad7e26988 # v1.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           expire-in: 0
