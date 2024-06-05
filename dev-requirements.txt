@@ -3,4 +3,4 @@ auditwheel~=5.4
 patchelf~=0.17
 pytest~=7.4
 pytest-asyncio~=0.21
-pytest-cov~=4.1
+pytest-cov~=5.0
