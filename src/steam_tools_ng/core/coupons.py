@@ -92,6 +92,13 @@ async def main(
                 yield data
 
             return
+        except community.InventoryEmptyError:
+            module_data = utils.ModuleData(error=_("The botid {} inventory is empty"), info=_("Skipping"))
+
+            async for data in utils.timed_module_data(30, module_data):
+                yield data
+
+            continue
 
         if not inventory:
             module_data = utils.ModuleData(error=_("The botid {} has no coupons available"), info=_("Skipping"))
