@@ -414,26 +414,22 @@ class Main(Gtk.ApplicationWindow):
             label.set_text(_("Strategy {}").format(index))
             strategy_section.attach(label, 0, 0, 1, 1)
 
-            enable = strategy_section.new_item("enable", None, Gtk.Switch, 2, 0)
+            enable = strategy_section.new_item("enable", None, Gtk.Switch, 1, 0)
             enable.connect("state-set", utils.on_setting_state_set)
 
             minimum_label = Gtk.Label()
             minimum_label.set_text(_("Minimum"))
-            strategy_section.attach(minimum_label, 1, 1, 1, 1)
+            strategy_section.attach(minimum_label, 0, 1, 1, 1)
 
             maximum_label = Gtk.Label()
             maximum_label.set_text(_("Maximum"))
-            strategy_section.attach(maximum_label, 2, 1, 1, 1)
+            strategy_section.attach(maximum_label, 1, 1, 1, 1)
 
             for tree_level, item in enumerate(["points", "level", "copies", "metascore", "entries"]):
-                label = Gtk.Label()
-                label.set_text(_(item))
-                strategy_section.attach(label, 0, tree_level + 2, 1, 1)
-
-                minimum = strategy_section.new_item(f"minimum_{item}", None, Gtk.Entry, 1, tree_level + 2)
+                minimum = strategy_section.new_item(f"minimum_{item}", _(item) + ':', Gtk.Entry, 0, tree_level + 2)
                 minimum.connect("changed", utils.on_digit_only_setting_changed)
 
-                maximum = strategy_section.new_item(f"maximum_{item}", None, Gtk.Entry, 2, tree_level + 2)
+                maximum = strategy_section.new_item(f"maximum_{item}", None, Gtk.Entry, 1, tree_level + 2)
                 maximum.connect("changed", utils.on_digit_only_setting_changed)
 
             restrict_type = strategy_section.new_item(

@@ -587,7 +587,7 @@ class _SectionItem(Gtk.Grid):
             self.label = Gtk.Label()
             self.label.set_name(name)
             self.label.set_text(label)
-            self.label.set_halign(Gtk.Align.START)
+            #self.label.set_halign(Gtk.Align.START)
 
             self.attach(self.label, 0, 0, 1, 1)
             self.attach_next_to(self.widget, self.label, Gtk.PositionType.RIGHT, 1, 1)
