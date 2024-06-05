@@ -121,7 +121,7 @@ class ManageAuthenticator:
         config.new("login", "shared_secret", self.authenticator_data.shared_secret)
         config.new("login", "identity_secret", self.authenticator_data.identity_secret)
         config.new("steamguard", "enable", True)
-        config.new("confirmations", "enable", True)
+        config.new("steamguard", "enable_confirmations", True)
 
         utils.set_console(info=_(
             "RECOVERY CODE\n\n"

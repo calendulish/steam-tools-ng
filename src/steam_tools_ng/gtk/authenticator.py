@@ -180,7 +180,7 @@ class AuthenticatorWindow(utils.PopupWindowBase):
             config.new("login", "shared_secret", self.authenticator_data.shared_secret)
             config.new("login", "identity_secret", self.authenticator_data.identity_secret)
             config.new("steamguard", "enable", True)
-            config.new("confirmations", "enable", True)
+            config.new("steamguard", "enable_confirmations", True)
 
             self.status.info(_(
                 "RECOVERY CODE\n\n"

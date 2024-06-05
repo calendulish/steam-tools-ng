@@ -39,7 +39,7 @@ async def main(
     session = community.Community.get_session(0)
 
     if not identity_secret:
-        config.new("confirmations", "enable", "false")
+        config.new("steamguard", "enable_confirmations", "false")
         module_data = utils.ModuleData(error=_("The current identity secret is invalid."), info=_("Waiting Changes"))
 
         async for data in utils.timed_module_data(10, module_data):
