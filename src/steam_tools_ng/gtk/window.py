@@ -63,7 +63,7 @@ class Main(Gtk.ApplicationWindow):
         header_bar = Gtk.HeaderBar()
 
         menu = Gio.Menu()
-        menu.append(_("Settings"), "app.settings")
+        menu.append(_("Preferences"), "app.settings")
         menu.append(_("About"), "app.about")
         menu.append(_("Exit"), "app.exit")
 
@@ -208,8 +208,8 @@ class Main(Gtk.ApplicationWindow):
         _message = _(
             "steamguard module has been disabled because you have\n"
             "logged in but no shared secret is found. To enable it again,\n"
-            "go to Advanced and add a valid shared secret\n"
-            "or use STNG as your Steam Authenticator\n"
+            "click Settings -> Add STNG as your Steam Authenticator\n"
+            "or go to Advanced and add a valid shared secret\n"
         )
 
         self.steamguard_disabled.set_markup(utils.markup(_message, color="hotpink", background="black"))
@@ -230,8 +230,8 @@ class Main(Gtk.ApplicationWindow):
         _message = _(
             "confirmations module has been disabled because you have\n"
             "logged in but no identity secret is found. To enable it again,\n"
-            "go to login -> advanced and add a valid identity secret\n"
-            "or use STNG as your Steam Authenticator\n"
+            "click Settings -> Add STNG as your Steam Authenticator\n"
+            "or go to Advanced and add a valid identity secret\n"
         )
 
         self.confirmations_disabled.set_markup(utils.markup(_message, color="hotpink", background="black"))
