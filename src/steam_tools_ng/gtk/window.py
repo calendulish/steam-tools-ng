@@ -42,6 +42,7 @@ class Main(Gtk.ApplicationWindow):
     def __init__(self, application: Gtk.Application, title: str) -> None:
         super().__init__(application=application, title=title)
         self.application = application
+        self._gtk_settings = Gtk.Settings.get_default()
 
         _display = Gdk.Display.get_default()
         _style_provider = Gtk.CssProvider()
@@ -633,7 +634,14 @@ class Main(Gtk.ApplicationWindow):
 
     @property
     def theme(self) -> str:
-        return config.parser.get('general', 'theme')
+        option = config.parser.get('general', 'theme')
+
+        if option == 'default':
+            prefer_dark_theme = self._gtk_settings.get_property("gtk-application-prefer-dark-theme")
+            return 'dark' if prefer_dark_theme else 'light'
+
+        return option
+
 
     async def user_info(self) -> None:
         while self.get_realized():

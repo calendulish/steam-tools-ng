@@ -57,6 +57,7 @@ def _(message):
 
 
 gtk_themes = OrderedDict([
+    ('default', _("Default")),
     ('light', _("Light")),
     ('dark', _("Dark")),
 ])
@@ -182,7 +183,7 @@ default_config: Dict[str, Dict[str, Any]] = {
         'cakes': '',
     },
     'general': {
-        'theme': 'light',
+        'theme': 'default',
         'show_close_button': True,
         'language': str(locale.getdefaultlocale()[0]),
     },
