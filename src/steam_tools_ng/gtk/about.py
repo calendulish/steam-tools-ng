@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Lara Maia <dev@lara.monster> 2015 ~ 2023
+# Lara Maia <dev@lara.monster> 2015 ~ 2024
 #
 # The Steam Tools NG is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -46,7 +46,7 @@ class AboutDialog(Gtk.AboutDialog):
         self.set_website("https://github.com/calendulish/steam-tools-ng")
         self.set_website_label(_("Git Repository"))
         self.set_version(__version__)
-        self.set_copyright("Lara Maia (C) 2015 ~ 2023 - dev@lara.monster")
+        self.set_copyright("Lara Maia (C) 2015 ~ 2024 - dev@lara.monster")
         self.set_comments(_("Made with Love <3"))
         self.set_license_type(Gtk.License.GPL_3_0)
 

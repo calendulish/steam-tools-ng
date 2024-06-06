@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Lara Maia <dev@lara.monster> 2015 ~ 2023
+# Lara Maia <dev@lara.monster> 2015 ~ 2024
 #
 # The Steam Tools NG is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -141,7 +141,7 @@ def freeze_options() -> Mapping[str, Any]:
         return {}
 
     icons_path = Path('src', 'steam_tools_ng', 'icons')
-    copyright_ = 'Lara Maia (C) 2015 ~ 2023'
+    copyright_ = 'Lara Maia (C) 2015 ~ 2024'
 
     executables = [
         Executable(
