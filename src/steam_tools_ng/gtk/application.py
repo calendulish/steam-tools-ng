@@ -24,8 +24,8 @@ from typing import Any, Optional, Dict, Callable, List
 
 import aiohttp
 from gi.repository import Gio, Gtk
-
 from stlib import universe, login, community, webapi, internals, plugins
+
 from . import about, settings, window, utils
 from . import login as gtk_login
 from .. import config, i18n, core
@@ -128,9 +128,17 @@ class SteamToolsNG(Gtk.Application):
 
         self.main_window.statusbar.set_warning("steamguard", _("Logging on Steam. Please wait!"))
         log.info(_("Logging on Steam"))
+
+        if config.cookies_file.is_file():
+            login_session.http_session.cookie_jar.load(config.cookies_file)
+
         try_count = 3
 
         for login_count in range(try_count):
+            if login_session.is_logged_in():
+                log.info("Steam login Successful")
+                break
+
             try:
                 if login_count == 0:
                     await self.do_login(auto=True)
@@ -147,10 +155,6 @@ class SteamToolsNG(Gtk.Application):
                     return
                 log.error(_("Waiting 10 seconds to try again"))
                 await asyncio.sleep(10)
-
-            if await login_session.is_logged_in():
-                log.info("Steam login Successful")
-                break
 
         self.main_window.statusbar.clear("steamguard")
 

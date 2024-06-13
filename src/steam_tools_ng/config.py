@@ -43,7 +43,9 @@ else:
 
 config_file_directory = data_dir / 'steam-tools-ng'
 config_file_name = 'steam-tools-ng.config'
+cookies_file_name = 'cookiejar'
 config_file = config_file_directory / config_file_name
+cookies_file = config_file_directory / cookies_file_name
 
 try:
     from stlib import client

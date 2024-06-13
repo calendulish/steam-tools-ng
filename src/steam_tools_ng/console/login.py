@@ -22,9 +22,9 @@ import logging
 from typing import TYPE_CHECKING, Optional
 
 import aiohttp
-
 from stlib import login
 from stlib.login import AuthCodeType
+
 from . import utils
 from .. import i18n, config, core
 
@@ -89,6 +89,14 @@ class Login:
 
         _login_session = login.Login.get_session(0)
         _login_session.http_session.cookie_jar.clear()
+
+        if config.cookies_file.is_file():
+            _login_session.http_session.cookie_jar.load(config.cookies_file)
+
+            if _login_session.is_logged_in():
+                log.info("Steam login Successful")
+                return None
+
         _login_session.username = self.username
         _login_session.password = self.__password
 
@@ -168,8 +176,7 @@ class Login:
                 for key, value in new_configs.items():
                     config.new("login", key, value)
 
-                # steamid = universe.generate_steamid(new_configs['steamid'])
-                # _login_session.restore_login(steamid, new_configs['token'], new_configs['token_secure'])
+                _login_session.cookie_jar.save(config.cookies_file)
                 self.has_user_data = True
 
             break

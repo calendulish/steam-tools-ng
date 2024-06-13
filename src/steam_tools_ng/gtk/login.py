@@ -296,8 +296,7 @@ class LoginWindow(utils.PopupWindowBase):
                 for key_, value_ in new_configs.items():
                     config.new("login", key_, value_)
 
-                # steamid = universe.generate_steamid(new_configs['steamid'])
-                # _login_session.restore_login(steamid, new_configs['token'], new_configs['token_secure'])
+                _login_session.cookie_jar.save(config.cookies_file)
 
                 self.application.main_window.statusbar.clear('steamguard')
 
