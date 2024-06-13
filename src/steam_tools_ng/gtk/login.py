@@ -18,13 +18,14 @@
 import asyncio
 import binascii
 import logging
+from concurrent.futures import ProcessPoolExecutor
 from typing import Any, Optional
 
 import aiohttp
 from gi.repository import Gtk, Gdk
-
 from stlib import login
 from stlib.login import AuthCodeType
+
 from . import utils
 from .. import i18n, config, core
 
@@ -53,8 +54,13 @@ class LoginWindow(utils.PopupWindowBase):
         self.status = utils.SimpleStatus()
         self.content_grid.attach(self.status, 0, 0, 1, 1)
 
+        self.progress_bar = Gtk.ProgressBar()
+        self.progress_bar.set_pulse_step(0.5)
+        self.progress_bar.set_visible(False)
+        self.content_grid.attach(self.progress_bar, 0, 1, 1, 1)
+
         self.user_details_section = utils.Section("login")
-        self.content_grid.attach(self.user_details_section, 0, 1, 1, 1)
+        self.content_grid.attach(self.user_details_section, 0, 2, 1, 1)
 
         self.username_item = self.user_details_section.new_item("account_name", _("Username:"), Gtk.Entry, 0, 0)
 
@@ -78,10 +84,10 @@ class LoginWindow(utils.PopupWindowBase):
         self.advanced_login.set_margin_end(10)
         self.advanced_login.set_margin_bottom(10)
         self.advanced_login.connect("clicked", self.on_advanced_login_clicked)
-        self.content_grid.attach(self.advanced_login, 0, 2, 1, 1)
+        self.content_grid.attach(self.advanced_login, 0, 3, 1, 1)
 
         self.advanced_login_section = utils.Section("login")
-        self.content_grid.attach(self.advanced_login_section, 0, 3, 1, 1)
+        self.content_grid.attach(self.advanced_login_section, 0, 4, 1, 1)
 
         self.identity_secret_item = self.advanced_login_section.new_item(
             'identity_secret',
@@ -102,7 +108,45 @@ class LoginWindow(utils.PopupWindowBase):
 
         self.auth_code_item.set_visible(False)
         self.advanced_login_section.set_visible(False)
+
         self.check_login_availability()
+        self.login_session = login.Login.get_session(0)
+        self.poll_task: Optional[asyncio.Task] = None
+        self.poll_cancelled = False
+
+    async def poll_login(self, steamid: int, client_id: str, request_id: str) -> None:
+        while True:
+            login_data = await self.login_session.poll_login(steamid, client_id, request_id)
+
+            if login_data:
+                self.login_button.set_sensitive(False)
+                break
+
+            if self.poll_cancelled:
+                return None
+
+            self.progress_bar.pulse()
+            await asyncio.sleep(2)
+
+        self.save_login_data(login_data)
+        self.application.main_window.statusbar.clear('steamguard')
+        self.has_user_data = True
+        self.destroy()
+
+    def save_login_data(self, login_data: login.LoginData) -> None:
+        new_configs = {
+            "account_name": self.username,
+            "steamid": login_data.steamid,
+        }
+
+        if self.save_password_item.get_active():
+            encrypted_password = core.utils.encode_password(self.__password)
+            new_configs["password"] = encrypted_password
+
+        for key_, value_ in new_configs.items():
+            config.new("login", key_, value_)
+
+        self.login_session.http_session.cookie_jar.save(config.cookies_file)
 
     @property
     def username(self) -> str:
@@ -174,14 +218,21 @@ class LoginWindow(utils.PopupWindowBase):
         self.__password_item.set_sensitive(False)
         self.save_password_item.set_sensitive(False)
         self.login_button.set_sensitive(False)
+        self.progress_bar.set_visible(False)
 
-        _login_session = login.Login.get_session(0)
-        _login_session.http_session.cookie_jar.clear()
-        _login_session.username = self.username
-        _login_session.password = self.__password
+        if self.poll_task:
+            log.info(_("Cancelling current login poll."))
+            self.poll_cancelled = True
 
-        config.remove('login', 'refresh_token')
-        config.remove('login', 'access_token')
+            # wait poll be cancelled
+            await self.poll_task
+
+            self.poll_cancelled = False
+            self.poll_task = None
+
+        self.login_session.http_session.cookie_jar.clear()
+        self.login_session.username = self.username
+        self.login_session.password = self.__password
 
         if not self.shared_secret:
             log.warning(_("No shared secret found. Trying to log-in without two-factor authentication."))
@@ -194,7 +245,7 @@ class LoginWindow(utils.PopupWindowBase):
 
         while True:
             try:
-                login_data = await _login_session.do_login(
+                login_data = await self.login_session.do_login(
                     self.shared_secret,
                     self.auth_code if self.auth_code else auth_code,
                     auth_code_type,
@@ -230,6 +281,22 @@ class LoginWindow(utils.PopupWindowBase):
                 self.captcha_text_item.set_text("")
                 self.captcha_text_item.set_visible(True)
                 self.captcha_text_item.grab_focus()
+            except login.TwoFactorCodeError as exception:
+                self.status.error(_("Confirm the login on your mobile device or write the steam code\nWaiting..."))
+                self.progress_bar.set_visible(True)
+
+                self.poll_task = asyncio.create_task(
+                    self.poll_login(
+                        exception.steamid,
+                        exception.client_id,
+                        exception.request_id,
+                    )
+                )
+
+                self.auth_code_item.set_text("")
+                self.auth_code_item.set_visible(True)
+                self.auth_code_item.grab_focus()
+                auth_code_type = AuthCodeType.device
             except binascii.Error:
                 self.status.error(_("shared secret is invalid!"))
                 self.username_item.set_sensitive(True)
@@ -244,35 +311,28 @@ class LoginWindow(utils.PopupWindowBase):
                 self.__password_item.grab_focus()
                 break
             except login.LoginError as exception:
-                if self.shared_secret:
-                    if try_count > 0:
-                        for count in range(10, 0):
-                            self.status.info(_("Retrying login in {} seconds ({} left)").format(count, try_count))
-                            await asyncio.sleep(1)
+                if try_count > 0:
+                    for count in range(10, 0):
+                        self.status.info(_("Retrying login in {} seconds ({} left)").format(count, try_count))
+                        await asyncio.sleep(1)
 
-                        try_count -= 1
-                        continue
-                    else:
-                        log.error(str(exception))
+                    try_count -= 1
+                    continue
+                else:
+                    log.error(str(exception))
 
-                        self.status.error(
-                            ':\n'.join(str(exception).split(': ')) +
-                            _(
-                                '\n\nIf your previous authenticator has been removed,'
-                                '\nopen advanced login bellow and remove the old secrets.'
-                            ),
-                        )
+                    self.status.error(
+                        ':\n'.join(str(exception).split(': ')) +
+                        _(
+                            '\n\nIf your previous authenticator has been removed,'
+                            '\nopen advanced login bellow and remove the old secrets.'
+                        ),
+                    )
 
-                        self.username_item.set_sensitive(True)
-                        self.__password_item.set_sensitive(True)
-                        self.__password_item.grab_focus()
-                        break
-
-                self.status.error(_("Write Steam Code bellow and click on 'Log-in'"))
-                self.auth_code_item.set_text("")
-                self.auth_code_item.set_visible(True)
-                self.auth_code_item.grab_focus()
-                auth_code_type = AuthCodeType.device
+                    self.username_item.set_sensitive(True)
+                    self.__password_item.set_sensitive(True)
+                    self.__password_item.grab_focus()
+                    break
             except (aiohttp.ClientError, ValueError):
                 for count in range(20, 0):
                     self.status.error(_("Check your connection. (server down? blocked?)\nWaiting {}").format(count))
@@ -282,24 +342,8 @@ class LoginWindow(utils.PopupWindowBase):
                 self.__password_item.set_sensitive(True)
                 self.login_button.grab_focus()
             else:
-                new_configs = {
-                    "account_name": self.username,
-                    'steamid': login_data.steamid,
-                    'refresh_token': login_data.refresh_token,
-                    'access_token': login_data.access_token,
-                }
-
-                if self.save_password_item.get_active():
-                    encrypted_password = core.utils.encode_password(self.__password)
-                    new_configs["password"] = encrypted_password
-
-                for key_, value_ in new_configs.items():
-                    config.new("login", key_, value_)
-
-                _login_session.cookie_jar.save(config.cookies_file)
-
+                self.save_login_data(login_data)
                 self.application.main_window.statusbar.clear('steamguard')
-
                 self.has_user_data = True
                 self.destroy()
             finally:

@@ -135,7 +135,7 @@ class SteamToolsNG(Gtk.Application):
         try_count = 3
 
         for login_count in range(try_count):
-            if login_session.is_logged_in():
+            if await login_session.is_logged_in():
                 log.info("Steam login Successful")
                 break
 

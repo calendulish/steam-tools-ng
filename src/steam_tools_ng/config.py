@@ -192,8 +192,6 @@ default_config: Dict[str, Dict[str, Any]] = {
     'login': {
         'steamid': 0,
         'deviceid': '',
-        'refresh_token': '',
-        'access_token': '',
         'account_name': '',
         'shared_secret': '',
         'identity_secret': '',

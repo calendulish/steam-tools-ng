@@ -93,15 +93,12 @@ class Login:
         if config.cookies_file.is_file():
             _login_session.http_session.cookie_jar.load(config.cookies_file)
 
-            if _login_session.is_logged_in():
+            if await _login_session.is_logged_in():
                 log.info("Steam login Successful")
                 return None
 
         _login_session.username = self.username
         _login_session.password = self.__password
-
-        config.remove('login', 'refresh_token')
-        config.remove('login', 'access_token')
 
         if not self.shared_secret:
             log.warning(_("No shared secret found. Trying to log-in without two-factor authentication."))
@@ -121,6 +118,7 @@ class Login:
                 user_input = utils.safe_input(_("Write code received by email"))
                 assert isinstance(user_input, str), "safe_input is returning bool when it should return str"
                 await self.do_login(True, user_input, AuthCodeType.email)
+                return None
             except login.LoginBlockedError:
                 log.error(_(
                     "Your network is blocked!\n"
@@ -136,6 +134,29 @@ class Login:
                 user_input = utils.safe_input(_("Write Captcha Code"))
                 assert isinstance(user_input, str)
                 await self.do_login(True, user_input, AuthCodeType.machine)
+                return None
+            except login.TwoFactorCodeError as exception:
+                user_input = await utils.async_input(
+                    _("Confirm the login on your mobile device or write the steam Code"),
+                )
+
+                while True:
+                    login_data = await _login_session.poll_login(
+                        exception.steamid,
+                        exception.client_id,
+                        exception.request_id,
+                    )
+
+                    if not login_data:
+                        if user_input.done():
+                            await self.do_login(True, user_input.result())
+                            return None
+
+                        await asyncio.sleep(2)
+                        continue
+
+                    user_input.cancel()
+                    break
             except binascii.Error:
                 log.error(_("shared secret is invalid!"))
                 self.cli.on_quit()
@@ -143,40 +164,33 @@ class Login:
                 log.error(str(exception))
                 self.cli.on_quit()
             except login.LoginError as exception:
-                if self.shared_secret:
-                    if try_count > 0:
-                        log.warning(_("Retrying login in 10 seconds ({} left)").format(try_count))
-                        await asyncio.sleep(10)
-                        try_count -= 1
-                        continue
-                    else:
-                        log.error(str(exception))
+                if try_count > 0:
+                    log.warning(_("Retrying login in 10 seconds ({} left)").format(try_count))
+                    await asyncio.sleep(10)
+                    try_count -= 1
+                    continue
 
-                        log.warning(_(
-                            "If your previous authenticator has been removed,"
-                            "\nopen your config file and remove the old secrets."
-                        ))
-                        self.cli.on_quit()
+                log.error(str(exception))
 
-                user_input = utils.safe_input(_("Write Steam Code"))
-                assert isinstance(user_input, str), "safe_input is returning bool when it should return str"
-                await self.do_login(True, user_input)
+                log.warning(_(
+                    "If your previous authenticator has been removed,"
+                    "\nopen your config file and remove the old secrets."
+                ))
+                self.cli.on_quit()
             except (aiohttp.ClientError, ValueError):
                 log.error(_("Check your connection. (server down?)"))
                 await asyncio.sleep(15)
                 continue
-            else:
-                new_configs = {
-                    "account_name": self.username,
-                    'steamid': login_data.steamid,
-                    'refresh_token': login_data.refresh_token,
-                    'access_token': login_data.access_token,
-                }
 
-                for key, value in new_configs.items():
-                    config.new("login", key, value)
+            new_configs = {
+                "account_name": self.username,
+                'steamid': login_data.steamid,  # noqa
+            }
 
-                _login_session.cookie_jar.save(config.cookies_file)
-                self.has_user_data = True
+            for key, value in new_configs.items():
+                config.new("login", key, value)
 
-            break
+            _login_session.http_session.cookie_jar.save(config.cookies_file)
+            self.has_user_data = True
+
+            return None

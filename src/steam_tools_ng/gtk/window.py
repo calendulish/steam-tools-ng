@@ -277,12 +277,6 @@ class Main(Gtk.ApplicationWindow):
         shared_secret = steamguard_advanced.new_item('shared_secret', _("Shared Secret:"), Gtk.Entry, 0, 1)
         shared_secret.connect('changed', utils.on_setting_changed)
 
-        access_token_item = steamguard_advanced.new_item("access_token", _("Access Token:"), Gtk.Entry, 0, 2)
-        access_token_item.connect("changed", utils.on_setting_changed)
-
-        refresh_token_item = steamguard_advanced.new_item("refresh_token", _("Refresh Token:"), Gtk.Entry, 0, 3)
-        refresh_token_item.connect("changed", utils.on_setting_changed)
-
         identity_secret = steamguard_advanced.new_item('identity_secret', _("Identity Secret:"), Gtk.Entry, 0, 4)
         identity_secret.connect('changed', utils.on_setting_changed)
 

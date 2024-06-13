@@ -19,6 +19,7 @@ import asyncio
 import logging
 import os
 import sys
+from concurrent.futures import ProcessPoolExecutor
 from typing import Optional, Union, List, Tuple, Any
 
 from .. import i18n, core
@@ -46,7 +47,10 @@ def safe_input(
 
     while True:
         try:
-            user_input = input(f'\n{msg} {options}: ')
+            print(f'\n{msg} {options}: ', end="", flush=True)
+
+            with os.fdopen(0) as stdin:
+                user_input = stdin.readline().strip()
 
             if custom_choices:
                 if not user_input:
@@ -76,6 +80,14 @@ def safe_input(
         except ValueError as exception:
             log.error(exception.args[0])
             log.error(_('Please, try again.'))
+
+
+async def async_input(*args) -> asyncio.Future[bool | str]:
+    loop = asyncio.get_running_loop()
+    process_pool = ProcessPoolExecutor(max_workers=2)
+    input_future = loop.run_in_executor(process_pool, safe_input, *args)
+
+    return input_future
 
 
 def set_console(
