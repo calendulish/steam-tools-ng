@@ -554,12 +554,16 @@ class Main(Gtk.ApplicationWindow):
         self.coupon_progress = Gtk.LevelBar()
         self.coupons_grid.attach(self.coupon_progress, 0, 3, 4, 1)
 
+        self.coupon_running_progress = Gtk.ProgressBar()
+        self.coupon_running_progress.set_pulse_step(0.5)
+        self.coupons_grid.attach(self.coupon_running_progress, 0, 4, 4, 1)
+
         fetch_coupons_button = Gtk.Button()
         fetch_coupons_button.set_margin_start(3)
         fetch_coupons_button.set_margin_end(3)
         fetch_coupons_button.set_label(_('Fetch'))
         fetch_coupons_button.connect('clicked', self.on_fetch_coupons)
-        self.coupons_grid.attach(fetch_coupons_button, 0, 4, 1, 1)
+        self.coupons_grid.attach(fetch_coupons_button, 0, 5, 1, 1)
 
         self.fetch_coupon_event = asyncio.Event()
 
@@ -568,21 +572,21 @@ class Main(Gtk.ApplicationWindow):
         stop_fetching_coupons_button.set_margin_end(3)
         stop_fetching_coupons_button.set_label(_('Stop fetching'))
         stop_fetching_coupons_button.connect('clicked', self.on_stop_fetching_coupons)
-        self.coupons_grid.attach(stop_fetching_coupons_button, 1, 4, 1, 1)
+        self.coupons_grid.attach(stop_fetching_coupons_button, 1, 5, 1, 1)
 
         get_coupon_button = Gtk.Button()
         get_coupon_button.set_margin_start(3)
         get_coupon_button.set_margin_end(3)
         get_coupon_button.set_label(_('Get selected'))
         get_coupon_button.connect('clicked', self.on_coupon_action, 'get')
-        self.coupons_grid.attach(get_coupon_button, 2, 4, 1, 1)
+        self.coupons_grid.attach(get_coupon_button, 2, 5, 1, 1)
 
         give_coupon_button = Gtk.Button()
         give_coupon_button.set_margin_start(3)
         give_coupon_button.set_margin_end(3)
         give_coupon_button.set_label(_('Send'))
         give_coupon_button.connect('clicked', self.on_coupon_action, 'give')
-        self.coupons_grid.attach(give_coupon_button, 3, 4, 1, 1)
+        self.coupons_grid.attach(give_coupon_button, 3, 5, 1, 1)
 
         coupons_settings = utils.Section("coupons")
         coupons_settings.stackup_section(_("Settings"), coupons_stack)
@@ -627,6 +631,9 @@ class Main(Gtk.ApplicationWindow):
         user_info_task = self.loop.create_task(self.user_info())
         user_info_task.add_done_callback(utils.safe_task_callback)
 
+        coupon_indicator_task = self.loop.create_task(self.coupon_running_indicator())
+        coupon_indicator_task.add_done_callback(utils.safe_task_callback)
+
     @property
     def theme(self) -> str:
         option = config.parser.get('general', 'theme')
@@ -636,7 +643,6 @@ class Main(Gtk.ApplicationWindow):
             return 'dark' if prefer_dark_theme else 'light'
 
         return option
-
 
     async def user_info(self) -> None:
         while self.get_realized():
@@ -727,6 +733,12 @@ class Main(Gtk.ApplicationWindow):
 
             await asyncio.sleep(3)
 
+    async def coupon_running_indicator(self) -> None:
+        while self.get_realized():
+            await self.fetch_coupon_event.wait()
+            self.coupon_running_progress.pulse()
+            await asyncio.sleep(1)
+
     def on_fetch_coupons(self, button: Gtk.Button) -> None:
         self.fetch_coupon_event.set()
 
@@ -734,6 +746,7 @@ class Main(Gtk.ApplicationWindow):
         self.fetch_coupon_event.clear()
         self.coupon_progress.set_value(0)
         self.coupon_progress.set_max_value(0)
+        self.coupon_running_progress.set_fraction(0)
 
     def on_coupon_action(self, button: Gtk.Button, action: str) -> None:
         coupon_window = coupon.CouponWindow(self, self.application, self.coupons_tree, action)
