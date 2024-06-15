@@ -26,9 +26,11 @@ import aiohttp
 from gi.repository import Gio, Gtk
 from stlib import universe, login, community, webapi, internals, plugins
 
-from . import about, settings, window, utils
+from . import about, settings, window, utils, update
 from . import login as gtk_login
 from .. import config, i18n, core
+
+from steam_tools_ng import __version__
 
 _ = i18n.get_translation
 log = logging.getLogger(__name__)
@@ -157,6 +159,19 @@ class SteamToolsNG(Gtk.Application):
                 await asyncio.sleep(10)
 
         self.main_window.statusbar.clear("steamguard")
+
+        try:
+            release_data = await login_session.request_json(
+                "https://api.github.com/repos/calendulish/steam-tools-ng/releases/latest",
+            )
+            latest_version = release_data['tag_name'][1:]
+
+            if latest_version > __version__:
+                update_window = update.UpdateWindow(self.main_window, self, latest_version)
+                update_window.present()
+        except aiohttp.ClientError as error:
+            log.exception(str(error))
+            # bypass
 
         community_session = await community.Community.new_session(0, api_url=self.api_url)
 

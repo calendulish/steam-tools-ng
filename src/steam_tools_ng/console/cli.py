@@ -23,9 +23,10 @@ import sys
 from typing import Optional, Any, Callable
 
 import aiohttp
-
 import stlib
+from steam_tools_ng import __version__
 from stlib import plugins, universe, login, community, webapi, internals
+
 from . import authenticator, utils
 from . import login as cli_login
 from .. import i18n, config, core
@@ -56,8 +57,8 @@ class SteamToolsNG:
         self.extra_gameid = None
 
         if (
-            module_name in {'cardfarming', 'fakerun'}
-            and not stlib.steamworks_available
+                module_name in {'cardfarming', 'fakerun'}
+                and not stlib.steamworks_available
         ):
             log.critical(_(
                 "{} module has been disabled because you have "
@@ -150,6 +151,20 @@ class SteamToolsNG:
             if await login_session.is_logged_in():
                 utils.set_console(info=_("Steam login Successful"))
                 break
+
+        try:
+            release_data = await login_session.request_json(
+                "https://api.github.com/repos/calendulish/steam-tools-ng/releases/latest",
+            )
+            latest_version = release_data['tag_name'][1:]
+
+            if latest_version > __version__:
+                log.warning(_("A new version is available [{}]."))
+                log.warning(_("It's highly recommended to update."))
+                log.warning('https://github.com/calendulish/steam-tools-ng/releases')
+        except aiohttp.ClientError as error:
+            log.exception(str(error))
+            # bypass
 
         community_session = await community.Community.new_session(0, api_url=self.api_url)
 
