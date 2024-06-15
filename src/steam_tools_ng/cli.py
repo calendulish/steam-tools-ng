@@ -127,6 +127,7 @@ def main() -> None:
     config.init_logger()
 
     if console_params.reset:
+        config.cookies_file.unlink(missing_ok=True)
         config.config_file.unlink(missing_ok=True)
         logging.root.removeHandler(logging.root.handlers[0])
 

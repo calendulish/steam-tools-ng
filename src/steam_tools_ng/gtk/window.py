@@ -19,6 +19,7 @@
 import asyncio
 import contextlib
 import logging
+from pathlib import Path
 from subprocess import call
 from typing import Optional, Tuple, Any
 
@@ -872,7 +873,12 @@ class Main(Gtk.ApplicationWindow):
         login_window.advanced_login.set_visible(False)
         login_window.present()
 
+        config.cookies_file.unlink(missing_ok=True)
         config.config_file.unlink(missing_ok=True)
+
+        log_directory = config.parser.get("logger", "log_directory")
+        Path(log_directory, 'steam-tools-ng.log').unlink()
+        Path(log_directory, 'steam-tools-ng.log.1').unlink()
 
         config.parser.clear()
         config.init()
