@@ -20,7 +20,7 @@ import asyncio
 from subprocess import call
 from typing import AsyncGenerator, Optional, List
 
-from stlib import webapi, client, universe, community
+from stlib import webapi, client, universe, community, login
 from . import utils
 from .. import i18n, config
 
@@ -101,6 +101,7 @@ async def main(
         extra_game_id: Optional[int] = None,
 ) -> AsyncGenerator[utils.ModuleData, None]:
     webapi_session = webapi.SteamWebAPI.get_session(0)
+    login_session = login.Login.get_session(0)
 
     if game_id == 34:
         assert isinstance(extra_game_id, int), "No extra game_id"
@@ -108,19 +109,23 @@ async def main(
             yield slice_
         return
 
-    try:
-        game_list = await webapi_session.get_owned_games(steamid, appids_filter=[game_id])
-        game_name = game_list[0].name
-    except aiohttp.ClientError:
-        module_data = utils.ModuleData(error=_("Check your connection. (server down?)"))
+    if not await login_session.is_limited():
+        try:
+            game_list = await webapi_session.get_owned_games(steamid, appids_filter=[game_id])
+            game_name = game_list[0].name
+        except aiohttp.ClientError:
+            module_data = utils.ModuleData(error=_("Check your connection. (server down?)"))
 
-        async for data in utils.timed_module_data(15, module_data):
-            yield data
+            async for data in utils.timed_module_data(15, module_data):
+                yield data
 
-        return
-    except ValueError:
-        yield utils.ModuleData(error=_("Game {} doesn't exist").format(game_id))
-        return
+            return
+        except ValueError:
+            yield utils.ModuleData(error=_("Game {} doesn't exist").format(game_id))
+            return
+    else:
+        # fallback
+        game_name = "[limited account]"
 
     yield utils.ModuleData(
         display=str(game_id),
