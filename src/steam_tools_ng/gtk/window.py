@@ -725,7 +725,7 @@ class Main(Gtk.ApplicationWindow):
                     status = getattr(self, f'{plugin_name}_status')
 
                     if not enabled:
-                        def disabled_callback(status_) -> None:
+                        def disabled_callback(status_: utils.SimpleStatus) -> None:
                             status_.set_status(_("Disabled"))
                             status_.set_info("")
 
@@ -773,13 +773,13 @@ class Main(Gtk.ApplicationWindow):
         call([config.file_manager, url])
 
     @staticmethod
-    def on_tree_selection_changed(view: Gtk.SingleSelection, position, item_count: int) -> None:
+    def on_tree_selection_changed(view: Gtk.SingleSelection, position: int, item_count: int) -> None:
         item = view.get_selected_item()
         if parent := item.get_parent():
             view.set_selected(parent.get_position())
 
     @staticmethod
-    def on_stack_child_changed(tabs: Gtk.Stack, *args) -> None:
+    def on_stack_child_changed(tabs: Gtk.Stack, *args: Any) -> None:
         main_section = tabs.get_visible_child()
 
         if not (config_stack := main_section.get_child_at(1, 1)):

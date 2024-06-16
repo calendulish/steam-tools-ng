@@ -262,6 +262,7 @@ class SteamToolsNG(Gtk.Application):
 
     @while_window_realized
     async def run_cardfarming(self, play_event: asyncio.Event) -> None:
+        assert isinstance(self.steamid, universe.SteamId)
         cardfarming = core.cardfarming.main(self.steamid, play_event)
 
         async for module_data in cardfarming:

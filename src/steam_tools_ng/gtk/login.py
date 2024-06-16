@@ -18,7 +18,6 @@
 import asyncio
 import binascii
 import logging
-from concurrent.futures import ProcessPoolExecutor
 from typing import Any, Optional
 
 import aiohttp
@@ -111,7 +110,7 @@ class LoginWindow(utils.PopupWindowBase):
 
         self.check_login_availability()
         self.login_session = login.Login.get_session(0)
-        self.poll_task: Optional[asyncio.Task] = None
+        self.poll_task: Optional[asyncio.Task[Any]] = None
         self.poll_cancelled = False
 
     async def poll_login(self, steamid: int, client_id: str, request_id: str) -> None:

@@ -54,7 +54,8 @@ except ImportError as exception:
     client = None
 
 
-def _(message):
+# translation module isn't initialized yet
+def _(message: str) -> str:
     return message
 
 

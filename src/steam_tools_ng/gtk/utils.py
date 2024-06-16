@@ -19,6 +19,7 @@ import asyncio
 import functools
 import html
 import logging
+import sys
 import traceback
 from collections import OrderedDict
 from traceback import StackSummary
@@ -154,7 +155,7 @@ class StatusBar(Gtk.Grid):
 
 
 class SimpleTextTreeItem(GObject.Object):
-    def __init__(self, *args: str, headers: Tuple[str], **kwargs) -> None:
+    def __init__(self, *args: str, headers: Tuple[str, ...], **kwargs: Any) -> None:
         for name, value in kwargs.items():
             setattr(self, name, value)
 
@@ -167,7 +168,7 @@ class SimpleTextTreeItem(GObject.Object):
                 log.debug(f'{name} param not set in {self}')
 
         super(GObject.Object, self).__init__()
-        self.children = []
+        self.children: List[SimpleTextTreeItem] = []
 
 
 class SimpleTextTree(Gtk.Grid):
@@ -261,14 +262,16 @@ class SimpleTextTree(Gtk.Grid):
 
         self.attach(self._disabled_label, 0, 0, 1, 1)
 
-    def setup(self, view: Gtk.ListView, item: Gtk.ListItem, hide_expander: bool = True) -> None:
+    @staticmethod
+    def setup(view: Gtk.ListView, item: Gtk.ListItem, hide_expander: bool = True) -> None:
         expander = Gtk.TreeExpander()
         expander.set_hide_expander(hide_expander)
         label = Gtk.Label()
         expander.set_child(label)
         item.set_child(expander)
 
-    def bind(self, view: Gtk.ListView, item: Gtk.ListItem, element: Optional[str] = None) -> None:
+    @staticmethod
+    def bind(view: Gtk.ListView, item: Gtk.ListItem, element: Optional[str] = None) -> None:
         expander = item.get_child()
         assert isinstance(expander, Gtk.TreeExpander)
 
@@ -290,7 +293,7 @@ class SimpleTextTree(Gtk.Grid):
     def item_factory(self, item: Gtk.ListItem) -> Optional[Gtk.TreeListModel]:
         store = Gio.ListStore.new(SimpleTextTreeItem)
 
-        if type(item) == Gtk.TreeListRow:
+        if isinstance(item, Gtk.TreeListRow):
             item = item.get_item()
 
         if item.children:
@@ -301,7 +304,7 @@ class SimpleTextTree(Gtk.Grid):
 
         return None
 
-    def new_item(self, *data: List[str], **kwargs) -> SimpleTextTreeItem:
+    def new_item(self, *data: str, **kwargs: Any) -> SimpleTextTreeItem:
         return SimpleTextTreeItem(*data, headers=self.headers, **kwargs)
 
     def append_row(self, row: Gtk.TreeListRow) -> None:
@@ -587,7 +590,7 @@ class _SectionItem(Gtk.Grid):
             self.label = Gtk.Label()
             self.label.set_name(name)
             self.label.set_text(label)
-            #self.label.set_halign(Gtk.Align.START)
+            # self.label.set_halign(Gtk.Align.START)
 
             self.attach(self.label, 0, 0, 1, 1)
             self.attach_next_to(self.widget, self.label, Gtk.PositionType.RIGHT, 1, 1)
@@ -609,10 +612,10 @@ class _SectionItem(Gtk.Grid):
         value = config.parser.get(self.section.get_name(), self.get_name())
 
         try:
+            assert self.items is str, "received None from items"
             current_option = list(self.items).index(value)
         except ValueError:
-            import sys
-
+            assert self.items is str, "received None from items"
             error_message = _("Please, fix your config file. Accepted values for {} are:\n{}").format(
                 self.name,
                 ', '.join(self.items.keys()),
@@ -652,14 +655,14 @@ class _SectionItem(Gtk.Grid):
         self.label.set_visible(state)
         super(self.__class__, self).set_visible(state)
 
-    def connect(self, name: str, callback: Callable[..., Any], *args, **kwargs) -> None:
+    def connect(self, name: str, callback: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
         self.widget.connect(name, lambda widget, *data: callback(self, *data, *args, **kwargs))
 
 
 class Section(Gtk.Grid):
     def __init__(self, name: str) -> None:
         super().__init__()
-        self.items = []
+        self.items: List[_SectionItem] = []
 
         self.set_name(name)
         self.set_row_spacing(10)
@@ -689,10 +692,10 @@ class Section(Gtk.Grid):
         name = self.get_name()
 
         if scroll:
-            scroll = Gtk.ScrolledWindow()
-            scroll.set_overlay_scrolling(True)
-            scroll.set_child(self)
-            stack.add_titled(scroll, name, text)
+            scrolled_window = Gtk.ScrolledWindow()
+            scrolled_window.set_overlay_scrolling(True)
+            scrolled_window.set_child(self)
+            stack.add_titled(scrolled_window, name, text)
         else:
             stack.add_titled(self, name, text)
 
