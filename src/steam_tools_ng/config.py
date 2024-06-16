@@ -32,10 +32,10 @@ from . import i18n, logger_handlers
 
 parser = configparser.RawConfigParser()
 log = logging.getLogger(__name__)
+script_dir = Path(__file__).resolve().parent
 
-if Path('src').is_dir():
-    # development mode
-    data_dir = Path('config')
+if (script_dir / 'src').is_dir() or (script_dir / 'portable_mode.txt').is_file():
+    data_dir = script_dir / 'config'
 elif hasattr(sys, 'frozen') or sys.platform == 'win32':
     data_dir = Path(os.environ['LOCALAPPDATA'])
 else:
