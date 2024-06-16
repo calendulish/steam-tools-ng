@@ -159,7 +159,10 @@ class SimpleTextTreeItem(GObject.Object):
             setattr(self, name, value)
 
         for index, header in enumerate(headers):
-            name = header.replace('_', '').replace(' ', '_').lower()
+            if header.startswith('_'):
+                header = header.replace('_', '', 1)
+
+            name = header.replace(' ', '_').lower()
 
             try:
                 setattr(self, name, args[index])
@@ -587,7 +590,7 @@ class _SectionItem(Gtk.Grid):
             self.label = Gtk.Label()
             self.label.set_name(name)
             self.label.set_text(label)
-            #self.label.set_halign(Gtk.Align.START)
+            # self.label.set_halign(Gtk.Align.START)
 
             self.attach(self.label, 0, 0, 1, 1)
             self.attach_next_to(self.widget, self.label, Gtk.PositionType.RIGHT, 1, 1)
@@ -776,6 +779,13 @@ def sanitize_package_details(package_details: List[internals.Package]) -> List[i
 
     assert isinstance(previous, tuple)
     return [previous[0]]
+
+
+def sanatize_steam_price(price: str) -> float:
+    no_comma = price.replace(',', '.')
+    price_list = no_comma.split('.')
+    big = remove_letters(price_list[0])
+    return float(f'{big}.{price_list[1]}')
 
 
 def remove_letters(text: str) -> str:

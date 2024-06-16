@@ -131,6 +131,9 @@ class Main(Gtk.ApplicationWindow):
         coupons_section = utils.Section("coupons")
         coupons_section.stackup_section(_("Coupons"), self.main_tabs)
 
+        market_section = utils.Section("market")
+        market_section.stackup_section(_("Market Monitor"), self.main_tabs)
+
         # grid managed by plugin switch
         self.steamguard_status = utils.Status(4)
         self.cardfarming_status = utils.Status(6)
@@ -617,6 +620,48 @@ class Main(Gtk.ApplicationWindow):
         )
         coupon_discount.connect("notify::selected", utils.on_dropdown_setting_changed, config.coupon_discounts)
 
+        market_stack = Gtk.Stack()
+        market_stack.set_vexpand(True)
+        market_section.attach(market_stack, 1, 1, 1, 1)
+
+        market_sidebar = Gtk.StackSidebar()
+        market_sidebar.set_stack(market_stack)
+        market_sidebar.set_size_request(150, -1)
+        market_section.attach(market_sidebar, 0, 1, 1, 1)
+
+        self.market_grid = Gtk.Grid()
+        self.market_grid.set_row_spacing(10)
+        market_stack.add_titled(self.market_grid, "market_list", _("Market List"))
+
+        market_tree_headers = '_name', '_my_price', '_sell_price', '_buy_price', 'sell_for', 'orderid', 'contextid'
+        self.market_tree = utils.SimpleTextTree(*market_tree_headers)
+        self.market_grid.attach(self.market_tree, 0, 0, 4, 2)
+
+        for index, column in enumerate(self.market_tree.view.get_columns()):
+            if column == 0:
+                column.set_resizable(True)
+                column.set_expand(True)
+
+            if index in (5, 7):
+                column.set_visible(False)
+
+        self.market_tree.model.connect("selection-changed", self.on_market_selection_changed)
+
+        self.market_running_progress = Gtk.ProgressBar()
+        self.market_running_progress.set_pulse_step(0.5)
+        self.market_grid.attach(self.market_running_progress, 0, 3, 4, 1)
+
+        self.market_sell_button = Gtk.Button()
+        self.market_sell_button.set_margin_start(3)
+        self.market_sell_button.set_margin_end(3)
+        self.market_sell_button.set_label(_("Select an item"))
+        self.market_sell_button.set_sensitive(False)
+        #sell_button.connect("clicked", self.on_market_sell)
+        self.market_grid.attach(self.market_sell_button, 0, 4, 1, 1)
+
+        self.market_settings = utils.Section("market")
+        self.market_settings.stackup_section(_("Settings"), market_stack)
+
         self.statusbar = utils.StatusBar()
         main_grid.attach(self.statusbar, 1, 3, 1, 1)
 
@@ -705,6 +750,10 @@ class Main(Gtk.ApplicationWindow):
     async def plugin_status(self) -> None:
         while self.get_realized():
             for plugin_name in config.plugins.keys():
+                if plugin_name == 'market':
+                    # TODO: STUB
+                    continue
+
                 if plugin_name in ["coupons", "confirmations"]:
                     if plugin_name == "confirmations":
                         enabled = config.parser.getboolean("steamguard", "enable_confirmations")
@@ -720,16 +769,18 @@ class Main(Gtk.ApplicationWindow):
                     else:
                         tree.disabled = True
                         main.set_sensitive(False)
-                else:
-                    enabled = config.parser.getboolean(plugin_name, "enable")
-                    status = getattr(self, f'{plugin_name}_status')
 
-                    if not enabled:
-                        def disabled_callback(status_) -> None:
-                            status_.set_status(_("Disabled"))
-                            status_.set_info("")
+                    continue
 
-                        self.loop.call_later(3, disabled_callback, status)
+                enabled = config.parser.getboolean(plugin_name, "enable")
+                status = getattr(self, f'{plugin_name}_status')
+
+                if not enabled:
+                    def disabled_callback(status_) -> None:
+                        status_.set_status(_("Disabled"))
+                        status_.set_info("")
+
+                    self.loop.call_later(3, disabled_callback, status)
 
             await asyncio.sleep(3)
 
@@ -771,6 +822,13 @@ class Main(Gtk.ApplicationWindow):
             url = item.link
 
         call([config.file_manager, url])
+
+    def on_market_selection_changed(self, view: Gtk.SingleSelection, position, item_count: int) -> None:
+        row = view.get_selected_item()
+        item = row.get_item()
+
+        self.market_sell_button.set_label(_("Sell for {}").format(item.sell_for))
+        self.market_sell_button.set_sensitive(True)
 
     @staticmethod
     def on_tree_selection_changed(view: Gtk.SingleSelection, position, item_count: int) -> None:

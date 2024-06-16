@@ -24,13 +24,12 @@ from typing import Any, Optional, Dict, Callable, List
 
 import aiohttp
 from gi.repository import Gio, Gtk
+from steam_tools_ng import __version__
 from stlib import universe, login, community, webapi, internals, plugins
 
 from . import about, settings, window, utils, update
 from . import login as gtk_login
 from .. import config, i18n, core
-
-from steam_tools_ng import __version__
 
 _ = i18n.get_translation
 log = logging.getLogger(__name__)
@@ -227,7 +226,7 @@ class SteamToolsNG(Gtk.Application):
                             with contextlib.suppress(IndexError):
                                 await plugin.Main.new_session(0)
 
-                        if module_name in ["coupons", "confirmations"]:
+                        if module_name in ["coupons", "confirmations", "market"]:
                             task = asyncio.create_task(module())
                         else:
                             self.main_window.set_status(module_name, status=_("Loading"))
@@ -247,7 +246,7 @@ class SteamToolsNG(Gtk.Application):
                     try:
                         await task
                     except asyncio.CancelledError:
-                        if module_name not in ["confirmations", "coupons"]:
+                        if module_name not in ["confirmations", "coupons", "market"]:
                             self.main_window.set_status(module_name, status=_("Disabled"))
                 else:
                     await asyncio.sleep(1)
@@ -335,6 +334,41 @@ class SteamToolsNG(Gtk.Application):
 
                 self.old_confirmations = module_data.raw_data
                 self.main_window.statusbar.clear('confirmations')
+
+    @while_window_realized
+    async def run_market(self) -> None:
+        market = core.market.main()
+
+        async for module_data in market:
+            if module_data.error:
+                self.main_window.statusbar.set_critical("market", module_data.error)
+
+            self.main_window.statusbar.set_warning("market", module_data.info)
+            if module_data.info:
+                pass
+
+            if not any([module_data.info, module_data.error]):
+                self.main_window.statusbar.clear("coupons")
+
+            if module_data.action == "update":
+                order = module_data.raw_data['order']
+                position = module_data.raw_data['position']
+                histogram = module_data.raw_data['histogram']
+
+                item = self.main_window.market_tree.new_item(
+                    order.name,
+                    f"{order.price} ({order.amount})",
+                    f"{histogram['sell_order_price']} ({histogram['sell_order_table'][0]['quantity']})",
+                    f"{histogram['buy_order_price']} ({histogram['buy_order_table'][0]['quantity']})",
+                    str(round(utils.sanatize_steam_price(histogram['sell_order_price']) - 0.01, 2)),
+                    str(order.orderid),
+                    str(order.contextid),
+                )
+
+                self.main_window.market_tree.append_row(item)
+
+        # TODO: STUB
+        await asyncio.sleep(60 * 10)
 
     @while_window_realized
     async def run_coupons(self) -> None:
