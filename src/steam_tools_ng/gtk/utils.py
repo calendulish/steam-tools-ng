@@ -610,13 +610,12 @@ class _SectionItem(Gtk.Grid):
         return getattr(self.widget, item)
 
     def __update_dropdown(self) -> None:
+        assert isinstance(self.items, OrderedDict), "received None from items"
         value = config.parser.get(self.section.get_name(), self.get_name())
 
         try:
-            assert self.items is str, "received None from items"
             current_option = list(self.items).index(value)
         except ValueError:
-            assert self.items is str, "received None from items"
             error_message = _("Please, fix your config file. Accepted values for {} are:\n{}").format(
                 self.name,
                 ', '.join(self.items.keys()),
