@@ -49,7 +49,7 @@ def safe_input(
         try:
             print(f'\n{msg} {options}: ', end="", flush=True)
 
-            with os.fdopen(0) as stdin:
+            with os.fdopen(0, closefd=False) as stdin:
                 user_input = stdin.readline().strip()
 
             if custom_choices:
