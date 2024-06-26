@@ -21,13 +21,13 @@ import locale
 import logging
 import os
 import site
+import sys
 from collections import OrderedDict
 from pathlib import Path
-
-import sys
 from typing import Any, Dict
 
 from stlib import plugins as stlib_plugins
+
 from . import i18n, logger_handlers
 
 parser = configparser.RawConfigParser()
@@ -313,7 +313,18 @@ def init_logger() -> None:
         log_file_handler = logger_handlers.NullHandler()  # type: ignore
 
     log_console_handler = logger_handlers.ColoredStreamHandler()
-    log_console_handler.setLevel(getattr(logging, log_console_level.upper()))
+    log_console_level = getattr(logging, log_console_level.upper())
+    log_console_handler.setLevel(log_console_level)
+
+    log_stlib = logging.getLogger('stlib')
+    log_stlib.setLevel(logging.DEBUG)
+
+    # TODO: ColoredStreamHandler isn't working from root log
+    log_stlib.propagate = False
+    log_stlib_handler = logger_handlers.ColoredStreamHandler()
+    log_stlib_handler.setLevel(log_console_level)
+    log_stlib.addHandler(log_stlib_handler)
+    log_stlib.addHandler(log_file_handler)
 
     if 'gtk' not in sys.modules:
         log_console_handler.setLevel(logging.WARNING)
