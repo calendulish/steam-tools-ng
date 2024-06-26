@@ -17,6 +17,8 @@
 #
 
 import argparse
+import asyncio
+import contextlib
 import logging
 import sys
 import textwrap
@@ -160,7 +162,15 @@ def main() -> None:
     module_options = console_params.options
 
     app = cli.SteamToolsNG(module_name, module_options)
-    app.run()
+
+    with contextlib.suppress(asyncio.CancelledError, KeyboardInterrupt):
+        asyncio.run(app.init())
+
+    # prevent tries to open log file at shutdown
+    logging.root.removeHandler(logging.root.handlers[0])
+
+    print("\nUntil next time!")
+    sys.exit(0)
 
 
 if __name__ == "__main__":

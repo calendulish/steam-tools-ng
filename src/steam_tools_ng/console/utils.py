@@ -16,6 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
+import inspect
 import logging
 import os
 import sys
@@ -78,7 +79,7 @@ def safe_input(
 
             raise ValueError(_('{} is not an accepted value').format(user_input))
         except ValueError as exception:
-            log.error(exception.args[0])
+            log.error(str(exception))
             log.error(_('Please, try again.'))
 
 
@@ -145,18 +146,20 @@ def set_console(
 
 def safe_task_callback(task: asyncio.Task[Any]) -> None:
     if task.cancelled():
-        log.debug(_("%s has been stopped due user request"), task.get_coro())
+        coro = task.get_coro()
+        assert inspect.iscoroutine(coro), "isn't coro?"
+        log.debug(_("\n%s has been stopped due user request"), coro.__name__)
         return
 
     exception = task.exception()
 
-    if exception and not isinstance(exception, asyncio.CancelledError):
+    if exception and not isinstance(exception, KeyboardInterrupt):
         stack = task.get_stack()
 
         for frame in stack:
             log.critical("%s at %s", type(exception).__name__, frame)
 
         log.critical("Fatal Error: %s", str(exception))
-        loop = asyncio.get_running_loop()
-        loop.stop()
-        sys.exit(1)
+
+        for task in asyncio.all_tasks():
+            task.cancel()

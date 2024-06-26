@@ -42,7 +42,6 @@ def while_running(function: Callable[..., Any]) -> Callable[..., Any]:
             await function(self, *args, **kwargs)
 
             if self.stop:
-                self.on_quit()
                 break
 
     return wrapper
@@ -114,15 +113,14 @@ class SteamToolsNG:
 
         return None
 
-    # FIXME: https://github.com/python/asyncio/pull/465
-    def run(self) -> None:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        task = loop.create_task(self.async_activate())
+    async def init(self) -> None:
+        await core.fix_ssl()
+
+        task = asyncio.create_task(self.async_activate())
         task.add_done_callback(utils.safe_task_callback)
 
-        with contextlib.suppress(KeyboardInterrupt):
-            loop.run_forever()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
 
     async def do_login(self, *, block: bool = True, auto: bool = False) -> None:
         login_session = cli_login.Login(self)
@@ -250,9 +248,3 @@ class SteamToolsNG:
             if module_data.action == "login":
                 await self.do_login(auto=True)
                 continue
-
-    @staticmethod
-    def on_quit(exit_code: int = 0) -> None:
-        loop = asyncio.get_running_loop()
-        loop.stop()
-        # sys.exit(exit_code)

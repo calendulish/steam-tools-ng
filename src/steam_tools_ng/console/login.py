@@ -70,6 +70,8 @@ class Login:
             auth_code: str = '',
             auth_code_type: Optional[AuthCodeType] = AuthCodeType.device,
     ) -> None:
+        task = asyncio.current_task()
+        assert isinstance(task, asyncio.Task), "no task?"
         utils.set_console(info=_("Retrieving user data"))
 
         if auto:
@@ -124,7 +126,7 @@ class Login:
                     "Your network is blocked!\n"
                     "It'll take some time until unblocked. Please, try again later\n"
                 ))
-                self.cli.on_quit()
+                task.cancel()
             except login.CaptchaError as exception:
                 utils.set_console(info=_("Steam server is requesting a captcha code."))
                 # TODO: Captcha gid?? (where did you go? where did you go?)
@@ -159,10 +161,7 @@ class Login:
                     break
             except binascii.Error:
                 log.error(_("shared secret is invalid!"))
-                self.cli.on_quit()
-            except AttributeError as exception:
-                log.error(str(exception))
-                self.cli.on_quit()
+                task.cancel()
             except login.LoginError as exception:
                 if try_count > 0:
                     log.warning(_("Retrying login in 10 seconds ({} left)").format(try_count))
@@ -176,7 +175,8 @@ class Login:
                     "If your previous authenticator has been removed,"
                     "\nopen your config file and remove the old secrets."
                 ))
-                self.cli.on_quit()
+
+                task.cancel()
             except (aiohttp.ClientError, ValueError):
                 log.error(_("Check your connection. (server down?)"))
                 await asyncio.sleep(15)

@@ -124,7 +124,6 @@ class SteamToolsNG(Gtk.Application):
     async def async_activate(self) -> None:
         # TODO: Wait for window manager catch the main window position and size
         await asyncio.sleep(3)
-
         assert isinstance(self.main_window, window.Main)
         login_session = await login.Login.new_session(0, api_url=self.api_url)
 
@@ -410,6 +409,6 @@ class SteamToolsNG(Gtk.Application):
 
     # noinspection PyMethodMayBeStatic
     def on_exit_activate(self, *args: Any) -> None:
-        loop = asyncio.get_running_loop()
-        loop.stop()
-        # self.main_window.destroy()
+        task = asyncio.current_task()
+        assert isinstance(task, asyncio.Task), "isn't task?"
+        task.cancel()

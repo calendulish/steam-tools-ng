@@ -25,21 +25,20 @@ __all__ = [
     'utils',
 ]
 
-import asyncio
 import ssl
 import sys
 from pathlib import Path
 
 import aiohttp
-
 import stlib
+
 from . import *
 
 if stlib.steamworks_available:
     from . import cardfarming, fakerun
 
 
-async def fix_ssl():
+async def fix_ssl() -> None:
     ssl_context = ssl.SSLContext()
 
     if hasattr(sys, 'frozen'):
@@ -48,7 +47,3 @@ async def fix_ssl():
 
     tcp_connector = aiohttp.TCPConnector(ssl=ssl_context, force_close=True)
     await stlib.set_default_http_params(0, connector=tcp_connector)
-
-
-loop = asyncio.get_event_loop()
-loop.create_task(fix_ssl())

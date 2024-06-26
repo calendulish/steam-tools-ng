@@ -18,6 +18,7 @@
 import asyncio
 import functools
 import html
+import inspect
 import logging
 import sys
 import traceback
@@ -28,8 +29,8 @@ from typing import Any, Callable, List, Optional, Union, Type, Tuple
 from xml.etree import ElementTree
 
 from gi.repository import Gtk, Gdk, Gio, GObject
-
 from stlib import internals
+
 from . import async_gtk
 from .. import i18n, config
 
@@ -803,13 +804,13 @@ def fatal_error_dialog(
         error_dialog.set_detail("\n".join([str(frame) for frame in stack]))
 
     def callback(*args: Any) -> None:
-        loop = asyncio.get_event_loop()
-        loop.stop()
-
         application = Gtk.Application.get_default()
 
         if application:
             application.quit()
+
+        for task in asyncio.all_tasks():
+            task.cancel()
 
     error_dialog.choose(parent=parent, callback=callback)
 
@@ -820,12 +821,14 @@ def fatal_error_dialog(
 
 def safe_task_callback(task: asyncio.Task[Any]) -> None:
     if task.cancelled():
-        log.debug(_("%s has been stopped due user request"), task.get_coro())
+        coro = task.get_coro()
+        assert inspect.iscoroutine(coro), "isn't coro?"
+        log.debug(_("%s has been stopped due user request"), coro.__name__)
         return
 
     exception = task.exception()
 
-    if exception and not isinstance(exception, asyncio.CancelledError):
+    if exception and not isinstance(exception, KeyboardInterrupt):
         stack = task.get_stack()
         application = Gtk.Application.get_default()
 

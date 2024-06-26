@@ -623,15 +623,13 @@ class Main(Gtk.ApplicationWindow):
         self.connect("destroy", self.application.on_exit_activate)
         self.connect("close-request", self.application.on_exit_activate)
 
-        self.loop = asyncio.get_event_loop()
-
-        plugin_status_task = self.loop.create_task(self.plugin_status())
+        plugin_status_task = asyncio.create_task(self.plugin_status())
         plugin_status_task.add_done_callback(utils.safe_task_callback)
 
-        user_info_task = self.loop.create_task(self.user_info())
+        user_info_task = asyncio.create_task(self.user_info())
         user_info_task.add_done_callback(utils.safe_task_callback)
 
-        coupon_indicator_task = self.loop.create_task(self.coupon_running_indicator())
+        coupon_indicator_task = asyncio.create_task(self.coupon_running_indicator())
         coupon_indicator_task.add_done_callback(utils.safe_task_callback)
 
     @property
@@ -729,7 +727,7 @@ class Main(Gtk.ApplicationWindow):
                             status_.set_status(_("Disabled"))
                             status_.set_info("")
 
-                        self.loop.call_later(3, disabled_callback, status)
+                        asyncio.get_running_loop().call_later(3, disabled_callback, status)
 
             await asyncio.sleep(3)
 
@@ -870,13 +868,15 @@ class Main(Gtk.ApplicationWindow):
         authenticator_window = authenticator.AuthenticatorWindow(self, self.application)
         authenticator_window.present()
 
-        self.loop.create_task(authenticator_window.on_add_authenticator())
+        task = asyncio.create_task(authenticator_window.on_add_authenticator())
+        task.add_done_callback(utils.safe_task_callback)
 
     def on_remove_authenticator_clicked(self, button: Gtk.Button) -> None:
         authenticator_window = authenticator.AuthenticatorWindow(self, self.application)
         authenticator_window.present()
 
-        self.loop.create_task(authenticator_window.on_remove_authenticator())
+        task = asyncio.create_task(authenticator_window.on_remove_authenticator())
+        task.add_done_callback(utils.safe_task_callback)
 
     def on_reset_clicked(self, button: Gtk.Button) -> None:
         login_window = LoginWindow(self, self.application)
@@ -893,15 +893,8 @@ class Main(Gtk.ApplicationWindow):
         Path(log_directory, 'steam-tools-ng.log').unlink()
         Path(log_directory, 'steam-tools-ng.log.1').unlink()
 
-        config.parser.clear()
-        config.init()
-
-        def reset_callback() -> None:
-            login_window.destroy()
-            self.destroy()
-
         login_window.status.info(_("Successful!\nExiting..."))
-        self.loop.call_later(3, reset_callback)
+        asyncio.get_running_loop().call_later(3, lambda: [task.cancel() for task in asyncio.all_tasks()])
 
     def on_reset_password_clicked(self, button: Gtk.Button) -> None:
         reseting_window = utils.PopupWindowBase(self, self.application)
@@ -915,9 +908,5 @@ class Main(Gtk.ApplicationWindow):
 
         config.new("login", "password", "")
 
-        def reset_password_callback() -> None:
-            reseting_window.destroy()
-            self.destroy()
-
-        reseting_status.info(_("Successful!\nExiting..."))
-        self.loop.call_later(3, reset_password_callback)
+        reseting_status.info(_("Successful!"))
+        asyncio.get_running_loop().call_later(3, lambda: reseting_window.destroy())

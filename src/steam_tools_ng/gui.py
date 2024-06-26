@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import asyncio
 import os
 import sys
 
@@ -101,9 +100,8 @@ def main() -> None:
 
     if console_params.version:
         about_dialog = about.AboutDialog(parent_window=None)
+        about_dialog.connect("close-request", lambda dialog, *args: dialog.destroy())
         about_dialog.present()
-        about_dialog.connect("close-request", lambda *args: asyncio.get_event_loop().stop())
-        about_dialog.connect("destroy", lambda *args: asyncio.get_event_loop().stop())
 
         if not Gtk.Application.get_default():
             async_gtk.run()
