@@ -19,7 +19,7 @@ import asyncio
 import binascii
 import getpass
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import aiohttp
 from stlib import login
@@ -68,7 +68,7 @@ class Login:
             self,
             auto: bool,
             auth_code: str = '',
-            auth_code_type: Optional[AuthCodeType] = AuthCodeType.device,
+            auth_code_type: AuthCodeType | None = AuthCodeType.device,
     ) -> None:
         task = asyncio.current_task()
         assert isinstance(task, asyncio.Task), "no task?"

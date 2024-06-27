@@ -17,7 +17,6 @@
 #
 
 from importlib import resources
-from typing import Optional
 
 from gi.repository import Gdk, Gtk
 
@@ -28,7 +27,7 @@ _ = i18n.get_translation
 
 # noinspection PyUnusedLocal
 class AboutDialog(Gtk.AboutDialog):
-    def __init__(self, parent_window: Optional[Gtk.Window]) -> None:
+    def __init__(self, parent_window: Gtk.Window | None) -> None:
         super().__init__()
         self.set_transient_for(parent_window)
         self.set_modal(True)

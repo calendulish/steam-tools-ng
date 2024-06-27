@@ -20,17 +20,16 @@ import contextlib
 import functools
 import itertools
 import logging
-from typing import Any, Optional, Dict, Callable, List
+from typing import Any, Dict, Callable, List
 
 import aiohttp
 from gi.repository import Gio, Gtk
+from steam_tools_ng import __version__
 from stlib import universe, login, community, webapi, internals, plugins
 
 from . import about, settings, window, utils, update
 from . import login as gtk_login
 from .. import config, i18n, core
-
-from steam_tools_ng import __version__
 
 _ = i18n.get_translation
 log = logging.getLogger(__name__)
@@ -53,17 +52,17 @@ class SteamToolsNG(Gtk.Application):
         self._main_window_id = 0
         self.gtk_settings = Gtk.Settings.get_default()
 
-        self.api_login: Optional[login.Login] = None
+        self.api_login: login.Login | None = None
         self.api_url = config.parser.get("steam", "api_url")
 
         self.old_confirmations: List[community.Confirmation] = []
 
     @property
-    def main_window(self) -> Optional[window.Main]:
+    def main_window(self) -> window.Main | None:
         return self.get_window_by_id(self._main_window_id)
 
     @property
-    def steamid(self) -> Optional[universe.SteamId]:
+    def steamid(self) -> universe.SteamId | None:
         if steamid := config.parser.getint("login", "steamid"):
             try:
                 return universe.generate_steamid(steamid)

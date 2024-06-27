@@ -22,7 +22,7 @@ import multiprocessing
 import os
 import sys
 from concurrent.futures import ProcessPoolExecutor
-from typing import Optional, Union, List, Tuple, Any
+from typing import List, Tuple, Any
 
 from .. import i18n, core
 
@@ -32,9 +32,9 @@ _ = i18n.get_translation
 
 def safe_input(
         msg: str,
-        default_response: Optional[bool] = None,
-        custom_choices: Optional[List[str]] = None,
-) -> Union[bool, str]:
+        default_response: bool | None = None,
+        custom_choices: List[str] | None = None,
+) -> bool | str:
     if default_response and custom_choices:
         raise AttributeError("You can not use both default_response and custom_choices")
 
@@ -84,7 +84,7 @@ def safe_input(
             log.error(_('Please, try again.'))
 
 
-async def async_input(*args) -> asyncio.Future[bool | str]:
+async def async_input(*args: Any) -> asyncio.Future[bool | str]:
     loop = asyncio.get_running_loop()
     process_context = multiprocessing.get_context("spawn")
     process_pool = ProcessPoolExecutor(max_workers=2, mp_context=process_context)
@@ -95,7 +95,7 @@ async def async_input(*args) -> asyncio.Future[bool | str]:
 
 
 def set_console(
-        module_data: Optional[core.utils.ModuleData] = None,
+        module_data: core.utils.ModuleData | None = None,
         *,
         display: str = '',
         status: str = '',

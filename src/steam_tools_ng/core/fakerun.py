@@ -15,12 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import aiohttp
 import asyncio
 from subprocess import call
-from typing import AsyncGenerator, Optional, List
+from typing import AsyncGenerator, List
 
+import aiohttp
 from stlib import webapi, client, universe, community, login
+
 from . import utils
 from .. import i18n, config
 
@@ -98,7 +99,7 @@ async def cake(
 async def main(
         steamid: universe.SteamId,
         game_id: int,
-        extra_game_id: Optional[int] = None,
+        extra_game_id: int | None = None,
 ) -> AsyncGenerator[utils.ModuleData, None]:
     webapi_session = webapi.SteamWebAPI.get_session(0)
     login_session = login.Login.get_session(0)

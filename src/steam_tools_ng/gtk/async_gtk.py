@@ -20,14 +20,13 @@ import asyncio
 import contextlib
 import logging
 import sys
-from typing import Optional
 
 from gi.repository import Gtk, GLib, Gio
 
 from .. import core
 
 
-async def main_loop(application: Optional[Gtk.Application] = None) -> None:
+async def main_loop(application: Gtk.Application | None = None) -> None:
     main_context = GLib.MainContext.default()
 
     await core.fix_ssl()
@@ -43,7 +42,7 @@ async def main_loop(application: Optional[Gtk.Application] = None) -> None:
         await asyncio.sleep(0.01)
 
 
-def run(application: Optional[Gtk.Application] = None) -> None:
+def run(application: Gtk.Application | None = None) -> None:
     with contextlib.suppress(asyncio.CancelledError, KeyboardInterrupt):
         asyncio.run(main_loop(application))
 

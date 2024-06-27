@@ -17,12 +17,11 @@
 #
 import asyncio
 import logging
-from typing import Optional
 
 import aiohttp
 from gi.repository import Gtk, Gdk
-
 from stlib import universe, webapi
+
 from . import utils
 from .. import i18n, config
 
@@ -34,7 +33,7 @@ _ = i18n.get_translation
 class AuthenticatorWindow(utils.PopupWindowBase):
     def __init__(self, parent_window: Gtk.Window, application: Gtk.Application) -> None:
         super().__init__(parent_window, application)
-        self.authenticator_data: Optional[webapi.AuthenticatorData] = None
+        self.authenticator_data: webapi.AuthenticatorData | None = None
         self.webapi_session = webapi.SteamWebAPI.get_session(0)
         self.set_title(_('Manage Steam Authenticator'))
 
@@ -77,7 +76,7 @@ class AuthenticatorWindow(utils.PopupWindowBase):
         return config.parser.get("login", "access_token")
 
     @property
-    def steamid(self) -> Optional[universe.SteamId]:
+    def steamid(self) -> universe.SteamId | None:
         if steamid := config.parser.getint("login", "steamid"):
             try:
                 return universe.generate_steamid(steamid)

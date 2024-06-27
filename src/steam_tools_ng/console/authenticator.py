@@ -18,7 +18,7 @@
 import asyncio
 import logging
 import sys
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import aiohttp
 from stlib import universe, webapi
@@ -38,7 +38,7 @@ class ManageAuthenticator:
     def __init__(self, cli_: 'cli.SteamToolsNG') -> None:
         self.cli = cli_
         self.webapi_session = webapi.SteamWebAPI.get_session(0)
-        self.authenticator_data: Optional[webapi.AuthenticatorData] = None
+        self.authenticator_data: webapi.AuthenticatorData | None = None
         self._sms_code = ''
 
     @property
@@ -50,7 +50,7 @@ class ManageAuthenticator:
         return config.parser.get("login", "access_token")
 
     @property
-    def steamid(self) -> Optional[universe.SteamId]:
+    def steamid(self) -> universe.SteamId | None:
         if steamid := config.parser.getint("login", "steamid"):
             try:
                 return universe.generate_steamid(steamid)

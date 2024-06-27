@@ -20,7 +20,7 @@ import contextlib
 import functools
 import logging
 import sys
-from typing import Optional, Any, Callable
+from typing import Any, Callable
 
 import aiohttp
 import stlib
@@ -104,7 +104,7 @@ class SteamToolsNG:
         self.api_url = config.parser.get("steam", "api_url")
 
     @property
-    def steamid(self) -> Optional[universe.SteamId]:
+    def steamid(self) -> universe.SteamId | None:
         if steamid := config.parser.getint("login", "steamid"):
             try:
                 return universe.generate_steamid(steamid)

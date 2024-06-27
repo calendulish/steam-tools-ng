@@ -21,12 +21,12 @@ import contextlib
 import logging
 from pathlib import Path
 from subprocess import call
-from typing import Optional, Tuple, Any
-
-from gi.repository import Gio, Gtk, Gdk
+from typing import Tuple, Any
 
 import stlib
+from gi.repository import Gio, Gtk, Gdk
 from stlib import login, plugins
+
 from . import confirmation, utils, coupon, authenticator
 from .login import LoginWindow
 from .. import config, i18n, core
@@ -810,7 +810,7 @@ class Main(Gtk.ApplicationWindow):
     def set_status(
             self,
             module: str,
-            module_data: Optional[core.utils.ModuleData] = None,
+            module_data: core.utils.ModuleData | None = None,
             *,
             display: str = '',
             status: str = '',

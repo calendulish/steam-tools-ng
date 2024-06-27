@@ -25,7 +25,7 @@ import traceback
 from collections import OrderedDict
 from traceback import StackSummary
 from types import FrameType
-from typing import Any, Callable, List, Optional, Union, Type, Tuple
+from typing import Any, Callable, List, Type, Tuple
 from xml.etree import ElementTree
 
 from gi.repository import Gtk, Gdk, Gio, GObject
@@ -61,7 +61,7 @@ class VariableButton(Gtk.Button):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         super().connect('clicked', self.__callback)
-        self._user_callback: Optional[Callable[..., Any]] = None
+        self._user_callback: Callable[..., Any] | None = None
         self._user_args: Any = None
         self._user_kwargs: Any = None
 
@@ -84,7 +84,7 @@ class AsyncButton(Gtk.Button):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         super().connect('clicked', self.__callback)
-        self._user_callback: Optional[Callable[..., Any]] = None
+        self._user_callback: Callable[..., Any] | None = None
         self._user_args: Any = None
         self._user_kwargs: Any = None
 
@@ -272,7 +272,7 @@ class SimpleTextTree(Gtk.Grid):
         item.set_child(expander)
 
     @staticmethod
-    def bind(view: Gtk.ListView, item: Gtk.ListItem, element: Optional[str] = None) -> None:
+    def bind(view: Gtk.ListView, item: Gtk.ListItem, element: str | None = None) -> None:
         expander = item.get_child()
         assert isinstance(expander, Gtk.TreeExpander)
 
@@ -291,7 +291,7 @@ class SimpleTextTree(Gtk.Grid):
             label.set_markup(column_text)
             label.set_hexpand(True)
 
-    def item_factory(self, item: Gtk.ListItem) -> Optional[Gtk.TreeListModel]:
+    def item_factory(self, item: Gtk.ListItem) -> Gtk.TreeListModel | None:
         store = Gio.ListStore.new(SimpleTextTreeItem)
 
         if isinstance(item, Gtk.TreeListRow):
@@ -570,9 +570,9 @@ class _SectionItem(Gtk.Grid):
     def __init__(self,
                  section: 'Section',
                  name: str,
-                 label: Optional[str],
+                 label: str | None,
                  widget: Type[Gtk.Widget],
-                 items: Optional[OrderedDict[str, str]] = None,
+                 items: OrderedDict[str, str] | None = None,
                  ) -> None:
         super().__init__()
         self.set_column_homogeneous(True)
@@ -674,10 +674,10 @@ class Section(Gtk.Grid):
     def new_item(
             self,
             name: str,
-            label: Optional[str],
+            label: str | None,
             widget: Type[Gtk.Widget],
             *grid_position: int,
-            items: Optional[OrderedDict[str, str]] = None,
+            items: OrderedDict[str, str] | None = None,
     ) -> Gtk.Widget:
         item = _SectionItem(self, name, label, widget, items=items)
         self.attach(item, *grid_position, 1, 1)
@@ -756,7 +756,7 @@ def unmarkup(text: str) -> str:
     return tree.text
 
 
-def sanitize_confirmation(value: Optional[List[str]]) -> str:
+def sanitize_confirmation(value: List[str] | None) -> str:
     if not value:
         return _("Nothing")
     elif len(value) == 1:
@@ -766,7 +766,7 @@ def sanitize_confirmation(value: Optional[List[str]]) -> str:
 
 
 def sanitize_package_details(package_details: List[internals.Package]) -> List[internals.Package]:
-    previous: Optional[Tuple[internals.Package, int, int]] = None
+    previous: Tuple[internals.Package, int, int] | None = None
 
     for package in package_details:
         for index, app in enumerate(package.apps):
@@ -788,8 +788,8 @@ def remove_letters(text: str) -> str:
 
 def fatal_error_dialog(
         exception: BaseException,
-        stack: Optional[Union[StackSummary, List[FrameType]]] = None,
-        parent: Optional[Gtk.Window] = None,
+        stack: StackSummary | List[FrameType] | None = None,
+        parent: Gtk.Window | None = None,
 ) -> None:
     log.critical("%s: %s", type(exception).__name__, str(exception))
 

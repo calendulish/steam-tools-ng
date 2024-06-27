@@ -18,7 +18,7 @@
 import asyncio
 import binascii
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import aiohttp
 from gi.repository import Gtk, Gdk
@@ -110,7 +110,7 @@ class LoginWindow(utils.PopupWindowBase):
 
         self.check_login_availability()
         self.login_session = login.Login.get_session(0)
-        self.poll_task: Optional[asyncio.Task[Any]] = None
+        self.poll_task: asyncio.Task[Any] | None = None
         self.poll_cancelled = False
 
     async def poll_login(self, steamid: int, client_id: str, request_id: str) -> None:
@@ -209,7 +209,7 @@ class LoginWindow(utils.PopupWindowBase):
             self,
             auto: bool,
             auth_code: str = '',
-            auth_code_type: Optional[AuthCodeType] = AuthCodeType.device,
+            auth_code_type: AuthCodeType | None = AuthCodeType.device,
     ) -> None:
         self.status.info(_("Retrieving user data"))
         self.application.main_window.statusbar.set_warning("steamguard", _("Not logged in"))
