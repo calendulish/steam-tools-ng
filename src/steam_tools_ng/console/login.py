@@ -138,7 +138,7 @@ class Login:
                 await self.do_login(True, user_input, AuthCodeType.machine)
                 return None
             except login.TwoFactorCodeError as exception:
-                user_input = await utils.async_input(
+                async_user_input = await utils.async_input(
                     _("Confirm the login on your mobile device or write the steam Code"),
                 )
 
@@ -150,14 +150,16 @@ class Login:
                     )
 
                     if not login_data:
-                        if user_input.done():
-                            await self.do_login(True, user_input.result())
+                        if async_user_input.done():
+                            result = async_user_input.result()
+                            assert isinstance(result, str), "user input returning bool"
+                            await self.do_login(True, result)
                             return None
 
                         await asyncio.sleep(2)
                         continue
 
-                    user_input.cancel()
+                    async_user_input.cancel()
                     break
             except binascii.Error:
                 log.error(_("shared secret is invalid!"))
