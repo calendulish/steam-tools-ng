@@ -18,6 +18,7 @@
 import asyncio
 import inspect
 import logging
+import multiprocessing
 import os
 import sys
 from concurrent.futures import ProcessPoolExecutor
@@ -85,8 +86,10 @@ def safe_input(
 
 async def async_input(*args) -> asyncio.Future[bool | str]:
     loop = asyncio.get_running_loop()
-    process_pool = ProcessPoolExecutor(max_workers=2)
+    process_context = multiprocessing.get_context("spawn")
+    process_pool = ProcessPoolExecutor(max_workers=2, mp_context=process_context)
     input_future = loop.run_in_executor(process_pool, safe_input, *args)
+    input_future.add_done_callback(input_future.cancel)
 
     return input_future
 
