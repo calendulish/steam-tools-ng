@@ -34,7 +34,8 @@ def get_translation(text: str) -> str:
         # assume that config is not fully loaded yet
         return text
 
-    locale_path = Path(__file__).resolve().parent / 'locale'
+    with resources.as_file(resources.files('steam_tools_ng')) as path:
+        locale_path = path / 'locale'
 
     if os.name == 'posix':
         xdg_data_home = Path(os.getenv("XDG_DATA_HOME", Path.home() / ".local" / "share"))

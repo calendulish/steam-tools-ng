@@ -154,10 +154,10 @@ def freeze_options() -> Mapping[str, Any]:
         if file != 'settings.ini'
     )
     for language in ['fr', 'pt_BR']:
-        language_directory = Path('lib', 'steam_tools_ng', 'locale', language, 'LC_MESSAGES')
+        language_directory = Path('locale', language, 'LC_MESSAGES')
         includes.append((
-            Path('build', language_directory, 'steam-tools-ng.mo'),
-            language_directory / 'steam-tools-ng.mo',
+            Path(language_directory, 'steam-tools-ng.mo'),
+            Path('lib', 'steam_tools_ng', language_directory, 'steam-tools-ng.mo'),
         ))
 
     build_exe_options = {
