@@ -52,7 +52,6 @@ zip-safe = false
 where = ["src"]
 
 [tool.setuptools-gettext]
-source_dir = "i18n"
 build_dir = "locale"
 
 [tool.distutils.build_exe]

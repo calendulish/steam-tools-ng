@@ -34,7 +34,7 @@ Lara Maia <dev@lara.monster> (C) 2015 ~ 2024
 '''
 
 if __name__ == "__main__":
-    output_file = Path('i18n', 'steam-tools-ng.pot')
+    output_file = Path('po', 'steam-tools-ng.pot')
     output_file.write_text("")
     translatable_files = list(Path('src').glob('**/*.py'))
     for file in translatable_files:
