@@ -15,31 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import os
-import sys
-
-# FIXME: Temporary workaround for cx_freeze
-#  not running from Win32GUI correctly
-if os.name == 'nt' and hasattr(sys, 'frozen'):
-    import ctypes
-
-    console = ctypes.windll.kernel32.GetConsoleWindow()
-    ctypes.windll.user32.ShowWindow(console, 0)
-    ctypes.windll.kernel32.CloseHandle(console)
-
-from multiprocessing import freeze_support
-
 import argparse
 import configparser
 import logging
+import os
+import sys
+from gi.repository import Gtk
+from multiprocessing import freeze_support
 from pathlib import Path
+from steam_tools_ng import config, i18n
+from steam_tools_ng.gtk import application, about, async_gtk, utils
 from subprocess import call
 from typing import Any
-
-from steam_tools_ng import config, i18n
-from steam_tools_ng.gtk import application, about
-from steam_tools_ng.gtk import async_gtk, utils
-from gi.repository import Gtk
 
 _ = i18n.get_translation
 log = logging.getLogger(__name__)
