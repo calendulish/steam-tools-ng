@@ -146,9 +146,7 @@ class SettingsWindow(utils.PopupWindowBase):
         if theme == 'default':
             self.gtk_settings_class.reset_property("gtk-application-prefer-dark-theme")
             prefer_dark_theme = self.gtk_settings_class.get_property("gtk-application-prefer-dark-theme")
-            config.new('general', 'theme', 'dark' if prefer_dark_theme else 'light')
-
-            return
+            theme = 'dark' if prefer_dark_theme else 'light'
 
         self.gtk_settings_class.props.gtk_application_prefer_dark_theme = (
             theme == 'dark'

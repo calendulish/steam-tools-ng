@@ -86,16 +86,13 @@ class SteamToolsNG(Gtk.Application):
         exit_action.connect("activate", self.on_exit_activate)
         self.add_action(exit_action)
 
-        theme = config.parser.get("general", "theme")
-
-        self.gtk_settings.props.gtk_application_prefer_dark_theme = theme == 'dark'
-
     def do_activate(self) -> None:
         if self._main_window_id != 0:
             self.main_window.present()
             return
 
         current_window = window.Main(application=self, title="Steam Tools NG")
+        self.gtk_settings.props.gtk_application_prefer_dark_theme = current_window.theme == 'dark'
         self._main_window_id = current_window.get_id()
         current_window.present()
 
