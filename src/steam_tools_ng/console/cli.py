@@ -132,6 +132,13 @@ class SteamToolsNG:
         try_count = 3
 
         for login_count in range(try_count):
+            if await login_session.is_logged_in():
+                utils.set_console(info=_("Steam login Successful"))
+                _store_cookies = login_session.http_session.cookie_jar.filter_cookies('https://store.steampowered.com')
+                _steamid = _store_cookies['steamLoginSecure'].value.split('%7')[0]
+                config.new("login", "steamid", _steamid)
+                break
+
             try:
                 if login_count == 0:
                     await self.do_login(auto=True)
@@ -145,10 +152,6 @@ class SteamToolsNG:
                     return
                 log.error(_("Waiting 10 seconds to try again"))
                 await asyncio.sleep(10)
-
-            if await login_session.is_logged_in():
-                utils.set_console(info=_("Steam login Successful"))
-                break
 
         try:
             release_data = await login_session.request_json(
