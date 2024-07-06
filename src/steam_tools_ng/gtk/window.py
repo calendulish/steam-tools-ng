@@ -651,7 +651,11 @@ class Main(Gtk.ApplicationWindow):
             with contextlib.suppress(IndexError):
                 login_session = login.Login.get_session(0)
 
-            if not login_session or not await login_session.is_logged_in():
+            if (
+                    not login_session
+                    or not await login_session.is_logged_in()
+                    or not self.application.steamid
+            ):
                 self.application.main_window.user_info_label.set_markup(
                     utils.markup(
                         _('Not logged in'),
