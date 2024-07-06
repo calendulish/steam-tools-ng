@@ -161,12 +161,12 @@ default_config: Dict[str, Dict[str, Any]] = {
         'enable_confirmations': True,
     },
     'steamtrades': {
-        'enable': True,
+        'enable': False,
         'wait_for_bump': 3700,
         'trade_ids': '',
     },
     'steamgifts': {
-        'enable': True,
+        'enable': False,
         'developer_giveaways': 'True',
         'mode': 'run_all_and_restart',
         'wait_after_each_strategy': 10,
@@ -174,7 +174,7 @@ default_config: Dict[str, Dict[str, Any]] = {
         'minimum_points': 0,
     },
     'cardfarming': {
-        'enable': True,
+        'enable': False,
         'reverse_sorting': False,
         'mandatory_waiting': 7200,
         'wait_while_running': 300,
