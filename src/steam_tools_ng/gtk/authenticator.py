@@ -96,7 +96,7 @@ class AuthenticatorWindow(utils.PopupWindowBase):
         super().on_key_released_event(controller, keyval, keycode, state)
 
         if keyval == Gdk.KEY_Return:
-            self.add_authenticator_button.emit('clicked')
+            self.action_button.emit('clicked')
 
     async def on_add_authenticator(self) -> None:
         self.status.info(_("Retrieving user data"))
@@ -190,7 +190,7 @@ class AuthenticatorWindow(utils.PopupWindowBase):
                 "YOU WILL NOT ABLE TO VIEW IT AGAIN!\n"
             ))
 
-            self.add_authenticator_button.set_visible(False)
+            self.action_button.set_visible(False)
             self.revocation_status.set_display(self.authenticator_data.revocation_code)
             self.revocation_status.set_status('')
             self.revocation_status.set_visible(True)
@@ -203,6 +203,7 @@ class AuthenticatorWindow(utils.PopupWindowBase):
                 await asyncio.sleep(0.3)
 
             self.set_deletable(True)
+            return
         finally:
             self.action_button.set_label(_("Add Authenticator"))
             self.action_button.connect("clicked", lambda button: self.on_add_authenticator())
