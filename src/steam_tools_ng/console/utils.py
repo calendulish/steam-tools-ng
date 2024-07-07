@@ -20,6 +20,7 @@ import inspect
 import logging
 import multiprocessing
 import os
+import signal
 import sys
 from concurrent.futures import ProcessPoolExecutor
 from typing import List, Tuple, Any
@@ -84,14 +85,23 @@ def safe_input(
             log.error(_('Please, try again.'))
 
 
-async def async_input(*args: Any) -> asyncio.Future[bool | str]:
-    loop = asyncio.get_running_loop()
-    process_context = multiprocessing.get_context("spawn")
-    process_pool = ProcessPoolExecutor(max_workers=2, mp_context=process_context)
-    input_future = loop.run_in_executor(process_pool, safe_input, *args)
-    input_future.add_done_callback(input_future.cancel)
+class AsyncInput(ProcessPoolExecutor):
+    def __init__(self, *args: Any, max_workers: int = 2) -> None:
+        self.process_context = multiprocessing.get_context("spawn")
+        super().__init__(max_workers=max_workers, mp_context=self.process_context)
 
-    return input_future
+        self._pid = self.submit(os.getpid).result()
+        self._input = self.submit(safe_input, *args)
+
+    def done(self) -> bool:
+        return self._input.done()
+
+    def result(self) -> bool | str:
+        return self._input.result()
+
+    def cancel(self, *args: Any, **kwargs: Any) -> None:
+        self.submit(os.kill, self._pid, signal.SIGABRT)
+        super().shutdown(*args, **kwargs)
 
 
 def set_console(

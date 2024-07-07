@@ -138,7 +138,7 @@ class Login:
                 await self.do_login(True, user_input, AuthCodeType.machine)
                 return None
             except login.TwoFactorCodeError as exception:
-                async_user_input = await utils.async_input(
+                async_user_input = utils.AsyncInput(
                     _("Confirm the login on your mobile device or write the steam Code"),
                 )
 
