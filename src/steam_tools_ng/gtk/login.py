@@ -246,7 +246,7 @@ class LoginWindow(utils.PopupWindowBase):
             try:
                 login_data = await self.login_session.do_login(
                     self.shared_secret,
-                    self.auth_code if self.auth_code else auth_code,
+                    self.auth_code or auth_code,
                     auth_code_type,
                     self.mobile_login,
                 )

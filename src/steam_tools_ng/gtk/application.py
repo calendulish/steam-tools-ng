@@ -111,10 +111,7 @@ class SteamToolsNG(Gtk.Application):
             login_window.login_button.emit('clicked')
 
         if block:
-            while self.main_window.get_realized():
-                if login_window.has_user_data:
-                    break
-
+            while self.main_window.get_realized() and not login_window.has_user_data:
                 await asyncio.sleep(1)
 
     async def async_activate(self) -> None:
@@ -201,7 +198,7 @@ class SteamToolsNG(Gtk.Application):
 
         while self.main_window.get_realized():
             for module_name in config.plugins.keys():
-                task = modules.get(module_name, None)
+                task = modules.get(module_name)
 
                 if module_name == "confirmations":
                     enabled = config.parser.getboolean("steamguard", "enable_confirmations")
@@ -323,9 +320,9 @@ class SteamToolsNG(Gtk.Application):
 
                     for give, receive in itertools.zip_longest(confirmation_.give, confirmation_.receive):
                         child = self.main_window.confirmations_tree.new_item(
-                            give=give if give else _("Nothing"),
+                            give=give or _("Nothing"),
                             to='-->',
-                            receive=receive if receive else _("Nothing"),
+                            receive=receive or _("Nothing"),
                         )
 
                         item.children.append(child)

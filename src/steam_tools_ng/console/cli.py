@@ -66,14 +66,13 @@ class SteamToolsNG:
             ).format(module_name))
             sys.exit(1)
 
-        if module_name in {'steamtrades', 'steamgifts'}:
-            if not plugins.has_plugin(module_name):
-                log.critical(_(
-                    "{0} module has been disabled because you don't "
-                    "have {0} plugin installed. To enable it again, "
-                    "install the {0} plugin."
-                ).format(module_name))
-                sys.exit(1)
+        if module_name in {'steamtrades', 'steamgifts'} and not plugins.has_plugin(module_name):
+            log.critical(_(
+                "{0} module has been disabled because you don't "
+                "have {0} plugin installed. To enable it again, "
+                "install the {0} plugin."
+            ).format(module_name))
+            sys.exit(1)
 
         try:
             if module_name == 'fakerun':
