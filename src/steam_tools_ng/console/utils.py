@@ -140,7 +140,7 @@ def set_console(
 
         print(module_data.display, end=' ')
 
-    if module_data.level:
+    if module_data.level[1] > 0:
         progress = module_data.level[0] + 1
         total = module_data.level[1]
         bar_size = 20
