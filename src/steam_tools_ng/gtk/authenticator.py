@@ -73,7 +73,8 @@ class AuthenticatorWindow(utils.PopupWindowBase):
 
     @property
     def access_token(self) -> str:
-        return config.parser.get("login", "access_token")
+        _store_cookies = self.webapi_session.http_session.cookie_jar.filter_cookies("https://store.steampowered.com")
+        return _store_cookies['steamLoginSecure'].value.split('%7C%7C')[1]
 
     @property
     def steamid(self) -> universe.SteamId | None:

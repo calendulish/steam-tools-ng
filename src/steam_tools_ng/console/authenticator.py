@@ -21,7 +21,7 @@ import sys
 from typing import TYPE_CHECKING
 
 import aiohttp
-from stlib import universe, webapi
+from stlib import universe, webapi, login
 
 from . import utils
 from .. import i18n, config
@@ -47,7 +47,8 @@ class ManageAuthenticator:
 
     @property
     def access_token(self) -> str:
-        return config.parser.get("login", "access_token")
+        _store_cookies = self.webapi_session.http_session.cookie_jar.filter_cookies("https://store.steampowered.com")
+        return _store_cookies['steamLoginSecure'].value.split('%7C%7C')[1]
 
     @property
     def steamid(self) -> universe.SteamId | None:
