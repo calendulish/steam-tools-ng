@@ -132,10 +132,11 @@ class ManageAuthenticator:
             "if you lose access to STNG Authenticator. So, write"
             "down this recovery code.\n\n"
             "YOU WILL NOT ABLE TO VIEW IT AGAIN!\n"
-        ))
+        ), suppress_logging=True)
 
-        utils.set_console(info=self.authenticator_data.revocation_code)
-        await asyncio.sleep(30)
+        for progress in range(30):
+            utils.set_console(info=self.authenticator_data.revocation_code, level=(progress, 30), suppress_logging=True)
+            await asyncio.sleep(1)
 
     async def remove_authenticator(self) -> None:
         task = asyncio.current_task()
