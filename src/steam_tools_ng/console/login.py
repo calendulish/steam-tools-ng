@@ -138,6 +138,11 @@ class Login:
                 await self.do_login(True, user_input, AuthCodeType.machine)
                 return None
             except login.TwoFactorCodeError as exception:
+                log.warning(_(
+                    "If your previous authenticator has been removed,"
+                    "\nopen your config file and remove the old secrets."
+                ))
+
                 async_user_input = utils.AsyncInput(
                     _("Confirm the login on your mobile device or write the steam Code"),
                 )
@@ -172,11 +177,6 @@ class Login:
                     continue
 
                 log.error(str(exception))
-
-                log.warning(_(
-                    "If your previous authenticator has been removed,"
-                    "\nopen your config file and remove the old secrets."
-                ))
 
                 await core.safe_cancel(task)
             except (aiohttp.ClientError, ValueError):

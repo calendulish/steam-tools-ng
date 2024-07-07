@@ -26,6 +26,7 @@ from collections import OrderedDict
 from pathlib import Path
 from typing import Any, Dict
 
+from stlib import login
 from stlib import plugins as stlib_plugins
 
 from . import i18n, logger_handlers
@@ -356,3 +357,10 @@ def remove(section: str, option: str) -> None:
 
     # with open(config_file, 'w', encoding="utf8") as config_file_object:
     #    parser.write(config_file_object)
+
+
+def update_steamid_from_cookies(session_id: int = 0) -> None:
+    login_session = login.Login.get_session(session_id)
+    store_cookies = login_session.http_session.cookie_jar.filter_cookies('https://store.steampowered.com')
+    steamid = store_cookies['steamLoginSecure'].value.split('%7')[0]
+    new("login", "steamid", steamid)

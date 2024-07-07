@@ -77,36 +77,18 @@ class LoginWindow(utils.PopupWindowBase):
         )
         self.save_password_item.set_active(True)
 
-        self.advanced_login = utils.ClickableLabel()
-        self.advanced_login.set_markup(utils.markup(_("Advanced Login"), font_size='x-small', color='blue'))
-        self.advanced_login.set_halign(Gtk.Align.END)
-        self.advanced_login.set_margin_end(10)
-        self.advanced_login.set_margin_bottom(10)
-        self.advanced_login.connect("clicked", self.on_advanced_login_clicked)
-        self.content_grid.attach(self.advanced_login, 0, 3, 1, 1)
-
-        self.advanced_login_section = utils.Section("login")
-        self.content_grid.attach(self.advanced_login_section, 0, 4, 1, 1)
-
-        self.identity_secret_item = self.advanced_login_section.new_item(
-            'identity_secret',
-            _("Identity Secret:"),
-            Gtk.Entry,
-            0, 0,
-        )
-
-        self.shared_secret_item = self.advanced_login_section.new_item(
-            'shared_secret',
-            _("Shared Secret:"),
-            Gtk.Entry,
-            0, 1,
-        )
+        self.no_steamguard = utils.ClickableLabel()
+        self.no_steamguard.set_markup(utils.markup(_("I Removed my authenticator"), font_size='small', color='blue'))
+        self.no_steamguard.set_halign(Gtk.Align.END)
+        self.no_steamguard.set_margin_end(10)
+        self.no_steamguard.set_margin_bottom(10)
+        self.no_steamguard.connect("clicked", self.on_no_steamguard_clicked)
+        self.content_grid.attach(self.no_steamguard, 0, 3, 1, 1)
 
         self.connect('destroy', self.on_quit)
         self.connect('close-request', self.on_quit)
 
         self.auth_code_item.set_visible(False)
-        self.advanced_login_section.set_visible(False)
 
         self.check_login_availability()
         self.login_session = login.Login.get_session(0)
@@ -169,11 +151,11 @@ class LoginWindow(utils.PopupWindowBase):
 
     @property
     def shared_secret(self) -> str:
-        return self.shared_secret_item.get_text()
+        return config.parser.get("login", "shared_secret")
 
     @property
     def identity_secret(self) -> str:
-        return self.identity_secret_item.get_text()
+        return config.parser.get("login", "identity_secret")
 
     def check_login_availability(self) -> None:
         if not self.username or not self.__password:
@@ -262,8 +244,7 @@ class LoginWindow(utils.PopupWindowBase):
                     "It'll take some time until unblocked. Please, try again later\n"
                 ))
                 self.user_details_section.set_visible(False)
-                self.advanced_login.set_visible(False)
-                self.advanced_login_section.set_visible(False)
+                self.no_steamguard.set_visible(False)
                 self.login_button.set_visible(False)
                 self.set_deletable(True)
             except login.CaptchaError as exception:
@@ -300,7 +281,6 @@ class LoginWindow(utils.PopupWindowBase):
                 self.status.error(_("shared secret is invalid!"))
                 self.username_item.set_sensitive(True)
                 self.__password_item.set_sensitive(True)
-                self.shared_secret_item.grab_focus()
             except AttributeError as exception:
                 log.error(str(exception))
                 self.status.error(':\n'.join(str(exception).split(': ')))
@@ -319,14 +299,7 @@ class LoginWindow(utils.PopupWindowBase):
                     continue
                 else:
                     log.error(str(exception))
-
-                    self.status.error(
-                        ':\n'.join(str(exception).split(': ')) +
-                        _(
-                            '\n\nIf your previous authenticator has been removed,'
-                            '\nopen advanced login bellow and remove the old secrets.'
-                        ),
-                    )
+                    self.status.error(':\n'.join(str(exception).split(': ')))
 
                     self.username_item.set_sensitive(True)
                     self.__password_item.set_sensitive(True)
@@ -352,9 +325,14 @@ class LoginWindow(utils.PopupWindowBase):
 
             break
 
-    def on_advanced_login_clicked(self, *args: Any) -> None:
-        if self.advanced_login_section.get_visible():
-            self.advanced_login_section.set_visible(False)
-            self.set_size_request(400, 100)
-        else:
-            self.advanced_login_section.set_visible(True)
+    def on_no_steamguard_clicked(self, *args: Any) -> None:
+        self.status.info(_("Disabling authenticator..."))
+        self.auth_code_item.set_visible(False)
+        self.login_button.set_sensitive(False)
+
+        config.remove("login", "identity_secret")
+        config.remove("login", "shared_secret")
+        self.login_session.http_session.cookie_jar.clear()
+
+        self.status.info(_("Authenticator disabled!\nTry to login again."))
+        self.login_button.set_sensitive(True)

@@ -133,9 +133,7 @@ class SteamToolsNG:
         for login_count in range(try_count):
             if await login_session.is_logged_in():
                 utils.set_console(info=_("Steam login Successful"))
-                _store_cookies = login_session.http_session.cookie_jar.filter_cookies('https://store.steampowered.com')
-                _steamid = _store_cookies['steamLoginSecure'].value.split('%7')[0]
-                config.new("login", "steamid", _steamid)
+                config.update_steamid_from_cookies()
                 break
 
             try:

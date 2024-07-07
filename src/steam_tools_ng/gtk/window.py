@@ -887,7 +887,7 @@ class Main(Gtk.ApplicationWindow):
         login_window.status.info(_("Reseting... Please wait!"))
         login_window.set_deletable(False)
         login_window.user_details_section.set_visible(False)
-        login_window.advanced_login.set_visible(False)
+        login_window.no_steamguard.set_visible(False)
         login_window.present()
 
         config.cookies_file.unlink(missing_ok=True)
