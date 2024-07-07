@@ -86,7 +86,7 @@ class AuthenticatorWindow(utils.PopupWindowBase):
 
         return None
 
-    def on_key_release_event(
+    def on_key_released_event(
             self,
             controller: Gtk.EventControllerKey,
             keyval: int,
