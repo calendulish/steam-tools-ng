@@ -43,6 +43,7 @@ class LoginWindow(utils.PopupWindowBase):
         super().__init__(parent_window, application)
         self.mobile_login = mobile_login
         self.has_user_data = False
+        self.auth_code_type = None
 
         self.login_button = utils.AsyncButton()
         self.login_button.set_label(_("Log-in"))
@@ -229,7 +230,7 @@ class LoginWindow(utils.PopupWindowBase):
                 login_data = await self.login_session.do_login(
                     self.shared_secret,
                     self.auth_code or auth_code,
-                    auth_code_type,
+                    self.auth_code_type or auth_code_type,
                     self.mobile_login,
                 )
             except login.MailCodeError:
@@ -237,7 +238,7 @@ class LoginWindow(utils.PopupWindowBase):
                 self.auth_code_item.set_text("")
                 self.auth_code_item.set_visible(True)
                 self.auth_code_item.grab_focus()
-                auth_code_type = AuthCodeType.email
+                self.auth_code_type = AuthCodeType.email
             except login.LoginBlockedError:
                 self.status.error(_(
                     "Your network is blocked!\n"
@@ -276,7 +277,7 @@ class LoginWindow(utils.PopupWindowBase):
                 self.auth_code_item.set_text("")
                 self.auth_code_item.set_visible(True)
                 self.auth_code_item.grab_focus()
-                auth_code_type = AuthCodeType.device
+                self.auth_code_type = AuthCodeType.device
             except binascii.Error:
                 self.status.error(_("shared secret is invalid!"))
                 self.username_item.set_sensitive(True)
