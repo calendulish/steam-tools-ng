@@ -83,7 +83,7 @@ class SteamToolsNG(Gtk.Application):
         self.add_action(about_action)
 
         exit_action = Gio.SimpleAction.new("exit")
-        exit_action.connect("activate", self.on_exit_activate)
+        exit_action.connect("activate", lambda *args: core.safe_exit())
         self.add_action(exit_action)
 
     def do_activate(self) -> None:
@@ -405,9 +405,3 @@ class SteamToolsNG(Gtk.Application):
     def on_about_activate(self, *args: Any) -> None:
         about_dialog = about.AboutDialog(self.main_window)
         about_dialog.present()
-
-    # noinspection PyMethodMayBeStatic
-    def on_exit_activate(self, *args: Any) -> None:
-        task = asyncio.current_task()
-        assert isinstance(task, asyncio.Task), "isn't task?"
-        task.cancel()

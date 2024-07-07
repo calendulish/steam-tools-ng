@@ -25,9 +25,12 @@ __all__ = [
     'utils',
 ]
 
+import asyncio
+import contextlib
 import ssl
 import sys
 from pathlib import Path
+from typing import Any
 
 import aiohttp
 import stlib
@@ -47,3 +50,21 @@ async def fix_ssl() -> None:
 
     tcp_connector = aiohttp.TCPConnector(ssl=ssl_context, force_close=True)
     await stlib.set_default_http_params(0, connector=tcp_connector)
+
+
+# TODO: https://github.com/python/cpython/issues/103486
+def safe_exit() -> None:
+    for task in asyncio.all_tasks():
+        task.cancel()
+
+    # safe_task_callback will handle cancelled errors
+
+
+# TODO: https://github.com/python/cpython/issues/103486
+async def safe_cancel(task: asyncio.Task[Any]) -> None:
+    task.cancel()
+    await asyncio.sleep(0)
+
+    if not task.done():
+        with contextlib.suppress(asyncio.CancelledError):
+            await task

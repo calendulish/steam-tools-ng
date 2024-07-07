@@ -32,7 +32,7 @@ from gi.repository import Gtk, Gdk, Gio, GObject
 from stlib import internals
 
 from . import async_gtk
-from .. import i18n, config
+from .. import i18n, config, core
 
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
@@ -808,8 +808,7 @@ def fatal_error_dialog(
         if application:
             application.quit()
 
-        for task in asyncio.all_tasks():
-            task.cancel()
+        core.safe_exit()
 
     error_dialog.choose(parent=parent, callback=callback)
 

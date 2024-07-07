@@ -620,8 +620,8 @@ class Main(Gtk.ApplicationWindow):
         self.statusbar = utils.StatusBar()
         main_grid.attach(self.statusbar, 1, 3, 1, 1)
 
-        self.connect("destroy", self.application.on_exit_activate)
-        self.connect("close-request", self.application.on_exit_activate)
+        self.connect("destroy", lambda *args: core.safe_exit())
+        self.connect("close-request", lambda *args: core.safe_exit())
 
         plugin_status_task = asyncio.create_task(self.plugin_status())
         plugin_status_task.add_done_callback(utils.safe_task_callback)
@@ -898,7 +898,7 @@ class Main(Gtk.ApplicationWindow):
         Path(log_directory, 'steam-tools-ng.log.1').unlink()
 
         login_window.status.info(_("Successful!\nExiting..."))
-        asyncio.get_running_loop().call_later(3, lambda: [task.cancel() for task in asyncio.all_tasks()])
+        asyncio.get_running_loop().call_later(3, lambda: core.safe_exit())
 
     def on_reset_password_clicked(self, button: Gtk.Button) -> None:
         reseting_window = utils.PopupWindowBase(self, self.application)

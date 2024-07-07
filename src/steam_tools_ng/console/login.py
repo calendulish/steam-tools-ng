@@ -126,7 +126,7 @@ class Login:
                     "Your network is blocked!\n"
                     "It'll take some time until unblocked. Please, try again later\n"
                 ))
-                task.cancel()
+                await core.safe_cancel(task)
             except login.CaptchaError as exception:
                 utils.set_console(info=_("Steam server is requesting a captcha code."))
                 # TODO: Captcha gid?? (where did you go? where did you go?)
@@ -163,7 +163,7 @@ class Login:
                     break
             except binascii.Error:
                 log.error(_("shared secret is invalid!"))
-                task.cancel()
+                await core.safe_cancel(task)
             except login.LoginError as exception:
                 if try_count > 0:
                     log.warning(_("Retrying login in 10 seconds ({} left)").format(try_count))
@@ -178,7 +178,7 @@ class Login:
                     "\nopen your config file and remove the old secrets."
                 ))
 
-                task.cancel()
+                await core.safe_cancel(task)
             except (aiohttp.ClientError, ValueError):
                 log.error(_("Check your connection. (server down?)"))
                 await asyncio.sleep(15)

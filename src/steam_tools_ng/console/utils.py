@@ -174,5 +174,4 @@ def safe_task_callback(task: asyncio.Task[Any]) -> None:
 
         log.critical("Fatal Error: %s", str(exception))
 
-        for task in asyncio.all_tasks():
-            task.cancel()
+        core.safe_exit()

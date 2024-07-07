@@ -197,9 +197,7 @@ class SteamToolsNG:
 
         log.debug(_("Initializing module %s"), self.module_name)
         module = getattr(self, f"run_{self.module_name}")
-        task = asyncio.create_task(module())
-        log.debug(_("Adding a new callback for %s"), task)
-        task.add_done_callback(utils.safe_task_callback)
+        await module()
 
     async def run_add_authenticator(self) -> None:
         authenticator_manage = authenticator.ManageAuthenticator(self)

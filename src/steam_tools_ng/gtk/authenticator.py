@@ -23,7 +23,7 @@ from gi.repository import Gtk, Gdk
 from stlib import universe, webapi
 
 from . import utils
-from .. import i18n, config
+from .. import i18n, config, core
 
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
@@ -131,7 +131,7 @@ class AuthenticatorWindow(utils.PopupWindowBase):
                 import traceback
                 traceback_info = sys.exc_info()[2]
                 utils.fatal_error_dialog(exception, traceback.extract_tb(traceback_info), self.parent_window)
-                self.application.on_exit_activate()
+                core.safe_exit()
             else:
                 self.status.info(_("Enter bellow the code received by SMS\nand click on 'Add Authenticator' button"))
                 self.user_details_section.set_visible(True)
@@ -174,7 +174,7 @@ class AuthenticatorWindow(utils.PopupWindowBase):
             import traceback
             traceback_info = sys.exc_info()[2]
             utils.fatal_error_dialog(exception, traceback.extract_tb(traceback_info), self.parent_window)
-            self.application.on_exit_activate()
+            core.safe_exit()
         else:
             self.status.info(_("Saving new secrets"))
             config.new("login", "shared_secret", self.authenticator_data.shared_secret)
