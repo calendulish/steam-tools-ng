@@ -40,7 +40,7 @@ jobs:
       - run: sudo apt-fast -y install gettext
       - run: python -m pip install -r requirements.txt
       - run: python -m build
-      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
         with:
           name: linux_${{ matrix.python-version }}
           path: |
@@ -83,7 +83,7 @@ jobs:
             pacman -S --noconfirm python python-build tar
             python -m build
             cp -rfv dist/ /artifacts/
-      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
         with:
           name: rpi_${{ matrix.arch }}
           path: |
@@ -114,7 +114,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install -r .\\..\..\requirements.txt
       - run: dist_script_native.cmd
-      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+      - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
         with:
           name: windows_${{ matrix.python-version }}
           path: |
