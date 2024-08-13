@@ -20,11 +20,11 @@ import contextlib
 import random
 import time
 from subprocess import call
-from typing import AsyncGenerator, Dict, Optional, Any
+from typing import AsyncGenerator, Dict, Any
 
 import aiohttp
-
 from stlib import webapi, client, universe, community
+
 from . import utils
 from .. import i18n, config
 
@@ -41,7 +41,7 @@ def safe_exit(*args: Any, **kwargs: Any) -> None:
 async def while_has_cards(
         steamid: universe.SteamId,
         badge: community.Badge,
-        play_event: Optional[asyncio.Event] = None,
+        play_event: asyncio.Event | None = None,
 ) -> AsyncGenerator[utils.ModuleData, None]:
     webapi_session = webapi.SteamWebAPI.get_session(0)
     community_session = community.Community.get_session(0)
@@ -137,7 +137,7 @@ async def while_has_cards(
 
 async def main(
         steamid: universe.SteamId,
-        play_event: Optional[asyncio.Event] = None,
+        play_event: asyncio.Event | None = None,
         custom_game_id: int = 0,
 ) -> AsyncGenerator[utils.ModuleData, None]:
     if play_event:
@@ -192,7 +192,7 @@ async def main(
         generators[badge.appid] = while_has_cards(steamid, badge, play_event)
         total_cards_remaining += badge.cards
 
-    tasks: Dict[int, Optional[asyncio.Task[Any]]] = {}
+    tasks: Dict[int, asyncio.Task[Any] | None] = {}
     semaphore = asyncio.Semaphore(max_concurrency)
     last_update = 0
 

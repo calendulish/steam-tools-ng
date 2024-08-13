@@ -18,13 +18,13 @@
 import asyncio
 import logging
 import sys
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import aiohttp
+from stlib import universe, webapi, login
 
-from stlib import universe, webapi
 from . import utils
-from .. import i18n, config
+from .. import i18n, config, core
 
 if TYPE_CHECKING:
     from . import cli
@@ -38,7 +38,7 @@ class ManageAuthenticator:
     def __init__(self, cli_: 'cli.SteamToolsNG') -> None:
         self.cli = cli_
         self.webapi_session = webapi.SteamWebAPI.get_session(0)
-        self.authenticator_data: Optional[webapi.AuthenticatorData] = None
+        self.authenticator_data: webapi.AuthenticatorData | None = None
         self._sms_code = ''
 
     @property
@@ -47,10 +47,11 @@ class ManageAuthenticator:
 
     @property
     def access_token(self) -> str:
-        return config.parser.get("login", "access_token")
+        _store_cookies = self.webapi_session.http_session.cookie_jar.filter_cookies("https://store.steampowered.com")
+        return _store_cookies['steamLoginSecure'].value.split('%7C%7C')[1]
 
     @property
-    def steamid(self) -> Optional[universe.SteamId]:
+    def steamid(self) -> universe.SteamId | None:
         if steamid := config.parser.getint("login", "steamid"):
             try:
                 return universe.generate_steamid(steamid)
@@ -60,6 +61,8 @@ class ManageAuthenticator:
         return None
 
     async def add_authenticator(self) -> None:
+        task = asyncio.current_task()
+        assert isinstance(task, asyncio.Task), "no task?"
         utils.set_console(info=_("Retrieving user data"))
 
         if not self.access_token or not self.steamid:
@@ -68,7 +71,7 @@ class ManageAuthenticator:
                 "{} --reset"
             ).format(sys.argv[0]))
 
-            self.cli.on_quit(1)
+            await core.safe_cancel(task)
 
         assert isinstance(self.steamid, universe.SteamId)
 
@@ -77,22 +80,22 @@ class ManageAuthenticator:
                 self.authenticator_data = await self.webapi_session.new_authenticator(self.steamid, self.access_token)
             except aiohttp.ClientError:
                 log.error(_("Check your connection. (server down?)"))
-                self.cli.on_quit(1)
+                await core.safe_cancel(task)
             except webapi.AuthenticatorExists:
                 log.error(_(
                     "There's already an authenticator active for that account.\n"
                     "Remove your current steam authenticator and try again."
                 ))
-                self.cli.on_quit()
+                await core.safe_cancel(task)
             except webapi.PhoneNotRegistered:
                 log.error(_(
                     "You must have a phone registered on your steam account to proceed.\n"
                     "Go to your Steam Account Settings, add a Phone Number, and try again."
                 ))
-                self.cli.on_quit(1)
+                await core.safe_cancel(task)
             except NotImplementedError as exception:
                 log.critical("%s: %s", type(exception).__name__, str(exception))
-                self.cli.on_quit(1)
+                await core.safe_cancel(task)
             else:
                 user_input = utils.safe_input(_("Enter the code received by SMS"))
                 assert isinstance(user_input, str)
@@ -109,13 +112,13 @@ class ManageAuthenticator:
             )
         except webapi.SMSCodeError:
             log.error(_("Invalid SMS Code. Please, check the code and try again."))
-            self.cli.on_quit(1)
+            await core.safe_cancel(task)
         except aiohttp.ClientError:
             log.error(_("Check your connection. (server down?)"))
-            self.cli.on_quit(1)
+            await core.safe_cancel(task)
         except Exception as exception:
             log.critical("%s: %s", type(exception).__name__, str(exception))
-            self.cli.on_quit(1)
+            await core.safe_cancel(task)
 
         utils.set_console(info=_("Saving new secrets"))
         config.new("login", "shared_secret", self.authenticator_data.shared_secret)
@@ -129,12 +132,15 @@ class ManageAuthenticator:
             "if you lose access to STNG Authenticator. So, write"
             "down this recovery code.\n\n"
             "YOU WILL NOT ABLE TO VIEW IT AGAIN!\n"
-        ))
+        ), suppress_logging=True)
 
-        utils.set_console(info=self.authenticator_data.revocation_code)
-        await asyncio.sleep(30)
+        for progress in range(30):
+            utils.set_console(info=self.authenticator_data.revocation_code, level=(progress, 30), suppress_logging=True)
+            await asyncio.sleep(1)
 
     async def remove_authenticator(self) -> None:
+        task = asyncio.current_task()
+        assert isinstance(task, asyncio.Task), "no task?"
         utils.set_console(info=_("Retrieving user data"))
 
         if not self.access_token or not self.steamid:
@@ -143,7 +149,7 @@ class ManageAuthenticator:
                 "{} --reset"
             ).format(sys.argv[0]))
 
-            self.cli.on_quit(1)
+            await core.safe_cancel(task)
 
         user_input = utils.safe_input(_("Enter the revocation code"))
         assert isinstance(user_input, str)
@@ -158,10 +164,10 @@ class ManageAuthenticator:
             )
         except aiohttp.ClientError:
             log.error(_("Check your connection. (server down?)"))
-            self.cli.on_quit(1)
+            await core.safe_cancel(task)
         except webapi.RevocationError:
             log.error(_("Too many attempts, try again later."))
-            self.cli.on_quit(1)
+            await core.safe_cancel(task)
         else:
             if removed:
                 utils.set_console(info=_("Authenticator has been removed."))

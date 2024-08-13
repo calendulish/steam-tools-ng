@@ -16,11 +16,14 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
+import inspect
 import logging
+import multiprocessing
 import os
+import signal
 import sys
 from concurrent.futures import ProcessPoolExecutor
-from typing import Optional, Union, List, Tuple, Any
+from typing import List, Tuple, Any
 
 from .. import i18n, core
 
@@ -30,9 +33,9 @@ _ = i18n.get_translation
 
 def safe_input(
         msg: str,
-        default_response: Optional[bool] = None,
-        custom_choices: Optional[List[str]] = None,
-) -> Union[bool, str]:
+        default_response: bool | None = None,
+        custom_choices: List[str] | None = None,
+) -> bool | str:
     if default_response and custom_choices:
         raise AttributeError("You can not use both default_response and custom_choices")
 
@@ -49,7 +52,7 @@ def safe_input(
         try:
             print(f'\n{msg} {options}: ', end="", flush=True)
 
-            with os.fdopen(0) as stdin:
+            with os.fdopen(0, closefd=False) as stdin:
                 user_input = stdin.readline().strip()
 
             if custom_choices:
@@ -78,20 +81,31 @@ def safe_input(
 
             raise ValueError(_('{} is not an accepted value').format(user_input))
         except ValueError as exception:
-            log.error(exception.args[0])
+            log.error(str(exception))
             log.error(_('Please, try again.'))
 
 
-async def async_input(*args) -> asyncio.Future[bool | str]:
-    loop = asyncio.get_running_loop()
-    process_pool = ProcessPoolExecutor(max_workers=2)
-    input_future = loop.run_in_executor(process_pool, safe_input, *args)
+class AsyncInput(ProcessPoolExecutor):
+    def __init__(self, *args: Any, max_workers: int = 2) -> None:
+        self.process_context = multiprocessing.get_context("spawn")
+        super().__init__(max_workers=max_workers, mp_context=self.process_context)
 
-    return input_future
+        self._pid = self.submit(os.getpid).result()
+        self._input = self.submit(safe_input, *args)
+
+    def done(self) -> bool:
+        return self._input.done()
+
+    def result(self) -> bool | str:
+        return self._input.result()
+
+    def cancel(self, *args: Any, **kwargs: Any) -> None:
+        self.submit(os.kill, self._pid, signal.SIGABRT)
+        super().shutdown(*args, **kwargs)
 
 
 def set_console(
-        module_data: Optional[core.utils.ModuleData] = None,
+        module_data: core.utils.ModuleData | None = None,
         *,
         display: str = '',
         status: str = '',
@@ -126,7 +140,7 @@ def set_console(
 
         print(module_data.display, end=' ')
 
-    if module_data.level:
+    if module_data.level[1] > 0:
         progress = module_data.level[0] + 1
         total = module_data.level[1]
         bar_size = 20
@@ -145,18 +159,19 @@ def set_console(
 
 def safe_task_callback(task: asyncio.Task[Any]) -> None:
     if task.cancelled():
-        log.debug(_("%s has been stopped due user request"), task.get_coro())
+        coro = task.get_coro()
+        assert inspect.iscoroutine(coro), "isn't coro?"
+        log.debug(_("\n%s has been stopped due user request"), coro.__name__)
         return
 
     exception = task.exception()
 
-    if exception and not isinstance(exception, asyncio.CancelledError):
+    if exception and not isinstance(exception, KeyboardInterrupt):
         stack = task.get_stack()
 
         for frame in stack:
             log.critical("%s at %s", type(exception).__name__, frame)
 
         log.critical("Fatal Error: %s", str(exception))
-        loop = asyncio.get_running_loop()
-        loop.stop()
-        sys.exit(1)
+
+        core.safe_exit()

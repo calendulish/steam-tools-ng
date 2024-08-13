@@ -18,7 +18,7 @@
 import asyncio
 import logging
 import time
-from typing import Any
+from typing import Any, Tuple, List
 
 from gi.repository import Gtk
 
@@ -164,7 +164,7 @@ class CouponWindow(utils.PopupWindowBase):
             self.has_status = True
             return
 
-        give = []
+        give: List[Tuple[int, ...]] = []
         receive = []
 
         if self.action == 'get':

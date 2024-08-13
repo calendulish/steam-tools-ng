@@ -15,13 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-
+import inspect
 import logging
 from typing import AsyncGenerator, Callable, Awaitable
 
 import aiohttp
-
 from stlib import login, universe, community
+
 from . import utils
 from .. import i18n, config
 
@@ -56,9 +56,9 @@ async def main(
 
     try:
         confirmations = await session.get_confirmations(identity_secret, steamid, deviceid)
-    except AttributeError as exception:
-        log.error(str(exception))
-        module_data = utils.ModuleData(error=_("Error when fetch confirmations"), info=_("Waiting Changes"))
+    except AttributeError as error:
+        log.error("%s[%s]: %s", inspect.trace()[-1][3], type(error).__name__, str(error))
+        module_data = utils.ModuleData(error=_("Error when fetching confirmations"), info=_("Waiting Changes"))
     except ProcessLookupError:
         module_data = utils.ModuleData(error=_("Steam is not running"), info=_("Waiting Changes"))
     except login.LoginError:

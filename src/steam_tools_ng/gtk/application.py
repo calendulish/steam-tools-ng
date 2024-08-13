@@ -20,7 +20,7 @@ import contextlib
 import functools
 import itertools
 import logging
-from typing import Any, Optional, Dict, Callable, List
+from typing import Any, Dict, Callable, List
 
 import aiohttp
 from gi.repository import Gio, Gtk
@@ -52,17 +52,17 @@ class SteamToolsNG(Gtk.Application):
         self._main_window_id = 0
         self.gtk_settings = Gtk.Settings.get_default()
 
-        self.api_login: Optional[login.Login] = None
+        self.api_login: login.Login | None = None
         self.api_url = config.parser.get("steam", "api_url")
 
         self.old_confirmations: List[community.Confirmation] = []
 
     @property
-    def main_window(self) -> Optional[window.Main]:
+    def main_window(self) -> window.Main | None:
         return self.get_window_by_id(self._main_window_id)
 
     @property
-    def steamid(self) -> Optional[universe.SteamId]:
+    def steamid(self) -> universe.SteamId | None:
         if steamid := config.parser.getint("login", "steamid"):
             try:
                 return universe.generate_steamid(steamid)
@@ -83,12 +83,8 @@ class SteamToolsNG(Gtk.Application):
         self.add_action(about_action)
 
         exit_action = Gio.SimpleAction.new("exit")
-        exit_action.connect("activate", self.on_exit_activate)
+        exit_action.connect("activate", lambda *args: core.safe_exit())
         self.add_action(exit_action)
-
-        theme = config.parser.get("general", "theme")
-
-        self.gtk_settings.props.gtk_application_prefer_dark_theme = theme == 'dark'
 
     def do_activate(self) -> None:
         if self._main_window_id != 0:
@@ -96,6 +92,7 @@ class SteamToolsNG(Gtk.Application):
             return
 
         current_window = window.Main(application=self, title="Steam Tools NG")
+        self.gtk_settings.props.gtk_application_prefer_dark_theme = current_window.theme == 'dark'
         self._main_window_id = current_window.get_id()
         current_window.present()
 
@@ -114,16 +111,12 @@ class SteamToolsNG(Gtk.Application):
             login_window.login_button.emit('clicked')
 
         if block:
-            while self.main_window.get_realized():
-                if login_window.has_user_data:
-                    break
-
+            while self.main_window.get_realized() and not login_window.has_user_data:
                 await asyncio.sleep(1)
 
     async def async_activate(self) -> None:
         # TODO: Wait for window manager catch the main window position and size
         await asyncio.sleep(3)
-
         assert isinstance(self.main_window, window.Main)
         login_session = await login.Login.new_session(0, api_url=self.api_url)
 
@@ -138,6 +131,7 @@ class SteamToolsNG(Gtk.Application):
         for login_count in range(try_count):
             if await login_session.is_logged_in():
                 log.info("Steam login Successful")
+                config.update_steamid_from_cookies()
                 break
 
             try:
@@ -202,7 +196,7 @@ class SteamToolsNG(Gtk.Application):
 
         while self.main_window.get_realized():
             for module_name in config.plugins.keys():
-                task = modules.get(module_name, None)
+                task = modules.get(module_name)
 
                 if module_name == "confirmations":
                     enabled = config.parser.getboolean("steamguard", "enable_confirmations")
@@ -261,6 +255,7 @@ class SteamToolsNG(Gtk.Application):
 
     @while_window_realized
     async def run_cardfarming(self, play_event: asyncio.Event) -> None:
+        assert isinstance(self.steamid, universe.SteamId)
         cardfarming = core.cardfarming.main(self.steamid, play_event)
 
         async for module_data in cardfarming:
@@ -323,9 +318,9 @@ class SteamToolsNG(Gtk.Application):
 
                     for give, receive in itertools.zip_longest(confirmation_.give, confirmation_.receive):
                         child = self.main_window.confirmations_tree.new_item(
-                            give=give if give else _("Nothing"),
+                            give=give or _("Nothing"),
                             to='-->',
-                            receive=receive if receive else _("Nothing"),
+                            receive=receive or _("Nothing"),
                         )
 
                         item.children.append(child)
@@ -440,9 +435,3 @@ class SteamToolsNG(Gtk.Application):
     def on_about_activate(self, *args: Any) -> None:
         about_dialog = about.AboutDialog(self.main_window)
         about_dialog.present()
-
-    # noinspection PyMethodMayBeStatic
-    def on_exit_activate(self, *args: Any) -> None:
-        loop = asyncio.get_running_loop()
-        loop.stop()
-        # self.main_window.destroy()

@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-
 import os
 import sys
 import sysconfig
@@ -23,30 +22,12 @@ from pathlib import Path
 from typing import Any, List, Mapping, Tuple
 
 import certifi
-from pythongettext.msgfmt import Msgfmt
-from setuptools.command.build_py import build_py
 
 if os.name == 'nt' and not os.getenv('NO_FREEZE'):
     # noinspection PyPackageRequirements
     from cx_Freeze import setup, Executable
 else:
     from setuptools import setup
-
-
-class BuildTranslations(build_py):
-    def run(self) -> None:
-        super().run()
-
-        po_build_path = Path('build', 'lib', 'steam_tools_ng', 'locale')
-        po_build_path.mkdir(exist_ok=True)
-
-        for path in Path('i18n').glob('*.po'):
-            language = path.stem
-            output_directory = po_build_path / language / 'LC_MESSAGES'
-            output_directory.mkdir(exist_ok=True, parents=True)
-
-            with open(output_directory / 'steam-tools-ng.mo', 'wb') as mo:
-                mo.write(Msgfmt(str(path)).get())
 
 
 def fix_gtk() -> List[Tuple[str, str]]:
@@ -155,7 +136,7 @@ def freeze_options() -> Mapping[str, Any]:
         Executable(
             Path("src", "steam_tools_ng", "gui.py"),
             target_name='steam-tools-ng-gui',
-            base=None,
+            base='Win32GUI',
             icon=Path(icons_path, 'stng.ico'),
             shortcut_name='Steam Tools NG GUI',
             copyright=copyright_,
@@ -173,10 +154,10 @@ def freeze_options() -> Mapping[str, Any]:
         if file != 'settings.ini'
     )
     for language in ['fr', 'pt_BR']:
-        language_directory = Path('lib', 'steam_tools_ng', 'locale', language, 'LC_MESSAGES')
+        language_directory = Path('locale', language, 'LC_MESSAGES')
         includes.append((
-            Path('build', language_directory, 'steam-tools-ng.mo'),
-            language_directory / 'steam-tools-ng.mo',
+            Path(language_directory, 'steam-tools-ng.mo'),
+            Path('lib', 'steam_tools_ng', language_directory, 'steam-tools-ng.mo'),
         ))
 
     build_exe_options = {
@@ -194,4 +175,4 @@ def freeze_options() -> Mapping[str, Any]:
     }
 
 
-setup(cmdclass={'build_py': BuildTranslations}, **freeze_options())
+setup(**freeze_options())

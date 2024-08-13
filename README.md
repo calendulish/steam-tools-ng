@@ -38,17 +38,23 @@ Just run steam-tools-ng-gui and follow on-screen instructions
 Command Line Interface
 -----------------
 ```
-usage: steam-tools-ng [-h] [--reset] [--reset-password] [--add-authenticator] [-v] [<module>]
+usage: steam-tools-ng [-h] [--config-dir] [--log-dir] [--reset] [--reset-password] [--add-authenticator]
+                      [--remove-authenticator] [-v]
+                      [<module>]
 
 positional arguments:
-  <module>             Start a module
+  <module>              Start a module
 
 options:
-  -h, --help           show this help message and exit
-  --reset              Clean up settings and log files
-  --reset-password     Clean up saved password
-  --add-authenticator  Use STNG as your Steam Authenticator
-  -v, --version        Show version
+  -h, --help            show this help message and exit
+  --config-dir          Shows directory used to save config files
+  --log-dir             Shows directory used to save log files
+  --reset               Clean up settings and log files
+  --reset-password      Clean up saved password
+  --add-authenticator   Use STNG as your Steam Authenticator
+  --remove-authenticator
+                        Remove STNG Autenticator from your account
+  -v, --version         Show version
 
 Available modules | available options
  steamguard       | [oneshot]

@@ -21,12 +21,12 @@ import contextlib
 import logging
 from pathlib import Path
 from subprocess import call
-from typing import Optional, Tuple, Any
-
-from gi.repository import Gio, Gtk, Gdk
+from typing import Tuple, Any
 
 import stlib
+from gi.repository import Gio, Gtk, Gdk
 from stlib import login, plugins
+
 from . import confirmation, utils, coupon, authenticator
 from .login import LoginWindow
 from .. import config, i18n, core
@@ -665,18 +665,16 @@ class Main(Gtk.ApplicationWindow):
         self.statusbar = utils.StatusBar()
         main_grid.attach(self.statusbar, 1, 3, 1, 1)
 
-        self.connect("destroy", self.application.on_exit_activate)
-        self.connect("close-request", self.application.on_exit_activate)
+        self.connect("destroy", lambda *args: core.safe_exit())
+        self.connect("close-request", lambda *args: core.safe_exit())
 
-        self.loop = asyncio.get_event_loop()
-
-        plugin_status_task = self.loop.create_task(self.plugin_status())
+        plugin_status_task = asyncio.create_task(self.plugin_status())
         plugin_status_task.add_done_callback(utils.safe_task_callback)
 
-        user_info_task = self.loop.create_task(self.user_info())
+        user_info_task = asyncio.create_task(self.user_info())
         user_info_task.add_done_callback(utils.safe_task_callback)
 
-        coupon_indicator_task = self.loop.create_task(self.coupon_running_indicator())
+        coupon_indicator_task = asyncio.create_task(self.coupon_running_indicator())
         coupon_indicator_task.add_done_callback(utils.safe_task_callback)
 
     @property
@@ -698,7 +696,11 @@ class Main(Gtk.ApplicationWindow):
             with contextlib.suppress(IndexError):
                 login_session = login.Login.get_session(0)
 
-            if not login_session or not await login_session.is_logged_in():
+            if (
+                    not login_session
+                    or not await login_session.is_logged_in()
+                    or not self.application.steamid
+            ):
                 self.application.main_window.user_info_label.set_markup(
                     utils.markup(
                         _('Not logged in'),
@@ -776,11 +778,11 @@ class Main(Gtk.ApplicationWindow):
                 status = getattr(self, f'{plugin_name}_status')
 
                 if not enabled:
-                    def disabled_callback(status_) -> None:
+                    def disabled_callback(status_: utils.SimpleStatus) -> None:
                         status_.set_status(_("Disabled"))
                         status_.set_info("")
 
-                    self.loop.call_later(3, disabled_callback, status)
+                    asyncio.get_running_loop().call_later(3, disabled_callback, status)
 
             await asyncio.sleep(3)
 
@@ -831,13 +833,13 @@ class Main(Gtk.ApplicationWindow):
         self.market_sell_button.set_sensitive(True)
 
     @staticmethod
-    def on_tree_selection_changed(view: Gtk.SingleSelection, position, item_count: int) -> None:
+    def on_tree_selection_changed(view: Gtk.SingleSelection, position: int, item_count: int) -> None:
         item = view.get_selected_item()
         if parent := item.get_parent():
             view.set_selected(parent.get_position())
 
     @staticmethod
-    def on_stack_child_changed(tabs: Gtk.Stack, *args) -> None:
+    def on_stack_child_changed(tabs: Gtk.Stack, *args: Any) -> None:
         main_section = tabs.get_visible_child()
 
         if not (config_stack := main_section.get_child_at(1, 1)):
@@ -870,7 +872,7 @@ class Main(Gtk.ApplicationWindow):
     def set_status(
             self,
             module: str,
-            module_data: Optional[core.utils.ModuleData] = None,
+            module_data: core.utils.ModuleData | None = None,
             *,
             display: str = '',
             status: str = '',
@@ -928,20 +930,22 @@ class Main(Gtk.ApplicationWindow):
         authenticator_window = authenticator.AuthenticatorWindow(self, self.application)
         authenticator_window.present()
 
-        self.loop.create_task(authenticator_window.on_add_authenticator())
+        task = asyncio.create_task(authenticator_window.on_add_authenticator())
+        task.add_done_callback(utils.safe_task_callback)
 
     def on_remove_authenticator_clicked(self, button: Gtk.Button) -> None:
         authenticator_window = authenticator.AuthenticatorWindow(self, self.application)
         authenticator_window.present()
 
-        self.loop.create_task(authenticator_window.on_remove_authenticator())
+        task = asyncio.create_task(authenticator_window.on_remove_authenticator())
+        task.add_done_callback(utils.safe_task_callback)
 
     def on_reset_clicked(self, button: Gtk.Button) -> None:
         login_window = LoginWindow(self, self.application)
         login_window.status.info(_("Reseting... Please wait!"))
         login_window.set_deletable(False)
         login_window.user_details_section.set_visible(False)
-        login_window.advanced_login.set_visible(False)
+        login_window.no_steamguard.set_visible(False)
         login_window.present()
 
         config.cookies_file.unlink(missing_ok=True)
@@ -951,15 +955,8 @@ class Main(Gtk.ApplicationWindow):
         Path(log_directory, 'steam-tools-ng.log').unlink()
         Path(log_directory, 'steam-tools-ng.log.1').unlink()
 
-        config.parser.clear()
-        config.init()
-
-        def reset_callback() -> None:
-            login_window.destroy()
-            self.destroy()
-
         login_window.status.info(_("Successful!\nExiting..."))
-        self.loop.call_later(3, reset_callback)
+        asyncio.get_running_loop().call_later(3, lambda: core.safe_exit())
 
     def on_reset_password_clicked(self, button: Gtk.Button) -> None:
         reseting_window = utils.PopupWindowBase(self, self.application)
@@ -973,9 +970,5 @@ class Main(Gtk.ApplicationWindow):
 
         config.new("login", "password", "")
 
-        def reset_password_callback() -> None:
-            reseting_window.destroy()
-            self.destroy()
-
-        reseting_status.info(_("Successful!\nExiting..."))
-        self.loop.call_later(3, reset_password_callback)
+        reseting_status.info(_("Successful!"))
+        asyncio.get_running_loop().call_later(3, lambda: reseting_window.destroy())

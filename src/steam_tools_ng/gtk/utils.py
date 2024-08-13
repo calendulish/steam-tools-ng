@@ -18,19 +18,21 @@
 import asyncio
 import functools
 import html
+import inspect
 import logging
+import sys
 import traceback
 from collections import OrderedDict
 from traceback import StackSummary
 from types import FrameType
-from typing import Any, Callable, List, Optional, Union, Type, Tuple
+from typing import Any, Callable, List, Type, Tuple
 from xml.etree import ElementTree
 
 from gi.repository import Gtk, Gdk, Gio, GObject
-
 from stlib import internals
+
 from . import async_gtk
-from .. import i18n, config
+from .. import i18n, config, core
 
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
@@ -59,7 +61,7 @@ class VariableButton(Gtk.Button):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         super().connect('clicked', self.__callback)
-        self._user_callback: Optional[Callable[..., Any]] = None
+        self._user_callback: Callable[..., Any] | None = None
         self._user_args: Any = None
         self._user_kwargs: Any = None
 
@@ -82,7 +84,7 @@ class AsyncButton(Gtk.Button):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         super().connect('clicked', self.__callback)
-        self._user_callback: Optional[Callable[..., Any]] = None
+        self._user_callback: Callable[..., Any] | None = None
         self._user_args: Any = None
         self._user_kwargs: Any = None
 
@@ -154,7 +156,7 @@ class StatusBar(Gtk.Grid):
 
 
 class SimpleTextTreeItem(GObject.Object):
-    def __init__(self, *args: str, headers: Tuple[str], **kwargs) -> None:
+    def __init__(self, *args: str, headers: Tuple[str, ...], **kwargs: Any) -> None:
         for name, value in kwargs.items():
             setattr(self, name, value)
 
@@ -170,7 +172,7 @@ class SimpleTextTreeItem(GObject.Object):
                 log.debug(f'{name} param not set in {self}')
 
         super(GObject.Object, self).__init__()
-        self.children = []
+        self.children: List[SimpleTextTreeItem] = []
 
 
 class SimpleTextTree(Gtk.Grid):
@@ -264,14 +266,16 @@ class SimpleTextTree(Gtk.Grid):
 
         self.attach(self._disabled_label, 0, 0, 1, 1)
 
-    def setup(self, view: Gtk.ListView, item: Gtk.ListItem, hide_expander: bool = True) -> None:
+    @staticmethod
+    def setup(view: Gtk.ListView, item: Gtk.ListItem, hide_expander: bool = True) -> None:
         expander = Gtk.TreeExpander()
         expander.set_hide_expander(hide_expander)
         label = Gtk.Label()
         expander.set_child(label)
         item.set_child(expander)
 
-    def bind(self, view: Gtk.ListView, item: Gtk.ListItem, element: Optional[str] = None) -> None:
+    @staticmethod
+    def bind(view: Gtk.ListView, item: Gtk.ListItem, element: str | None = None) -> None:
         expander = item.get_child()
         assert isinstance(expander, Gtk.TreeExpander)
 
@@ -290,10 +294,10 @@ class SimpleTextTree(Gtk.Grid):
             label.set_markup(column_text)
             label.set_hexpand(True)
 
-    def item_factory(self, item: Gtk.ListItem) -> Optional[Gtk.TreeListModel]:
+    def item_factory(self, item: Gtk.ListItem) -> Gtk.TreeListModel | None:
         store = Gio.ListStore.new(SimpleTextTreeItem)
 
-        if type(item) == Gtk.TreeListRow:
+        if isinstance(item, Gtk.TreeListRow):
             item = item.get_item()
 
         if item.children:
@@ -304,7 +308,7 @@ class SimpleTextTree(Gtk.Grid):
 
         return None
 
-    def new_item(self, *data: List[str], **kwargs) -> SimpleTextTreeItem:
+    def new_item(self, *data: str, **kwargs: Any) -> SimpleTextTreeItem:
         return SimpleTextTreeItem(*data, headers=self.headers, **kwargs)
 
     def append_row(self, row: Gtk.TreeListRow) -> None:
@@ -569,9 +573,9 @@ class _SectionItem(Gtk.Grid):
     def __init__(self,
                  section: 'Section',
                  name: str,
-                 label: Optional[str],
+                 label: str | None,
                  widget: Type[Gtk.Widget],
-                 items: Optional[OrderedDict[str, str]] = None,
+                 items: OrderedDict[str, str] | None = None,
                  ) -> None:
         super().__init__()
         self.set_column_homogeneous(True)
@@ -609,13 +613,12 @@ class _SectionItem(Gtk.Grid):
         return getattr(self.widget, item)
 
     def __update_dropdown(self) -> None:
+        assert isinstance(self.items, OrderedDict), "received None from items"
         value = config.parser.get(self.section.get_name(), self.get_name())
 
         try:
             current_option = list(self.items).index(value)
         except ValueError:
-            import sys
-
             error_message = _("Please, fix your config file. Accepted values for {} are:\n{}").format(
                 self.name,
                 ', '.join(self.items.keys()),
@@ -655,14 +658,14 @@ class _SectionItem(Gtk.Grid):
         self.label.set_visible(state)
         super(self.__class__, self).set_visible(state)
 
-    def connect(self, name: str, callback: Callable[..., Any], *args, **kwargs) -> None:
+    def connect(self, name: str, callback: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
         self.widget.connect(name, lambda widget, *data: callback(self, *data, *args, **kwargs))
 
 
 class Section(Gtk.Grid):
     def __init__(self, name: str) -> None:
         super().__init__()
-        self.items = []
+        self.items: List[_SectionItem] = []
 
         self.set_name(name)
         self.set_row_spacing(10)
@@ -674,10 +677,10 @@ class Section(Gtk.Grid):
     def new_item(
             self,
             name: str,
-            label: Optional[str],
+            label: str | None,
             widget: Type[Gtk.Widget],
             *grid_position: int,
-            items: Optional[OrderedDict[str, str]] = None,
+            items: OrderedDict[str, str] | None = None,
     ) -> Gtk.Widget:
         item = _SectionItem(self, name, label, widget, items=items)
         self.attach(item, *grid_position, 1, 1)
@@ -692,10 +695,10 @@ class Section(Gtk.Grid):
         name = self.get_name()
 
         if scroll:
-            scroll = Gtk.ScrolledWindow()
-            scroll.set_overlay_scrolling(True)
-            scroll.set_child(self)
-            stack.add_titled(scroll, name, text)
+            scrolled_window = Gtk.ScrolledWindow()
+            scrolled_window.set_overlay_scrolling(True)
+            scrolled_window.set_child(self)
+            stack.add_titled(scrolled_window, name, text)
         else:
             stack.add_titled(self, name, text)
 
@@ -756,7 +759,7 @@ def unmarkup(text: str) -> str:
     return tree.text
 
 
-def sanitize_confirmation(value: Optional[List[str]]) -> str:
+def sanitize_confirmation(value: List[str] | None) -> str:
     if not value:
         return _("Nothing")
     elif len(value) == 1:
@@ -766,7 +769,7 @@ def sanitize_confirmation(value: Optional[List[str]]) -> str:
 
 
 def sanitize_package_details(package_details: List[internals.Package]) -> List[internals.Package]:
-    previous: Optional[Tuple[internals.Package, int, int]] = None
+    previous: Tuple[internals.Package, int, int] | None = None
 
     for package in package_details:
         for index, app in enumerate(package.apps):
@@ -795,8 +798,8 @@ def remove_letters(text: str) -> str:
 
 def fatal_error_dialog(
         exception: BaseException,
-        stack: Optional[Union[StackSummary, List[FrameType]]] = None,
-        parent: Optional[Gtk.Window] = None,
+        stack: StackSummary | List[FrameType] | None = None,
+        parent: Gtk.Window | None = None,
 ) -> None:
     log.critical("%s: %s", type(exception).__name__, str(exception))
 
@@ -810,13 +813,12 @@ def fatal_error_dialog(
         error_dialog.set_detail("\n".join([str(frame) for frame in stack]))
 
     def callback(*args: Any) -> None:
-        loop = asyncio.get_event_loop()
-        loop.stop()
-
         application = Gtk.Application.get_default()
 
         if application:
             application.quit()
+
+        core.safe_exit()
 
     error_dialog.choose(parent=parent, callback=callback)
 
@@ -827,12 +829,14 @@ def fatal_error_dialog(
 
 def safe_task_callback(task: asyncio.Task[Any]) -> None:
     if task.cancelled():
-        log.debug(_("%s has been stopped due user request"), task.get_coro())
+        coro = task.get_coro()
+        assert inspect.iscoroutine(coro), "isn't coro?"
+        log.debug(_("%s has been stopped due user request"), coro.__name__)
         return
 
     exception = task.exception()
 
-    if exception and not isinstance(exception, asyncio.CancelledError):
+    if exception and not isinstance(exception, KeyboardInterrupt):
         stack = task.get_stack()
         application = Gtk.Application.get_default()
 

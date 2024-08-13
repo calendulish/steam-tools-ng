@@ -1,13 +1,13 @@
 [build-system]
-requires = ["setuptools", "wheel", "certifi", "python-gettext", "cx_Freeze; sys_platform == 'win32'"]
+requires = ["setuptools", "wheel", "certifi", "setuptools-gettext", "cx_Freeze; sys_platform == 'win32'"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "steam-tools-ng"
-version = "3.1.5"
+version = "3.3.1"
 description = "Steam Tools NG"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = {text = "GPLv3"}
 keywords = ["steam", "valve"]
 authors = [{email = "dev@lara.monster"}, {name = "Lara Maia"}]
@@ -29,7 +29,7 @@ classifiers = [
 
 dependencies = [
   "pywin32; sys_platform == 'win32'",
-  "stlib~=2.0",
+  "stlib~=2.1",
   "stlib-plugins~=1.2",
   "aiohttp",
   "certifi"
@@ -50,6 +50,9 @@ zip-safe = false
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools-gettext]
+build_dir = "locale"
 
 [tool.distutils.build_exe]
 packages = ["steam_tools_ng", "stlib-plugins", "gi", "win32com.client"]

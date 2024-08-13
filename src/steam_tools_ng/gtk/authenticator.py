@@ -17,14 +17,13 @@
 #
 import asyncio
 import logging
-from typing import Optional
 
 import aiohttp
 from gi.repository import Gtk, Gdk
-
 from stlib import universe, webapi
+
 from . import utils
-from .. import i18n, config
+from .. import i18n, config, core
 
 log = logging.getLogger(__name__)
 _ = i18n.get_translation
@@ -34,7 +33,7 @@ _ = i18n.get_translation
 class AuthenticatorWindow(utils.PopupWindowBase):
     def __init__(self, parent_window: Gtk.Window, application: Gtk.Application) -> None:
         super().__init__(parent_window, application)
-        self.authenticator_data: Optional[webapi.AuthenticatorData] = None
+        self.authenticator_data: webapi.AuthenticatorData | None = None
         self.webapi_session = webapi.SteamWebAPI.get_session(0)
         self.set_title(_('Manage Steam Authenticator'))
 
@@ -74,10 +73,11 @@ class AuthenticatorWindow(utils.PopupWindowBase):
 
     @property
     def access_token(self) -> str:
-        return config.parser.get("login", "access_token")
+        _store_cookies = self.webapi_session.http_session.cookie_jar.filter_cookies("https://store.steampowered.com")
+        return _store_cookies['steamLoginSecure'].value.split('%7C%7C')[1]
 
     @property
-    def steamid(self) -> Optional[universe.SteamId]:
+    def steamid(self) -> universe.SteamId | None:
         if steamid := config.parser.getint("login", "steamid"):
             try:
                 return universe.generate_steamid(steamid)
@@ -86,7 +86,7 @@ class AuthenticatorWindow(utils.PopupWindowBase):
 
         return None
 
-    def on_key_release_event(
+    def on_key_released_event(
             self,
             controller: Gtk.EventControllerKey,
             keyval: int,
@@ -96,7 +96,7 @@ class AuthenticatorWindow(utils.PopupWindowBase):
         super().on_key_released_event(controller, keyval, keycode, state)
 
         if keyval == Gdk.KEY_Return:
-            self.add_authenticator_button.emit('clicked')
+            self.action_button.emit('clicked')
 
     async def on_add_authenticator(self) -> None:
         self.status.info(_("Retrieving user data"))
@@ -131,7 +131,7 @@ class AuthenticatorWindow(utils.PopupWindowBase):
                 import traceback
                 traceback_info = sys.exc_info()[2]
                 utils.fatal_error_dialog(exception, traceback.extract_tb(traceback_info), self.parent_window)
-                self.application.on_exit_activate()
+                core.safe_exit()
             else:
                 self.status.info(_("Enter bellow the code received by SMS\nand click on 'Add Authenticator' button"))
                 self.user_details_section.set_visible(True)
@@ -174,7 +174,7 @@ class AuthenticatorWindow(utils.PopupWindowBase):
             import traceback
             traceback_info = sys.exc_info()[2]
             utils.fatal_error_dialog(exception, traceback.extract_tb(traceback_info), self.parent_window)
-            self.application.on_exit_activate()
+            core.safe_exit()
         else:
             self.status.info(_("Saving new secrets"))
             config.new("login", "shared_secret", self.authenticator_data.shared_secret)
@@ -190,7 +190,7 @@ class AuthenticatorWindow(utils.PopupWindowBase):
                 "YOU WILL NOT ABLE TO VIEW IT AGAIN!\n"
             ))
 
-            self.add_authenticator_button.set_visible(False)
+            self.action_button.set_visible(False)
             self.revocation_status.set_display(self.authenticator_data.revocation_code)
             self.revocation_status.set_status('')
             self.revocation_status.set_visible(True)
@@ -203,6 +203,7 @@ class AuthenticatorWindow(utils.PopupWindowBase):
                 await asyncio.sleep(0.3)
 
             self.set_deletable(True)
+            return
         finally:
             self.action_button.set_label(_("Add Authenticator"))
             self.action_button.connect("clicked", lambda button: self.on_add_authenticator())

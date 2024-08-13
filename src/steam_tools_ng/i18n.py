@@ -20,7 +20,9 @@
 # [method>get_translation->vhlm->get_translation->vhlm] IT'S NOT A BUG!
 import configparser
 import gettext
+import os
 from importlib import resources
+from pathlib import Path
 
 from . import config
 
@@ -33,7 +35,23 @@ def get_translation(text: str) -> str:
         return text
 
     with resources.as_file(resources.files('steam_tools_ng')) as path:
-        translation = gettext.translation("steam-tools-ng", path / 'locale', languages=[language], fallback=True)
-        translated_text = translation.gettext(text)
+        locale_path = path / 'locale'
 
-    return translated_text
+    if os.name == 'posix':
+        xdg_data_home = Path(os.getenv("XDG_DATA_HOME", Path.home() / ".local" / "share"))
+        mo_file = Path(language) / 'LC_MESSAGES' / 'steam-tools-ng.mo'
+
+        test_paths = (
+            locale_path,
+            xdg_data_home / 'locale',
+            Path('/usr/local/share/locale'),
+            Path('/usr/share/locale'),
+        )
+
+        for path in test_paths:
+            if (path / mo_file).is_file():
+                locale_path = path
+                break
+
+    translation = gettext.translation("steam-tools-ng", locale_path, languages=[language], fallback=True)
+    return translation.gettext(text)

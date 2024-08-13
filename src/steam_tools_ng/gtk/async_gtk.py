@@ -18,52 +18,35 @@
 
 import asyncio
 import contextlib
-from gi.repository import Gtk, GLib
-from typing import Optional
+import logging
+import sys
+
+from gi.repository import Gtk, GLib, Gio
+
+from .. import core
 
 
-async def async_iterator(
-        application: Gtk.Application,
-        main_context: GLib.MainContext,
-        loop: asyncio.AbstractEventLoop,
-) -> None:
-    while main_context.pending():
-        main_context.iteration(False)
-
-    await asyncio.sleep(0.01)
-
-    if application.main_window and application.main_window.get_realized():
-        loop.create_task(async_iterator(application, main_context, loop))
-    else:
-        application.quit()
-        loop.stop()
-
-
-async def async_iterator_for_the_fifth_dimension(
-        main_context: GLib.MainContext,
-        loop: asyncio.AbstractEventLoop,
-) -> None:
-    while main_context.pending():
-        main_context.iteration(False)
-
-    await asyncio.sleep(0.01)
-    loop.create_task(async_iterator_for_the_fifth_dimension(main_context, loop))
-
-
-# FIXME: https://github.com/python/asyncio/pull/465
-def run(application: Optional[Gtk.Application] = None) -> None:
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+async def main_loop(application: Gtk.Application | None = None) -> None:
     main_context = GLib.MainContext.default()
 
-    if not application:
-        iterator = async_iterator_for_the_fifth_dimension(main_context, loop)
-    else:
-        iterator = async_iterator(application, main_context, loop)
+    await core.fix_ssl()
+
+    if application:
         application.register()
         application.activate()
 
-    loop.create_task(iterator)
+    while Gio.ListModel.get_n_items(Gtk.Window.get_toplevels()):
+        while main_context.pending():
+            main_context.iteration(False)
 
-    with contextlib.suppress(KeyboardInterrupt):
-        loop.run_forever()
+        await asyncio.sleep(0.01)
+
+
+def run(application: Gtk.Application | None = None) -> None:
+    with contextlib.suppress(asyncio.CancelledError, KeyboardInterrupt):
+        asyncio.run(main_loop(application))
+
+    # prevent tries to open log file at shutdown
+    logging.root.removeHandler(logging.root.handlers[0])
+
+    sys.exit(0)

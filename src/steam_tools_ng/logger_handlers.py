@@ -16,14 +16,13 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 
+import sys
 # noinspection PyUnresolvedReferences
 from logging import Handler, NullHandler
-
-import sys
 # noinspection PyUnresolvedReferences
 from logging.handlers import RotatingFileHandler
 from types import TracebackType
-from typing import Any, Optional, Type
+from typing import Any, Type
 
 if sys.platform == 'win32':
     from ctypes import Structure, byref, c_short, windll
@@ -66,9 +65,9 @@ if sys.platform == 'win32':
             return self
 
         def __exit__(self,
-                     exception_type: Optional[Type[BaseException]],
-                     exception_value: Optional[Exception],
-                     traceback: Optional[TracebackType]) -> None:
+                     exception_type: Type[BaseException] | None,
+                     exception_value: Exception | None,
+                     traceback: TracebackType | None) -> None:
             windll.kernel32.SetConsoleTextAttribute(self.screen_buffer, self.saved_buffer_info.attributes)
 
         def set_color(self, color_number: int) -> None:

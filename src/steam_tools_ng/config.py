@@ -21,21 +21,22 @@ import locale
 import logging
 import os
 import site
+import sys
 from collections import OrderedDict
 from pathlib import Path
-
-import sys
 from typing import Any, Dict
 
+from stlib import login
 from stlib import plugins as stlib_plugins
+
 from . import i18n, logger_handlers
 
 parser = configparser.RawConfigParser()
 log = logging.getLogger(__name__)
+script_dir = Path(__file__).resolve().parent
 
-if Path('src').is_dir():
-    # development mode
-    data_dir = Path('config')
+if (script_dir / 'src').is_dir() or (script_dir / 'portable_mode.txt').is_file():
+    data_dir = script_dir / 'config'
 elif hasattr(sys, 'frozen') or sys.platform == 'win32':
     data_dir = Path(os.environ['LOCALAPPDATA'])
 else:
@@ -54,7 +55,8 @@ except ImportError as exception:
     client = None
 
 
-def _(message):
+# translation module isn't initialized yet
+def _(message: str) -> str:
     return message
 
 
@@ -164,12 +166,12 @@ default_config: Dict[str, Dict[str, Any]] = {
         'enable_confirmations': True,
     },
     'steamtrades': {
-        'enable': True,
+        'enable': False,
         'wait_for_bump': 3700,
         'trade_ids': '',
     },
     'steamgifts': {
-        'enable': True,
+        'enable': False,
         'developer_giveaways': 'True',
         'mode': 'run_all_and_restart',
         'wait_after_each_strategy': 10,
@@ -177,7 +179,7 @@ default_config: Dict[str, Dict[str, Any]] = {
         'minimum_points': 0,
     },
     'cardfarming': {
-        'enable': True,
+        'enable': False,
         'reverse_sorting': False,
         'mandatory_waiting': 7200,
         'wait_while_running': 300,
@@ -316,7 +318,18 @@ def init_logger() -> None:
         log_file_handler = logger_handlers.NullHandler()  # type: ignore
 
     log_console_handler = logger_handlers.ColoredStreamHandler()
-    log_console_handler.setLevel(getattr(logging, log_console_level.upper()))
+    log_console_level = getattr(logging, log_console_level.upper())
+    log_console_handler.setLevel(log_console_level)
+
+    log_stlib = logging.getLogger('stlib')
+    log_stlib.setLevel(logging.DEBUG)
+
+    # TODO: ColoredStreamHandler isn't working from root log
+    log_stlib.propagate = False
+    log_stlib_handler = logger_handlers.ColoredStreamHandler()
+    log_stlib_handler.setLevel(log_console_level)
+    log_stlib.addHandler(log_stlib_handler)
+    log_stlib.addHandler(log_file_handler)
 
     if 'gtk' not in sys.modules:
         log_console_handler.setLevel(logging.WARNING)
@@ -348,3 +361,10 @@ def remove(section: str, option: str) -> None:
 
     # with open(config_file, 'w', encoding="utf8") as config_file_object:
     #    parser.write(config_file_object)
+
+
+def update_steamid_from_cookies(session_id: int = 0) -> None:
+    login_session = login.Login.get_session(session_id)
+    store_cookies = login_session.http_session.cookie_jar.filter_cookies('https://store.steampowered.com')
+    steamid = store_cookies['steamLoginSecure'].value.split('%7')[0]
+    new("login", "steamid", steamid)

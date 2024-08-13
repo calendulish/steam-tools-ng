@@ -19,7 +19,7 @@ import asyncio
 import binascii
 import getpass
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import aiohttp
 from stlib import login
@@ -68,8 +68,10 @@ class Login:
             self,
             auto: bool,
             auth_code: str = '',
-            auth_code_type: Optional[AuthCodeType] = AuthCodeType.device,
+            auth_code_type: AuthCodeType | None = AuthCodeType.device,
     ) -> None:
+        task = asyncio.current_task()
+        assert isinstance(task, asyncio.Task), "no task?"
         utils.set_console(info=_("Retrieving user data"))
 
         if auto:
@@ -124,7 +126,7 @@ class Login:
                     "Your network is blocked!\n"
                     "It'll take some time until unblocked. Please, try again later\n"
                 ))
-                self.cli.on_quit()
+                await core.safe_cancel(task)
             except login.CaptchaError as exception:
                 utils.set_console(info=_("Steam server is requesting a captcha code."))
                 # TODO: Captcha gid?? (where did you go? where did you go?)
@@ -136,7 +138,12 @@ class Login:
                 await self.do_login(True, user_input, AuthCodeType.machine)
                 return None
             except login.TwoFactorCodeError as exception:
-                user_input = await utils.async_input(
+                log.warning(_(
+                    "If your previous authenticator has been removed,"
+                    "\nopen your config file and remove the old secrets."
+                ))
+
+                async_user_input = utils.AsyncInput(
                     _("Confirm the login on your mobile device or write the steam Code"),
                 )
 
@@ -148,21 +155,20 @@ class Login:
                     )
 
                     if not login_data:
-                        if user_input.done():
-                            await self.do_login(True, user_input.result())
+                        if async_user_input.done():
+                            result = async_user_input.result()
+                            assert isinstance(result, str), "user input returning bool"
+                            await self.do_login(True, result)
                             return None
 
                         await asyncio.sleep(2)
                         continue
 
-                    user_input.cancel()
+                    async_user_input.cancel()
                     break
             except binascii.Error:
                 log.error(_("shared secret is invalid!"))
-                self.cli.on_quit()
-            except AttributeError as exception:
-                log.error(str(exception))
-                self.cli.on_quit()
+                await core.safe_cancel(task)
             except login.LoginError as exception:
                 if try_count > 0:
                     log.warning(_("Retrying login in 10 seconds ({} left)").format(try_count))
@@ -172,11 +178,7 @@ class Login:
 
                 log.error(str(exception))
 
-                log.warning(_(
-                    "If your previous authenticator has been removed,"
-                    "\nopen your config file and remove the old secrets."
-                ))
-                self.cli.on_quit()
+                await core.safe_cancel(task)
             except (aiohttp.ClientError, ValueError):
                 log.error(_("Check your connection. (server down?)"))
                 await asyncio.sleep(15)

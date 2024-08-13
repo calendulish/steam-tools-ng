@@ -20,7 +20,7 @@ import contextlib
 import functools
 import logging
 import sys
-from typing import Optional, Any, Callable
+from typing import Any, Callable
 
 import aiohttp
 import stlib
@@ -42,7 +42,6 @@ def while_running(function: Callable[..., Any]) -> Callable[..., Any]:
             await function(self, *args, **kwargs)
 
             if self.stop:
-                self.on_quit()
                 break
 
     return wrapper
@@ -67,14 +66,13 @@ class SteamToolsNG:
             ).format(module_name))
             sys.exit(1)
 
-        if module_name in {'steamtrades', 'steamgifts'}:
-            if not plugins.has_plugin(module_name):
-                log.critical(_(
-                    "{0} module has been disabled because you don't "
-                    "have {0} plugin installed. To enable it again, "
-                    "install the {0} plugin."
-                ).format(module_name))
-                sys.exit(1)
+        if module_name in {'steamtrades', 'steamgifts'} and not plugins.has_plugin(module_name):
+            log.critical(_(
+                "{0} module has been disabled because you don't "
+                "have {0} plugin installed. To enable it again, "
+                "install the {0} plugin."
+            ).format(module_name))
+            sys.exit(1)
 
         try:
             if module_name == 'fakerun':
@@ -105,7 +103,7 @@ class SteamToolsNG:
         self.api_url = config.parser.get("steam", "api_url")
 
     @property
-    def steamid(self) -> Optional[universe.SteamId]:
+    def steamid(self) -> universe.SteamId | None:
         if steamid := config.parser.getint("login", "steamid"):
             try:
                 return universe.generate_steamid(steamid)
@@ -114,15 +112,14 @@ class SteamToolsNG:
 
         return None
 
-    # FIXME: https://github.com/python/asyncio/pull/465
-    def run(self) -> None:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        task = loop.create_task(self.async_activate())
+    async def init(self) -> None:
+        await core.fix_ssl()
+
+        task = asyncio.create_task(self.async_activate())
         task.add_done_callback(utils.safe_task_callback)
 
-        with contextlib.suppress(KeyboardInterrupt):
-            loop.run_forever()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
 
     async def do_login(self, *, block: bool = True, auto: bool = False) -> None:
         login_session = cli_login.Login(self)
@@ -134,6 +131,11 @@ class SteamToolsNG:
         try_count = 3
 
         for login_count in range(try_count):
+            if await login_session.is_logged_in():
+                utils.set_console(info=_("Steam login Successful"))
+                config.update_steamid_from_cookies()
+                break
+
             try:
                 if login_count == 0:
                     await self.do_login(auto=True)
@@ -147,10 +149,6 @@ class SteamToolsNG:
                     return
                 log.error(_("Waiting 10 seconds to try again"))
                 await asyncio.sleep(10)
-
-            if await login_session.is_logged_in():
-                utils.set_console(info=_("Steam login Successful"))
-                break
 
         try:
             release_data = await login_session.request_json(
@@ -196,9 +194,7 @@ class SteamToolsNG:
 
         log.debug(_("Initializing module %s"), self.module_name)
         module = getattr(self, f"run_{self.module_name}")
-        task = asyncio.create_task(module())
-        log.debug(_("Adding a new callback for %s"), task)
-        task.add_done_callback(utils.safe_task_callback)
+        await module()
 
     async def run_add_authenticator(self) -> None:
         authenticator_manage = authenticator.ManageAuthenticator(self)
@@ -250,9 +246,3 @@ class SteamToolsNG:
             if module_data.action == "login":
                 await self.do_login(auto=True)
                 continue
-
-    @staticmethod
-    def on_quit(exit_code: int = 0) -> None:
-        loop = asyncio.get_running_loop()
-        loop.stop()
-        # sys.exit(exit_code)

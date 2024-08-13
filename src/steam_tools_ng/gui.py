@@ -15,39 +15,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import asyncio
-import os
-import sys
-
-# FIXME: Temporary workaround for cx_freeze
-#  not running from Win32GUI correctly
-if os.name == 'nt' and hasattr(sys, 'frozen'):
-    import ctypes
-
-    console = ctypes.windll.kernel32.GetConsoleWindow()
-    ctypes.windll.user32.ShowWindow(console, 0)
-    ctypes.windll.kernel32.CloseHandle(console)
-
-from multiprocessing import freeze_support
-
 import argparse
 import configparser
 import logging
-from pathlib import Path
-from subprocess import call
-from typing import Optional, Any
-
-from steam_tools_ng import config, i18n
-from steam_tools_ng.gtk import application, about
-from steam_tools_ng.gtk import async_gtk, utils
+import os
+import sys
 from gi.repository import Gtk
+from multiprocessing import freeze_support
+from pathlib import Path
+from steam_tools_ng import config, i18n
+from steam_tools_ng.gtk import application, about, async_gtk, utils
+from subprocess import call
+from typing import Any
 
 _ = i18n.get_translation
 log = logging.getLogger(__name__)
 
 
 class GraphicalArgParser(argparse.ArgumentParser):
-    def _print_message(self, message: str, file: Optional[Any] = None) -> None:
+    def _print_message(self, message: str, *args: Any, **kwargs: Any) -> None:
         if message:
             utils.fatal_error_dialog(type('Info', (Exception,), {})(message))
 
@@ -101,9 +87,8 @@ def main() -> None:
 
     if console_params.version:
         about_dialog = about.AboutDialog(parent_window=None)
+        about_dialog.connect("close-request", lambda dialog, *args: dialog.destroy())
         about_dialog.present()
-        about_dialog.connect("close-request", lambda *args: asyncio.get_event_loop().stop())
-        about_dialog.connect("destroy", lambda *args: asyncio.get_event_loop().stop())
 
         if not Gtk.Application.get_default():
             async_gtk.run()
