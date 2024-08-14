@@ -17,7 +17,7 @@
 #
 import asyncio
 import logging
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Callable, Awaitable
 
 import aiohttp
 from stlib import community
@@ -29,7 +29,13 @@ _ = i18n.get_translation
 log = logging.getLogger(__name__)
 
 
-async def main() -> AsyncGenerator[utils.ModuleData, None]:
+async def main(
+        fetch_market_event: asyncio.Event,
+        wait_available: Callable[[], Awaitable[None]],
+) -> AsyncGenerator[utils.ModuleData, None]:
+    await wait_available()
+    await fetch_market_event.wait()
+
     community_session = community.Community.get_session(0)
 
     try:
@@ -39,16 +45,62 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
         await asyncio.sleep(30)
         return
 
-    for position, buy_order in enumerate(my_orders[0]):
+    yield utils.ModuleData(action="clear")
+    yield utils.ModuleData(action="lock_buy")
+
+    for position, sell_order in enumerate(my_orders[0]):
+        if not fetch_market_event.is_set():
+            log.warning(_("Stopping fetching market (requested by user)"))
+            yield utils.ModuleData(action="update_sell_level", raw_data=(0, 0))
+            yield utils.ModuleData(action="update_buy_level", raw_data=(0, 0))
+
+        yield utils.ModuleData(action="update_sell_level", raw_data=(position, len(my_orders[0])))
+
+        try:
+            histogram = await community_session.get_item_histogram(sell_order.appid, sell_order.hash_name)
+        except aiohttp.ClientError:
+            # except (community.MarketError, aiohttp.ClientError):
+            module_data = utils.ModuleData(error=_("Failed when trying to get sell order histogram"))
+
+            async for data in utils.timed_module_data(15, module_data):
+                yield data
+
+            return
+
+        yield utils.ModuleData(action='update', raw_data={
+            'position': position,
+            'order': sell_order,
+            'histogram': histogram,
+            'type': 'sell',
+        })
+
+    yield utils.ModuleData(action="unlock_buy")
+
+    for position, buy_order in enumerate(my_orders[1]):
+        if not fetch_market_event.is_set():
+            log.warning(_("Stopping fetching market (requested by user)"))
+            yield utils.ModuleData(action="update_sell_level", raw_data=(0, 0))
+            yield utils.ModuleData(action="update_buy_level", raw_data=(0, 0))
+
+        yield utils.ModuleData(action="update_buy_level", raw_data=(position, len(my_orders[1])))
+
         try:
             histogram = await community_session.get_item_histogram(buy_order.appid, buy_order.hash_name)
         except aiohttp.ClientError:
-            yield utils.ModuleData(error=_("Failed when trying to get item histogram"))
-            await asyncio.sleep(30)
+            module_data = utils.ModuleData(error=_("Failed when trying to get buy order histogram"))
+
+            async for data in utils.timed_module_data(15, module_data):
+                yield data
+
             return
 
         yield utils.ModuleData(action='update', raw_data={
             'position': position,
             'order': buy_order,
             'histogram': histogram,
+            'type': 'buy',
         })
+
+    yield utils.ModuleData(action="update_sell_level", raw_data=(0, 0))
+    yield utils.ModuleData(action="update_buy_level", raw_data=(0, 0))
+    fetch_market_event.clear()

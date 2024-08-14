@@ -332,35 +332,79 @@ class SteamToolsNG(Gtk.Application):
 
     @while_window_realized
     async def run_market(self) -> None:
-        market = core.market.main()
+        # buy tree will always wait first, to prevent api ban
+        wait_available = self.main_window.market_sell_tree.wait_available
+        fetch_market_event = self.main_window.fetch_market_event
+        market = core.market.main(fetch_market_event, wait_available)
 
         async for module_data in market:
+            self.main_window.statusbar.clear("market")
+            await wait_available()
+            await fetch_market_event.wait()
+
             if module_data.error:
                 self.main_window.statusbar.set_critical("market", module_data.error)
 
-            self.main_window.statusbar.set_warning("market", module_data.info)
             if module_data.info:
-                pass
+                self.main_window.statusbar.set_warning("market", module_data.info)
 
             if not any([module_data.info, module_data.error]):
-                self.main_window.statusbar.clear("coupons")
+                self.main_window.statusbar.clear("market")
 
             if module_data.action == "update":
                 order = module_data.raw_data['order']
                 position = module_data.raw_data['position']
                 histogram = module_data.raw_data['histogram']
+                type_ = module_data.raw_data['type']
 
-                item = self.main_window.market_tree.new_item(
+                if type_ == 'sell':
+                    tree = self.main_window.market_sell_tree
+
+                    price_color = utils.color_by_price(
+                        order.price,
+                        histogram['sell_order_price'],
+                        int(histogram['sell_order_table'][0]['quantity']),
+                        order.amount,
+                    )
+                else:
+                    tree = self.main_window.market_buy_tree
+
+                    price_color = utils.color_by_price(
+                        histogram['buy_order_price'],
+                        order.price,
+                        int(histogram['buy_order_table'][0]['quantity']),
+                        order.amount,
+                    )
+
+                item = tree.new_item(
                     order.name,
-                    f"{order.price} ({order.amount})",
+                    utils.markup(f"{order.price} ({order.amount})", foreground=price_color),
                     f"{histogram['sell_order_price']} ({histogram['sell_order_table'][0]['quantity']})",
                     f"{histogram['buy_order_price']} ({histogram['buy_order_table'][0]['quantity']})",
-                    str(round(utils.sanatize_steam_price(histogram['sell_order_price']) - 0.01, 2)),
+                    f"{round(utils.sanatize_steam_price(histogram['sell_order_price']) - 0.01, 2):.2f}",
                     str(order.orderid),
                     str(order.contextid),
                 )
 
-                self.main_window.market_tree.append_row(item)
+                tree.append_row(item)
+
+            if module_data.action == "clear":
+                self.main_window.market_buy_tree.clear()
+                self.main_window.market_sell_tree.clear()
+
+            if module_data.action == "update_sell_level":
+                self.main_window.market_sell_progress.set_value(module_data.raw_data[0])
+                self.main_window.market_sell_progress.set_max_value(module_data.raw_data[1])
+
+            if module_data.action == "update_buy_level":
+                self.main_window.market_buy_progress.set_value(module_data.raw_data[0])
+                self.main_window.market_buy_progress.set_max_value(module_data.raw_data[1])
+
+            if module_data.action == "lock_buy":
+                self.main_window.market_buy_tree.lock = True
+
+            if module_data.action == "unlock_buy":
+                self.main_window.market_buy_tree.lock = False
 
         # TODO: STUB
         await asyncio.sleep(60 * 10)

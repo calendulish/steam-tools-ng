@@ -25,7 +25,7 @@ import traceback
 from collections import OrderedDict
 from traceback import StackSummary
 from types import FrameType
-from typing import Any, Callable, List, Type, Tuple
+from typing import Any, Callable, List, Type, Tuple, Dict
 from xml.etree import ElementTree
 
 from gi.repository import Gtk, Gdk, Gio, GObject
@@ -161,10 +161,11 @@ class SimpleTextTreeItem(GObject.Object):
             setattr(self, name, value)
 
         for index, header in enumerate(headers):
-            if header.startswith('_'):
-                header = header.replace('_', '', 1)
-
             name = header.replace(' ', '_').lower()
+
+            # remove translation mark
+            if name.startswith('_'):
+                name = name[1:]
 
             try:
                 setattr(self, name, args[index])
@@ -209,9 +210,11 @@ class SimpleTextTree(Gtk.Grid):
             column = Gtk.ColumnViewColumn()
             column.set_resizable(resizable)
 
+            # check if translation is needed
             if element.startswith('_'):
-                element = element[1:]
-                column.set_title(_(element))
+                element = _(element[1:])
+
+            column.set_title(element.replace('_', ' ').title())
 
             if fixed_width:
                 column.set_fixed_width(fixed_width)
@@ -794,6 +797,13 @@ def sanatize_steam_price(price: str) -> float:
 def remove_letters(text: str) -> str:
     new_text = [char for char in text if char.isdigit()]
     return ''.join(new_text)
+
+
+def color_by_price(price1: str, price2: str, quantity1: int, quantity2: int) -> str:
+    if remove_letters(price1) <= remove_letters(price2):
+        return 'green' if quantity1 == quantity2 else 'blue'
+
+    return 'red'
 
 
 def fatal_error_dialog(
