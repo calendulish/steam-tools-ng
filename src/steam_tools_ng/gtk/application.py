@@ -366,6 +366,8 @@ class SteamToolsNG(Gtk.Application):
                         int(histogram['sell_order_table'][0]['quantity']),
                         order.amount,
                     )
+
+                    trade_for = f"{round(utils.sanatize_steam_price(histogram['sell_order_price']) - 0.01, 2):.2f}"
                 else:
                     tree = self.main_window.market_buy_tree
 
@@ -376,14 +378,20 @@ class SteamToolsNG(Gtk.Application):
                         order.amount,
                     )
 
+                    trade_for = f"{round(utils.sanatize_steam_price(histogram['buy_order_price']) + 0.01, 2):.2f}"
+
                 item = tree.new_item(
                     order.name,
                     utils.markup(f"{order.price} ({order.amount})", foreground=price_color),
                     f"{histogram['sell_order_price']} ({histogram['sell_order_table'][0]['quantity']})",
                     f"{histogram['buy_order_price']} ({histogram['buy_order_table'][0]['quantity']})",
-                    f"{round(utils.sanatize_steam_price(histogram['sell_order_price']) - 0.01, 2):.2f}",
-                    str(order.orderid),
+                    str(order.appid),
                     str(order.contextid),
+                    str(order.assetid),
+                    str(order.orderid),
+                    order.hash_name,
+                    trade_for,
+                    order.amount,
                 )
 
                 tree.append_row(item)

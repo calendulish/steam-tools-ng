@@ -27,7 +27,7 @@ import stlib
 from gi.repository import Gio, Gtk, Gdk
 from stlib import login, plugins
 
-from . import confirmation, utils, coupon, authenticator
+from . import confirmation, utils, coupon, authenticator, market
 from .login import LoginWindow
 from .. import config, i18n, core
 
@@ -638,7 +638,9 @@ class Main(Gtk.ApplicationWindow):
 
         self.fetch_market_event = asyncio.Event()
 
-        market_tree_headers = '_name', '_my_price', '_sell_price', '_buy_price', 'sell_for', 'orderid', 'contextid'
+        market_tree_headers = '_name', '_my_price', '_sell_price', '_buy_price', \
+            'appid', 'contextid', 'assetid', 'orderid', 'hash_name', 'trade_for', 'amount'
+
         self.market_sell_tree = utils.SimpleTextTree(*market_tree_headers)
         self.market_buy_tree = utils.SimpleTextTree(*market_tree_headers)
         self.market_sell_grid.attach(self.market_sell_tree, 0, 0, 4, 2)
@@ -646,11 +648,11 @@ class Main(Gtk.ApplicationWindow):
 
         for tree in (self.market_sell_tree, self.market_buy_tree):
             for index, column in enumerate(tree.view.get_columns()):
-                if column == 0:
+                if column != 0:
                     column.set_resizable(True)
                     column.set_expand(True)
 
-                if index in (5, 6, 7):
+                if index in (0, 5, 6, 7, 8, 9, 10, 11):
                     column.set_visible(False)
 
         self.market_sell_tree.model.connect("selection-changed", self.on_market_sell_selection_changed)
@@ -674,7 +676,7 @@ class Main(Gtk.ApplicationWindow):
         self.market_sell_button.set_margin_end(3)
         self.market_sell_button.set_label(_("Select an item"))
         self.market_sell_button.set_sensitive(False)
-        #sell_button.connect("clicked", self.on_market_sell)
+        self.market_sell_button.connect("clicked", self.on_market_action, "sell", self.market_sell_tree)
         self.market_sell_grid.attach(self.market_sell_button, 0, 5, 1, 1)
 
         self.market_buy_button = Gtk.Button()
@@ -682,11 +684,22 @@ class Main(Gtk.ApplicationWindow):
         self.market_buy_button.set_margin_end(3)
         self.market_buy_button.set_label(_("Select an item"))
         self.market_buy_button.set_sensitive(False)
-        #buy_button.connect("clicked", self.on_market_sell)
+        self.market_buy_button.connect("clicked", self.on_market_action, "buy", self.market_buy_tree)
         self.market_buy_grid.attach(self.market_buy_button, 0, 5, 1, 1)
 
-        self.market_settings = utils.Section("market")
-        self.market_settings.stackup_section(_("Settings"), market_stack)
+        market_settings = utils.Section("market")
+        market_settings.stackup_section(_("Settings"), market_stack)
+
+        market_enable = market_settings.new_item("enable", _("Enable:"), Gtk.Switch, 0, 1)
+        market_enable.label.set_margin_top(40)
+        market_enable.widget.set_margin_top(40)
+        market_enable.connect("state-set", utils.on_setting_state_set)
+
+        market_refetch_button = Gtk.Button()
+        market_refetch_button.set_label(_("Refetch market data"))
+        market_refetch_button.set_name("market_refetch_button")
+        market_refetch_button.connect('clicked', self.on_market_refetch_clicked)
+        market_settings.attach(login_button, 0, 2, 2, 1)
 
         self.statusbar = utils.StatusBar()
         main_grid.attach(self.statusbar, 1, 3, 1, 1)
@@ -875,19 +888,26 @@ class Main(Gtk.ApplicationWindow):
 
         call([config.file_manager, url])
 
-    def on_market_sell_selection_changed(self, view: Gtk.SingleSelection, position, item_count: int) -> None:
+    def on_market_sell_selection_changed(self, view: Gtk.SingleSelection, position: int, item_count: int) -> None:
         row = view.get_selected_item()
         item = row.get_item()
 
-        self.market_sell_button.set_label(_("Sell for {}").format(item.sell_for))
+        self.market_sell_button.set_label(_("Sell for {}").format(item.trade_for))
         self.market_sell_button.set_sensitive(True)
 
-    def on_market_buy_selection_changed(self, view: Gtk.SingleSelection, position, item_count: int) -> None:
+    def on_market_buy_selection_changed(self, view: Gtk.SingleSelection, position: int, item_count: int) -> None:
         row = view.get_selected_item()
         item = row.get_item()
 
-        self.market_buy_button.set_label(_("Buy for {}").format(item.sell_for))
+        self.market_buy_button.set_label(_("Buy for {}").format(item.trade_for))
         self.market_buy_button.set_sensitive(True)
+
+    def on_market_refetch_clicked(self, button: Gtk.Button) -> None:
+        self.fetch_market_event.set()
+
+    def on_market_action(self, button: Gtk.Button, action: str, tree: utils.SimpleTextTree) -> None:
+        market_window = market.MarketWindow(self, self.application, tree, action)
+        market_window.present()
 
     @staticmethod
     def on_tree_selection_changed(view: Gtk.SingleSelection, position: int, item_count: int) -> None:

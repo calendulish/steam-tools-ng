@@ -58,8 +58,7 @@ async def main(
 
         try:
             histogram = await community_session.get_item_histogram(sell_order.appid, sell_order.hash_name)
-        except aiohttp.ClientError:
-            # except (community.MarketError, aiohttp.ClientError):
+        except (community.MarketError, aiohttp.ClientError):
             module_data = utils.ModuleData(error=_("Failed when trying to get sell order histogram"))
 
             async for data in utils.timed_module_data(15, module_data):

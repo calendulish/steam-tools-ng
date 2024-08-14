@@ -30,25 +30,23 @@ _ = i18n.get_translation
 
 
 # noinspection PyUnusedLocal
-class FinalizeWindow(utils.PopupWindowBase):
+class MarketWindow(utils.PopupWindowBase):
     def __init__(
             self,
             parent_window: Gtk.Window,
             application: Gtk.Application,
-            confirmations_tree: utils.SimpleTextTree,
+            tree: utils.SimpleTextTree,
             action: str,
-            batch: bool = False,
     ) -> None:
         super().__init__(parent_window, application)
         self.community_session = community.Community.get_session(0)
-        self.confirmations_tree = confirmations_tree
-        self.selection = self.confirmations_tree.model.get_selected_item()
-        self.batch = batch
-
-        self.action = _("accept") if action == "allow" else _("cancel")
+        self.action = _(action)
         self.raw_action = action
+        self.tree = tree
+        self.selection = self.tree.model.get_selected_item()
+
         self.header_bar.set_show_title_buttons(False)
-        self.set_title(_('Finalize Confirmation'))
+        self.set_title(_('Market Monitor'))
 
         self.status = utils.SimpleStatus()
         self.content_grid.attach(self.status, 0, 0, 1, 1)
@@ -67,16 +65,12 @@ class FinalizeWindow(utils.PopupWindowBase):
         self.no_button.connect("clicked", lambda button: self.destroy())
         self.header_bar.pack_start(self.no_button)
 
-        if self.batch:
+        if self.selection:
             self.status.info(
-                _("Do you really want to {} ALL confirmations?\nIt can't be undone!").format(self.action.upper())
-            )
-        elif self.selection:
-            self.status.info(
-                _("{}\nDo you want to {} the offer to\n{}?\nIt can't be undone!").format(
-                    self.selection.get_item().summary,
+                _("{}\nDo you want to {} the item for {}?\nIt can't be undone!").format(
+                    self.selection.get_item().name,
                     self.action.upper(),
-                    utils.unmarkup(self.selection.get_item().to),
+                    self.selection.get_item().trade_for,
                 )
             )
         else:
@@ -91,20 +85,15 @@ class FinalizeWindow(utils.PopupWindowBase):
         self.progress.set_visible(True)
         self.set_size_request(0, 0)
         self.header_bar.set_show_title_buttons(False)
-        self.confirmations_tree.lock = True
+        self.tree.lock = True
 
         loop = asyncio.get_event_loop()
-
-        if self.batch:
-            task = loop.create_task(self.batch_finalize())
-        else:
-            task = loop.create_task(self.single_finalize())
-
+        task = loop.create_task(self.single_action_test())
         task.add_done_callback(self.on_task_finish)
 
     def on_task_finish(self, task: asyncio.Task[Any]) -> None:
         self.progress.set_visible(False)
-        self.confirmations_tree.lock = False
+        self.tree.lock = False
         exception = task.exception()
 
         if exception and not isinstance(exception, asyncio.CancelledError):
@@ -123,10 +112,9 @@ class FinalizeWindow(utils.PopupWindowBase):
                 self.status.error(
                     _(
                         "Unable to complete this confirmation. The reason is one of the following:\n\n"
-                        "1. The confirmation you choose already gone. Try another one.\n"
-                        "2. You wrote a wrong token in config. Update you config.\n"
-                        "3. The Steam server is slow. Wait a minute and try again.\n\n"
-                        "If you keep seeing this error, please update the confirmation list."
+                        "1. The order you choose already gone. Try to refetch market data.\n"
+                        "2. The Steam server is slow. Wait a minute and try again.\n\n"
+                        "If you keep seeing this error, verify if your account is able to use the market."
                     )
                 )
 
@@ -135,56 +123,71 @@ class FinalizeWindow(utils.PopupWindowBase):
         else:
             self.destroy()
 
-    async def do_finalize(self, item: Gtk.ListItem) -> Dict[str, Any]:
-        identity_secret = config.parser.get("login", "identity_secret")
-        deviceid = config.parser.get("login", "deviceid")
-        steamid_raw = config.parser.getint("login", "steamid")
-
-        try:
-            steamid = universe.generate_steamid(steamid_raw)
-        except ValueError:
-            self.status.info(_("Your steam is invalid. (are you logged in?)"))
-            await asyncio.sleep(5)
-            return {}
-
-        self.status.info(_("Waiting Steam Server (OP: {})").format(item.creatorid))
-        result: Dict[str, Any] = {}
-
-        # steam confirmation server isn't reliable
-        for i in range(2):
-            result = await self.community_session.send_confirmation(
-                identity_secret,
-                steamid,
-                deviceid,
-                item.id,
-                item.nonce,
-                self.raw_action,
-            )
-            await asyncio.sleep(0.5)
-
-        assert isinstance(result, dict)
-        return result
-
-    async def single_finalize(self) -> Dict[str, Any]:
+    async def single_action(self) -> None:
         item = self.selection.get_item()
-        result = await self.do_finalize(item)
-        self.confirmations_tree.remove_row(self.selection)
 
-        assert isinstance(result, dict)
-        return result
+        if self.raw_action == 'sell':
+            self.status.info(_("Waiting Steam Server (OP: {})").format(item.assetid))
+            await self.community_session.remove_sell_order(int(item.orderid))
 
-    async def batch_finalize(self) -> List[Tuple[Gtk.TreeIter, Dict[str, Any]]]:
-        results = []
-        n_items = self.confirmations_tree.store.get_n_items()
-        self.status.info(_("Waiting Steam Server response"))
+            await asyncio.sleep(2)
 
-        for index in range(n_items):
-            self.progress.set_value(index)
-            self.progress.set_max_value(n_items)
-            item = self.confirmations_tree.store.get_item(index)
-            result = await self.do_finalize(item)
-            results.append((item, result))
+            result = await self.community_session.sell_item(
+                int(item.appid),
+                int(item.contextid),
+                int(item.assetid),
+                int(item.trade_for),
+                int(item.amount),
+            )
+        else:
+            self.status.info(_("Waiting Steam Server (OP: {})").format(item.orderid))
+            await self.community_session.remove_buy_order(int(item.orderid))
 
-        self.confirmations_tree.clear()
+            await asyncio.sleep(2)
 
-        return results
+            result = await self.community_session.buy_item(
+                int(item.appid),
+                item.hash_name,
+                int(item.trade_for),
+                int(item.amount),
+            )
+
+        await asyncio.sleep(0.5)
+
+        item.price = item.trade_for
+        return None
+
+    async def single_action_test(self) -> None:
+        item = self.selection.get_item()
+
+        if self.raw_action == 'sell':
+            self.status.info(_("Waiting Steam Server (OP: {})").format(item.assetid))
+            print(f'remove sell order: {item.orderid}')
+
+            await asyncio.sleep(2)
+
+            print(f'sell item \
+                {item.appid} \
+                {item.contextid} \
+                {item.assetid} \
+                {item.trade_for} \
+                {item.amount}'
+            )
+        else:
+            self.status.info(_("Waiting Steam Server (OP: {})").format(item.orderid))
+            print(f'remove buy order: {item.orderid}')
+
+            await asyncio.sleep(2)
+
+            print(f'buy item \
+                {item.appid} \
+            {item.hash_nam} \
+             {item.trade_for} \
+            {item.amount}'
+            )
+
+        await asyncio.sleep(0.5)
+
+        # TODO: Update item values in current list
+        # TODO: remove and create a new one from scratch?
+        return None

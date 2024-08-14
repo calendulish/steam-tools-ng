@@ -233,6 +233,7 @@ class SimpleTextTree(Gtk.Grid):
         self._list_sort.set_sorter(self._tree_sort)
         self._list_sort.set_model(self._tree)
         self._model = Gtk.SingleSelection.new(self._list_sort)
+        self._model.set_autoselect(True)
         self._view.set_model(self._model)
 
         self._lock = False
@@ -316,6 +317,10 @@ class SimpleTextTree(Gtk.Grid):
 
     def append_row(self, row: Gtk.TreeListRow) -> None:
         self._store.append(row)
+        total = self._model.get_n_items()
+
+        if total == 1:
+            self._model.emit('selection-changed', 0, total)
 
     def remove_row(self, row: Gtk.TreeListRow) -> bool:
         item = row.get_item()
@@ -323,6 +328,11 @@ class SimpleTextTree(Gtk.Grid):
 
         if found:
             self._store.remove(position)
+            total = self._model.get_n_items()
+
+            if total > 0:
+                self._model.emit('selection-changed', 0, total)
+
             return True
         else:
             return False
