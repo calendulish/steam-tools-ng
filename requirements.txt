@@ -1,7 +1,7 @@
 aiohttp~=3.9b
 certifi>=2023.7.22
 cx_Freeze~=7.1; sys_platform == 'win32'
-setuptools~=70.0
+setuptools~=72.2
 pywin32==306; sys_platform == 'win32'
 stlib~=2.1
 stlib-plugins~=1.2
