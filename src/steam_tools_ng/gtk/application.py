@@ -334,22 +334,22 @@ class SteamToolsNG(Gtk.Application):
     async def run_market(self) -> None:
         # buy tree will always wait first, to prevent api ban
         wait_available = self.main_window.market_sell_tree.wait_available
-        fetch_market_event = self.main_window.fetch_market_event
-        market = core.market.main(fetch_market_event, wait_available)
+        fetch_market_buy_event = self.main_window.fetch_market_buy_event
+        fetch_market_sell_event = self.main_window.fetch_market_sell_event
+        market = core.market.main(fetch_market_buy_event, fetch_market_sell_event, wait_available)
 
         async for module_data in market:
             self.main_window.statusbar.clear("market")
             await wait_available()
-            await fetch_market_event.wait()
+
+            while not any([fetch_market_buy_event.is_set(), fetch_market_sell_event.is_set()]):
+                await asyncio.sleep(5)
 
             if module_data.error:
                 self.main_window.statusbar.set_critical("market", module_data.error)
 
             if module_data.info:
                 self.main_window.statusbar.set_warning("market", module_data.info)
-
-            if not any([module_data.info, module_data.error]):
-                self.main_window.statusbar.clear("market")
 
             if module_data.action == "update":
                 order = module_data.raw_data['order']
@@ -407,15 +407,6 @@ class SteamToolsNG(Gtk.Application):
             if module_data.action == "update_buy_level":
                 self.main_window.market_buy_progress.set_value(module_data.raw_data[0])
                 self.main_window.market_buy_progress.set_max_value(module_data.raw_data[1])
-
-            if module_data.action == "lock_buy":
-                self.main_window.market_buy_tree.lock = True
-
-            if module_data.action == "unlock_buy":
-                self.main_window.market_buy_tree.lock = False
-
-        # TODO: STUB
-        await asyncio.sleep(60 * 10)
 
     @while_window_realized
     async def run_coupons(self) -> None:

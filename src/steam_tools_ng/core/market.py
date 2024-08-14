@@ -17,7 +17,7 @@
 #
 import asyncio
 import logging
-from typing import AsyncGenerator, Callable, Awaitable
+from typing import AsyncGenerator, Callable, Awaitable, List, Dict, Any
 
 import aiohttp
 from stlib import community
@@ -29,12 +29,50 @@ _ = i18n.get_translation
 log = logging.getLogger(__name__)
 
 
+async def get_histogram(
+        orders: List[community.Order],
+        order_type: str,
+        fetch_event: asyncio.Event | None = None,
+) -> AsyncGenerator[utils.ModuleData, None]:
+    community_session = community.Community.get_session(0)
+
+    for position, order in enumerate(orders):
+        if fetch_event and not fetch_event.is_set():
+            log.warning(_("Stopping fetching market (requested by user)"))
+            yield utils.ModuleData(action=f"update_{order_type}_level", raw_data=(0, 0))
+            await fetch_event.wait()
+
+        yield utils.ModuleData(action=f"update_{order_type}_level", raw_data=(position, len(orders)))
+
+        try:
+            histogram = await community_session.get_item_histogram(order.appid, order.hash_name)
+        except (community.MarketError, aiohttp.ClientError):
+            module_data = utils.ModuleData(error=_("Failed when trying to get order histogram"))
+
+            async for data in utils.timed_module_data(15, module_data):
+                yield data
+
+            return
+
+        yield utils.ModuleData(action='update', raw_data={
+            'position': position,
+            'order': order,
+            'histogram': histogram,
+            'type': order_type,
+        })
+
+    yield utils.ModuleData(action=f"update_{order_type}_level", raw_data=(0, 0))
+
+
 async def main(
-        fetch_market_event: asyncio.Event,
+        fetch_market_buy_event: asyncio.Event,
+        fetch_market_sell_event: asyncio.Event,
         wait_available: Callable[[], Awaitable[None]],
 ) -> AsyncGenerator[utils.ModuleData, None]:
     await wait_available()
-    await fetch_market_event.wait()
+
+    while not fetch_market_sell_event.is_set() and not fetch_market_buy_event.is_set():
+        await asyncio.sleep(5)
 
     community_session = community.Community.get_session(0)
 
@@ -46,60 +84,57 @@ async def main(
         return
 
     yield utils.ModuleData(action="clear")
-    yield utils.ModuleData(action="lock_buy")
 
-    for position, sell_order in enumerate(my_orders[0]):
-        if not fetch_market_event.is_set():
-            log.warning(_("Stopping fetching market (requested by user)"))
-            yield utils.ModuleData(action="update_sell_level", raw_data=(0, 0))
-            yield utils.ModuleData(action="update_buy_level", raw_data=(0, 0))
+    generators = {
+        "sell": get_histogram(my_orders[0], "sell", fetch_market_sell_event),
+        "buy": get_histogram(my_orders[1], "buy", fetch_market_buy_event),
+    }
 
-        yield utils.ModuleData(action="update_sell_level", raw_data=(position, len(my_orders[0])))
+    tasks: Dict[str, asyncio.Task[Any] | None] = {}
+    semaphore = asyncio.Semaphore(2)
 
-        try:
-            histogram = await community_session.get_item_histogram(sell_order.appid, sell_order.hash_name)
-        except (community.MarketError, aiohttp.ClientError):
-            module_data = utils.ModuleData(error=_("Failed when trying to get sell order histogram"))
+    while True:
+        for type_ in generators:
+            progress_coro = anext(generators[type_])
+            assert asyncio.iscoroutine(progress_coro)
 
-            async for data in utils.timed_module_data(15, module_data):
-                yield data
+            if type_ not in tasks:
+                if semaphore.locked():
+                    break
 
-            return
+                await semaphore.acquire()
+                tasks[type_] = asyncio.create_task(progress_coro)
 
-        yield utils.ModuleData(action='update', raw_data={
-            'position': position,
-            'order': sell_order,
-            'histogram': histogram,
-            'type': 'sell',
-        })
+            if not tasks[type_]:
+                continue
 
-    yield utils.ModuleData(action="unlock_buy")
+            current_task = tasks[type_]
+            assert isinstance(current_task, asyncio.Task)
 
-    for position, buy_order in enumerate(my_orders[1]):
-        if not fetch_market_event.is_set():
-            log.warning(_("Stopping fetching market (requested by user)"))
-            yield utils.ModuleData(action="update_sell_level", raw_data=(0, 0))
-            yield utils.ModuleData(action="update_buy_level", raw_data=(0, 0))
+            if current_task.done():
+                semaphore.release()
 
-        yield utils.ModuleData(action="update_buy_level", raw_data=(position, len(my_orders[1])))
+                if current_task.exception():
+                    if isinstance(current_task.exception(), StopAsyncIteration):
+                        tasks[type_] = None
+                        continue
 
-        try:
-            histogram = await community_session.get_item_histogram(buy_order.appid, buy_order.hash_name)
-        except aiohttp.ClientError:
-            module_data = utils.ModuleData(error=_("Failed when trying to get buy order histogram"))
+                    current_exception = current_task.exception()
+                    assert isinstance(current_exception, BaseException)
+                    raise current_exception
 
-            async for data in utils.timed_module_data(15, module_data):
-                yield data
+                await semaphore.acquire()
+                tasks[type_] = asyncio.create_task(progress_coro)
 
-            return
+        if not any(tasks.values()):
+            break
 
-        yield utils.ModuleData(action='update', raw_data={
-            'position': position,
-            'order': buy_order,
-            'histogram': histogram,
-            'type': 'buy',
-        })
+        await asyncio.wait([task for task in tasks.values() if task], return_when=asyncio.FIRST_COMPLETED)
 
-    yield utils.ModuleData(action="update_sell_level", raw_data=(0, 0))
-    yield utils.ModuleData(action="update_buy_level", raw_data=(0, 0))
-    fetch_market_event.clear()
+        for task in tasks.values():
+            if task and task.done() and not task.exception():
+                yield task.result()
+
+    # yield utils.ModuleData(action="update_sell_level", raw_data=(0, 0))
+    # yield utils.ModuleData(action="update_buy_level", raw_data=(0, 0))
+    # fetch_market_event.clear()
