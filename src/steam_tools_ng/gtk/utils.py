@@ -324,6 +324,9 @@ class SimpleTextTree(Gtk.Grid):
 
     def remove_row(self, row: Gtk.TreeListRow) -> bool:
         item = row.get_item()
+        self.remove_item(item)
+
+    def remove_item(self, item: SimpleTextTreeItem) -> None:
         found, position = self._store.find(item)
 
         if found:
@@ -334,8 +337,8 @@ class SimpleTextTree(Gtk.Grid):
                 self._model.emit('selection-changed', 0, total)
 
             return True
-        else:
-            return False
+
+        return False
 
     def clear(self) -> None:
         self._store.remove_all()
@@ -814,6 +817,13 @@ def color_by_price(price1: str, price2: str, quantity1: int, quantity2: int) -> 
         return 'green' if quantity1 == quantity2 else 'blue'
 
     return 'red'
+
+
+async def update_progress(event, progress) -> None:
+    if event.is_set():
+        progress.pulse()
+    else:
+        progress.set_fraction(0)
 
 
 def fatal_error_dialog(

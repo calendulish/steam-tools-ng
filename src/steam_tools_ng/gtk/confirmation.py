@@ -143,7 +143,7 @@ class FinalizeWindow(utils.PopupWindowBase):
         try:
             steamid = universe.generate_steamid(steamid_raw)
         except ValueError:
-            self.status.info(_("Your steam is invalid. (are you logged in?)"))
+            self.status.error(_("Your steamid is invalid. (are you logged in?)"))
             await asyncio.sleep(5)
             return {}
 

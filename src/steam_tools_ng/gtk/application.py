@@ -332,18 +332,15 @@ class SteamToolsNG(Gtk.Application):
 
     @while_window_realized
     async def run_market(self) -> None:
-        # buy tree will always wait first, to prevent api ban
-        wait_available = self.main_window.market_sell_tree.wait_available
-        fetch_market_buy_event = self.main_window.fetch_market_buy_event
-        fetch_market_sell_event = self.main_window.fetch_market_sell_event
-        market = core.market.main(fetch_market_buy_event, fetch_market_sell_event, wait_available)
+        fetch_market_buy_event = self.main_window.market_fetch_buy_event
+        fetch_market_sell_event = self.main_window.market_fetch_sell_event
+        market = core.market.main(fetch_market_buy_event, fetch_market_sell_event)
 
         async for module_data in market:
             self.main_window.statusbar.clear("market")
-            await wait_available()
 
             while not any([fetch_market_buy_event.is_set(), fetch_market_sell_event.is_set()]):
-                await asyncio.sleep(5)
+                await asyncio.sleep(3)
 
             if module_data.error:
                 self.main_window.statusbar.set_critical("market", module_data.error)
@@ -391,6 +388,7 @@ class SteamToolsNG(Gtk.Application):
                     str(order.orderid),
                     order.hash_name,
                     trade_for,
+                    str(order.currency),
                     order.amount,
                 )
 
@@ -404,13 +402,19 @@ class SteamToolsNG(Gtk.Application):
                 self.main_window.market_sell_progress.set_value(module_data.raw_data[0])
                 self.main_window.market_sell_progress.set_max_value(module_data.raw_data[1])
 
+                if not fetch_market_sell_event.is_set():
+                    self.main_window.market_sell_running_progress.set_fraction(0)
+
             if module_data.action == "update_buy_level":
                 self.main_window.market_buy_progress.set_value(module_data.raw_data[0])
                 self.main_window.market_buy_progress.set_max_value(module_data.raw_data[1])
 
+                if not fetch_market_buy_event.is_set():
+                    self.main_window.market_buy_running_progress.set_fraction(0)
+
     @while_window_realized
     async def run_coupons(self) -> None:
-        fetch_coupon_event = self.main_window.fetch_coupon_event
+        fetch_coupon_event = self.main_window.coupon_fetch_event
         wait_available = self.main_window.coupons_tree.wait_available
         coupons = core.coupons.main(self.steamid, fetch_coupon_event, wait_available)
 
@@ -446,6 +450,9 @@ class SteamToolsNG(Gtk.Application):
             if module_data.action == "update_level":
                 self.main_window.coupon_progress.set_value(module_data.raw_data[0])
                 self.main_window.coupon_progress.set_max_value(module_data.raw_data[1])
+
+                if not fetch_coupon_event.is_set():
+                    self.main_window.coupon_running_progress.set_fraction(0)
 
     @while_window_realized
     async def run_steamtrades(self, play_event: asyncio.Event) -> None:

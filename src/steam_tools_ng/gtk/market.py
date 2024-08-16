@@ -19,6 +19,7 @@ import asyncio
 import logging
 from typing import Any, Dict, List, Tuple
 
+import aiohttp
 from gi.repository import Gtk
 
 from stlib import universe, community
@@ -50,6 +51,15 @@ class MarketWindow(utils.PopupWindowBase):
 
         self.status = utils.SimpleStatus()
         self.content_grid.attach(self.status, 0, 0, 1, 1)
+
+        steamid_raw = config.parser.getint("login", "steamid")
+
+        try:
+            self.steamid = universe.generate_steamid(steamid_raw)
+        except ValueError:
+            self.status.error(_("Your steamid is invalid. (are you logged in?)"))
+            self.header_bar.set_show_title_buttons(True)
+            return
 
         self.progress = Gtk.LevelBar()
         self.progress.set_visible(False)
@@ -88,7 +98,7 @@ class MarketWindow(utils.PopupWindowBase):
         self.tree.lock = True
 
         loop = asyncio.get_event_loop()
-        task = loop.create_task(self.single_action_test())
+        task = loop.create_task(self.single_action())
         task.add_done_callback(self.on_task_finish)
 
     def on_task_finish(self, task: asyncio.Task[Any]) -> None:
@@ -128,66 +138,104 @@ class MarketWindow(utils.PopupWindowBase):
 
         if self.raw_action == 'sell':
             self.status.info(_("Waiting Steam Server (OP: {})").format(item.assetid))
-            await self.community_session.remove_sell_order(int(item.orderid))
+
+            # steam market server isn't reliable
+            for tries in range(3):
+                try:
+                    await self.community_session.cancel_sell_order(int(item.orderid))
+                    break
+                except (community.MarketError, aiohttp.ClientError) as error:
+                    if tries == 3:
+                        raise error from None
+
+                await asyncio.sleep(1)
 
             await asyncio.sleep(2)
 
-            result = await self.community_session.sell_item(
-                int(item.appid),
-                int(item.contextid),
-                int(item.assetid),
-                int(item.trade_for),
-                int(item.amount),
-            )
-        else:
-            self.status.info(_("Waiting Steam Server (OP: {})").format(item.orderid))
-            await self.community_session.remove_buy_order(int(item.orderid))
+            # steam market server isn't reliable
+            for tries in range(3):
+                try:
+                    response = await self.community_session.sell_item(
+                        self.steamid,
+                        int(item.appid),
+                        int(item.contextid),
+                        int(item.assetid),
+                        float(item.trade_for),
+                        int(item.amount),
+                    )
+                    break
+                except (community.MarketError, aiohttp.ClientError) as error:
+                    if tries == 3:
+                        raise error from None
 
-            await asyncio.sleep(2)
+                await asyncio.sleep(1)
 
-            result = await self.community_session.buy_item(
-                int(item.appid),
+            new_item = self.tree.new_item(
+                item.name,
+                utils.markup(item.trade_for, foreground='green'),
+                f"{item.trade_for} ({item.amount})",
+                item.buy_price,
+                item.appid,
+                item.contextid,
+                item.assetid,
+                "0",
                 item.hash_name,
-                int(item.trade_for),
-                int(item.amount),
+                f"{round(float(item.trade_for) + 0.01, 2):.2f}",
+                item.currency,
+                item.amount,
             )
 
-        await asyncio.sleep(0.5)
-
-        item.price = item.trade_for
-        return None
-
-    async def single_action_test(self) -> None:
-        item = self.selection.get_item()
-
-        if self.raw_action == 'sell':
-            self.status.info(_("Waiting Steam Server (OP: {})").format(item.assetid))
-            print(f'remove sell order: {item.orderid}')
-
-            await asyncio.sleep(2)
-
-            print(f'sell item \
-                {item.appid} \
-                {item.contextid} \
-                {item.assetid} \
-                {item.trade_for} \
-                {item.amount}'
-            )
+            self.tree.append_row(new_item)
+            self.tree.remove_item(item)
+            return None
         else:
             self.status.info(_("Waiting Steam Server (OP: {})").format(item.orderid))
-            print(f'remove buy order: {item.orderid}')
+
+            # steam market server isn't reliable
+            for tries in range(3):
+                try:
+                    await self.community_session.cancel_buy_order(int(item.orderid))
+                    break
+                except (community.MarketError, aiohttp.ClientError) as error:
+                    if tries == 3:
+                        raise error from None
+
+                await asyncio.sleep(1)
 
             await asyncio.sleep(2)
 
-            print(f'buy item \
-                {item.appid} \
-            {item.hash_nam} \
-             {item.trade_for} \
-            {item.amount}'
-            )
+            # steam market server isn't reliable
+            for tries in range(3):
+                try:
+                    response = await self.community_session.buy_item(
+                        int(item.appid),
+                        item.hash_name,
+                        float(item.trade_for),
+                        int(item.currency),
+                        int(item.amount),
+                    )
+                    break
+                except (community.MarketError, aiohttp.ClientError) as error:
+                    if tries == 3:
+                        raise error from None
 
-        await asyncio.sleep(0.5)
+                await asyncio.sleep(1)
 
-        # TODO: Update item values in current list
-        # TODO: remove and create a new one from scratch?
+        new_item = self.tree.new_item(
+            item.name,
+            utils.markup(item.trade_for, foreground='green'),
+            item.sell_price,
+            f"{item.trade_for} ({item.amount})",
+            item.appid,
+            item.contextid,
+            item.assetid,
+            response['buy_orderid'],
+            item.hash_name,
+            f"{round(float(item.trade_for) + 0.01, 2):.2f}",
+            item.currency,
+            item.amount,
+        )
+
+        self.tree.append_row(new_item)
+        self.tree.remove_item(item)
         return None

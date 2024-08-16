@@ -38,11 +38,11 @@ async def get_histogram(
 
     for position, order in enumerate(orders):
         if fetch_event and not fetch_event.is_set():
-            log.warning(_("Stopping fetching market (requested by user)"))
+            log.warning(_("Stopping fetching market"))
             yield utils.ModuleData(action=f"update_{order_type}_level", raw_data=(0, 0))
             await fetch_event.wait()
 
-        yield utils.ModuleData(action=f"update_{order_type}_level", raw_data=(position, len(orders)))
+        yield utils.ModuleData(action=f"update_{order_type}_level", raw_data=(position+1, len(orders)))
 
         try:
             histogram = await community_session.get_item_histogram(order.appid, order.hash_name)
@@ -62,16 +62,15 @@ async def get_histogram(
         })
 
     yield utils.ModuleData(action=f"update_{order_type}_level", raw_data=(0, 0))
+    fetch_event.clear()
+
 
 
 async def main(
-        fetch_market_buy_event: asyncio.Event,
-        fetch_market_sell_event: asyncio.Event,
-        wait_available: Callable[[], Awaitable[None]],
+        fetch_buy_event: asyncio.Event,
+        fetch_sell_event: asyncio.Event,
 ) -> AsyncGenerator[utils.ModuleData, None]:
-    await wait_available()
-
-    while not fetch_market_sell_event.is_set() and not fetch_market_buy_event.is_set():
+    while not fetch_sell_event.is_set() and not fetch_buy_event.is_set():
         await asyncio.sleep(5)
 
     community_session = community.Community.get_session(0)
@@ -86,8 +85,8 @@ async def main(
     yield utils.ModuleData(action="clear")
 
     generators = {
-        "sell": get_histogram(my_orders[0], "sell", fetch_market_sell_event),
-        "buy": get_histogram(my_orders[1], "buy", fetch_market_buy_event),
+        "sell": get_histogram(my_orders[0], "sell", fetch_sell_event),
+        "buy": get_histogram(my_orders[1], "buy", fetch_buy_event),
     }
 
     tasks: Dict[str, asyncio.Task[Any] | None] = {}
@@ -134,7 +133,3 @@ async def main(
         for task in tasks.values():
             if task and task.done() and not task.exception():
                 yield task.result()
-
-    # yield utils.ModuleData(action="update_sell_level", raw_data=(0, 0))
-    # yield utils.ModuleData(action="update_buy_level", raw_data=(0, 0))
-    # fetch_market_event.clear()
