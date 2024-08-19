@@ -38,7 +38,7 @@ async def get_histogram(
 
     for position, order in enumerate(orders):
         if fetch_event and not fetch_event.is_set():
-            log.warning(_("Stopping fetching market"))
+            log.debug(_("Waiting market fetch event"))
             yield utils.ModuleData(action=f"update_{order_type}_level", raw_data=(0, 0))
             await fetch_event.wait()
 

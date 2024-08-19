@@ -18,11 +18,11 @@
 import asyncio
 import contextlib
 import functools
-import itertools
 import logging
 from typing import Any, Dict, Callable, List
 
 import aiohttp
+import itertools
 from gi.repository import Gio, Gtk
 from steam_tools_ng import __version__
 from stlib import universe, login, community, webapi, internals, plugins
@@ -358,39 +358,48 @@ class SteamToolsNG(Gtk.Application):
                     tree = self.main_window.market_sell_tree
 
                     price_color = utils.color_by_price(
-                        order.price,
-                        histogram['sell_order_price'],
-                        int(histogram['sell_order_table'][0]['quantity']),
+                        order.price.with_fees_added,
+                        histogram.sell_order_table[0].price.as_float,
+                        histogram.sell_order_table[1].price.as_float,
+                        histogram.sell_order_table[0].quantity,
                         order.amount,
                     )
-
-                    trade_for = f"{round(utils.sanatize_steam_price(histogram['sell_order_price']) - 0.01, 2):.2f}"
                 else:
                     tree = self.main_window.market_buy_tree
 
                     price_color = utils.color_by_price(
-                        histogram['buy_order_price'],
-                        order.price,
-                        int(histogram['buy_order_table'][0]['quantity']),
+                        histogram.buy_order_table[0].price.as_float,
+                        order.price.with_fees_added,
+                        histogram.buy_order_table[1].price.as_float,
+                        histogram.buy_order_table[0].quantity,
                         order.amount,
                     )
 
-                    trade_for = f"{round(utils.sanatize_steam_price(histogram['buy_order_price']) + 0.01, 2):.2f}"
-
                 item = tree.new_item(
-                    order.name,
-                    utils.markup(f"{order.price} ({order.amount})", foreground=price_color),
-                    f"{histogram['sell_order_price']} ({histogram['sell_order_table'][0]['quantity']})",
-                    f"{histogram['buy_order_price']} ({histogram['buy_order_table'][0]['quantity']})",
-                    str(order.appid),
-                    str(order.contextid),
-                    str(order.assetid),
-                    str(order.orderid),
-                    order.hash_name,
-                    trade_for,
-                    str(order.currency),
-                    order.amount,
+                    utils.markup(order.name, foreground='blue', underline='single'),
+                    utils.markup(f"{order.price.as_monetary_string_with_fees_added} ({order.amount})",
+                                 foreground=price_color),
+                    histogram.sell_order_price.as_monetary_string +
+                    f" ({histogram.sell_order_table[0].quantity if histogram.sell_order_table else 0}:"
+                    f"{histogram.sell_order_count})",
+                    histogram.buy_order_price.as_monetary_string +
+                    f" ({histogram.buy_order_table[0].quantity if histogram.buy_order_table else 0}:"
+                    f"{histogram.buy_order_count})",
+                    order,
+                    histogram,
                 )
+
+                for i in range(1, 5):
+                    child = tree.new_item(
+                        sell_price=histogram.sell_order_table[i].price.as_monetary_string +
+                                   f" ({histogram.sell_order_table[i].quantity})"
+                        if len(histogram.sell_order_table) > i else '-',
+                        buy_price=histogram.buy_order_table[i].price.as_monetary_string +
+                                  f" ({histogram.buy_order_table[i].quantity})"
+                        if len(histogram.buy_order_table) > i else '-'
+                    )
+
+                    item.children.append(child)
 
                 tree.append_row(item)
 

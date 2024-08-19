@@ -17,12 +17,13 @@
 #
 import asyncio
 import logging
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict
 
 import aiohttp
+import stlib.utils
 from gi.repository import Gtk
-
 from stlib import universe, community
+
 from . import utils
 from .. import config, i18n
 
@@ -38,11 +39,13 @@ class MarketWindow(utils.PopupWindowBase):
             application: Gtk.Application,
             tree: utils.SimpleTextTree,
             action: str,
+            data: str,
     ) -> None:
         super().__init__(parent_window, application)
         self.community_session = community.Community.get_session(0)
         self.action = _(action)
         self.raw_action = action
+        self.data = data
         self.tree = tree
         self.selection = self.tree.model.get_selected_item()
 
@@ -76,11 +79,21 @@ class MarketWindow(utils.PopupWindowBase):
         self.header_bar.pack_start(self.no_button)
 
         if self.selection:
+            self.item = self.selection.get_item()
+
+            if self.raw_action == 'sell':
+                self.price = self.item.histogram.sell_order_price
+            else:
+                self.price = self.item.histogram.buy_order_price
+
+            if self.data == "min":
+                self.price -= 0.01
+
             self.status.info(
                 _("{}\nDo you want to {} the item for {}?\nIt can't be undone!").format(
-                    self.selection.get_item().name,
+                    self.item.order.name,
                     self.action.upper(),
-                    self.selection.get_item().trade_for,
+                    self.price.as_float,
                 )
             )
         else:
@@ -133,109 +146,125 @@ class MarketWindow(utils.PopupWindowBase):
         else:
             self.destroy()
 
+    async def cancel(self, order: stlib.community.Order, type_: str) -> None:
+        if self.raw_action == 'sell':
+            self.status.info(_("Waiting Steam Server (OP: {})").format(order.assetid))
+
+            # steam market server isn't reliable
+            for tries in range(3):
+                try:
+                    await self.community_session.cancel_sell_order(order.orderid)
+                    break
+                except (community.MarketError, aiohttp.ClientError) as error:
+                    if tries == 2:
+                        raise error from None
+
+                await asyncio.sleep(1)
+        else:
+            self.status.info(_("Waiting Steam Server (OP: {})").format(order.orderid))
+
+            # steam market server isn't reliable
+            for tries in range(3):
+                try:
+                    await self.community_session.cancel_buy_order(order.orderid)
+                    break
+                except (community.MarketError, aiohttp.ClientError) as error:
+                    if tries == 2:
+                        raise error from None
+
+                await asyncio.sleep(1)
+
+    async def sell(self, order: stlib.community.Order, price: universe.SteamPrice) -> Dict[str, Any]:
+        self.status.info(_("Waiting Steam Server (OP: {})").format(order.assetid))
+
+        # steam market server isn't reliable
+        for tries in range(3):
+            try:
+                response = await self.community_session.sell_item(
+                    self.steamid,
+                    order.appid,
+                    order.contextid,
+                    order.assetid,
+                    price,
+                    order.amount,
+                )
+                break
+            except (community.MarketError, aiohttp.ClientError) as error:
+                if tries == 2:
+                    raise error from None
+
+            await asyncio.sleep(1)
+
+        # noinspection PyUnboundLocalVariable
+        return response
+
+    async def buy(self, order: stlib.community.Order, price: universe.SteamPrice) -> Dict[str, Any]:
+        self.status.info(_("Waiting Steam Server (OP: {})").format(order.orderid))
+
+        # steam market server isn't reliable
+        for tries in range(3):
+            try:
+                response = await self.community_session.buy_item(
+                    order.appid,
+                    order.hash_name,
+                    price,
+                    order.currency,
+                    order.amount,
+                )
+                break
+            except (community.MarketError, aiohttp.ClientError) as error:
+                if tries == 2:
+                    raise error from None
+
+            await asyncio.sleep(1)
+
+        # noinspection PyUnboundLocalVariable
+        return response
+
     async def single_action(self) -> None:
-        item = self.selection.get_item()
+        if self.raw_action == 'cancel':
+            await self.cancel(self.item.order, self.data)
+            return
 
         if self.raw_action == 'sell':
-            self.status.info(_("Waiting Steam Server (OP: {})").format(item.assetid))
-
-            # steam market server isn't reliable
-            for tries in range(3):
-                try:
-                    await self.community_session.cancel_sell_order(int(item.orderid))
-                    break
-                except (community.MarketError, aiohttp.ClientError) as error:
-                    if tries == 3:
-                        raise error from None
-
-                await asyncio.sleep(1)
-
+            await self.cancel(self.item.order, "sell")
             await asyncio.sleep(2)
-
-            # steam market server isn't reliable
-            for tries in range(3):
-                try:
-                    response = await self.community_session.sell_item(
-                        self.steamid,
-                        int(item.appid),
-                        int(item.contextid),
-                        int(item.assetid),
-                        float(item.trade_for),
-                        int(item.amount),
-                    )
-                    break
-                except (community.MarketError, aiohttp.ClientError) as error:
-                    if tries == 3:
-                        raise error from None
-
-                await asyncio.sleep(1)
+            await self.sell(self.item.order, self.price)
+            self.item.histogram.sell_order_table.insert(0, community.PriceInfo(self.price, self.item.order.amount))
 
             new_item = self.tree.new_item(
-                item.name,
-                utils.markup(item.trade_for, foreground='green'),
-                f"{item.trade_for} ({item.amount})",
-                item.buy_price,
-                item.appid,
-                item.contextid,
-                item.assetid,
-                "0",
-                item.hash_name,
-                f"{round(float(item.trade_for) + 0.01, 2):.2f}",
-                item.currency,
-                item.amount,
+                self.item.name,
+                utils.markup(f"${self.price.as_float} ({self.item.order.amount})", foreground='green'),
+                f"$ {self.price.as_float} ({self.item.order.amount}):{self.item.histogram.sell_order_count}",
+                self.item.buy_price,
+                self.item.order,
+                self.item.histogram,
             )
 
+            new_item.children.extend(self.item.children)
             self.tree.append_row(new_item)
-            self.tree.remove_item(item)
-            return None
-        else:
-            self.status.info(_("Waiting Steam Server (OP: {})").format(item.orderid))
+            self.tree.remove_item(self.item)
+            return
 
-            # steam market server isn't reliable
-            for tries in range(3):
-                try:
-                    await self.community_session.cancel_buy_order(int(item.orderid))
-                    break
-                except (community.MarketError, aiohttp.ClientError) as error:
-                    if tries == 3:
-                        raise error from None
-
-                await asyncio.sleep(1)
-
+        if self.raw_action == 'buy':
+            await self.cancel(self.item.order, "buy")
             await asyncio.sleep(2)
 
-            # steam market server isn't reliable
-            for tries in range(3):
-                try:
-                    response = await self.community_session.buy_item(
-                        int(item.appid),
-                        item.hash_name,
-                        float(item.trade_for),
-                        int(item.currency),
-                        int(item.amount),
-                    )
-                    break
-                except (community.MarketError, aiohttp.ClientError) as error:
-                    if tries == 3:
-                        raise error from None
+            response = await self.buy(self.item.order, self.price)
+            # noinspection PyProtectedMember
+            self.item.order._replace(orderid=response['buy_orderid'])
+            self.item.histogram.buy_order_table.insert(0, community.PriceInfo(self.price, self.item.order.amount))
 
-                await asyncio.sleep(1)
+            new_item = self.tree.new_item(
+                self.item.name,
+                utils.markup(f"${self.price.as_float} ({self.item.order.amount})", foreground='green'),
+                self.item.sell_price.as_float,
+                f"$ {self.price.as_float} ({self.item.order.amount}:{self.item.histogram.buy_order_count})",
+                self.item.order,
+                self.item.histogram,
+            )
 
-        new_item = self.tree.new_item(
-            item.name,
-            utils.markup(item.trade_for, foreground='green'),
-            item.sell_price,
-            f"{item.trade_for} ({item.amount})",
-            item.appid,
-            item.contextid,
-            item.assetid,
-            response['buy_orderid'],
-            item.hash_name,
-            f"{round(float(item.trade_for) + 0.01, 2):.2f}",
-            item.currency,
-            item.amount,
-        )
-
-        self.tree.append_row(new_item)
-        self.tree.remove_item(item)
-        return None
+            new_item.children.extend(self.item.children)
+            self.tree.append_row(new_item)
+            self.tree.remove_item(self.item)
+            return

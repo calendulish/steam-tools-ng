@@ -16,18 +16,19 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
+import contextlib
 import functools
 import html
 import inspect
 import logging
-import sys
 import traceback
 from collections import OrderedDict
 from traceback import StackSummary
 from types import FrameType
-from typing import Any, Callable, List, Type, Tuple, Dict
+from typing import Any, Callable, List, Type, Tuple
 from xml.etree import ElementTree
 
+import sys
 from gi.repository import Gtk, Gdk, Gio, GObject
 from stlib import internals
 
@@ -167,10 +168,8 @@ class SimpleTextTreeItem(GObject.Object):
             if name.startswith('_'):
                 name = name[1:]
 
-            try:
+            with contextlib.suppress(IndexError):
                 setattr(self, name, args[index])
-            except IndexError:
-                log.debug(f'{name} param not set in {self}')
 
         super(GObject.Object, self).__init__()
         self.children: List[SimpleTextTreeItem] = []
@@ -274,6 +273,7 @@ class SimpleTextTree(Gtk.Grid):
     def setup(view: Gtk.ListView, item: Gtk.ListItem, hide_expander: bool = True) -> None:
         expander = Gtk.TreeExpander()
         expander.set_hide_expander(hide_expander)
+        expander.set_indent_for_depth(False)
         label = Gtk.Label()
         expander.set_child(label)
         item.set_child(expander)
@@ -294,9 +294,12 @@ class SimpleTextTree(Gtk.Grid):
             data = data.get_item()
 
         if element:
-            column_text = getattr(data, element.replace(' ', '_').lower())
-            label.set_markup(column_text)
-            label.set_hexpand(True)
+            attribute = element.replace(' ', '_').lower()
+
+            if hasattr(data, attribute):
+                column_text = getattr(data, attribute)
+                label.set_markup(column_text)
+                label.set_hexpand(True)
 
     def item_factory(self, item: Gtk.ListItem) -> Gtk.TreeListModel | None:
         store = Gio.ListStore.new(SimpleTextTreeItem)
@@ -812,9 +815,12 @@ def remove_letters(text: str) -> str:
     return ''.join(new_text)
 
 
-def color_by_price(price1: str, price2: str, quantity1: int, quantity2: int) -> str:
-    if remove_letters(price1) <= remove_letters(price2):
-        return 'green' if quantity1 == quantity2 else 'blue'
+def color_by_price(price1: float, price2: float, price3: float, quantity1: int, quantity2: int) -> str:
+    if price1 <= price2:
+        if quantity1 != quantity2:
+            return 'darkcyan'
+
+        return 'yellow' if price1 - price3 > 1 else 'green'
 
     return 'red'
 
