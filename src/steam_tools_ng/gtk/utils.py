@@ -817,7 +817,7 @@ def remove_letters(text: str) -> str:
 
 def color_by_price(price1: float, price2: float, price3: float, quantity1: int, quantity2: int) -> str:
     if price1 <= price2:
-        if quantity1 != quantity2:
+        if quantity1 > quantity2:
             return 'darkcyan'
 
         return 'yellow' if price1 - price3 > 1 else 'green'

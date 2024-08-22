@@ -81,21 +81,36 @@ class MarketWindow(utils.PopupWindowBase):
         if self.selection:
             self.item = self.selection.get_item()
 
-            if self.raw_action == 'sell':
-                self.price = self.item.histogram.sell_order_price
-            else:
-                self.price = self.item.histogram.buy_order_price
+            if self.raw_action != 'cancel':
+                price_map = {
+                    'sell': {
+                        'max': self.item.histogram.buy_order_price,
+                        'min': self.item.histogram.sell_order_price - 0.01,
+                        'same': self.item.histogram.sell_order_price
+                    },
+                    'buy': {
+                        'max': self.item.histogram.sell_order_price,
+                        'min': self.item.histogram.buy_order_price + 0.01,
+                        'same': self.item.histogram.buy_order_price
+                    }
+                }
 
-            if self.data == "min":
-                self.price -= 0.01
+                self.price = price_map[self.raw_action][self.data]
 
-            self.status.info(
-                _("{}\nDo you want to {} the item for {}?\nIt can't be undone!").format(
-                    self.item.order.name,
-                    self.action.upper(),
-                    self.price.as_float,
+                self.status.info(
+                    _("{}\nDo you want to {} the item for {}?\nIt can't be undone!").format(
+                        self.item.order.name,
+                        self.action.upper(),
+                        self.price.as_float,
+                    )
                 )
-            )
+            else:
+                self.status.info(
+                    _("{}\nDo you want to {} the order?\nIt can't be undone!").format(
+                        self.item.order.name,
+                        self.action.upper(),
+                    )
+                )
         else:
             self.status.error(_("You must select something"))
             self.header_bar.set_show_title_buttons(True)
@@ -222,6 +237,8 @@ class MarketWindow(utils.PopupWindowBase):
         return response
 
     async def single_action(self) -> None:
+        total_amount = self.item.order.amount
+
         if self.raw_action == 'cancel':
             await self.cancel(self.item.order, self.data)
             return
@@ -230,12 +247,16 @@ class MarketWindow(utils.PopupWindowBase):
             await self.cancel(self.item.order, "sell")
             await asyncio.sleep(2)
             await self.sell(self.item.order, self.price)
+            self.item.histogram._replace(sell_order_price=self.price) # noqa
             self.item.histogram.sell_order_table.insert(0, community.PriceInfo(self.price, self.item.order.amount))
+
+            if self.data == 'same':
+                total_amount += self.item.histogram.sell_order_table[0].amount
 
             new_item = self.tree.new_item(
                 self.item.name,
                 utils.markup(f"${self.price.as_float} ({self.item.order.amount})", foreground='green'),
-                f"$ {self.price.as_float} ({self.item.order.amount}):{self.item.histogram.sell_order_count}",
+                f"$ {self.price.as_float} ({total_amount}:{self.item.histogram.sell_order_count})",
                 self.item.buy_price,
                 self.item.order,
                 self.item.histogram,
@@ -251,15 +272,18 @@ class MarketWindow(utils.PopupWindowBase):
             await asyncio.sleep(2)
 
             response = await self.buy(self.item.order, self.price)
-            # noinspection PyProtectedMember
-            self.item.order._replace(orderid=response['buy_orderid'])
+            self.item.order._replace(orderid=response['buy_orderid']) # noqa
+            self.item.histogram._replace(buy_order_price=self.price) # noqa
             self.item.histogram.buy_order_table.insert(0, community.PriceInfo(self.price, self.item.order.amount))
+
+            if self.data == 'same':
+                total_amount += self.item.histogram.buy_order_table[0].amount
 
             new_item = self.tree.new_item(
                 self.item.name,
                 utils.markup(f"${self.price.as_float} ({self.item.order.amount})", foreground='green'),
-                self.item.sell_price.as_float,
-                f"$ {self.price.as_float} ({self.item.order.amount}:{self.item.histogram.buy_order_count})",
+                self.item.sell_price,
+                f"$ {self.price.as_float} ({total_amount}:{self.item.histogram.buy_order_count})",
                 self.item.order,
                 self.item.histogram,
             )

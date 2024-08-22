@@ -649,8 +649,8 @@ class Main(Gtk.ApplicationWindow):
         self.market_buy_tree.view.connect("activate", self.on_market_double_clicked, self.market_buy_tree)
         self.market_buy_tree.model.connect("selection-changed", self.on_tree_selection_changed)
 
-        self.market_sell_grid.attach(self.market_sell_tree, 0, 0, 5, 2)
-        self.market_buy_grid.attach(self.market_buy_tree, 0, 0, 5, 2)
+        self.market_sell_grid.attach(self.market_sell_tree, 0, 0, 6, 2)
+        self.market_buy_grid.attach(self.market_buy_tree, 0, 0, 6, 2)
 
         for tree in (self.market_sell_tree, self.market_buy_tree):
             for index, column in enumerate(tree.view.get_columns()):
@@ -666,16 +666,16 @@ class Main(Gtk.ApplicationWindow):
 
         self.market_buy_progress = Gtk.LevelBar()
         self.market_sell_progress = Gtk.LevelBar()
-        self.market_sell_grid.attach(self.market_sell_progress, 0, 3, 5, 1)
-        self.market_buy_grid.attach(self.market_buy_progress, 0, 3, 5, 1)
+        self.market_sell_grid.attach(self.market_sell_progress, 0, 3, 6, 1)
+        self.market_buy_grid.attach(self.market_buy_progress, 0, 3, 6, 1)
 
         self.market_buy_running_progress = Gtk.ProgressBar()
         self.market_buy_running_progress.set_pulse_step(0.5)
-        self.market_buy_grid.attach(self.market_buy_running_progress, 0, 4, 5, 1)
+        self.market_buy_grid.attach(self.market_buy_running_progress, 0, 4, 6, 1)
 
         self.market_sell_running_progress = Gtk.ProgressBar()
         self.market_sell_running_progress.set_pulse_step(0.5)
-        self.market_sell_grid.attach(self.market_sell_running_progress, 0, 4, 5, 1)
+        self.market_sell_grid.attach(self.market_sell_running_progress, 0, 4, 6, 1)
 
         self.market_sell_fetch_button = Gtk.Button()
         self.market_sell_fetch_button.set_margin_start(3)
@@ -707,13 +707,21 @@ class Main(Gtk.ApplicationWindow):
         self.market_sell_same_button.connect("clicked", self.on_market_action, "sell", "same", self.market_sell_tree)
         self.market_sell_grid.attach(self.market_sell_same_button, 3, 5, 1, 1)
 
+        self.market_sell_max_button = Gtk.Button()
+        self.market_sell_max_button.set_margin_start(3)
+        self.market_sell_max_button.set_margin_end(3)
+        self.market_sell_max_button.set_label(_("Select an item"))
+        self.market_sell_max_button.set_sensitive(False)
+        self.market_sell_max_button.connect("clicked", self.on_market_action, "sell", "max", self.market_sell_tree)
+        self.market_sell_grid.attach(self.market_sell_max_button, 4, 5, 1, 1)
+
         self.market_sell_cancel_button = Gtk.Button()
         self.market_sell_cancel_button.set_margin_start(3)
         self.market_sell_cancel_button.set_margin_end(3)
         self.market_sell_cancel_button.set_label(_("Cancel"))
         self.market_sell_cancel_button.set_sensitive(False)
         self.market_sell_cancel_button.connect("clicked", self.on_market_action, "cancel", "sell", self.market_sell_tree)
-        self.market_sell_grid.attach(self.market_sell_cancel_button, 4, 5, 1, 1)
+        self.market_sell_grid.attach(self.market_sell_cancel_button, 5, 5, 1, 1)
 
         self.market_buy_fetch_button = Gtk.Button()
         self.market_buy_fetch_button.set_margin_start(3)
@@ -745,13 +753,21 @@ class Main(Gtk.ApplicationWindow):
         self.market_buy_same_button.connect("clicked", self.on_market_action, "buy", "same", self.market_buy_tree)
         self.market_buy_grid.attach(self.market_buy_same_button, 3, 5, 1, 1)
 
+        self.market_buy_max_button = Gtk.Button()
+        self.market_buy_max_button.set_margin_start(3)
+        self.market_buy_max_button.set_margin_end(3)
+        self.market_buy_max_button.set_label(_("Select an item"))
+        self.market_buy_max_button.set_sensitive(False)
+        self.market_buy_max_button.connect("clicked", self.on_market_action, "buy", "max", self.market_buy_tree)
+        self.market_buy_grid.attach(self.market_buy_max_button, 4, 5, 1, 1)
+
         self.market_buy_cancel_button = Gtk.Button()
         self.market_buy_cancel_button.set_margin_start(3)
         self.market_buy_cancel_button.set_margin_end(3)
         self.market_buy_cancel_button.set_label(_("Cancel"))
         self.market_buy_cancel_button.set_sensitive(False)
         self.market_buy_cancel_button.connect("clicked", self.on_market_action, "cancel", "buy", self.market_buy_tree)
-        self.market_buy_grid.attach(self.market_buy_cancel_button, 4, 5, 1, 1)
+        self.market_buy_grid.attach(self.market_buy_cancel_button, 5, 5, 1, 1)
 
         market_settings = utils.Section("market")
         market_settings.stackup_section(_("Settings"), market_stack)
@@ -991,12 +1007,16 @@ class Main(Gtk.ApplicationWindow):
         item = row.get_item()
         min_ = item.histogram.sell_order_price - 0.01
         same = item.histogram.sell_order_price
+        max_ = item.histogram.buy_order_price
 
         self.market_sell_min_button.set_label(_("Sell for {}").format(min_.as_monetary_string))
         self.market_sell_min_button.set_sensitive(True)
 
         self.market_sell_same_button.set_label(_("Sell for {}").format(same.as_monetary_string))
         self.market_sell_same_button.set_sensitive(True)
+
+        self.market_sell_max_button.set_label(_("Sell for {}").format(max_.as_monetary_string))
+        self.market_sell_max_button.set_sensitive(True)
 
         self.market_sell_cancel_button.set_sensitive(True)
 
@@ -1005,12 +1025,16 @@ class Main(Gtk.ApplicationWindow):
         item = row.get_item()
         min_ = item.histogram.buy_order_price + 0.01
         same = item.histogram.buy_order_price
+        max_ = item.histogram.sell_order_price
 
         self.market_buy_min_button.set_label(_("Buy for {}").format(min_.as_monetary_string))
         self.market_buy_min_button.set_sensitive(True)
 
         self.market_buy_same_button.set_label(_("Buy for {}").format(same.as_monetary_string))
         self.market_buy_same_button.set_sensitive(True)
+
+        self.market_buy_max_button.set_label(_("Buy for {}").format(max_.as_monetary_string))
+        self.market_buy_max_button.set_sensitive(True)
 
         self.market_buy_cancel_button.set_sensitive(True)
 

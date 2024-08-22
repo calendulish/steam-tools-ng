@@ -356,6 +356,7 @@ class SteamToolsNG(Gtk.Application):
 
                 if type_ == 'sell':
                     tree = self.main_window.market_sell_tree
+                    price = order.price.as_monetary_string_with_fees_added
 
                     price_color = utils.color_by_price(
                         order.price.with_fees_added,
@@ -366,10 +367,11 @@ class SteamToolsNG(Gtk.Application):
                     )
                 else:
                     tree = self.main_window.market_buy_tree
+                    price = order.price.as_monetary_string
 
                     price_color = utils.color_by_price(
                         histogram.buy_order_table[0].price.as_float,
-                        order.price.with_fees_added,
+                        order.price.as_float,
                         histogram.buy_order_table[1].price.as_float,
                         histogram.buy_order_table[0].quantity,
                         order.amount,
@@ -377,7 +379,7 @@ class SteamToolsNG(Gtk.Application):
 
                 item = tree.new_item(
                     utils.markup(order.name, foreground='blue', underline='single'),
-                    utils.markup(f"{order.price.as_monetary_string_with_fees_added} ({order.amount})",
+                    utils.markup(f"{price} ({order.amount})",
                                  foreground=price_color),
                     histogram.sell_order_price.as_monetary_string +
                     f" ({histogram.sell_order_table[0].quantity if histogram.sell_order_table else 0}:"
