@@ -424,11 +424,17 @@ class SimpleStatus(Gtk.Frame):
         self.info(_("Waiting"))
         self.set_hexpand(True)
 
-    def error(self, text: str) -> None:
-        self._label.set_markup(markup(text, color='hotpink', face='monospace'))
+    def error(self, text: str, custom: str = "") -> None:
+        self._label.set_markup(
+            markup(text, color='hotpink', face='monospace') +
+            custom,
+        )
 
-    def info(self, text: str) -> None:
-        self._label.set_markup(markup(text, color='cyan', face='monospace'))
+    def info(self, text: str, custom: str = "") -> None:
+        self._label.set_markup(
+            markup(text, color='cyan', face='monospace') +
+            custom,
+        )
 
 
 def when_running(function: Callable[..., Any]) -> Callable[..., Any]:
@@ -815,14 +821,16 @@ def remove_letters(text: str) -> str:
     return ''.join(new_text)
 
 
-def color_by_price(price1: float, price2: float, price3: float, quantity1: int, quantity2: int) -> str:
+def color_by_price(price1: int, price2: int, price3: int, quantity1: int, quantity2: int) -> str:
+    color = 'red'
+
     if price1 <= price2:
-        if quantity1 > quantity2:
-            return 'darkcyan'
+        color = 'yellow' if quantity1 > quantity2 else 'green'
 
-        return 'yellow' if price1 - price3 > 1 else 'green'
+        if price3 - price1 > 1:
+            color = 'darkcyan'
 
-    return 'red'
+    return color
 
 
 async def update_progress(event, progress) -> None:

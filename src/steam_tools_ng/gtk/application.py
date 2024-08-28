@@ -356,24 +356,30 @@ class SteamToolsNG(Gtk.Application):
 
                 if type_ == 'sell':
                     tree = self.main_window.market_sell_tree
-                    price = order.price.as_monetary_string_with_fees_added
+                    price = order.price.as_monetary_string(sum_fees=True)
 
                     price_color = utils.color_by_price(
-                        order.price.with_fees_added,
-                        histogram.sell_order_table[0].price.as_float,
-                        histogram.sell_order_table[1].price.as_float,
-                        histogram.sell_order_table[0].quantity,
+                        order.price.as_integer(sum_fees=True),
+                        histogram.sell_order_table[0].price.as_integer()
+                        if histogram.sell_order_table else 0,
+                        histogram.sell_order_table[1].price.as_integer()
+                        if len(histogram.sell_order_table) > 1 else 0,
+                        histogram.sell_order_table[0].quantity
+                        if histogram.sell_order_table else 0,
                         order.amount,
                     )
                 else:
                     tree = self.main_window.market_buy_tree
-                    price = order.price.as_monetary_string
+                    price = order.price.as_monetary_string()
 
                     price_color = utils.color_by_price(
-                        histogram.buy_order_table[0].price.as_float,
-                        order.price.as_float,
-                        histogram.buy_order_table[1].price.as_float,
-                        histogram.buy_order_table[0].quantity,
+                        histogram.buy_order_table[0].price.as_integer()
+                        if histogram.buy_order_table else 0,
+                        order.price.as_integer(),
+                        histogram.buy_order_table[1].price.as_integer()
+                        if len(histogram.buy_order_table) > 1 else 0,
+                        histogram.buy_order_table[0].quantity
+                        if histogram.buy_order_table else 0,
                         order.amount,
                     )
 
@@ -381,10 +387,10 @@ class SteamToolsNG(Gtk.Application):
                     utils.markup(order.name, foreground='blue', underline='single'),
                     utils.markup(f"{price} ({order.amount})",
                                  foreground=price_color),
-                    histogram.sell_order_price.as_monetary_string +
+                    histogram.sell_order_price.as_monetary_string() +
                     f" ({histogram.sell_order_table[0].quantity if histogram.sell_order_table else 0}:"
                     f"{histogram.sell_order_count})",
-                    histogram.buy_order_price.as_monetary_string +
+                    histogram.buy_order_price.as_monetary_string() +
                     f" ({histogram.buy_order_table[0].quantity if histogram.buy_order_table else 0}:"
                     f"{histogram.buy_order_count})",
                     order,
@@ -393,10 +399,10 @@ class SteamToolsNG(Gtk.Application):
 
                 for i in range(1, 5):
                     child = tree.new_item(
-                        sell_price=histogram.sell_order_table[i].price.as_monetary_string +
+                        sell_price=histogram.sell_order_table[i].price.as_monetary_string() +
                                    f" ({histogram.sell_order_table[i].quantity})"
                         if len(histogram.sell_order_table) > i else '-',
-                        buy_price=histogram.buy_order_table[i].price.as_monetary_string +
+                        buy_price=histogram.buy_order_table[i].price.as_monetary_string() +
                                   f" ({histogram.buy_order_table[i].quantity})"
                         if len(histogram.buy_order_table) > i else '-'
                     )

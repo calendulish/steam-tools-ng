@@ -80,29 +80,49 @@ class MarketWindow(utils.PopupWindowBase):
 
         if self.selection:
             self.item = self.selection.get_item()
+            sell_table = self.item.histogram.sell_order_table
+            buy_table = self.item.histogram.buy_order_table
+            default_price = universe.SteamPrice(0.03)
 
             if self.raw_action != 'cancel':
                 price_map = {
                     'sell': {
                         'max': self.item.histogram.buy_order_price,
-                        'min': self.item.histogram.sell_order_price - 0.01,
-                        'same': self.item.histogram.sell_order_price
+                        'min': sell_table[0].price - 0.01 if sell_table else default_price,
+                        'same': sell_table[1].price - 0.01 if len(sell_table) > 1 else default_price,
                     },
                     'buy': {
                         'max': self.item.histogram.sell_order_price,
-                        'min': self.item.histogram.buy_order_price + 0.01,
-                        'same': self.item.histogram.buy_order_price
+                        'min': buy_table[0].price + 0.01 if buy_table else default_price,
+                        'same': buy_table[1].price + 0.01 if len(buy_table) > 1 else default_price,
                     }
                 }
 
                 self.price = price_map[self.raw_action][self.data]
 
-                self.status.info(
-                    _("{}\nDo you want to {} the item for {}?\nIt can't be undone!").format(
-                        self.item.order.name,
-                        self.action.upper(),
-                        self.price.as_float,
+                if self.price < 0.03:
+                    price_offset = default_price
+                else:
+                    price_offset = universe.SteamPrice(self.price.fees(reverse=True)[0])
+
+                message = _("{}\nDo you want to {} the item for {}?\nIt can't be undone!").format(
+                    self.item.order.name,
+                    self.action.upper(),
+                    self.price.as_monetary_string(),
+                )
+
+                extra_message = ""
+
+                if (self.raw_action == 'sell' and price_offset != self.price or
+                        self.raw_action == 'buy' and self.price < 0.03):
+                    self.price = price_offset
+                    extra_message = _("\nItem will be listed for {} due steam market price calculation").format(
+                        self.price.as_monetary_string(),
                     )
+
+                self.status.info(
+                    message,
+                    utils.markup(extra_message, color='yellow'),
                 )
             else:
                 self.status.info(
@@ -162,7 +182,7 @@ class MarketWindow(utils.PopupWindowBase):
             self.destroy()
 
     async def cancel(self, order: stlib.community.Order, type_: str) -> None:
-        if self.raw_action == 'sell':
+        if type_ == 'sell':
             self.status.info(_("Waiting Steam Server (OP: {})").format(order.assetid))
 
             # steam market server isn't reliable
@@ -239,56 +259,93 @@ class MarketWindow(utils.PopupWindowBase):
     async def single_action(self) -> None:
         total_amount = self.item.order.amount
 
-        if self.raw_action == 'cancel':
-            await self.cancel(self.item.order, self.data)
-            return
-
         if self.raw_action == 'sell':
             await self.cancel(self.item.order, "sell")
             await asyncio.sleep(2)
-            await self.sell(self.item.order, self.price)
-            self.item.histogram._replace(sell_order_price=self.price) # noqa
-            self.item.histogram.sell_order_table.insert(0, community.PriceInfo(self.price, self.item.order.amount))
 
-            if self.data == 'same':
-                total_amount += self.item.histogram.sell_order_table[0].amount
+            await self.sell(self.item.order, self.price)
+
+            self.item.histogram._replace(sell_order_price=self.price)  # noqa
+
+            if self.data == 'same' and self.item.histogram.sell_order_table:
+                total_amount += self.item.histogram.sell_order_table[0].quantity
+
+            add_new = True
+
+            if (self.item.histogram.sell_order_table and
+                    self.item.order.price == self.item.histogram.sell_order_table[0].price):
+                fixed_amount = self.item.histogram.sell_order_table[0].quantity - self.item.order.amount
+
+                if fixed_amount > 0:
+                    self.item.histogram.sell_order_table[0]._replace(quantity=fixed_amount)
+                else:
+                    self.item.histogram.sell_order_table[0]._replace(price=self.price)
+                    self.item.histogram.sell_order_table[0]._replace(quantity=self.item.order.amount)
+                    add_new = False
+
+            if add_new:
+                self.item.histogram.sell_order_table.insert(0, community.PriceInfo(self.price, self.item.order.amount))
 
             new_item = self.tree.new_item(
                 self.item.name,
-                utils.markup(f"${self.price.as_float} ({self.item.order.amount})", foreground='green'),
-                f"$ {self.price.as_float} ({total_amount}:{self.item.histogram.sell_order_count})",
+                utils.markup(f"${self.price.as_float()} ({self.item.order.amount})", foreground='green'),
+                f"$ {self.price.as_float()} ({total_amount}:{self.item.histogram.sell_order_count})",
                 self.item.buy_price,
                 self.item.order,
                 self.item.histogram,
             )
-
-            new_item.children.extend(self.item.children)
-            self.tree.append_row(new_item)
-            self.tree.remove_item(self.item)
-            return
-
-        if self.raw_action == 'buy':
+        elif self.raw_action == 'buy':
             await self.cancel(self.item.order, "buy")
             await asyncio.sleep(2)
 
             response = await self.buy(self.item.order, self.price)
-            self.item.order._replace(orderid=response['buy_orderid']) # noqa
-            self.item.histogram._replace(buy_order_price=self.price) # noqa
-            self.item.histogram.buy_order_table.insert(0, community.PriceInfo(self.price, self.item.order.amount))
+            self.item.order._replace(orderid=response['buy_orderid'])  # noqa
+            self.item.histogram._replace(buy_order_price=self.price)  # noqa
 
-            if self.data == 'same':
-                total_amount += self.item.histogram.buy_order_table[0].amount
+            if self.data == 'same' and self.item.histogram.buy_order_table:
+                total_amount += self.item.histogram.buy_order_table[0].quantity
+
+            add_new = True
+
+            if (self.item.histogram.buy_order_table and
+                    self.item.order.price == self.item.histogram.buy_order_table[0].price):
+                fixed_amount = self.item.histogram.buy_order_table[0].quantity - self.item.order.amount
+
+                if fixed_amount > 0:
+                    self.item.histogram.buy_order_table[0]._replace(quantity=fixed_amount)
+                else:
+                    self.item.histogram.buy_order_table[0]._replace(price=self.price)
+                    self.item.histogram.buy_order_table[0]._replace(quantity=self.item.order.amount)
+                    add_new = False
+
+            if add_new:
+                self.item.histogram.buy_order_table.insert(0, community.PriceInfo(self.price, self.item.order.amount))
 
             new_item = self.tree.new_item(
                 self.item.name,
-                utils.markup(f"${self.price.as_float} ({self.item.order.amount})", foreground='green'),
+                utils.markup(f"${self.price.as_float()} ({self.item.order.amount})", foreground='green'),
                 self.item.sell_price,
-                f"$ {self.price.as_float} ({total_amount}:{self.item.histogram.buy_order_count})",
+                f"$ {self.price.as_float()} ({total_amount}:{self.item.histogram.buy_order_count})",
                 self.item.order,
                 self.item.histogram,
             )
-
-            new_item.children.extend(self.item.children)
-            self.tree.append_row(new_item)
+        else:
+            await self.cancel(self.item.order, self.data)
+            await asyncio.sleep(2)
             self.tree.remove_item(self.item)
             return
+
+        for i in range(1, 5):
+            child = self.tree.new_item(
+                sell_price=self.item.histogram.sell_order_table[i].price.as_monetary_string() +
+                           f" ({self.item.histogram.sell_order_table[i].quantity})"
+                if len(self.item.histogram.sell_order_table) > i else '-',
+                buy_price=self.item.histogram.buy_order_table[i].price.as_monetary_string() +
+                          f" ({self.item.histogram.buy_order_table[i].quantity})"
+                if len(self.item.histogram.buy_order_table) > i else '-'
+            )
+
+            new_item.children.append(child)
+
+        self.tree.append_row(new_item)
+        self.tree.remove_item(self.item)

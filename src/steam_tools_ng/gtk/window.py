@@ -25,7 +25,7 @@ from typing import Tuple, Any
 
 import stlib
 from gi.repository import Gio, Gtk, Gdk
-from stlib import login, plugins
+from stlib import login, plugins, universe
 
 from . import confirmation, utils, coupon, authenticator, market
 from .login import LoginWindow
@@ -1005,17 +1005,18 @@ class Main(Gtk.ApplicationWindow):
     def on_market_sell_selection_changed(self, view: Gtk.SingleSelection, position: int, item_count: int) -> None:
         row = view.get_selected_item()
         item = row.get_item()
-        min_ = item.histogram.sell_order_price - 0.01
-        same = item.histogram.sell_order_price
+        default = universe.SteamPrice(0.03)
+        same = item.histogram.sell_order_table[1].price - 0.01 if len(item.histogram.sell_order_table) > 1 else default
+        min_ = item.histogram.sell_order_table[0].price - 0.01 if item.histogram.sell_order_table else default
         max_ = item.histogram.buy_order_price
 
-        self.market_sell_min_button.set_label(_("Sell for {}").format(min_.as_monetary_string))
+        self.market_sell_min_button.set_label(_("Sell for {}").format(min_.as_monetary_string()))
         self.market_sell_min_button.set_sensitive(True)
 
-        self.market_sell_same_button.set_label(_("Sell for {}").format(same.as_monetary_string))
+        self.market_sell_same_button.set_label(_("Sell for {}").format(same.as_monetary_string()))
         self.market_sell_same_button.set_sensitive(True)
 
-        self.market_sell_max_button.set_label(_("Sell for {}").format(max_.as_monetary_string))
+        self.market_sell_max_button.set_label(_("Sell for {}").format(max_.as_monetary_string()))
         self.market_sell_max_button.set_sensitive(True)
 
         self.market_sell_cancel_button.set_sensitive(True)
@@ -1023,17 +1024,18 @@ class Main(Gtk.ApplicationWindow):
     def on_market_buy_selection_changed(self, view: Gtk.SingleSelection, position: int, item_count: int) -> None:
         row = view.get_selected_item()
         item = row.get_item()
-        min_ = item.histogram.buy_order_price + 0.01
-        same = item.histogram.buy_order_price
+        default = universe.SteamPrice(0.03)
+        same = item.histogram.buy_order_table[1].price + 0.01 if len(item.histogram.buy_order_table) > 1 else default
+        min_ = item.histogram.buy_order_table[0].price + 0.01 if item.histogram.buy_order_table else default
         max_ = item.histogram.sell_order_price
 
-        self.market_buy_min_button.set_label(_("Buy for {}").format(min_.as_monetary_string))
+        self.market_buy_min_button.set_label(_("Buy for {}").format(min_.as_monetary_string()))
         self.market_buy_min_button.set_sensitive(True)
 
-        self.market_buy_same_button.set_label(_("Buy for {}").format(same.as_monetary_string))
+        self.market_buy_same_button.set_label(_("Buy for {}").format(same.as_monetary_string()))
         self.market_buy_same_button.set_sensitive(True)
 
-        self.market_buy_max_button.set_label(_("Buy for {}").format(max_.as_monetary_string))
+        self.market_buy_max_button.set_label(_("Buy for {}").format(max_.as_monetary_string()))
         self.market_buy_max_button.set_sensitive(True)
 
         self.market_buy_cancel_button.set_sensitive(True)
