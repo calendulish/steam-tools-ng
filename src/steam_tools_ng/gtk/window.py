@@ -924,13 +924,13 @@ class Main(Gtk.ApplicationWindow):
 
     async def coupon_running_indicator(self) -> None:
         while self.get_realized():
-            await utils.update_progress(self.coupon_fetch_event, self.coupon_running_progress)
+            utils.update_progress(self.coupon_fetch_event, self.coupon_running_progress)
             await asyncio.sleep(1)
 
     async def market_running_indicator(self) -> None:
         while self.get_realized():
-            await utils.update_progress(self.market_fetch_sell_event, self.market_sell_running_progress)
-            await utils.update_progress(self.market_fetch_buy_event, self.market_buy_running_progress)
+            utils.update_progress(self.market_fetch_sell_event, self.market_sell_running_progress)
+            utils.update_progress(self.market_fetch_buy_event, self.market_buy_running_progress)
             await asyncio.sleep(1)
 
     def on_fetch_market(self, button: Gtk.Button, type_: str) -> None:

@@ -20,8 +20,8 @@ import logging
 from typing import AsyncGenerator, Callable, Awaitable
 
 import aiohttp
-
 from stlib import universe, community, internals, webapi
+
 from . import utils
 from .. import i18n, config
 
@@ -31,11 +31,11 @@ log = logging.getLogger(__name__)
 
 async def main(
         steamid: universe.SteamId,
-        fetch_coupon_event: asyncio.Event,
+        coupon_fetch_event: asyncio.Event,
         wait_available: Callable[[], Awaitable[None]],
 ) -> AsyncGenerator[utils.ModuleData, None]:
     await wait_available()
-    await fetch_coupon_event.wait()
+    await coupon_fetch_event.wait()
 
     community_session = community.Community.get_session(0)
     internals_session = internals.Internals.get_session(0)
@@ -109,7 +109,7 @@ async def main(
             continue
 
         for index, coupon_ in enumerate(inventory):
-            yield utils.ModuleData(action="update_level", raw_data=(index+1, len(inventory)))
+            yield utils.ModuleData(action="update_level", raw_data=(index + 1, len(inventory)))
             package_link = coupon_.actions[0]['link']
             packageids = [int(id_) for id_ in package_link.split('=')[1].split(',')]
             blacklist = config.parser.get('coupons', 'blacklist')
@@ -119,7 +119,7 @@ async def main(
             game_name = coupon_.name.split('% OFF')[-1].split('- Coupon')[0].strip()
 
             for package_id in packageids:
-                if not fetch_coupon_event.is_set():
+                if not coupon_fetch_event.is_set():
                     log.warning(_("Stopping fetching coupons (requested by user)"))
                     yield utils.ModuleData(action="update_level", raw_data=(0, 0))
                     return
@@ -189,3 +189,4 @@ async def main(
                     yield data
 
     yield utils.ModuleData(action="update_level", raw_data=(0, 0))
+    coupon_fetch_event.clear()

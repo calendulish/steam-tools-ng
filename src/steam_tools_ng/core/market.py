@@ -17,7 +17,7 @@
 #
 import asyncio
 import logging
-from typing import AsyncGenerator, Callable, Awaitable, List, Dict, Any
+from typing import AsyncGenerator, List, Dict, Any
 
 import aiohttp
 from stlib import community
@@ -32,17 +32,17 @@ log = logging.getLogger(__name__)
 async def get_histogram(
         orders: List[community.Order],
         order_type: str,
-        fetch_event: asyncio.Event | None = None,
+        fetch_event: asyncio.Event,
 ) -> AsyncGenerator[utils.ModuleData, None]:
     community_session = community.Community.get_session(0)
 
     for position, order in enumerate(orders):
-        if fetch_event and not fetch_event.is_set():
+        if not fetch_event.is_set():
             log.debug(_("Waiting market fetch event"))
             yield utils.ModuleData(action=f"update_{order_type}_level", raw_data=(0, 0))
             await fetch_event.wait()
 
-        yield utils.ModuleData(action=f"update_{order_type}_level", raw_data=(position+1, len(orders)))
+        yield utils.ModuleData(action=f"update_{order_type}_level", raw_data=(position + 1, len(orders)))
 
         try:
             histogram = await community_session.get_item_histogram(order.appid, order.hash_name)
@@ -63,7 +63,6 @@ async def get_histogram(
 
     yield utils.ModuleData(action=f"update_{order_type}_level", raw_data=(0, 0))
     fetch_event.clear()
-
 
 
 async def main(

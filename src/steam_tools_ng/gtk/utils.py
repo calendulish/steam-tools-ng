@@ -21,6 +21,7 @@ import functools
 import html
 import inspect
 import logging
+import sys
 import traceback
 from collections import OrderedDict
 from traceback import StackSummary
@@ -28,7 +29,6 @@ from types import FrameType
 from typing import Any, Callable, List, Type, Tuple
 from xml.etree import ElementTree
 
-import sys
 from gi.repository import Gtk, Gdk, Gio, GObject
 from stlib import internals
 
@@ -809,13 +809,6 @@ def sanitize_package_details(package_details: List[internals.Package]) -> List[i
     return [previous[0]]
 
 
-def sanatize_steam_price(price: str) -> float:
-    no_comma = price.replace(',', '.')
-    price_list = no_comma.split('.')
-    big = remove_letters(price_list[0])
-    return float(f'{big}.{price_list[1]}')
-
-
 def remove_letters(text: str) -> str:
     new_text = [char for char in text if char.isdigit()]
     return ''.join(new_text)
@@ -833,7 +826,7 @@ def color_by_price(price1: int, price2: int, price3: int, quantity1: int, quanti
     return color
 
 
-async def update_progress(event, progress) -> None:
+def update_progress(event, progress) -> None:
     if event.is_set():
         progress.pulse()
     else:
