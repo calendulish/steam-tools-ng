@@ -25,9 +25,9 @@ from typing import Tuple, Any
 
 import stlib
 from gi.repository import Gio, Gtk, Gdk
-from stlib import login, plugins
+from stlib import login, plugins, universe
 
-from . import confirmation, utils, coupon, authenticator
+from . import confirmation, utils, coupon, authenticator, market
 from .login import LoginWindow
 from .. import config, i18n, core
 
@@ -127,6 +127,9 @@ class Main(Gtk.ApplicationWindow):
 
         steamtrades_section = utils.Section("steamtrades")
         steamtrades_section.stackup_section("SteamTrades", self.main_tabs)
+
+        market_section = utils.Section("market")
+        market_section.stackup_section(_("Market"), self.main_tabs)
 
         coupons_section = utils.Section("coupons")
         coupons_section.stackup_section(_("Coupons"), self.main_tabs)
@@ -565,7 +568,7 @@ class Main(Gtk.ApplicationWindow):
         fetch_coupons_button.connect('clicked', self.on_fetch_coupons)
         self.coupons_grid.attach(fetch_coupons_button, 0, 5, 1, 1)
 
-        self.fetch_coupon_event = asyncio.Event()
+        self.coupon_fetch_event = asyncio.Event()
 
         stop_fetching_coupons_button = Gtk.Button()
         stop_fetching_coupons_button.set_margin_start(3)
@@ -617,6 +620,169 @@ class Main(Gtk.ApplicationWindow):
         )
         coupon_discount.connect("notify::selected", utils.on_dropdown_setting_changed, config.coupon_discounts)
 
+        market_stack = Gtk.Stack()
+        market_stack.set_vexpand(True)
+        market_section.attach(market_stack, 1, 1, 1, 1)
+
+        market_sidebar = Gtk.StackSidebar()
+        market_sidebar.set_stack(market_stack)
+        market_sidebar.set_size_request(150, -1)
+        market_section.attach(market_sidebar, 0, 1, 1, 1)
+
+        self.market_buy_grid = Gtk.Grid()
+        self.market_buy_grid.set_row_spacing(10)
+        self.market_sell_grid = Gtk.Grid()
+        self.market_sell_grid.set_row_spacing(10)
+        market_stack.add_titled(self.market_sell_grid, "market_sell_list", _("Sell List"))
+        market_stack.add_titled(self.market_buy_grid, "market_buy_list", _("Buy List"))
+
+        self.market_fetch_buy_event = asyncio.Event()
+        self.market_fetch_sell_event = asyncio.Event()
+
+        market_tree_headers = '_name', '_my_price', '_sell_price', '_buy_price', 'order', 'histogram'
+
+        self.market_sell_tree = utils.SimpleTextTree(*market_tree_headers)
+        self.market_sell_tree.view.connect("activate", self.on_market_double_clicked, self.market_sell_tree)
+        self.market_sell_tree.model.connect("selection-changed", self.on_tree_selection_changed)
+
+        self.market_buy_tree = utils.SimpleTextTree(*market_tree_headers)
+        self.market_buy_tree.view.connect("activate", self.on_market_double_clicked, self.market_buy_tree)
+        self.market_buy_tree.model.connect("selection-changed", self.on_tree_selection_changed)
+
+        self.market_sell_grid.attach(self.market_sell_tree, 0, 0, 6, 2)
+        self.market_buy_grid.attach(self.market_buy_tree, 0, 0, 6, 2)
+
+        for tree in (self.market_sell_tree, self.market_buy_tree):
+            for index, column in enumerate(tree.view.get_columns()):
+                if column != 0:
+                    column.set_resizable(True)
+                    column.set_expand(True)
+
+                if index in (5, 6):
+                    column.set_visible(False)
+
+        self.market_sell_tree.model.connect("selection-changed", self.on_market_sell_selection_changed)
+        self.market_buy_tree.model.connect("selection-changed", self.on_market_buy_selection_changed)
+
+        self.market_buy_progress = Gtk.LevelBar()
+        self.market_sell_progress = Gtk.LevelBar()
+        self.market_sell_grid.attach(self.market_sell_progress, 0, 3, 6, 1)
+        self.market_buy_grid.attach(self.market_buy_progress, 0, 3, 6, 1)
+
+        self.market_buy_running_progress = Gtk.ProgressBar()
+        self.market_buy_running_progress.set_pulse_step(0.5)
+        self.market_buy_grid.attach(self.market_buy_running_progress, 0, 4, 6, 1)
+
+        self.market_sell_running_progress = Gtk.ProgressBar()
+        self.market_sell_running_progress.set_pulse_step(0.5)
+        self.market_sell_grid.attach(self.market_sell_running_progress, 0, 4, 6, 1)
+
+        self.market_sell_fetch_button = Gtk.Button()
+        self.market_sell_fetch_button.set_margin_start(3)
+        self.market_sell_fetch_button.set_margin_end(3)
+        self.market_sell_fetch_button.set_label(_("Fetch"))
+        self.market_sell_fetch_button.connect("clicked", self.on_fetch_market, "sell")
+        self.market_sell_grid.attach(self.market_sell_fetch_button, 0, 5, 1, 1)
+
+        self.market_sell_stop_fetch_button = Gtk.Button()
+        self.market_sell_stop_fetch_button.set_margin_start(3)
+        self.market_sell_stop_fetch_button.set_margin_end(3)
+        self.market_sell_stop_fetch_button.set_label(_("Stop"))
+        self.market_sell_stop_fetch_button.connect("clicked", self.on_stop_fetching_market, "sell")
+        self.market_sell_grid.attach(self.market_sell_stop_fetch_button, 1, 5, 1, 1)
+
+        self.market_sell_min_button = Gtk.Button()
+        self.market_sell_min_button.set_margin_start(3)
+        self.market_sell_min_button.set_margin_end(3)
+        self.market_sell_min_button.set_label(_("Select an item"))
+        self.market_sell_min_button.set_sensitive(False)
+        self.market_sell_min_button.connect("clicked", self.on_market_action, "sell", "min", self.market_sell_tree)
+        self.market_sell_grid.attach(self.market_sell_min_button, 2, 5, 1, 1)
+
+        self.market_sell_same_button = Gtk.Button()
+        self.market_sell_same_button.set_margin_start(3)
+        self.market_sell_same_button.set_margin_end(3)
+        self.market_sell_same_button.set_label(_("Select an item"))
+        self.market_sell_same_button.set_sensitive(False)
+        self.market_sell_same_button.connect("clicked", self.on_market_action, "sell", "same", self.market_sell_tree)
+        self.market_sell_grid.attach(self.market_sell_same_button, 3, 5, 1, 1)
+
+        self.market_sell_max_button = Gtk.Button()
+        self.market_sell_max_button.set_margin_start(3)
+        self.market_sell_max_button.set_margin_end(3)
+        self.market_sell_max_button.set_label(_("Select an item"))
+        self.market_sell_max_button.set_sensitive(False)
+        self.market_sell_max_button.connect("clicked", self.on_market_action, "sell", "max", self.market_sell_tree)
+        self.market_sell_grid.attach(self.market_sell_max_button, 4, 5, 1, 1)
+
+        self.market_sell_cancel_button = Gtk.Button()
+        self.market_sell_cancel_button.set_margin_start(3)
+        self.market_sell_cancel_button.set_margin_end(3)
+        self.market_sell_cancel_button.set_label(_("Cancel"))
+        self.market_sell_cancel_button.set_sensitive(False)
+        self.market_sell_cancel_button.connect("clicked", self.on_market_action, "cancel", "sell", self.market_sell_tree)
+        self.market_sell_grid.attach(self.market_sell_cancel_button, 5, 5, 1, 1)
+
+        self.market_buy_fetch_button = Gtk.Button()
+        self.market_buy_fetch_button.set_margin_start(3)
+        self.market_buy_fetch_button.set_margin_end(3)
+        self.market_buy_fetch_button.set_label(_("Fetch"))
+        self.market_buy_fetch_button.connect("clicked", self.on_fetch_market, "buy")
+        self.market_buy_grid.attach(self.market_buy_fetch_button, 0, 5, 1, 1)
+
+        self.market_buy_stop_fetch_button = Gtk.Button()
+        self.market_buy_stop_fetch_button.set_margin_start(3)
+        self.market_buy_stop_fetch_button.set_margin_end(3)
+        self.market_buy_stop_fetch_button.set_label(_("Stop"))
+        self.market_buy_stop_fetch_button.connect("clicked", self.on_stop_fetching_market, "buy")
+        self.market_buy_grid.attach(self.market_buy_stop_fetch_button, 1, 5, 1, 1)
+
+        self.market_buy_min_button = Gtk.Button()
+        self.market_buy_min_button.set_margin_start(3)
+        self.market_buy_min_button.set_margin_end(3)
+        self.market_buy_min_button.set_label(_("Select an item"))
+        self.market_buy_min_button.set_sensitive(False)
+        self.market_buy_min_button.connect("clicked", self.on_market_action, "buy", "min", self.market_buy_tree)
+        self.market_buy_grid.attach(self.market_buy_min_button, 2, 5, 1, 1)
+
+        self.market_buy_same_button = Gtk.Button()
+        self.market_buy_same_button.set_margin_start(3)
+        self.market_buy_same_button.set_margin_end(3)
+        self.market_buy_same_button.set_label(_("Select an item"))
+        self.market_buy_same_button.set_sensitive(False)
+        self.market_buy_same_button.connect("clicked", self.on_market_action, "buy", "same", self.market_buy_tree)
+        self.market_buy_grid.attach(self.market_buy_same_button, 3, 5, 1, 1)
+
+        self.market_buy_max_button = Gtk.Button()
+        self.market_buy_max_button.set_margin_start(3)
+        self.market_buy_max_button.set_margin_end(3)
+        self.market_buy_max_button.set_label(_("Select an item"))
+        self.market_buy_max_button.set_sensitive(False)
+        self.market_buy_max_button.connect("clicked", self.on_market_action, "buy", "max", self.market_buy_tree)
+        self.market_buy_grid.attach(self.market_buy_max_button, 4, 5, 1, 1)
+
+        self.market_buy_cancel_button = Gtk.Button()
+        self.market_buy_cancel_button.set_margin_start(3)
+        self.market_buy_cancel_button.set_margin_end(3)
+        self.market_buy_cancel_button.set_label(_("Cancel"))
+        self.market_buy_cancel_button.set_sensitive(False)
+        self.market_buy_cancel_button.connect("clicked", self.on_market_action, "cancel", "buy", self.market_buy_tree)
+        self.market_buy_grid.attach(self.market_buy_cancel_button, 5, 5, 1, 1)
+
+        market_settings = utils.Section("market")
+        market_settings.stackup_section(_("Settings"), market_stack)
+
+        market_enable = market_settings.new_item("enable", _("Enable:"), Gtk.Switch, 0, 1)
+        market_enable.label.set_margin_top(40)
+        market_enable.widget.set_margin_top(40)
+        market_enable.connect("state-set", utils.on_setting_state_set)
+
+        market_refetch_button = Gtk.Button()
+        market_refetch_button.set_label(_("Refetch market data"))
+        market_refetch_button.set_name("market_refetch_button")
+        market_refetch_button.connect('clicked', self.on_market_refetch_clicked)
+        market_settings.attach(login_button, 0, 2, 2, 1)
+
         self.statusbar = utils.StatusBar()
         main_grid.attach(self.statusbar, 1, 3, 1, 1)
 
@@ -631,6 +797,9 @@ class Main(Gtk.ApplicationWindow):
 
         coupon_indicator_task = asyncio.create_task(self.coupon_running_indicator())
         coupon_indicator_task.add_done_callback(utils.safe_task_callback)
+
+        market_indicator_task = asyncio.create_task(self.market_running_indicator())
+        market_indicator_task.add_done_callback(utils.safe_task_callback)
 
     @property
     def theme(self) -> str:
@@ -707,6 +876,22 @@ class Main(Gtk.ApplicationWindow):
     async def plugin_status(self) -> None:
         while self.get_realized():
             for plugin_name in config.plugins.keys():
+                if plugin_name == 'market':
+                    enabled = config.parser.getboolean("market", "enable")
+
+                    if enabled:
+                        self.market_buy_grid.disabled = False
+                        self.market_sell_grid.disabled = False
+                        self.market_buy_tree.set_sensitive(True)
+                        self.market_sell_tree.set_sensitive(True)
+                    else:
+                        self.market_buy_grid.disabled = True
+                        self.market_sell_grid.disabled = True
+                        self.market_buy_tree.set_sensitive(False)
+                        self.market_sell_tree.set_sensitive(False)
+
+                    continue
+
                 if plugin_name in ["coupons", "confirmations"]:
                     if plugin_name == "confirmations":
                         enabled = config.parser.getboolean("steamguard", "enable_confirmations")
@@ -722,30 +907,55 @@ class Main(Gtk.ApplicationWindow):
                     else:
                         tree.disabled = True
                         main.set_sensitive(False)
-                else:
-                    enabled = config.parser.getboolean(plugin_name, "enable")
-                    status = getattr(self, f'{plugin_name}_status')
 
-                    if not enabled:
-                        def disabled_callback(status_: utils.SimpleStatus) -> None:
-                            status_.set_status(_("Disabled"))
-                            status_.set_info("")
+                    continue
 
-                        asyncio.get_running_loop().call_later(3, disabled_callback, status)
+                enabled = config.parser.getboolean(plugin_name, "enable")
+                status = getattr(self, f'{plugin_name}_status')
+
+                if not enabled:
+                    def disabled_callback(status_: utils.SimpleStatus) -> None:
+                        status_.set_status(_("Disabled"))
+                        status_.set_info("")
+
+                    asyncio.get_running_loop().call_later(3, disabled_callback, status)
 
             await asyncio.sleep(3)
 
     async def coupon_running_indicator(self) -> None:
         while self.get_realized():
-            await self.fetch_coupon_event.wait()
-            self.coupon_running_progress.pulse()
+            await utils.update_progress(self.coupon_fetch_event, self.coupon_running_progress)
             await asyncio.sleep(1)
 
+    async def market_running_indicator(self) -> None:
+        while self.get_realized():
+            await utils.update_progress(self.market_fetch_sell_event, self.market_sell_running_progress)
+            await utils.update_progress(self.market_fetch_buy_event, self.market_buy_running_progress)
+            await asyncio.sleep(1)
+
+    def on_fetch_market(self, button: Gtk.Button, type_: str) -> None:
+        if type_ == 'sell':
+            self.market_fetch_sell_event.set()
+        else:
+            self.market_fetch_buy_event.set()
+
+    def on_stop_fetching_market(self, button: Gtk.Button, type_: str) -> None:
+        if type_ == 'sell':
+            self.market_fetch_sell_event.clear()
+            self.market_sell_progress.set_value(0)
+            self.market_sell_progress.set_max_value(0)
+            self.market_sell_running_progress.set_fraction(0)
+        else:
+            self.market_fetch_buy_event.clear()
+            self.market_buy_progress.set_value(0)
+            self.market_buy_progress.set_max_value(0)
+            self.market_buy_running_progress.set_fraction(0)
+
     def on_fetch_coupons(self, button: Gtk.Button) -> None:
-        self.fetch_coupon_event.set()
+        self.coupon_fetch_event.set()
 
     def on_stop_fetching_coupons(self, button: Gtk.Button) -> None:
-        self.fetch_coupon_event.clear()
+        self.coupon_fetch_event.clear()
         self.coupon_progress.set_value(0)
         self.coupon_progress.set_max_value(0)
         self.coupon_running_progress.set_fraction(0)
@@ -773,6 +983,69 @@ class Main(Gtk.ApplicationWindow):
             url = item.link
 
         call([config.file_manager, url])
+
+    @staticmethod
+    def on_market_double_clicked(view: Gtk.ColumnView, position: int, tree: utils.SimpleTextTree) -> None:
+        row = tree.model.get_item(position)
+        item = row.get_item()
+        raw_url = f"https://steamcommunity.com/market/listings/{item.order.appid}/{item.order.hash_name}"
+        url = f"steam://openurl/{raw_url}"
+        steam_running = False
+
+        if stlib.steamworks_available:
+            with contextlib.suppress(ProcessLookupError):
+                with client.SteamGameServer() as server:
+                    steam_running = True
+
+        if not steam_running:
+            url = raw_url
+
+        call([config.file_manager, url])
+
+    def on_market_sell_selection_changed(self, view: Gtk.SingleSelection, position: int, item_count: int) -> None:
+        row = view.get_selected_item()
+        item = row.get_item()
+        default = universe.SteamPrice(0.03)
+        same = item.histogram.sell_order_table[1].price - 0.01 if len(item.histogram.sell_order_table) > 1 else default
+        min_ = item.histogram.sell_order_table[0].price - 0.01 if item.histogram.sell_order_table else default
+        max_ = item.histogram.buy_order_price
+
+        self.market_sell_min_button.set_label(_("Sell for {}").format(min_.as_monetary_string()))
+        self.market_sell_min_button.set_sensitive(True)
+
+        self.market_sell_same_button.set_label(_("Sell for {}").format(same.as_monetary_string()))
+        self.market_sell_same_button.set_sensitive(True)
+
+        self.market_sell_max_button.set_label(_("Sell for {}").format(max_.as_monetary_string()))
+        self.market_sell_max_button.set_sensitive(True)
+
+        self.market_sell_cancel_button.set_sensitive(True)
+
+    def on_market_buy_selection_changed(self, view: Gtk.SingleSelection, position: int, item_count: int) -> None:
+        row = view.get_selected_item()
+        item = row.get_item()
+        default = universe.SteamPrice(0.03)
+        same = item.histogram.buy_order_table[1].price + 0.01 if len(item.histogram.buy_order_table) > 1 else default
+        min_ = item.histogram.buy_order_table[0].price + 0.01 if item.histogram.buy_order_table else default
+        max_ = item.histogram.sell_order_price
+
+        self.market_buy_min_button.set_label(_("Buy for {}").format(min_.as_monetary_string()))
+        self.market_buy_min_button.set_sensitive(True)
+
+        self.market_buy_same_button.set_label(_("Buy for {}").format(same.as_monetary_string()))
+        self.market_buy_same_button.set_sensitive(True)
+
+        self.market_buy_max_button.set_label(_("Buy for {}").format(max_.as_monetary_string()))
+        self.market_buy_max_button.set_sensitive(True)
+
+        self.market_buy_cancel_button.set_sensitive(True)
+
+    def on_market_refetch_clicked(self, button: Gtk.Button) -> None:
+        self.fetch_market_event.set()
+
+    def on_market_action(self, button: Gtk.Button, action: str, value: str | None, tree: utils.SimpleTextTree) -> None:
+        market_window = market.MarketWindow(self, self.application, tree, action, value)
+        market_window.present()
 
     @staticmethod
     def on_tree_selection_changed(view: Gtk.SingleSelection, position: int, item_count: int) -> None:

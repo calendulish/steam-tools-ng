@@ -18,11 +18,11 @@
 import asyncio
 import contextlib
 import functools
-import itertools
 import logging
 from typing import Any, Dict, Callable, List
 
 import aiohttp
+import itertools
 from gi.repository import Gio, Gtk
 from steam_tools_ng import __version__
 from stlib import universe, login, community, webapi, internals, plugins
@@ -220,7 +220,7 @@ class SteamToolsNG(Gtk.Application):
                             with contextlib.suppress(IndexError):
                                 await plugin.Main.new_session(0)
 
-                        if module_name in ["coupons", "confirmations"]:
+                        if module_name in ["coupons", "confirmations", "market"]:
                             task = asyncio.create_task(module())
                         else:
                             self.main_window.set_status(module_name, status=_("Loading"))
@@ -240,7 +240,7 @@ class SteamToolsNG(Gtk.Application):
                     try:
                         await task
                     except asyncio.CancelledError:
-                        if module_name not in ["confirmations", "coupons"]:
+                        if module_name not in ["confirmations", "coupons", "market"]:
                             self.main_window.set_status(module_name, status=_("Disabled"))
                 else:
                     await asyncio.sleep(1)
@@ -331,8 +331,107 @@ class SteamToolsNG(Gtk.Application):
                 self.main_window.statusbar.clear('confirmations')
 
     @while_window_realized
+    async def run_market(self) -> None:
+        fetch_market_buy_event = self.main_window.market_fetch_buy_event
+        fetch_market_sell_event = self.main_window.market_fetch_sell_event
+        market = core.market.main(fetch_market_buy_event, fetch_market_sell_event)
+
+        async for module_data in market:
+            self.main_window.statusbar.clear("market")
+
+            while not any([fetch_market_buy_event.is_set(), fetch_market_sell_event.is_set()]):
+                await asyncio.sleep(3)
+
+            if module_data.error:
+                self.main_window.statusbar.set_critical("market", module_data.error)
+
+            if module_data.info:
+                self.main_window.statusbar.set_warning("market", module_data.info)
+
+            if module_data.action == "update":
+                order = module_data.raw_data['order']
+                position = module_data.raw_data['position']
+                histogram = module_data.raw_data['histogram']
+                type_ = module_data.raw_data['type']
+
+                if type_ == 'sell':
+                    tree = self.main_window.market_sell_tree
+                    price = order.price.as_monetary_string(sum_fees=True)
+
+                    price_color = utils.color_by_price(
+                        order.price.as_integer(sum_fees=True),
+                        histogram.sell_order_table[0].price.as_integer()
+                        if histogram.sell_order_table else 0,
+                        histogram.sell_order_table[1].price.as_integer()
+                        if len(histogram.sell_order_table) > 1 else 0,
+                        histogram.sell_order_table[0].quantity
+                        if histogram.sell_order_table else 0,
+                        order.amount,
+                    )
+                else:
+                    tree = self.main_window.market_buy_tree
+                    price = order.price.as_monetary_string()
+
+                    price_color = utils.color_by_price(
+                        histogram.buy_order_table[0].price.as_integer()
+                        if histogram.buy_order_table else 0,
+                        order.price.as_integer(),
+                        histogram.buy_order_table[1].price.as_integer()
+                        if len(histogram.buy_order_table) > 1 else 0,
+                        histogram.buy_order_table[0].quantity
+                        if histogram.buy_order_table else 0,
+                        order.amount,
+                    )
+
+                item = tree.new_item(
+                    utils.markup(order.name, foreground='blue', underline='single'),
+                    utils.markup(f"{price} ({order.amount})",
+                                 foreground=price_color),
+                    histogram.sell_order_price.as_monetary_string() +
+                    f" ({histogram.sell_order_table[0].quantity if histogram.sell_order_table else 0}:"
+                    f"{histogram.sell_order_count})",
+                    histogram.buy_order_price.as_monetary_string() +
+                    f" ({histogram.buy_order_table[0].quantity if histogram.buy_order_table else 0}:"
+                    f"{histogram.buy_order_count})",
+                    order,
+                    histogram,
+                )
+
+                for i in range(1, 5):
+                    child = tree.new_item(
+                        sell_price=histogram.sell_order_table[i].price.as_monetary_string() +
+                                   f" ({histogram.sell_order_table[i].quantity})"
+                        if len(histogram.sell_order_table) > i else '-',
+                        buy_price=histogram.buy_order_table[i].price.as_monetary_string() +
+                                  f" ({histogram.buy_order_table[i].quantity})"
+                        if len(histogram.buy_order_table) > i else '-'
+                    )
+
+                    item.children.append(child)
+
+                tree.append_row(item)
+
+            if module_data.action == "clear":
+                self.main_window.market_buy_tree.clear()
+                self.main_window.market_sell_tree.clear()
+
+            if module_data.action == "update_sell_level":
+                self.main_window.market_sell_progress.set_value(module_data.raw_data[0])
+                self.main_window.market_sell_progress.set_max_value(module_data.raw_data[1])
+
+                if not fetch_market_sell_event.is_set():
+                    self.main_window.market_sell_running_progress.set_fraction(0)
+
+            if module_data.action == "update_buy_level":
+                self.main_window.market_buy_progress.set_value(module_data.raw_data[0])
+                self.main_window.market_buy_progress.set_max_value(module_data.raw_data[1])
+
+                if not fetch_market_buy_event.is_set():
+                    self.main_window.market_buy_running_progress.set_fraction(0)
+
+    @while_window_realized
     async def run_coupons(self) -> None:
-        fetch_coupon_event = self.main_window.fetch_coupon_event
+        fetch_coupon_event = self.main_window.coupon_fetch_event
         wait_available = self.main_window.coupons_tree.wait_available
         coupons = core.coupons.main(self.steamid, fetch_coupon_event, wait_available)
 
@@ -368,6 +467,9 @@ class SteamToolsNG(Gtk.Application):
             if module_data.action == "update_level":
                 self.main_window.coupon_progress.set_value(module_data.raw_data[0])
                 self.main_window.coupon_progress.set_max_value(module_data.raw_data[1])
+
+                if not fetch_coupon_event.is_set():
+                    self.main_window.coupon_running_progress.set_fraction(0)
 
     @while_window_realized
     async def run_steamtrades(self, play_event: asyncio.Event) -> None:

@@ -109,7 +109,7 @@ async def main(
             continue
 
         for index, coupon_ in enumerate(inventory):
-            yield utils.ModuleData(action="update_level", raw_data=(index, len(inventory)))
+            yield utils.ModuleData(action="update_level", raw_data=(index+1, len(inventory)))
             package_link = coupon_.actions[0]['link']
             packageids = [int(id_) for id_ in package_link.split('=')[1].split(',')]
             blacklist = config.parser.get('coupons', 'blacklist')
@@ -189,4 +189,3 @@ async def main(
                     yield data
 
     yield utils.ModuleData(action="update_level", raw_data=(0, 0))
-    fetch_coupon_event.clear()

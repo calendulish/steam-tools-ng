@@ -114,6 +114,7 @@ plugins = OrderedDict([
     ("steamgifts", _("Steam Gifts")),
     ("steamguard", _("Steam Guard")),
     ("cardfarming", _("Card Farming")),
+    ("market", _("Market Monitor")),
 ])
 
 coupon_discounts = OrderedDict([
@@ -156,6 +157,9 @@ default_config: Dict[str, Dict[str, Any]] = {
         'blacklist': '',
         'last_trade_time': 0,
         'minimum_discount': 75,
+    },
+    'market': {
+        'enable': True,
     },
     'steamguard': {
         'enable': True,

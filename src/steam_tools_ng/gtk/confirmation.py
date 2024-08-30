@@ -73,7 +73,7 @@ class FinalizeWindow(utils.PopupWindowBase):
             )
         elif self.selection:
             self.status.info(
-                _("{}\nDo you want to {} the offer?\nIt can't be undone!").format(
+                _("{}\nDo you want to {} the offer to\n{}?\nIt can't be undone!").format(
                     self.selection.get_item().summary,
                     self.action.upper(),
                     utils.unmarkup(self.selection.get_item().to),
@@ -143,7 +143,7 @@ class FinalizeWindow(utils.PopupWindowBase):
         try:
             steamid = universe.generate_steamid(steamid_raw)
         except ValueError:
-            self.status.info(_("Your steam is invalid. (are you logged in?)"))
+            self.status.error(_("Your steamid is invalid. (are you logged in?)"))
             await asyncio.sleep(5)
             return {}
 

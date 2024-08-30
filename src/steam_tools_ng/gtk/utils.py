@@ -16,11 +16,11 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
+import contextlib
 import functools
 import html
 import inspect
 import logging
-import sys
 import traceback
 from collections import OrderedDict
 from traceback import StackSummary
@@ -28,6 +28,7 @@ from types import FrameType
 from typing import Any, Callable, List, Type, Tuple
 from xml.etree import ElementTree
 
+import sys
 from gi.repository import Gtk, Gdk, Gio, GObject
 from stlib import internals
 
@@ -161,12 +162,14 @@ class SimpleTextTreeItem(GObject.Object):
             setattr(self, name, value)
 
         for index, header in enumerate(headers):
-            name = header.replace('_', '').replace(' ', '_').lower()
+            name = header.replace(' ', '_').lower()
 
-            try:
+            # remove translation mark
+            if name.startswith('_'):
+                name = name[1:]
+
+            with contextlib.suppress(IndexError):
                 setattr(self, name, args[index])
-            except IndexError:
-                log.debug(f'{name} param not set in {self}')
 
         super(GObject.Object, self).__init__()
         self.children: List[SimpleTextTreeItem] = []
@@ -206,9 +209,11 @@ class SimpleTextTree(Gtk.Grid):
             column = Gtk.ColumnViewColumn()
             column.set_resizable(resizable)
 
+            # check if translation is needed
             if element.startswith('_'):
-                element = element[1:]
-                column.set_title(_(element))
+                element = _(element[1:])
+
+            column.set_title(element.replace('_', ' ').title())
 
             if fixed_width:
                 column.set_fixed_width(fixed_width)
@@ -227,6 +232,7 @@ class SimpleTextTree(Gtk.Grid):
         self._list_sort.set_sorter(self._tree_sort)
         self._list_sort.set_model(self._tree)
         self._model = Gtk.SingleSelection.new(self._list_sort)
+        self._model.set_autoselect(True)
         self._view.set_model(self._model)
 
         self._lock = False
@@ -267,6 +273,7 @@ class SimpleTextTree(Gtk.Grid):
     def setup(view: Gtk.ListView, item: Gtk.ListItem, hide_expander: bool = True) -> None:
         expander = Gtk.TreeExpander()
         expander.set_hide_expander(hide_expander)
+        expander.set_indent_for_depth(False)
         label = Gtk.Label()
         expander.set_child(label)
         item.set_child(expander)
@@ -287,9 +294,12 @@ class SimpleTextTree(Gtk.Grid):
             data = data.get_item()
 
         if element:
-            column_text = getattr(data, element.replace(' ', '_').lower())
-            label.set_markup(column_text)
-            label.set_hexpand(True)
+            attribute = element.replace(' ', '_').lower()
+
+            if hasattr(data, attribute):
+                column_text = getattr(data, attribute)
+                label.set_markup(column_text)
+                label.set_hexpand(True)
 
     def item_factory(self, item: Gtk.ListItem) -> Gtk.TreeListModel | None:
         store = Gio.ListStore.new(SimpleTextTreeItem)
@@ -310,16 +320,28 @@ class SimpleTextTree(Gtk.Grid):
 
     def append_row(self, row: Gtk.TreeListRow) -> None:
         self._store.append(row)
+        total = self._model.get_n_items()
+
+        if total == 1:
+            self._model.emit('selection-changed', 0, total)
 
     def remove_row(self, row: Gtk.TreeListRow) -> bool:
         item = row.get_item()
+        self.remove_item(item)
+
+    def remove_item(self, item: SimpleTextTreeItem) -> None:
         found, position = self._store.find(item)
 
         if found:
             self._store.remove(position)
+            total = self._model.get_n_items()
+
+            if total > 0:
+                self._model.emit('selection-changed', 0, total)
+
             return True
-        else:
-            return False
+
+        return False
 
     def clear(self) -> None:
         self._store.remove_all()
@@ -402,11 +424,17 @@ class SimpleStatus(Gtk.Frame):
         self.info(_("Waiting"))
         self.set_hexpand(True)
 
-    def error(self, text: str) -> None:
-        self._label.set_markup(markup(text, color='hotpink', face='monospace'))
+    def error(self, text: str, custom: str = "") -> None:
+        self._label.set_markup(
+            markup(text, color='hotpink', face='monospace') +
+            custom,
+        )
 
-    def info(self, text: str) -> None:
-        self._label.set_markup(markup(text, color='cyan', face='monospace'))
+    def info(self, text: str, custom: str = "") -> None:
+        self._label.set_markup(
+            markup(text, color='cyan', face='monospace') +
+            custom,
+        )
 
 
 def when_running(function: Callable[..., Any]) -> Callable[..., Any]:
@@ -781,9 +809,35 @@ def sanitize_package_details(package_details: List[internals.Package]) -> List[i
     return [previous[0]]
 
 
+def sanatize_steam_price(price: str) -> float:
+    no_comma = price.replace(',', '.')
+    price_list = no_comma.split('.')
+    big = remove_letters(price_list[0])
+    return float(f'{big}.{price_list[1]}')
+
+
 def remove_letters(text: str) -> str:
     new_text = [char for char in text if char.isdigit()]
     return ''.join(new_text)
+
+
+def color_by_price(price1: int, price2: int, price3: int, quantity1: int, quantity2: int) -> str:
+    color = 'red'
+
+    if price1 <= price2:
+        color = 'yellow' if quantity1 > quantity2 else 'green'
+
+        if price3 - price1 > 1:
+            color = 'darkcyan'
+
+    return color
+
+
+async def update_progress(event, progress) -> None:
+    if event.is_set():
+        progress.pulse()
+    else:
+        progress.set_fraction(0)
 
 
 def fatal_error_dialog(
