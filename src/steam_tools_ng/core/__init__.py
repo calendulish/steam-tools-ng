@@ -42,7 +42,7 @@ if stlib.steamworks_available:
     from . import cardfarming, fakerun
 
 
-async def fix_ssl() -> None:
+async def fix_ssl(session_index: int) -> None:
     ssl_context = ssl.SSLContext()
 
     if hasattr(sys, 'frozen'):
@@ -50,7 +50,7 @@ async def fix_ssl() -> None:
         ssl_context.load_verify_locations(cafile=_executable_path / 'etc' / 'cacert.pem')
 
     tcp_connector = aiohttp.TCPConnector(ssl=ssl_context, force_close=True)
-    await stlib.set_default_http_params(0, connector=tcp_connector)
+    await stlib.set_default_http_params(session_index, connector=tcp_connector)
 
 
 # TODO: https://github.com/python/cpython/issues/103486

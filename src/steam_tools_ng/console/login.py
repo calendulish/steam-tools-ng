@@ -16,12 +16,12 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
 import asyncio
-import binascii
 import getpass
 import logging
 from typing import TYPE_CHECKING
 
 import aiohttp
+import binascii
 from stlib import login
 from stlib.login import AuthCodeType
 
@@ -37,7 +37,9 @@ _ = i18n.get_translation
 
 # noinspection PyUnusedLocal
 class Login:
-    def __init__(self, cli_: 'cli.SteamToolsNG', mobile_login: bool = True) -> None:
+    def __init__(self, session_index: int, cli_: 'cli.SteamToolsNG', mobile_login: bool = True) -> None:
+        self.session_index = session_index
+        self.config = config.get_parser(session_index)
         self.cli = cli_
         self.mobile_login = mobile_login
         self.has_user_data = False
@@ -58,11 +60,11 @@ class Login:
 
     @property
     def shared_secret(self) -> str:
-        return config.parser.get("login", "shared_secret")
+        return self.config.get("login", "shared_secret")
 
     @property
     def identity_secret(self) -> str:
-        return config.parser.get("login", "identity_secret")
+        return self.config.get("login", "identity_secret")
 
     async def do_login(
             self,
@@ -72,32 +74,30 @@ class Login:
     ) -> None:
         task = asyncio.current_task()
         assert isinstance(task, asyncio.Task), "no task?"
-        utils.set_console(info=_("Retrieving user data"))
+        utils.set_console(info=_("Retrieving user data (session {})").format(self.session_index))
 
         if auto:
-            self._username = config.parser.get("login", "account_name")
-            encrypted_password = config.parser.get("login", "password")
+            self._username = self.config.get("login", "account_name")
+            encrypted_password = self.config.get("login", "password")
             self.set_password(encrypted_password)
 
         if not self.username or not self.__password:
-            user_input = utils.safe_input(_("Please, write your username"))
+            user_input = utils.safe_input(_("Please, write your username (session {})").format(self.session_index))
             assert isinstance(user_input, str), "Safe input is returning bool when it should return str"
-            config.new("login", "account_name", user_input)
+            config.new(self.session_index, "login", "account_name", user_input)
             self._username = user_input
 
-            self.__password = getpass.getpass(_("Please, write your password (IT'S HIDDEN, and will be encrypted)"))
+            self.__password = getpass.getpass(
+                _("Please, write your password [It's hidden and encrypted] (session {}) : ").format(self.session_index)
+            )
             encrypted_password = core.utils.encode_password(self.__password)
-            config.new("login", "password", encrypted_password)
+            config.new(self.session_index, "login", "password", encrypted_password)
 
-        _login_session = login.Login.get_session(0)
+        _login_session = login.Login.get_session(self.session_index)
         _login_session.http_session.cookie_jar.clear()
 
-        if config.cookies_file.is_file():
-            _login_session.http_session.cookie_jar.load(config.cookies_file)
-
-            if await _login_session.is_logged_in():
-                log.info("Steam login Successful")
-                return None
+        if await config.load_cookies(self.session_index, _login_session):
+            return None
 
         _login_session.username = self.username
         _login_session.password = self.__password
@@ -105,7 +105,7 @@ class Login:
         if not self.shared_secret:
             log.warning(_("No shared secret found. Trying to log-in without two-factor authentication."))
 
-        utils.set_console(info=_("Logging in"))
+        utils.set_console(info=_("Logging in ({})").format(self.username))
         try_count = 3
 
         while True:
@@ -117,7 +117,7 @@ class Login:
                     self.mobile_login,
                 )
             except login.MailCodeError:
-                user_input = utils.safe_input(_("Write code received by email"))
+                user_input = utils.safe_input(_("Write code received by email ({})").format(self.username))
                 assert isinstance(user_input, str), "safe_input is returning bool when it should return str"
                 await self.do_login(True, user_input, AuthCodeType.email)
                 return None
@@ -144,7 +144,7 @@ class Login:
                 ))
 
                 async_user_input = utils.AsyncInput(
-                    _("Confirm the login on your mobile device or write the steam Code"),
+                    _("Confirm the login on your mobile device or write the steam Code ({})").format(self.username),
                 )
 
                 while True:
@@ -167,7 +167,7 @@ class Login:
                     async_user_input.cancel()
                     break
             except binascii.Error:
-                log.error(_("shared secret is invalid!"))
+                log.error(_("shared secret is invalid! ({})").format(self.username))
                 await core.safe_cancel(task)
             except login.LoginError as exception:
                 if try_count > 0:
@@ -190,9 +190,9 @@ class Login:
             }
 
             for key, value in new_configs.items():
-                config.new("login", key, value)
+                config.new(self.session_index, "login", key, value)
 
-            _login_session.http_session.cookie_jar.save(config.cookies_file)
+            config.save_cookies(self.session_index, _login_session)
             self.has_user_data = True
 
             return None

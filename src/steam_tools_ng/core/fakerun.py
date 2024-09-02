@@ -42,12 +42,14 @@ async def mixing_igredients(ids: List[str]) -> AsyncGenerator[utils.ModuleData, 
 
 
 async def cake(
-        webapi_session: webapi.SteamWebAPI,
+        session_index: int,
         steamid: universe.SteamId,
         game_id: int,
 ) -> AsyncGenerator[utils.ModuleData, None]:
     yield utils.ModuleData(display=str(34), status=_("Loading a delicious cake"))
-    ids = config.parser.get('fakerun', 'cakes').strip().split(',')
+    webapi_session = webapi.SteamWebAPI.get_session(session_index)
+    configparser = config.get_parser(session_index)
+    ids = configparser.get('fakerun', 'cakes').strip().split(',')
     call([config.file_manager, "steam://friends/status/invisible"])
 
     if len(ids) < 3:
@@ -76,7 +78,7 @@ async def cake(
     async for slice_ in mixing_igredients(ids):
         yield slice_
 
-    community_session = community.Community.get_session(0)
+    community_session = community.Community.get_session(session_index)
 
     while True:
         last_played_game = await community_session.get_last_played_game(steamid)
@@ -97,16 +99,17 @@ async def cake(
 
 
 async def main(
+        session_index: int,
         steamid: universe.SteamId,
         game_id: int,
         extra_game_id: int | None = None,
 ) -> AsyncGenerator[utils.ModuleData, None]:
-    webapi_session = webapi.SteamWebAPI.get_session(0)
-    login_session = login.Login.get_session(0)
+    webapi_session = webapi.SteamWebAPI.get_session(session_index)
+    login_session = login.Login.get_session(session_index)
 
     if game_id == 34:
         assert isinstance(extra_game_id, int), "No extra game_id"
-        async for slice_ in cake(webapi_session, steamid, extra_game_id):
+        async for slice_ in cake(session_index, steamid, extra_game_id):
             yield slice_
         return
 

@@ -17,11 +17,11 @@
 #
 import asyncio
 import logging
-import sys
 from typing import TYPE_CHECKING
 
 import aiohttp
-from stlib import universe, webapi, login
+import sys
+from stlib import universe, webapi
 
 from . import utils
 from .. import i18n, config, core
@@ -35,9 +35,11 @@ _ = i18n.get_translation
 
 # noinspection PyUnusedLocal
 class ManageAuthenticator:
-    def __init__(self, cli_: 'cli.SteamToolsNG') -> None:
+    def __init__(self, session_index: int, cli_: 'cli.SteamToolsNG') -> None:
+        self.session_index = session_index
+        self.config = config.get_parser(session_index)
         self.cli = cli_
-        self.webapi_session = webapi.SteamWebAPI.get_session(0)
+        self.webapi_session = webapi.SteamWebAPI.get_session(session_index)
         self.authenticator_data: webapi.AuthenticatorData | None = None
         self._sms_code = ''
 
@@ -52,7 +54,7 @@ class ManageAuthenticator:
 
     @property
     def steamid(self) -> universe.SteamId | None:
-        if steamid := config.parser.getint("login", "steamid"):
+        if steamid := self.config.getint("login", "steamid"):
             try:
                 return universe.generate_steamid(steamid)
             except ValueError:
@@ -121,10 +123,10 @@ class ManageAuthenticator:
             await core.safe_cancel(task)
 
         utils.set_console(info=_("Saving new secrets"))
-        config.new("login", "shared_secret", self.authenticator_data.shared_secret)
-        config.new("login", "identity_secret", self.authenticator_data.identity_secret)
-        config.new("steamguard", "enable", True)
-        config.new("steamguard", "enable_confirmations", True)
+        config.new(self.session_index, "login", "shared_secret", self.authenticator_data.shared_secret)
+        config.new(self.session_index, "login", "identity_secret", self.authenticator_data.identity_secret)
+        config.new(self.session_index, "steamguard", "enable", True)
+        config.new(self.session_index, "steamguard", "enable_confirmations", True)
 
         utils.set_console(info=_(
             "RECOVERY CODE\n\n"

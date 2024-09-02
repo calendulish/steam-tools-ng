@@ -28,8 +28,10 @@ from . import config
 
 
 def get_translation(text: str) -> str:
+    global_config = config.get_parser(0)
+
     try:
-        language = config.parser.get('general', 'language')
+        language = global_config.get('general', 'language')
     except configparser.NoSectionError:
         # assume that config is not fully loaded yet
         return text

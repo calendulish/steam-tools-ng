@@ -20,11 +20,10 @@ import argparse
 import asyncio
 import contextlib
 import logging
-import sys
 import textwrap
 from multiprocessing import freeze_support
-from pathlib import Path
 
+import sys
 from steam_tools_ng import config, i18n, __version__
 from steam_tools_ng.console import cli
 
@@ -34,7 +33,6 @@ log = logging.getLogger(__name__)
 
 def main() -> None:
     freeze_support()
-    config.init()
 
     command_parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -50,10 +48,20 @@ def main() -> None:
     command_parser.add_argument(
         'module',
         choices=['steamguard', 'steamtrades', 'steamgifts', 'cardfarming', 'fakerun'],
-        metavar='<module>',
+        metavar='<module> [options]',
         action='store',
         nargs='?',
         help='Start a module',
+    )
+
+    command_parser.add_argument(
+        '--user',
+        metavar='<session_index>',
+        action='append',
+        choices=range(1, 11),
+        nargs='?',
+        type=int,
+        help='Specific the session. you can use multiple times to use multiple accounts',
     )
 
     command_parser.add_argument(
@@ -73,15 +81,15 @@ def main() -> None:
     command_parser.add_argument(
         '--reset',
         action='store_true',
-        help='Clean up settings and log files',
+        help='Clean up settings, cookies and log for specified users (with --user)',
         dest='reset',
     )
 
     command_parser.add_argument(
-        '--reset-password',
+        '--reset-all',
         action='store_true',
-        help='Clean up saved password',
-        dest='reset_password',
+        help='Clean up settings, cookies and log for all users',
+        dest='reset_all',
     )
 
     command_parser.add_argument(
@@ -113,6 +121,8 @@ def main() -> None:
     )
 
     console_params = command_parser.parse_args()
+    users = console_params.user or [1]
+    config.init(users)
 
     if console_params.version:
         print(__version__)
@@ -123,26 +133,18 @@ def main() -> None:
         sys.exit(0)
 
     if console_params.log_dir:
-        print(config.parser.get("logger", "log_directory"))
+        global_config = config.get_parser(0)
+        print(global_config.get("logger", "log_directory"))
         sys.exit(0)
 
     config.init_logger()
 
     if console_params.reset:
-        config.cookies_file.unlink(missing_ok=True)
-        config.config_file.unlink(missing_ok=True)
-        logging.root.removeHandler(logging.root.handlers[0])
-
-        log_directory = config.parser.get("logger", "log_directory")
-        Path(log_directory, 'steam-tools-ng.log').unlink()
-        Path(log_directory, 'steam-tools-ng.log.1').unlink()
-
-        log.info(_('Done!'))
+        config.reset(users)
         sys.exit(0)
 
-    if console_params.reset_password:
-        config.new("login", "password", "")
-        log.info(_('Done!'))
+    if console_params.reset_all:
+        config.reset(list(range(1, 11)))
         sys.exit(0)
 
     print(f'Steam Tools NG version {__version__} (Made with Girl Power <33)')
@@ -161,7 +163,7 @@ def main() -> None:
     module_name = console_params.module
     module_options = console_params.options
 
-    app = cli.SteamToolsNG(module_name, module_options)
+    app = cli.SteamToolsNG(users, module_name, module_options)
 
     with contextlib.suppress(asyncio.CancelledError, KeyboardInterrupt):
         asyncio.run(app.init())

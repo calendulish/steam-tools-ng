@@ -30,16 +30,18 @@ log = logging.getLogger(__name__)
 
 
 async def main(
+        session_index: int,
         steamid: universe.SteamId,
         wait_available: Callable[[], Awaitable[None]],
 ) -> AsyncGenerator[utils.ModuleData, None]:
     await wait_available()
 
-    identity_secret = config.parser.get("login", "identity_secret")
-    session = community.Community.get_session(0)
+    configparser = config.get_parser(session_index)
+    identity_secret = configparser.get("login", "identity_secret")
+    session = community.Community.get_session(session_index)
 
     if not identity_secret:
-        config.new("steamguard", "enable_confirmations", "false")
+        config.new(session_index, "steamguard", "enable_confirmations", "false")
         module_data = utils.ModuleData(error=_("The current identity secret is invalid."), info=_("Waiting Changes"))
 
         async for data in utils.timed_module_data(10, module_data):
@@ -47,12 +49,12 @@ async def main(
 
         return
 
-    deviceid = config.parser.get("login", "deviceid")
+    deviceid = configparser.get("login", "deviceid")
 
     if not deviceid:
         log.warning(_("Unable to find deviceid. Generating from identity."))
         deviceid = universe.generate_device_id(identity_secret)
-        config.new("login", "deviceid", deviceid)
+        config.new(session_index, "login", "deviceid", deviceid)
 
     try:
         confirmations = await session.get_confirmations(identity_secret, steamid, deviceid)

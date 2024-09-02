@@ -15,13 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import aiohttp
 import asyncio
-import binascii
 import logging
 from typing import AsyncGenerator
 
+import aiohttp
+import binascii
 from stlib import universe, webapi
+
 from . import utils
 from .. import i18n, config
 
@@ -45,9 +46,10 @@ def cached_server_time() -> int:
         return real_time
 
 
-async def main() -> AsyncGenerator[utils.ModuleData, None]:
-    shared_secret = config.parser.get("login", "shared_secret")
-    webapi_session = webapi.SteamWebAPI.get_session(0)
+async def main(session_index: int) -> AsyncGenerator[utils.ModuleData, None]:
+    configparser = config.get_parser(session_index)
+    shared_secret = configparser.get("login", "shared_secret")
+    webapi_session = webapi.SteamWebAPI.get_session(session_index)
 
     try:
         server_time = cached_server_time()
@@ -68,7 +70,7 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
 
     try:
         if not shared_secret:
-            config.new("steamguard", "enable", "false")
+            config.new(session_index, "steamguard", "enable", "false")
             raise ValueError
 
         auth_code = universe.generate_steam_code(server_time, shared_secret)

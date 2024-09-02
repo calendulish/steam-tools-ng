@@ -21,17 +21,16 @@ import locale
 import logging
 import os
 import site
-import sys
 from collections import OrderedDict
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
+import sys
 from stlib import login
 from stlib import plugins as stlib_plugins
 
 from . import i18n, logger_handlers
 
-parser = configparser.RawConfigParser()
 log = logging.getLogger(__name__)
 script_dir = Path(__file__).resolve().parent
 
@@ -43,10 +42,6 @@ else:
     data_dir = Path(os.getenv('XDG_CONFIG_HOME', Path.home() / '.config'))
 
 config_file_directory = data_dir / 'steam-tools-ng'
-config_file_name = 'steam-tools-ng.config'
-cookies_file_name = 'cookiejar'
-config_file = config_file_directory / config_file_name
-cookies_file = config_file_directory / cookies_file_name
 
 try:
     from stlib import client
@@ -128,15 +123,11 @@ coupon_discounts = OrderedDict([
 _ = i18n.get_translation
 
 if sys.platform == 'win32':
-    event_loop = asyncio.ProactorEventLoop()
     file_manager = 'explorer'
 else:
     file_manager = 'xdg-open'
-    event_loop = asyncio.new_event_loop()
 
-asyncio.set_event_loop(event_loop)
-
-default_config: Dict[str, Dict[str, Any]] = {
+default_global_config: Dict[str, Dict[str, Any]] = {
     'logger': {
         'log_directory': data_dir / 'steam-tools-ng',
         'log_level': 'debug',
@@ -146,6 +137,14 @@ default_config: Dict[str, Dict[str, Any]] = {
     'steam': {
         'api_url': 'https://api.steampowered.com',
     },
+    'general': {
+        'theme': 'default',
+        'show_close_button': True,
+        'language': str(locale.getdefaultlocale()[0]),
+    },
+}
+
+default_config: Dict[str, Dict[str, Any]] = {
     'coupons': {
         'enable': True,
         'botid_to_donate': '76561199642778394',
@@ -190,11 +189,6 @@ default_config: Dict[str, Dict[str, Any]] = {
     'fakerun': {
         'cakes': '',
     },
-    'general': {
-        'theme': 'default',
-        'show_close_button': True,
-        'language': str(locale.getdefaultlocale()[0]),
-    },
     'login': {
         'steamid': 0,
         'deviceid': '',
@@ -225,6 +219,23 @@ for index in range(1, 6):
     if index == 1:
         default_config[f'steamgifts_strategy{index}']['enable'] = True
 
+_parser_cache: Dict[int, configparser.RawConfigParser] = {}
+
+
+def get_parser(session_index: int) -> configparser.RawConfigParser:
+    if session_index in _parser_cache:
+        return _parser_cache[session_index]
+
+    parser = configparser.RawConfigParser()
+    _parser_cache[session_index] = parser
+
+    if session_index == 0:
+        parser.read_dict(default_global_config)
+    else:
+        parser.read_dict(default_config)
+
+    return parser
+
 
 def update_log_level(type_: str, level_string: str) -> None:
     level = getattr(logging, level_string.upper())
@@ -236,13 +247,14 @@ def update_log_level(type_: str, level_string: str) -> None:
         file_handler.setLevel(level)
 
 
-def validate_config(section: str, option: str, defaults: OrderedDict[str, str]) -> None:
-    value = parser.get(section, option)
+def validate_config(session_index: int, section: str, option: str, defaults: OrderedDict[str, str]) -> None:
+    _configparser = get_parser(session_index)
+    value = _configparser.get(section, option)
 
     if value and value not in defaults.keys():
         if option == 'language':
             log.error(_("Unsupported language requested. Fallbacking to English."))
-            new('general', 'language', 'en')
+            new(session_index, 'general', 'language', 'en')
             return
 
         raise configparser.Error(_("Please, fix your config file. Available values for {}:\n{}").format(
@@ -251,37 +263,8 @@ def validate_config(section: str, option: str, defaults: OrderedDict[str, str]) 
         ))
 
 
-def init() -> None:
+def init(users: List[int]) -> None:
     config_file_directory.mkdir(parents=True, exist_ok=True)
-    parser.read_dict(default_config)
-
-    if config_file.is_file():
-        parser.read(config_file)
-
-    # fallback deprecated values
-    if (parser.get('steam', 'api_url') in [
-        'https://api.lara.monster', 'https://api.lara.click',
-    ]):
-        new('steam', 'api_url', default_config['steam']['api_url'])
-
-    log_directory = Path(parser.get("logger", "log_directory"))
-
-    if not log_directory.is_dir():
-        log.error(_("Incorrect log directory. Fallbacking to default."))
-        log_directory = data_dir / 'steam-tools-ng'
-        new("logger", "log_directory", log_directory)
-
-    validate_config("logger", "log_level", log_levels)
-    validate_config("logger", "log_console_level", log_levels)
-    validate_config("general", "theme", gtk_themes)
-    validate_config("general", "language", translations)
-    validate_config("steamgifts", "mode", steamgifts_modes)
-
-    for _index in range(1, 4):
-        validate_config(f"steamgifts_strategy{_index}", "restrict_type", giveaway_types)
-        validate_config(f"steamgifts_strategy{_index}", "sort_type", giveaway_sort_types)
-
-    log_directory.mkdir(parents=True, exist_ok=True)
 
     stlib_plugins.add_search_paths(
         str(Path(os.getcwd(), 'lib', 'stlib-plugins')),
@@ -289,20 +272,79 @@ def init() -> None:
         str(Path(site.getusersitepackages(), 'stlib-plugins')),
     )
 
-    if not stlib_plugins.has_plugin("steamtrades"):
-        new("steamtrades", "enable", False)
+    for session_index in users:
+        config_file = config_file_directory / f'steam-tools-ng.session{session_index}.config'
 
-    if not stlib_plugins.has_plugin("steamgifts"):
-        new("steamgifts", "enable", False)
+        if not config_file.is_file() and session_index == 1:
+            deprecated_config_file = config_file_directory / 'steam-tools-ng.config'
 
-    if not client:
-        new("cardfarming", "enable", False)
+            if deprecated_config_file.is_file():
+                log.warning(_("Migrating old config file for multiuser support"))
+                deprecated_config = configparser.RawConfigParser()
+                deprecated_config.read(deprecated_config_file)
+
+                for section in default_global_config.keys():
+                    deprecated_config.remove_section(section)
+
+                with open(deprecated_config_file, 'w', encoding="utf8") as config_file_object:
+                    deprecated_config.write(config_file_object)
+
+                del deprecated_config
+                deprecated_config_file.rename(config_file)
+
+        _configparser = get_parser(session_index)
+
+        if config_file.is_file():
+            _configparser.read(config_file)
+
+        validate_config(session_index, "steamgifts", "mode", steamgifts_modes)
+
+        for _index in range(1, 4):
+            validate_config(session_index, f"steamgifts_strategy{_index}", "restrict_type", giveaway_types)
+            validate_config(session_index, f"steamgifts_strategy{_index}", "sort_type", giveaway_sort_types)
+
+        if not stlib_plugins.has_plugin("steamtrades"):
+            new(session_index, "steamtrades", "enable", False)
+
+        if not stlib_plugins.has_plugin("steamgifts"):
+            new(session_index, "steamgifts", "enable", False)
+
+        if not client:
+            new(session_index, "cardfarming", "enable", False)
+
+    global_config = get_parser(0)
+    global_config_file = config_file_directory / 'steam-tools-ng.global.config'
+
+    if global_config_file.is_file():
+        global_config.read(global_config_file)
+
+    log_directory = Path(global_config.get("logger", "log_directory"))
+
+    if not log_directory.is_dir():
+        log.error(_("Incorrect log directory. Fallbacking to default."))
+        log_directory = data_dir / 'steam-tools-ng'
+        new(0, "logger", "log_directory", log_directory)
+
+    validate_config(0, "logger", "log_level", log_levels)
+    validate_config(0, "logger", "log_console_level", log_levels)
+    validate_config(0, "general", "theme", gtk_themes)
+    validate_config(0, "general", "language", translations)
+
+    log_directory.mkdir(parents=True, exist_ok=True)
+
+    if sys.platform == 'win32':
+        event_loop = asyncio.ProactorEventLoop()
+    else:
+        event_loop = asyncio.new_event_loop()
+
+    asyncio.set_event_loop(event_loop)
 
 
 def init_logger() -> None:
-    log_directory = Path(parser.get("logger", "log_directory"))
-    log_level = parser.get("logger", "log_level")
-    log_console_level = parser.get("logger", "log_console_level")
+    global_config = get_parser(0)
+    log_directory = Path(global_config.get("logger", "log_directory"))
+    log_level = global_config.get("logger", "log_level")
+    log_console_level = global_config.get("logger", "log_console_level")
 
     log_file_handler = logger_handlers.RotatingFileHandler(log_directory / 'steam-tools-ng.log',
                                                            backupCount=1,
@@ -338,33 +380,72 @@ def init_logger() -> None:
     logging.basicConfig(level=logging.DEBUG, handlers=[log_file_handler, log_console_handler])
 
 
-def new(section: str, option: str, value: Any) -> None:
+def new(session_index: int, section: str, option: str, value: Any) -> None:
     if option == "log_level":
         update_log_level("file", value)
     elif option == "log_console_level":
         update_log_level("console", value)
 
-    if parser.get(section, option, fallback='') != str(value):
+    _configparser = get_parser(session_index)
+
+    if _configparser.get(section, option, fallback='') != str(value):
         log.debug(_('Saving {}:{} on config file').format(section, option))
-        parser.set(section, option, str(value))
+        _configparser.set(section, option, str(value))
+
+        if session_index == 0:
+            config_file = config_file_directory / "steam-tools-ng.global.config"
+        else:
+            config_file = config_file_directory / f'steam-tools-ng.session{session_index}.config'
 
         with open(config_file, 'w', encoding="utf8") as config_file_object:
-            parser.write(config_file_object)
+            _configparser.write(config_file_object)
     else:
         log.debug(_('Not saving {}:{} because values are already updated').format(section, option))
 
 
-def remove(section: str, option: str) -> None:
+def remove(session_index: int, section: str, option: str) -> None:
     # Some GUI checks will fail if option doesn't exist
-    new(section, option, '')
+    new(session_index, section, option, '')
     # parser.remove_option(section, option)
 
     # with open(config_file, 'w', encoding="utf8") as config_file_object:
     #    parser.write(config_file_object)
 
 
-def update_steamid_from_cookies(session_id: int = 0) -> None:
-    login_session = login.Login.get_session(session_id)
+def update_steamid_from_cookies(session_index: int) -> None:
+    login_session = login.Login.get_session(session_index)
     store_cookies = login_session.http_session.cookie_jar.filter_cookies('https://store.steampowered.com')
     steamid = store_cookies['steamLoginSecure'].value.split('%7')[0]
-    new("login", "steamid", steamid)
+    new(session_index, "login", "steamid", steamid)
+
+
+async def load_cookies(session_index: int, login_session: login.Login) -> bool:
+    cookies_file = config_file_directory / f"cookiejar.session{session_index}"
+
+    if cookies_file.is_file():
+        login_session.http_session.cookie_jar.load(cookies_file)
+
+        if await login_session.is_logged_in():
+            log.info(_("Steam login Successul (session {})").format(session_index))
+            return True
+
+    return False
+
+
+def save_cookies(session_index: int, login_session: login.Login) -> None:
+    cookies_file = config_file_directory / f"cookiejar.session{session_index}"
+    login_session.http_session.cookie_jar.save(cookies_file)
+
+
+def reset(users: List[int]) -> None:
+    for session_index in users:
+        (config_file_directory / f"cookiejar.session{session_index}").unlink(missing_ok=True)
+        (config_file_directory / f"steam-tools-ng.session{session_index}.config").unlink(missing_ok=True)
+
+    logging.root.removeHandler(logging.root.handlers[0])
+    global_config = get_parser(0)
+    log_directory = global_config.get("logger", "log_directory")
+    (log_directory / 'steam-tools-ng.log').unlink()
+    (log_directory / 'steam-tools-ng.log.1').unlink()
+
+    log.warning(_('Config cleaned!'))

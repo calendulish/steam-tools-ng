@@ -30,6 +30,7 @@ log = logging.getLogger(__name__)
 
 
 async def main(
+        session_index: int,
         steamid: universe.SteamId,
         coupon_fetch_event: asyncio.Event,
         wait_available: Callable[[], Awaitable[None]],
@@ -37,13 +38,14 @@ async def main(
     await wait_available()
     await coupon_fetch_event.wait()
 
-    community_session = community.Community.get_session(0)
-    internals_session = internals.Internals.get_session(0)
-    webapi_session = webapi.SteamWebAPI.get_session(0)
-    botids = config.parser.get('coupons', 'botids')
-    tokens = config.parser.get('coupons', 'tokens')
-    appid = config.parser.getint('coupons', 'appid')
-    contextid = config.parser.getint('coupons', 'contextid')
+    community_session = community.Community.get_session(session_index)
+    internals_session = internals.Internals.get_session(session_index)
+    webapi_session = webapi.SteamWebAPI.get_session(session_index)
+    configparser = config.get_parser(session_index)
+    botids = configparser.get('coupons', 'botids')
+    tokens = configparser.get('coupons', 'tokens')
+    appid = configparser.getint('coupons', 'appid')
+    contextid = configparser.getint('coupons', 'contextid')
 
     if not botids:
         yield utils.ModuleData(error=_("No botID found"), info=_("Waiting Changes"))
@@ -112,10 +114,10 @@ async def main(
             yield utils.ModuleData(action="update_level", raw_data=(index + 1, len(inventory)))
             package_link = coupon_.actions[0]['link']
             packageids = [int(id_) for id_ in package_link.split('=')[1].split(',')]
-            blacklist = config.parser.get('coupons', 'blacklist')
+            blacklist = configparser.get('coupons', 'blacklist')
             ignored_list = [name.split('% OFF')[-1].split('- Coupon')[0].strip() for name in blacklist.split(',')]
             ignored_list.extend([game.name for game in owned_games])
-            minimum_discount = config.parser.getint('coupons', 'minimum_discount')
+            minimum_discount = configparser.getint('coupons', 'minimum_discount')
             game_name = coupon_.name.split('% OFF')[-1].split('- Coupon')[0].strip()
 
             for package_id in packageids:

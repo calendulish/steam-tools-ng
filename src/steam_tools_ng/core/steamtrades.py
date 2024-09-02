@@ -29,16 +29,17 @@ _ = i18n.get_translation
 log = logging.getLogger(__name__)
 
 
-async def main() -> AsyncGenerator[utils.ModuleData, None]:
+async def main(session_index: int) -> AsyncGenerator[utils.ModuleData, None]:
     yield utils.ModuleData(status=_("Loading"))
 
     if not plugins.has_plugin("steamtrades"):
         raise ImportError(_("Unable to find Steamtrades plugin"))
 
     steamtrades = plugins.get_plugin("steamtrades")
-    steamtrades_session = steamtrades.Main.get_session(0)
-    trade_ids = config.parser.get("steamtrades", "trade_ids")
-    wait_for_bump = config.parser.getint("steamtrades", "wait_for_bump")
+    steamtrades_session = steamtrades.Main.get_session(session_index)
+    configparser = config.get_parser(session_index)
+    trade_ids = configparser.get("steamtrades", "trade_ids")
+    wait_for_bump = configparser.getint("steamtrades", "wait_for_bump")
 
     if not trade_ids:
         yield utils.ModuleData(error=_("No trade ID found"), info=_("Waiting Changes"))

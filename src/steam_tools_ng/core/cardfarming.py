@@ -39,20 +39,22 @@ def safe_exit(*args: Any, **kwargs: Any) -> None:
 
 
 async def while_has_cards(
+        session_index: int,
         steamid: universe.SteamId,
         badge: community.Badge,
         play_event: asyncio.Event | None = None,
 ) -> AsyncGenerator[utils.ModuleData, None]:
-    webapi_session = webapi.SteamWebAPI.get_session(0)
-    community_session = community.Community.get_session(0)
+    webapi_session = webapi.SteamWebAPI.get_session(session_index)
+    community_session = community.Community.get_session(session_index)
+    configparser = config.get_parser(session_index)
 
     while badge.cards != 0:
         if play_event:
             await play_event.wait()
 
-        mandatory_waiting = config.parser.getint("cardfarming", "mandatory_waiting")
-        wait_while_running = config.parser.getint("cardfarming", "wait_while_running")
-        wait_for_drops = config.parser.getint("cardfarming", "wait_for_drops")
+        mandatory_waiting = configparser.getint("cardfarming", "mandatory_waiting")
+        wait_while_running = configparser.getint("cardfarming", "wait_while_running")
+        wait_for_drops = configparser.getint("cardfarming", "wait_for_drops")
 
         try:
             game_list = await webapi_session.get_owned_games(steamid, appids_filter=[badge.appid])
@@ -136,6 +138,7 @@ async def while_has_cards(
 
 
 async def main(
+        session_index: int,
         steamid: universe.SteamId,
         play_event: asyncio.Event | None = None,
         custom_game_id: int = 0,
@@ -145,10 +148,11 @@ async def main(
 
     asyncio.current_task().add_done_callback(safe_exit)
 
-    reverse_sorting = config.parser.getboolean("cardfarming", "reverse_sorting")
-    max_concurrency = config.parser.getint("cardfarming", "max_concurrency")
-    invisible = config.parser.getboolean("cardfarming", "invisible")
-    community_session = community.Community.get_session(0)
+    configparser = config.get_parser(session_index)
+    reverse_sorting = configparser.getboolean("cardfarming", "reverse_sorting")
+    max_concurrency = configparser.getint("cardfarming", "max_concurrency")
+    invisible = configparser.getboolean("cardfarming", "invisible")
+    community_session = community.Community.get_session(session_index)
     total_cards_remaining = 0
 
     try:
@@ -189,7 +193,7 @@ async def main(
             yield utils.ModuleData(info=_("Skipping {}").format(badge.appid))
             continue
 
-        generators[badge.appid] = while_has_cards(steamid, badge, play_event)
+        generators[badge.appid] = while_has_cards(session_index, steamid, badge, play_event)
         total_cards_remaining += badge.cards
 
     tasks: Dict[int, asyncio.Task[Any] | None] = {}

@@ -30,11 +30,12 @@ log = logging.getLogger(__name__)
 
 
 async def get_histogram(
+        session_index: int,
         orders: List[community.Order],
         order_type: str,
         fetch_event: asyncio.Event,
 ) -> AsyncGenerator[utils.ModuleData, None]:
-    community_session = community.Community.get_session(0)
+    community_session = community.Community.get_session(session_index)
 
     for position, order in enumerate(orders):
         if not fetch_event.is_set():
@@ -66,13 +67,14 @@ async def get_histogram(
 
 
 async def main(
+        session_index: int,
         fetch_buy_event: asyncio.Event,
         fetch_sell_event: asyncio.Event,
 ) -> AsyncGenerator[utils.ModuleData, None]:
     while not fetch_sell_event.is_set() and not fetch_buy_event.is_set():
         await asyncio.sleep(5)
 
-    community_session = community.Community.get_session(0)
+    community_session = community.Community.get_session(session_index)
 
     try:
         my_orders = await community_session.get_my_orders()
@@ -84,8 +86,8 @@ async def main(
     yield utils.ModuleData(action="clear")
 
     generators = {
-        "sell": get_histogram(my_orders[0], "sell", fetch_sell_event),
-        "buy": get_histogram(my_orders[1], "buy", fetch_buy_event),
+        "sell": get_histogram(session_index, my_orders[0], "sell", fetch_sell_event),
+        "buy": get_histogram(session_index, my_orders[1], "buy", fetch_buy_event),
     }
 
     tasks: Dict[str, asyncio.Task[Any] | None] = {}

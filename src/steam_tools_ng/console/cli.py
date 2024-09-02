@@ -19,11 +19,11 @@ import asyncio
 import contextlib
 import functools
 import logging
-import sys
-from typing import Any, Callable
+from typing import Any, Callable, List
 
 import aiohttp
 import stlib
+import sys
 from steam_tools_ng import __version__
 from stlib import plugins, universe, login, community, webapi, internals
 
@@ -49,7 +49,8 @@ def while_running(function: Callable[..., Any]) -> Callable[..., Any]:
 
 # noinspection PyUnusedLocal
 class SteamToolsNG:
-    def __init__(self, module_name: str, module_options: str) -> None:
+    def __init__(self, users: List[int], module_name: str, module_options: str) -> None:
+        self.users = users
         self.module_name = module_name
         self.stop = False
         self.custom_gameid = 0
@@ -100,20 +101,23 @@ class SteamToolsNG:
             logging.critical("Wrong command line params!")
             sys.exit(1)
 
-        self.api_url = config.parser.get("steam", "api_url")
+        global_parser = config.get_parser(0)
+        self.api_url = global_parser.get("steam", "api_url")
 
-    @property
-    def steamid(self) -> universe.SteamId | None:
-        if steamid := config.parser.getint("login", "steamid"):
+    @staticmethod
+    def steamid(session_index: int) -> universe.SteamId | None:
+        parser = config.get_parser(session_index)
+        if steamid := parser.getint("login", "steamid"):
             try:
                 return universe.generate_steamid(steamid)
             except ValueError:
-                log.warning(_("SteamId is invalid"))
+                log.warning(_("SteamId is invalid (session {})").format(session_index))
 
         return None
 
     async def init(self) -> None:
-        await core.fix_ssl()
+        for session_index in self.users:
+            await core.fix_ssl(session_index)
 
         task = asyncio.create_task(self.async_activate())
         task.add_done_callback(utils.safe_task_callback)
@@ -121,128 +125,134 @@ class SteamToolsNG:
         with contextlib.suppress(asyncio.CancelledError):
             await task
 
-    async def do_login(self, *, block: bool = True, auto: bool = False) -> None:
-        login_session = cli_login.Login(self)
+    async def do_login(self, session_index: int, *, block: bool = True, auto: bool = False) -> None:
+        login_session = cli_login.Login(session_index, self)
         await login_session.do_login(auto)
 
     async def async_activate(self) -> None:
-        login_session = await login.Login.new_session(0, api_url=self.api_url)
-        utils.set_console(info=_("Logging on Steam. Please wait!"))
-        try_count = 3
+        tasks: List[asyncio.Task] = []
 
-        for login_count in range(try_count):
-            if await login_session.is_logged_in():
-                utils.set_console(info=_("Steam login Successful"))
-                config.update_steamid_from_cookies()
-                break
+        for session_index in self.users:
+            login_session = await login.Login.new_session(session_index, api_url=self.api_url)
+            utils.set_console(info=_("Logging on Steam (session {}). Please wait!").format(session_index))
+            try_count = 3
+
+            for login_count in range(try_count):
+                if await login_session.is_logged_in():
+                    utils.set_console(info=_("Steam login Successful (session {})").format(session_index))
+                    config.update_steamid_from_cookies(session_index)
+                    break
+
+                try:
+                    await self.do_login(session_index, auto=login_count == 0)
+                except aiohttp.ClientError as exception:
+                    log.exception(str(exception))
+                    log.error(_("Check your connection. (server down?)"))
+
+                    if login_count == 2:
+                        return
+                    log.error(_("Waiting 10 seconds to try again"))
+                    await asyncio.sleep(10)
+
+            community_session = await community.Community.new_session(session_index, api_url=self.api_url)
 
             try:
-                if login_count == 0:
-                    await self.do_login(auto=True)
-                else:
-                    await self.do_login()
-            except aiohttp.ClientError as exception:
-                log.exception(str(exception))
-                log.error(_("Check your connection. (server down?)"))
+                api_key = await community_session.get_api_key()
+                log.debug(_('SteamAPI key found: %s'), api_key)
 
-                if login_count == 2:
-                    return
-                log.error(_("Waiting 10 seconds to try again"))
-                await asyncio.sleep(10)
+                if api_key[1] != 'Steam Tools NG':
+                    raise AttributeError
+            except AttributeError:
+                log.warning(_('Updating your SteamAPI dev key'))
+                await asyncio.sleep(3)
+                await community_session.revoke_api_key()
+                await asyncio.sleep(3)
+                api_key = await community_session.register_api_key('Steam Tools NG')
+
+                if not api_key:
+                    raise ValueError(_('Something wrong with your SteamAPI dev key'))
+            except PermissionError:
+                log.error(_("Limited account! Using dummy API key"))
+                api_key = (0, 'Steam Tools NG')
+
+            await webapi.SteamWebAPI.new_session(session_index, api_key=api_key[0], api_url=self.api_url)
+            await internals.Internals.new_session(session_index)
+
+            if self.module_name in ['steamtrades', 'steamgifts']:
+                plugin = plugins.get_plugin(self.module_name)
+                await plugin.Main.new_session(session_index)
+
+            log.debug(_("Initializing module %s"), self.module_name)
+            module = getattr(self, f"run_{self.module_name}")
+            task = asyncio.create_task(module(session_index))
+            task.add_done_callback(utils.safe_task_callback)
+            tasks.append(task)
 
         try:
-            release_data = await login_session.request_json(
+            release_data = await login.Login.get_session(self.users[0]).request_json(
                 "https://api.github.com/repos/calendulish/steam-tools-ng/releases/latest",
             )
             latest_version = release_data['tag_name'][1:]
 
             if latest_version > __version__:
-                log.warning(_("A new version is available [{}]."))
+                log.warning(_("A new version is available [{}].").format(latest_version))
                 log.warning(_("It's highly recommended to update."))
                 log.warning('https://github.com/calendulish/steam-tools-ng/releases')
         except aiohttp.ClientError as error:
             log.exception(str(error))
             # bypass
 
-        community_session = await community.Community.new_session(0, api_url=self.api_url)
+        await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
 
-        try:
-            api_key = await community_session.get_api_key()
-            log.debug(_('SteamAPI key found: %s'), api_key)
-
-            if api_key[1] != 'Steam Tools NG':
-                raise AttributeError
-        except AttributeError:
-            log.warning(_('Updating your SteamAPI dev key'))
-            await asyncio.sleep(3)
-            await community_session.revoke_api_key()
-            await asyncio.sleep(3)
-            api_key = await community_session.register_api_key('Steam Tools NG')
-
-            if not api_key:
-                raise ValueError(_('Something wrong with your SteamAPI dev key'))
-        except PermissionError:
-            log.error(_("Limited account! Using dummy API key"))
-            api_key = (0, 'Steam Tools NG')
-
-        await webapi.SteamWebAPI.new_session(0, api_key=api_key[0], api_url=self.api_url)
-        await internals.Internals.new_session(0)
-
-        if self.module_name in ['steamtrades', 'steamgifts']:
-            plugin = plugins.get_plugin(self.module_name)
-            await plugin.Main.new_session(0)
-
-        log.debug(_("Initializing module %s"), self.module_name)
-        module = getattr(self, f"run_{self.module_name}")
-        await module()
-
-    async def run_add_authenticator(self) -> None:
-        authenticator_manage = authenticator.ManageAuthenticator(self)
+    async def run_add_authenticator(self, session_index: int) -> None:
+        authenticator_manage = authenticator.ManageAuthenticator(session_index, self)
         await authenticator_manage.add_authenticator()
 
-    async def run_remove_authenticator(self) -> None:
-        authenticator_manage = authenticator.ManageAuthenticator(self)
+    async def run_remove_authenticator(self, session_index: int) -> None:
+        authenticator_manage = authenticator.ManageAuthenticator(session_index, self)
         await authenticator_manage.remove_authenticator()
 
     @while_running
-    async def run_steamguard(self) -> None:
-        steamguard = core.steamguard.main()
+    async def run_steamguard(self, session_index: int) -> None:
+        steamguard = core.steamguard.main(session_index)
 
         async for module_data in steamguard:
             utils.set_console(module_data)
 
     @while_running
-    async def run_cardfarming(self) -> None:
-        cardfarming = core.cardfarming.main(self.steamid, custom_game_id=self.custom_gameid)
+    async def run_cardfarming(self, session_index: int) -> None:
+        cardfarming = core.cardfarming.main(
+            session_index, self.steamid(session_index), custom_game_id=self.custom_gameid,
+        )
 
         async for module_data in cardfarming:
             utils.set_console(module_data)
 
     @while_running
-    async def run_fakerun(self) -> None:
-        fakerun = core.fakerun.main(self.steamid, self.custom_gameid, self.extra_gameid)
+    async def run_fakerun(self, session_index: int) -> None:
+        fakerun = core.fakerun.main(session_index, self.steamid(session_index), self.custom_gameid, self.extra_gameid)
 
         async for module_data in fakerun:
             utils.set_console(module_data)
 
     @while_running
-    async def run_steamtrades(self) -> None:
-        steamtrades = core.steamtrades.main()
+    async def run_steamtrades(self, session_index: int) -> None:
+        steamtrades = core.steamtrades.main(session_index)
 
         async for module_data in steamtrades:
             utils.set_console(module_data)
 
             if module_data.action == "login":
-                await self.do_login(auto=True)
+                await self.do_login(session_index, auto=True)
                 continue
 
     @while_running
-    async def run_steamgifts(self) -> None:
-        steamgifts = core.steamgifts.main()
+    async def run_steamgifts(self, session_index: int) -> None:
+        steamgifts = core.steamgifts.main(session_index)
 
         async for module_data in steamgifts:
             utils.set_console(module_data)
 
             if module_data.action == "login":
-                await self.do_login(auto=True)
+                await self.do_login(session_index, auto=True)
                 continue

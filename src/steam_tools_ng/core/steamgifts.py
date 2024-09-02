@@ -30,14 +30,14 @@ _ = i18n.get_translation
 log = logging.getLogger(__name__)
 
 
-async def main() -> AsyncGenerator[utils.ModuleData, None]:
+async def main(session_index: int) -> AsyncGenerator[utils.ModuleData, None]:
     yield utils.ModuleData(status=_("Loading"))
 
     if not plugins.has_plugin("steamgifts"):
         raise ImportError(_("Unable to find Steamgifts plugin."))
 
     steamgifts = plugins.get_plugin("steamgifts")
-    steamgifts_session = steamgifts.Main.get_session(0)
+    steamgifts_session = steamgifts.Main.get_session(session_index)
     try:
         await steamgifts_session.do_login()
     except aiohttp.ClientError:
@@ -75,31 +75,32 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
         await asyncio.sleep(20)
         return
 
-    pinned = config.parser.getboolean("steamgifts", "developer_giveaways")
-    points_to_preserve = config.parser.getint("steamgifts", "minimum_points")
-    mode = config.parser.get("steamgifts", "mode")
-    wait_after_each_strategy = config.parser.getint("steamgifts", "wait_after_each_strategy")
-    wait_after_full_cycle = config.parser.getint("steamgifts", "wait_after_full_cycle")
+    configparser = config.get_parser(session_index)
+    pinned = configparser.getboolean("steamgifts", "developer_giveaways")
+    points_to_preserve = configparser.getint("steamgifts", "minimum_points")
+    mode = configparser.get("steamgifts", "mode")
+    wait_after_each_strategy = configparser.getint("steamgifts", "wait_after_each_strategy")
+    wait_after_full_cycle = configparser.getint("steamgifts", "wait_after_full_cycle")
 
     for strategy_index in range(1, 6):
         strategy = f"steamgifts_strategy{strategy_index}"
-        enabled = config.parser.get(strategy, "enable")
+        enabled = configparser.get(strategy, "enable")
 
         if not enabled:
             yield utils.ModuleData(info=_("Strategy {} is disabled. Skipping.").format(strategy_index))
             continue
 
-        type_ = config.parser.get(strategy, "restrict_type")
-        minimum_points = config.parser.getint(strategy, "minimum_points")
-        maximum_points = config.parser.getint(strategy, "maximum_points")
-        minimum_level = config.parser.getint(strategy, "minimum_level")
-        maximum_level = config.parser.getint(strategy, "maximum_level")
-        minimum_copies = config.parser.getint(strategy, "minimum_copies")
-        maximum_copies = config.parser.getint(strategy, "maximum_copies")
-        minimum_metascore = config.parser.getint(strategy, "minimum_metascore")
-        maximum_metascore = config.parser.getint(strategy, "maximum_metascore")
-        minimum_entries = config.parser.getint(strategy, "minimum_entries")
-        maximum_entries = config.parser.getint(strategy, "maximum_entries")
+        type_ = configparser.get(strategy, "restrict_type")
+        minimum_points = configparser.getint(strategy, "minimum_points")
+        maximum_points = configparser.getint(strategy, "maximum_points")
+        minimum_level = configparser.getint(strategy, "minimum_level")
+        maximum_level = configparser.getint(strategy, "maximum_level")
+        minimum_copies = configparser.getint(strategy, "minimum_copies")
+        maximum_copies = configparser.getint(strategy, "maximum_copies")
+        minimum_metascore = configparser.getint(strategy, "minimum_metascore")
+        maximum_metascore = configparser.getint(strategy, "maximum_metascore")
+        minimum_entries = configparser.getint(strategy, "minimum_entries")
+        maximum_entries = configparser.getint(strategy, "maximum_entries")
 
         max_ban_wait = random.randint(5, 15)
         async for data in utils.timed_module_data(max_ban_wait, utils.ModuleData()):
@@ -123,7 +124,7 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
         wait_enabled = False
 
         if giveaways:
-            sort_type = config.parser.get(strategy, "sort_type")
+            sort_type = configparser.get(strategy, "sort_type")
             sort_name = sort_type[:-1]
             sort_direction = sort_type[-1]
 
