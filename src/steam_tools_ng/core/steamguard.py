@@ -15,13 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 #
-import aiohttp
 import asyncio
 import binascii
 import logging
 from typing import AsyncGenerator
 
+import aiohttp
 from stlib import universe, webapi
+
 from . import utils
 from .. import i18n, config
 
@@ -34,23 +35,13 @@ log = logging.getLogger(__name__)
 _ = i18n.get_translation
 
 
-@utils.time_offset_cache(ttl=3600)
-def cached_server_time() -> int:
-    if not client:
-        raise ProcessLookupError
-
-    with client.SteamGameServer() as server:
-        real_time = server.get_server_real_time()
-        assert isinstance(real_time, int)
-        return real_time
-
-
 async def main() -> AsyncGenerator[utils.ModuleData, None]:
     shared_secret = config.parser.get("login", "shared_secret")
     webapi_session = webapi.SteamWebAPI.get_session(0)
 
     try:
-        server_time = cached_server_time()
+        with client.SteamGameServer() as server:
+            server_time = server.get_server_real_time()
     except ProcessLookupError:
         yield utils.ModuleData(error=_("Steam is not running."), info=_("Fallbacking server time to WebAPI"))
 
