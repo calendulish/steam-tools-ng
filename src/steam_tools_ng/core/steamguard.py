@@ -21,6 +21,7 @@ import logging
 from typing import AsyncGenerator
 
 import aiohttp
+import stlib
 from stlib import universe, webapi
 
 from . import utils
@@ -40,6 +41,9 @@ async def main() -> AsyncGenerator[utils.ModuleData, None]:
     webapi_session = webapi.SteamWebAPI.get_session(0)
 
     try:
+        if not stlib.steamworks_available:
+            raise ProcessLookupError
+
         with client.SteamGameServer() as server:
             server_time = server.get_server_real_time()
     except ProcessLookupError:
