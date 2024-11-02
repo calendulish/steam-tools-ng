@@ -224,6 +224,7 @@ class CouponWindow(utils.PopupWindowBase):
 
                     if item.creatorid == json_data['tradeofferid']:
                         confirmations_tree.model.set_selected(index)
+                        target = True
                         break
 
                 if target:
