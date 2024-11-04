@@ -1137,8 +1137,6 @@ class Main(Gtk.ApplicationWindow):
 
     def on_login_button_clicked(self, button: Gtk.Button) -> None:
         login_window = LoginWindow(self, self.application)
-        login_window.shared_secret_item.set_text('')
-        login_window.identity_secret_item.set_text('')
         login_window.present()
 
     def on_new_authenticator_clicked(self, button: Gtk.Button) -> None:
