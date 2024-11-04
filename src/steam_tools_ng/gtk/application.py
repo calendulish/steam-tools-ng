@@ -201,7 +201,7 @@ class SteamToolsNG(Gtk.Application):
 
             while True:
                 self.main_window.statusbar.set_warning('steamguard', _('Waiting devkey confirmation (STNG and mobile)'))
-                await asyncio.sleep(5)
+                await asyncio.sleep(10)
 
                 if await utils.match_confirmation(
                         self.main_window,
