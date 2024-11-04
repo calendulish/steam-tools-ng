@@ -24,9 +24,13 @@ You can run the follow modules from steam-tools:
 
 * Fake Run: Will run any game forever, even if you don't have it installed
 
+* Market Monitor: You can monitor Steam market prices
+
 * Free coupons: Get coupons for free and donate your coupons
 
 * More (**Coming Soon**)
+
+If you need anything else, open an issue or send a pull request
 
 Graphical User Interface
 -------------
