@@ -304,6 +304,8 @@ class LoginWindow(utils.PopupWindowBase):
 
                     self.username_item.set_sensitive(True)
                     self.__password_item.set_sensitive(True)
+                    self.auth_code_item.set_text("")
+                    self.auth_code_item.set_visible(True)
                     self.__password_item.grab_focus()
                     break
             except (aiohttp.ClientError, ValueError):
