@@ -68,7 +68,7 @@ jobs:
           egress-policy: audit
 
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - uses: uraimo/run-on-arch-action@b0ffb25eb00af00468375982384441f063da1741 # v2.7.2
+      - uses: uraimo/run-on-arch-action@5397f9e30a9b62422f302092631c99ae1effcd9e # v2.8.1
         id: build
         with:
           arch: ${{ matrix.arch }}
