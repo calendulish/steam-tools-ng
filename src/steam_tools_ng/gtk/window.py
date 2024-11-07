@@ -155,7 +155,7 @@ class Main(Gtk.ApplicationWindow):
         self.confirmations_grid.set_row_spacing(10)
         steamguard_stack.add_titled(self.confirmations_grid, "confirmations", _("Confirmations"))
 
-        confirmation_tree_headers = 'id', 'creatorid', 'nonce', '_give', '_to', '_receive', 'summary', 'type'
+        confirmation_tree_headers = 'id', 'creatorid', 'nonce', '_give', '_to', '_receive', 'summary',
         self.confirmations_tree = utils.SimpleTextTree(*confirmation_tree_headers)
         self.confirmations_grid.attach(self.confirmations_tree, 0, 0, 4, 1)
 
@@ -164,7 +164,7 @@ class Main(Gtk.ApplicationWindow):
                 column.set_resizable(True)
                 column.set_expand(True)
 
-            if index in (1, 2, 3, 7, 8):
+            if index in (1, 2, 3, 7):
                 column.set_visible(False)
 
         self.confirmations_tree.model.connect("selection-changed", self.on_tree_selection_changed)

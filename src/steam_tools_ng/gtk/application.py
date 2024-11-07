@@ -167,67 +167,33 @@ class SteamToolsNG(Gtk.Application):
             # bypass
 
         community_session = await community.Community.new_session(0, api_url=self.api_url)
-        internals_session = await internals.Internals.new_session(0)
-        modules: Dict[str, asyncio.Task[Any]] = {}
-
-        if config.parser.getboolean("steamguard", "enable_confirmations"):
-            task = asyncio.create_task(self.run_confirmations())
-            task.add_done_callback(utils.safe_task_callback)
-            modules['confirmations'] = task
 
         try:
-            api_key, __ = await community_session.get_api_key()
+            api_key = await community_session.get_api_key()
             log.debug(_('SteamAPI key found: %s'), api_key)
+
+            if api_key[1] != 'Steam Tools NG':
+                raise AttributeError
         except AttributeError:
             self.main_window.statusbar.set_warning('steamguard', _('Updating your SteamAPI dev key'))
             await asyncio.sleep(3)
             await community_session.revoke_api_key()
             await asyncio.sleep(3)
 
-            # Prevent pending devkeys
-            await utils.match_confirmation(
-                self.main_window,
-                self,
-                self.main_window.confirmations_tree,
-                9,
-                'cancel',
-            )
-
-            await asyncio.sleep(3)
-
-            request_id, __ = await community_session.request_api_key('Steam Tools NG')
-            confirmations_tree = self.main_window.confirmations_tree
-            have_api_key = False
-
-            while True:
-                self.main_window.statusbar.set_warning('steamguard', _('Waiting devkey confirmation (STNG and mobile)'))
-                await asyncio.sleep(10)
-
-                if await utils.match_confirmation(
-                        self.main_window,
-                        self,
-                        self.main_window.confirmations_tree,
-                        9,
-                        'allow',
-                ):
-                    have_api_key = True
-
-                __, api_key = await community_session.request_api_key('Steam Tools NG', request_id)
-
-                if api_key:
-                    have_api_key = True
-
-                if have_api_key:
-                    break
-
-            await asyncio.sleep(5)
+            api_key = await community_session.register_api_key('Steam Tools NG')
             self.main_window.statusbar.clear('steamguard')
+
+            if not api_key:
+                utils.fatal_error_dialog(ValueError(_('Something wrong with your SteamAPI dev key')), [])
         except PermissionError:
             log.error(_("Limited account! Using dummy API key"))
             self.main_window.limited_label.set_visible(True)
-            api_key = "0"
+            api_key = (0, 'Steam Tools NG')
 
-        webapi_session = await webapi.SteamWebAPI.new_session(0, api_key=api_key, api_url=self.api_url)
+        webapi_session = await webapi.SteamWebAPI.new_session(0, api_key=api_key[0], api_url=self.api_url)
+        internals_session = await internals.Internals.new_session(0)
+
+        modules: Dict[str, asyncio.Task[Any]] = {}
 
         while self.main_window.get_realized():
             for module_name in config.plugins.keys():
@@ -349,7 +315,6 @@ class SteamToolsNG(Gtk.Application):
                         utils.markup(confirmation_.to),
                         utils.markup(t_receive),
                         '. '.join(confirmation_.summary),
-                        str(confirmation_.type),
                     )
 
                     for give, receive in itertools.zip_longest(confirmation_.give, confirmation_.receive):

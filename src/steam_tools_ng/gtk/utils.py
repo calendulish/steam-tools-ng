@@ -901,30 +901,3 @@ def on_digit_only_setting_changed(item: _SectionItem) -> None:
 def on_dropdown_setting_changed(item: _SectionItem, _spec: Any, items: OrderedDict[str, str]) -> None:
     current_value = list(items)[item.get_selected()]
     config.new(item.section.get_name(), item.get_name(), current_value)
-
-
-async def match_confirmation(window: Gtk.Window,
-                             application: Gtk.Application,
-                             tree: SimpleTextTree,
-                             confirmation_type: int,
-                             method: str,
-                             ) -> bool:
-    # prevent circular imports due finalize window being reused
-    from . import confirmation  # noqa
-
-    matched = False
-
-    for index in range(tree.store.get_n_items()):
-        item = tree.store.get_item(index)
-
-        if item and int(item.type) == confirmation_type:
-            matched = True
-            tree.model.set_selected(index)
-
-            finalize_window = confirmation.FinalizeWindow(window, application, tree, method)
-            finalize_window.present()
-            finalize_window.yes_button.emit('clicked')
-
-            await asyncio.sleep(2)
-
-    return matched
