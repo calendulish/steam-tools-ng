@@ -169,19 +169,16 @@ class SteamToolsNG:
         try:
             api_key = await community_session.get_api_key()
             log.debug(_('SteamAPI key found: %s'), api_key)
-
-            if api_key[1] != 'Steam Tools NG':
-                raise AttributeError
         except AttributeError:
-            log.warning(_('Updating your SteamAPI dev key'))
-            await asyncio.sleep(3)
-            await community_session.revoke_api_key()
-            await asyncio.sleep(3)
-            api_key = await community_session.register_api_key('Steam Tools NG')
+            log.exception(
+                _(
+                    '\nBefore using STNG you must create a WebAPI Key here:\n'
+                    'https://steamcommunity.com/dev/apikey\n'
+                    'and restart STNG, it will read it automatically.\n'
+                ))
 
-            if not api_key:
-                raise ValueError(_('Something wrong with your SteamAPI dev key'))
-        except PermissionError:
+            return
+        except (IndexError, PermissionError):
             log.error(_("Limited account! Using dummy API key"))
             api_key = (0, 'Steam Tools NG')
 

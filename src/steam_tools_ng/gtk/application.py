@@ -171,21 +171,19 @@ class SteamToolsNG(Gtk.Application):
         try:
             api_key = await community_session.get_api_key()
             log.debug(_('SteamAPI key found: %s'), api_key)
-
-            if api_key[1] != 'Steam Tools NG':
-                raise AttributeError
         except AttributeError:
-            self.main_window.statusbar.set_warning('steamguard', _('Updating your SteamAPI dev key'))
-            await asyncio.sleep(3)
-            await community_session.revoke_api_key()
-            await asyncio.sleep(3)
+            self.main_window.statusbar.set_warning('steamguard', _('You must create a WebAPI Key for your account'))
+            utils.fatal_error_dialog(
+                PermissionError(
+                    _(
+                        'Before using STNG you must create a WebAPI Key here:\n'
+                        'https://steamcommunity.com/dev/apikey\n'
+                        'and restart STNG, it will read it automatically.'
+                    )
+                ), [])
 
-            api_key = await community_session.register_api_key('Steam Tools NG')
-            self.main_window.statusbar.clear('steamguard')
-
-            if not api_key:
-                utils.fatal_error_dialog(ValueError(_('Something wrong with your SteamAPI dev key')), [])
-        except PermissionError:
+            return
+        except (IndexError, PermissionError):
             log.error(_("Limited account! Using dummy API key"))
             self.main_window.limited_label.set_visible(True)
             api_key = (0, 'Steam Tools NG')
